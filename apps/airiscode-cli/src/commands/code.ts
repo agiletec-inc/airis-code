@@ -31,7 +31,7 @@ export function createCodeCommand(): Command {
   return cmd;
 }
 
-async function executeCodeCommand(task: string, options: CodeCommandOptions): Promise<void> {
+export async function executeCodeCommand(task: string, options: CodeCommandOptions): Promise<void> {
   const spinner = options.json ? null : ora('Initializing...').start();
 
   try {

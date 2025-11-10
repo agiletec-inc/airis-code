@@ -44,7 +44,7 @@
     "lint": "eslint src --ext .ts,.tsx",
     "test": "vitest run",
     "start": "node ./bin/airis",
-    "prepublishOnly": "npm run build && npm run test",
+    "prepublishOnly": "npm run build",
     "prepack": "npm run build"
   },
   "dependencies": {

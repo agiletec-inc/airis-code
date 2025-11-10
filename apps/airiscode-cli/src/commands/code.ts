@@ -124,7 +124,7 @@ export async function executeCodeCommand(task: string, options: CodeCommandOptio
 
       if (result.proposedShell && result.proposedShell.length > 0) {
         console.log(chalk.yellow('\nProposed shell commands:'));
-        result.proposedShell.forEach((cmd, index) => {
+        result.proposedShell.forEach((cmd: string, index: number) => {
           console.log(chalk.gray(`  ${index + 1}. ${cmd}`));
         });
       }

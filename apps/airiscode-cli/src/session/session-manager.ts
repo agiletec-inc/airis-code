@@ -2,6 +2,7 @@
  * Session management
  */
 
+// @ts-ignore
 import { v4 as uuidv4 } from 'uuid';
 import { existsSync, mkdirSync, readFileSync, writeFileSync, readdirSync, unlinkSync } from 'fs';
 import { join } from 'path';

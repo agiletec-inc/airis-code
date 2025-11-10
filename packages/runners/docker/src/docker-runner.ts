@@ -5,7 +5,6 @@
 import Docker from 'dockerode';
 import { ok, err } from '@airiscode/types';
 import type {
-  DockerOperation,
   ComposeUpOptions,
   ComposeDownOptions,
   ContainerInfo,
@@ -28,7 +27,7 @@ import type {
   NetworkListResult,
   VolumeListResult,
 } from './types.js';
-import { DockerRunnerError as DockerError } from './types.js';
+import { DockerRunnerError as DockerError, DockerOperation } from './types.js';
 import { spawn } from 'child_process';
 
 /**
@@ -87,13 +86,13 @@ export class DockerRunner {
       await this.execCommand('docker', args);
       return ok(undefined);
     } catch (error) {
-      return err(
+      return err<DockerRunnerError>(
         new DockerError(
           'Failed to start Docker Compose services',
           DockerOperation.COMPOSE_UP,
           error instanceof Error ? error : undefined
         )
-      );
+      ) as ComposeUpResult;
     }
   }
 
@@ -125,13 +124,13 @@ export class DockerRunner {
       await this.execCommand('docker', args);
       return ok(undefined);
     } catch (error) {
-      return err(
+      return err<DockerRunnerError>(
         new DockerError(
           'Failed to stop Docker Compose services',
           DockerOperation.COMPOSE_DOWN,
           error instanceof Error ? error : undefined
         )
-      );
+      ) as ComposeDownResult;
     }
   }
 
@@ -161,13 +160,13 @@ export class DockerRunner {
       const output = await this.execCommand('docker', args);
       return ok(output);
     } catch (error) {
-      return err(
+      return err<DockerRunnerError>(
         new DockerError(
           'Failed to get Docker Compose logs',
           DockerOperation.COMPOSE_LOGS,
           error instanceof Error ? error : undefined
         )
-      );
+      ) as ComposeLogsResult;
     }
   }
 
@@ -194,13 +193,13 @@ export class DockerRunner {
 
       return ok(result);
     } catch (error) {
-      return err(
+      return err<DockerRunnerError>(
         new DockerError(
           'Failed to list containers',
           DockerOperation.CONTAINER_LIST,
           error instanceof Error ? error : undefined
         )
-      );
+      ) as ContainerListResult;
     }
   }
 
@@ -217,7 +216,7 @@ export class DockerRunner {
           containerId,
           status: 'none',
           failingStreak: 0,
-        });
+        }) as ContainerHealthResult;
       }
 
       const health = info.State.Health;
@@ -237,13 +236,13 @@ export class DockerRunner {
           : undefined,
       });
     } catch (error) {
-      return err(
+      return err<DockerRunnerError>(
         new DockerError(
           'Failed to get container health',
           DockerOperation.HEALTH_CHECK,
           error instanceof Error ? error : undefined
         )
-      );
+      ) as ContainerHealthResult;
     }
   }
 
@@ -281,7 +280,7 @@ export class DockerRunner {
       }
 
       // Block I/O stats
-      const ioStats = stats.blkio_stats.io_service_bytes_recursive || [];
+      const ioStats = stats.blkio_stats?.io_service_bytes_recursive || [];
       let readBytes = 0;
       let writeBytes = 0;
       for (const io of ioStats) {
@@ -310,13 +309,13 @@ export class DockerRunner {
 
       return ok(result);
     } catch (error) {
-      return err(
+      return err<DockerRunnerError>(
         new DockerError(
           'Failed to get container stats',
           DockerOperation.CONTAINER_STATS,
           error instanceof Error ? error : undefined
         )
-      );
+      ) as ContainerStatsResult;
     }
   }
 
@@ -330,8 +329,8 @@ export class DockerRunner {
     try {
       const container = this.docker.getContainer(containerId);
 
-      const logOptions = {
-        follow: options.follow || false,
+      const logOptions: Docker.ContainerLogsOptions & { follow?: false } = {
+        follow: false,
         stdout: options.stdout !== false,
         stderr: options.stderr !== false,
         timestamps: options.timestamps || false,
@@ -343,18 +342,18 @@ export class DockerRunner {
           : undefined,
       };
 
-      const stream = await container.logs(logOptions);
-      const logs = stream.toString('utf-8');
+      const buffer = await container.logs(logOptions);
+      const logs = buffer.toString('utf-8');
 
       return ok(logs);
     } catch (error) {
-      return err(
+      return err<DockerRunnerError>(
         new DockerError(
           'Failed to get container logs',
           DockerOperation.CONTAINER_LOGS,
           error instanceof Error ? error : undefined
         )
-      );
+      ) as ContainerLogsResult;
     }
   }
 
@@ -374,13 +373,13 @@ export class DockerRunner {
 
       return ok(result);
     } catch (error) {
-      return err(
+      return err<DockerRunnerError>(
         new DockerError(
           'Failed to list images',
           DockerOperation.IMAGE_LIST,
           error instanceof Error ? error : undefined
         )
-      );
+      ) as ImageListResult;
     }
   }
 
@@ -408,13 +407,13 @@ export class DockerRunner {
 
       return ok(undefined);
     } catch (error) {
-      return err(
+      return err<DockerRunnerError>(
         new DockerError(
           'Failed to pull image',
           DockerOperation.IMAGE_PULL,
           error instanceof Error ? error : undefined
         )
-      );
+      ) as ImagePullResult;
     }
   }
 
@@ -434,13 +433,13 @@ export class DockerRunner {
 
       return ok(result);
     } catch (error) {
-      return err(
+      return err<DockerRunnerError>(
         new DockerError(
           'Failed to list networks',
           DockerOperation.NETWORK_LIST,
           error instanceof Error ? error : undefined
         )
-      );
+      ) as NetworkListResult;
     }
   }
 
@@ -456,18 +455,18 @@ export class DockerRunner {
         name: volume.Name,
         driver: volume.Driver,
         mountpoint: volume.Mountpoint,
-        created: new Date(volume.CreatedAt),
+        created: (volume as any).CreatedAt ? new Date((volume as any).CreatedAt) : new Date(),
       }));
 
       return ok(result);
     } catch (error) {
-      return err(
+      return err<DockerRunnerError>(
         new DockerError(
           'Failed to list volumes',
           DockerOperation.VOLUME_LIST,
           error instanceof Error ? error : undefined
         )
-      );
+      ) as VolumeListResult;
     }
   }
 

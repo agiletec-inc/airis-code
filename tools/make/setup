@@ -23,8 +23,16 @@ check_command() {
 
 echo "📦 Checking dependencies..."
 
-# Check pnpm
-if ! check_command pnpm "Install via: npm install -g pnpm@9 or https://pnpm.io/installation"; then
+# Check pnpm (allow npx fallback)
+if command -v pnpm &>/dev/null; then
+  echo "✓ pnpm is installed"
+  PNPM_CMD="pnpm"
+elif command -v npx &>/dev/null && npx pnpm --version &>/dev/null; then
+  echo "✓ pnpm is available via npx"
+  PNPM_CMD="npx pnpm"
+else
+  echo "✗ pnpm is NOT installed"
+  echo "  → Install via: npm install -g pnpm@9 or https://pnpm.io/installation"
   exit 1
 fi
 
@@ -53,7 +61,7 @@ echo ""
 # ========== pnpm Install ==========
 
 echo "📥 Installing dependencies..."
-pnpm install
+$PNPM_CMD install
 echo ""
 
 # ========== Proto Codegen (if buf available) ==========

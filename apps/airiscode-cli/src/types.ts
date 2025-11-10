@@ -3,7 +3,6 @@
  */
 
 import type { PolicyProfile } from '@airiscode/policies';
-import type { UUID } from '@airiscode/types';
 
 /**
  * CLI configuration
@@ -28,7 +27,7 @@ export interface CLIConfig {
  */
 export interface SessionInfo {
   /** Session ID */
-  id: UUID;
+  id: string;
   /** Session name */
   name?: string;
   /** Working directory */

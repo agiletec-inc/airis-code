@@ -1,6 +1,7 @@
 {
   "name": "@airiscode/cli",
   "version": "0.1.0",
+  "type": "module",
   "description": "AIRIS Code - Terminal-first autonomous coding runner",
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",

@@ -7,7 +7,7 @@ import chalk from 'chalk';
 import ora from 'ora';
 import { SessionManager } from '../session/session-manager.js';
 import { config } from '../utils/config.js';
-import { ClaudeCodeAdapter } from '@airiscode/adapters-claude-code';
+// import { ClaudeCodeAdapter } from '@airiscode/adapters-claude-code';
 import { ApprovalsLevel, TrustLevel } from '@airiscode/policies';
 import type { CodeCommandOptions } from '../types.js';
 
@@ -62,51 +62,29 @@ export async function executeCodeCommand(task: string, options: CodeCommandOptio
     }
 
     if (spinner) {
-      spinner.text = 'Starting adapter...';
+      spinner.succeed(chalk.green('Session created successfully'));
     }
 
-    // Initialize adapter based on selection
-    let adapter;
+    console.log(chalk.blue('\n📋 Session Information:'));
+    console.log(chalk.gray('  ID:'), session.id);
+    console.log(chalk.gray('  Task:'), task);
+    console.log(chalk.gray('  Working Directory:'), session.workingDir);
+    console.log(chalk.gray('  Driver:'), session.driver);
+    console.log(chalk.gray('  Adapter:'), session.adapter);
+    console.log(chalk.gray('  Policy:'), options.policy || 'sandboxed');
 
-    if (session.adapter === 'claude-code') {
-      adapter = new ClaudeCodeAdapter({
-        workingDir: session.workingDir,
-        policy: session.policy,
-      });
-    } else {
-      throw new Error(`Unknown adapter: ${session.adapter}`);
-    }
-
-    // Spawn adapter
-    await adapter.spawn();
-
-    sessionManager.addLog({
-      level: 'info',
-      source: 'adapter',
-      message: `Adapter spawned: ${session.adapter}`,
-    });
-
-    if (spinner) {
-      spinner.text = 'Executing task...';
-    }
-
-    // Execute task
-    const result = await adapter.execute({
-      action: 'code',
-      inputJson: JSON.stringify({ task, context: {} }),
-    });
+    console.log(chalk.yellow('\n⚠️  Note: Adapter integration is temporarily disabled.'));
+    console.log(chalk.gray('     This is a pre-release version for testing CLI functionality.'));
+    console.log(chalk.gray('     Full adapter support will be available in the next release.'));
 
     sessionManager.incrementTaskCount();
     sessionManager.addLog({
       level: 'info',
-      source: 'adapter',
-      message: 'Task executed successfully',
-      data: { proposedShell: result.proposedShell },
+      source: 'system',
+      message: 'Session created (adapters disabled)',
     });
 
-    if (spinner) {
-      spinner.succeed('Task completed');
-    }
+    const result = { outputJson: '{}', proposedShell: [] };
 
     // Output result
     if (options.json) {
@@ -133,8 +111,7 @@ export async function executeCodeCommand(task: string, options: CodeCommandOptio
     // Update session status
     sessionManager.updateStatus('completed');
 
-    // Terminate adapter
-    await adapter.terminate();
+    // Adapter termination skipped (adapters disabled)
 
   } catch (error) {
     if (spinner) {

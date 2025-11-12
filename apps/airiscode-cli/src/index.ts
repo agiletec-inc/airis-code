@@ -9,6 +9,7 @@ import chalk from 'chalk';
 import { createCodeCommand } from './commands/code.js';
 import { createConfigCommand } from './commands/config.js';
 import { createSessionCommand } from './commands/session.js';
+import { createChatCommand } from './commands/chat.js';
 
 const program = new Command();
 
@@ -21,6 +22,7 @@ program
 program.addCommand(createCodeCommand());
 program.addCommand(createConfigCommand());
 program.addCommand(createSessionCommand());
+program.addCommand(createChatCommand());
 
 // Default action - treat as 'code' command when task is provided directly
 program
@@ -38,8 +40,9 @@ program
       const { executeCodeCommand } = await import('./commands/code.js');
       await executeCodeCommand(task, options);
     } else {
-      // No task provided, show help
-      program.outputHelp();
+      // No task provided, start interactive chat mode
+      const { executeChatCommand } = await import('./commands/chat.js');
+      await executeChatCommand({ cwd: options.cwd });
     }
   });
 

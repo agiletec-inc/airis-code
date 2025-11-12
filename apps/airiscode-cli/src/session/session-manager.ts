@@ -3,7 +3,7 @@
  */
 
 // @ts-ignore
-import { v4 as uuidv4 } from 'uuid';
+import { randomUUID } from 'node:crypto';
 import { existsSync, mkdirSync, readFileSync, writeFileSync, readdirSync, unlinkSync } from 'fs';
 import { join } from 'path';
 import type { SessionInfo, TaskLogEntry } from '../types.js';
@@ -34,7 +34,7 @@ export class SessionManager {
     policy: PolicyProfile;
   }): SessionInfo {
     const session: SessionInfo = {
-      id: uuidv4(),
+      id: randomUUID(),
       name: options.name,
       workingDir: options.workingDir,
       driver: options.driver,

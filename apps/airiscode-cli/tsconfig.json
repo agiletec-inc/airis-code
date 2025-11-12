@@ -4,21 +4,14 @@
     "outDir": "./dist",
     "rootDir": "./src",
     "composite": true,
-    "jsx": "react"
+    "jsx": "react-jsx"
   },
-  "include": ["src/**/*"],
+  "include": ["src/index.tsx", "src/MinimalApp.tsx", "src/providerFactory.ts"],
+  "exclude": ["node_modules", "dist", "**/*.test.ts", "**/*.test.tsx", "**/*.spec.ts", "**/*.spec.tsx", "src/ui.backup/**/*", "src/ui/**/*", "src/commands/**/*", "src/session/**/*", "src/utils/**/*", "src/types.ts"],
   "references": [
-    { "path": "../../packages/types" },
-    { "path": "../../packages/policies" },
-    { "path": "../../packages/sandbox" },
-    { "path": "../../packages/drivers" },
-    { "path": "../../packages/drivers/local" },
-    { "path": "../../packages/adapters" },
-    { "path": "../../packages/adapters/claude-code" },
-    { "path": "../../packages/mcp/client" },
-    { "path": "../../packages/mcp/registry" },
-    { "path": "../../packages/runners/git" },
-    { "path": "../../packages/runners/docker" },
-    { "path": "../../packages/runners/test" }
+    { "path": "../../packages/core-gemini" },
+    { "path": "../../packages/drivers/openai" },
+    { "path": "../../packages/drivers/anthropic" },
+    { "path": "../../packages/drivers/ollama" }
   ]
 }

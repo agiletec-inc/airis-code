@@ -50,9 +50,9 @@ importers:
       '@airiscode/driver-openai':
         specifier: workspace:*
         version: link:../../packages/drivers/openai
-      '@airiscode/ui-gemini':
-        specifier: workspace:*
-        version: link:../../packages/ui-gemini
+      '@iarna/toml':
+        specifier: ^2.2.5
+        version: 2.2.5
       ansi-regex:
         specifier: ^6.2.2
         version: 6.2.2

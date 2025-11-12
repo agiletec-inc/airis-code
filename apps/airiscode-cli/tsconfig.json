@@ -6,7 +6,7 @@
     "composite": true,
     "jsx": "react-jsx"
   },
-  "include": ["src/index.tsx", "src/MinimalApp.tsx", "src/providerFactory.ts"],
+  "include": ["src/index.tsx", "src/MinimalApp.tsx", "src/providerFactory.ts", "src/sessionStorage.ts"],
   "exclude": ["node_modules", "dist", "**/*.test.ts", "**/*.test.tsx", "**/*.spec.ts", "**/*.spec.tsx", "src/ui.backup/**/*", "src/ui/**/*", "src/commands/**/*", "src/session/**/*", "src/utils/**/*", "src/types.ts"],
   "references": [
     { "path": "../../packages/core-gemini" },

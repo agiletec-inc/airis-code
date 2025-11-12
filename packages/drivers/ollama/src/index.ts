@@ -4,4 +4,4 @@
  * SPDX-License-Identifier: MIT
  */
 
-export * from "./contentGenerator.js";
+export * from './contentGenerator.js';

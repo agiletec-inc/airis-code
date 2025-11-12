@@ -50,6 +50,12 @@ importers:
       '@airiscode/driver-openai':
         specifier: workspace:*
         version: link:../../packages/drivers/openai
+      '@airiscode/mcp-registry':
+        specifier: workspace:*
+        version: link:../../packages/mcp/registry
+      '@airiscode/mcp-session':
+        specifier: workspace:*
+        version: link:../../packages/mcp/session
       '@iarna/toml':
         specifier: ^2.2.5
         version: 2.2.5
@@ -254,6 +260,9 @@ importers:
       '@airiscode/core-gemini':
         specifier: workspace:*
         version: link:../../core-gemini
+      '@airiscode/drivers':
+        specifier: workspace:*
+        version: link:..
     devDependencies:
       '@types/node':
         specifier: ^22.10.1
@@ -289,6 +298,9 @@ importers:
       '@airiscode/core-gemini':
         specifier: workspace:*
         version: link:../../core-gemini
+      '@airiscode/drivers':
+        specifier: workspace:*
+        version: link:..
     devDependencies:
       '@types/node':
         specifier: ^22.10.1
@@ -302,6 +314,9 @@ importers:
       '@airiscode/core-gemini':
         specifier: workspace:*
         version: link:../../core-gemini
+      '@airiscode/drivers':
+        specifier: workspace:*
+        version: link:..
     devDependencies:
       '@types/node':
         specifier: ^22.10.1

@@ -47,7 +47,7 @@ export const ChatApp: React.FC<ChatAppProps> = ({
   useEffect(() => {
     driverRef.current = new OllamaDriver({
       baseUrl: ollamaUrl,
-      timeout: 60000,
+      timeout: 30000,
       defaultModel: model
     });
 

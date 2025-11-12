@@ -2,6 +2,7 @@
   "name": "@airiscode/drivers",
   "version": "0.1.0",
   "description": "Model driver interface and base implementations",
+  "type": "module",
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
   "exports": {

@@ -19,6 +19,7 @@
   },
   "dependencies": {
     "@airiscode/mcp-client": "workspace:*",
+    "@airiscode/mcp-gateway-client": "workspace:*",
     "@airiscode/types": "workspace:*"
   },
   "devDependencies": {

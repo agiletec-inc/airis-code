@@ -415,6 +415,9 @@ importers:
       '@airiscode/mcp-client':
         specifier: workspace:*
         version: link:../client
+      '@airiscode/mcp-gateway-client':
+        specifier: workspace:*
+        version: link:../gateway-client
       '@airiscode/types':
         specifier: workspace:*
         version: link:../../types

@@ -7,20 +7,19 @@
     "jsx": "react-jsx"
   },
   "include": [
-    "src/index.tsx",
-    "src/MinimalApp.tsx",
-    "src/EnhancedApp.tsx",
-    "src/providerFactory.ts",
-    "src/sessionStorage.ts",
-    "src/contexts/SessionContext.tsx",
-    "src/contexts/UIStateContext.tsx",
-    "src/contexts/MCPContext.tsx",
-    "src/components/Composer.tsx",
-    "src/components/MessageDisplay.tsx"
+    "src/**/*"
   ],
-  "exclude": ["node_modules", "dist", "**/*.test.ts", "**/*.test.tsx", "**/*.spec.ts", "**/*.spec.tsx", "src/ui.backup/**/*", "src/ui/**/*", "src/commands/**/*", "src/session/**/*", "src/utils/**/*", "src/types.ts"],
+  "exclude": [
+    "node_modules",
+    "dist",
+    "**/*.test.ts",
+    "**/*.test.tsx",
+    "**/*.spec.ts",
+    "**/*.spec.tsx"
+  ],
   "references": [
     { "path": "../../packages/core-gemini" },
+    { "path": "../../packages/gemini-cli-core" },
     { "path": "../../packages/drivers/openai" },
     { "path": "../../packages/drivers/anthropic" },
     { "path": "../../packages/drivers/ollama" }

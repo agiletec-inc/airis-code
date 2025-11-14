@@ -60,9 +60,11 @@
     "@airiscode/mcp-gateway-client": "workspace:*",
     "@airiscode/mcp-session": "workspace:*",
     "@airiscode/mcp-registry": "workspace:*",
+    "@airiscode/policies": "workspace:*",
     "@google/genai": "1.16.0",
     "@iarna/toml": "^2.2.5",
     "@modelcontextprotocol/sdk": "^1.15.1",
+    "ansi-escapes": "^7.0.0",
     "ansi-regex": "^6.2.2",
     "chalk": "^5.3.0",
     "command-exists": "^1.2.9",
@@ -112,11 +114,13 @@
     "@types/tar": "^6.1.13",
     "@types/update-notifier": "^6.0.8",
     "@types/yargs": "^17.0.32",
+    "@types/prompts": "^2.4.9",
     "eslint": "^8.55.0",
     "ink-testing-library": "^4.0.0",
     "pretty-format": "^30.0.2",
     "react-dom": "^19.2.0",
     "typescript": "^5.3.0",
-    "vitest": "^1.0.0"
+    "vitest": "^1.0.0",
+    "tsx": "^4.15.5"
   }
 }

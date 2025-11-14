@@ -3,7 +3,8 @@
   "compilerOptions": {
     "outDir": "./dist",
     "rootDir": "./src",
-    "composite": true
+    "composite": true,
+    "skipLibCheck": true
   },
   "include": ["src/**/*"],
   "exclude": [
@@ -13,7 +14,6 @@
     "**/*.test.tsx",
     "**/*.test.circular.ts",
     "src/mocks/**/*",
-    "src/test-utils/**/*",
     "src/**/__fixtures__/**/*"
   ]
 }

@@ -14,7 +14,7 @@ import { OTLPMetricExporter as OTLPMetricExporterHttp } from '@opentelemetry/exp
 import { CompressionAlgorithm } from '@opentelemetry/otlp-exporter-base';
 import { NodeSDK } from '@opentelemetry/sdk-node';
 import { SemanticResourceAttributes } from '@opentelemetry/semantic-conventions';
-import { resourceFromAttributes } from '@opentelemetry/resources';
+import { Resource } from '@opentelemetry/resources';
 import {
   BatchSpanProcessor,
   ConsoleSpanExporter,
@@ -23,10 +23,16 @@ import {
   BatchLogRecordProcessor,
   ConsoleLogRecordExporter,
 } from '@opentelemetry/sdk-logs';
+import type { LogRecordExporter } from '@opentelemetry/sdk-logs';
 import {
   ConsoleMetricExporter,
   PeriodicExportingMetricReader,
 } from '@opentelemetry/sdk-metrics';
+import type { PushMetricExporter } from '@opentelemetry/sdk-metrics';
+import type {
+  SpanExporter,
+  SpanProcessor,
+} from '@opentelemetry/sdk-trace-base';
 import { HttpInstrumentation } from '@opentelemetry/instrumentation-http';
 import type { Config } from '../config/config.js';
 import { SERVICE_NAME } from './constants.js';
@@ -85,7 +91,7 @@ export function initializeTelemetry(config: Config): void {
     return;
   }
 
-  const resource = resourceFromAttributes({
+  const resource = new Resource({
     [SemanticResourceAttributes.SERVICE_NAME]: SERVICE_NAME,
     [SemanticResourceAttributes.SERVICE_VERSION]: process.version,
     'session.id': config.getSessionId(),
@@ -137,7 +143,7 @@ export function initializeTelemetry(config: Config): void {
       metricReader = new PeriodicExportingMetricReader({
         exporter: new OTLPMetricExporterHttp({
           url: parsedEndpoint,
-        }),
+        }) as unknown as PushMetricExporter,
         exportIntervalMillis: 10000,
       });
     } else {
@@ -154,7 +160,7 @@ export function initializeTelemetry(config: Config): void {
         exporter: new OTLPMetricExporter({
           url: parsedEndpoint,
           compression: CompressionAlgorithm.GZIP,
-        }),
+        }) as unknown as PushMetricExporter,
         exportIntervalMillis: 10000,
       });
     }
@@ -162,25 +168,36 @@ export function initializeTelemetry(config: Config): void {
     spanExporter = new FileSpanExporter(telemetryOutfile);
     logExporter = new FileLogExporter(telemetryOutfile);
     metricReader = new PeriodicExportingMetricReader({
-      exporter: new FileMetricExporter(telemetryOutfile),
+      exporter: new FileMetricExporter(
+        telemetryOutfile,
+      ) as unknown as PushMetricExporter,
       exportIntervalMillis: 10000,
     });
   } else {
     spanExporter = new ConsoleSpanExporter();
     logExporter = new ConsoleLogRecordExporter();
     metricReader = new PeriodicExportingMetricReader({
-      exporter: new ConsoleMetricExporter(),
+      exporter: new ConsoleMetricExporter() as unknown as PushMetricExporter,
       exportIntervalMillis: 10000,
     });
   }
 
-  sdk = new NodeSDK({
+  const typedSpanExporter = spanExporter as unknown as SpanExporter;
+  const spanProcessor = new BatchSpanProcessor(
+    typedSpanExporter,
+  ) as unknown as SpanProcessor;
+  const typedLogExporter = logExporter as unknown as LogRecordExporter;
+  const logProcessor = new BatchLogRecordProcessor(typedLogExporter);
+
+  const sdkOptions: any = {
     resource,
-    spanProcessors: [new BatchSpanProcessor(spanExporter)],
-    logRecordProcessors: [new BatchLogRecordProcessor(logExporter)],
+    spanProcessors: [spanProcessor],
+    logRecordProcessors: [logProcessor],
     metricReader,
     instrumentations: [new HttpInstrumentation()],
-  });
+  };
+
+  sdk = new NodeSDK(sdkOptions);
 
   try {
     sdk.start();

@@ -557,8 +557,12 @@ async function fetchAndCacheUserInfo(client: OAuth2Client): Promise<void> {
       return;
     }
 
-    const userInfo = await response.json();
-    await userAccountManager.cacheGoogleAccount(userInfo.email);
+    const userInfo = (await response.json()) as { email?: string };
+    if (userInfo?.email) {
+      await userAccountManager.cacheGoogleAccount(userInfo.email);
+    } else {
+      debugLogger.log('User info response missing email field');
+    }
   } catch (error) {
     debugLogger.log('Error retrieving user info:', error);
   }

@@ -7,6 +7,7 @@
 // Export config
 export * from './config/config.js';
 export * from './config/defaultModelConfigs.js';
+export * from './config/models.js';
 export * from './output/types.js';
 export * from './output/json-formatter.js';
 export * from './output/stream-json-formatter.js';
@@ -73,6 +74,7 @@ export * from './utils/debugLogger.js';
 export * from './utils/events.js';
 export * from './utils/extensionLoader.js';
 export * from './utils/package.js';
+export * from './utils/pathReader.js';
 
 // Export services
 export * from './services/fileDiscoveryService.js';
@@ -124,6 +126,7 @@ export type {
   OAuthCredentials,
 } from './mcp/token-storage/types.js';
 export { MCPOAuthTokenStorage } from './mcp/oauth-token-storage.js';
+export { KeychainTokenStorage } from './mcp/token-storage/keychain-token-storage.js';
 export type { MCPOAuthConfig } from './mcp/oauth-provider.js';
 export type {
   OAuthAuthorizationServerMetadata,

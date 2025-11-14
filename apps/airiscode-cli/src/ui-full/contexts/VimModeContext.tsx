@@ -11,8 +11,8 @@ import {
   useEffect,
   useState,
 } from 'react';
-import type { LoadedSettings } from '../../config/settings.js';
-import { SettingScope } from '../../config/settings.js';
+import type { LoadedSettings } from '../../gemini-base/config/settings.ts';
+import { SettingScope } from '../../gemini-base/config/settings.ts';
 
 export type VimMode = 'NORMAL' | 'INSERT';
 

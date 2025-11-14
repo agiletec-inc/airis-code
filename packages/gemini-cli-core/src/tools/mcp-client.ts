@@ -795,6 +795,21 @@ export function hasNetworkTransport(config: MCPServerConfig): boolean {
  * @returns A promise that resolves to a connected MCP `Client` instance.
  * @throws An error if the connection fails or the configuration is invalid.
  */
+import {
+  implementerTool,
+  implementerToolSpec,
+  reviewerTool,
+  reviewerToolSpec,
+  testerTool,
+  testerToolSpec,
+} from '@airiscode/airis-tools';
+import {
+  ToolDefinition,
+  ToolRequest,
+  ToolRequestSchema,
+  ToolResponse,
+} from '@modelcontextprotocol/sdk/types';
+
 export async function connectToMcpServer(
   mcpServerName: string,
   mcpServerConfig: MCPServerConfig,
@@ -806,9 +821,19 @@ export async function connectToMcpServer(
     version: '0.0.1',
   });
 
+  // Register built-in tools
+  const builtInTools: ToolDefinition[] = [
+    implementerToolSpec,
+    testerToolSpec,
+    reviewerToolSpec,
+  ];
+
   mcpClient.registerCapabilities({
     roots: {
       listChanged: true,
+    },
+    tools: {
+      definitions: builtInTools,
     },
   });
 
@@ -823,6 +848,56 @@ export async function connectToMcpServer(
     return {
       roots,
     };
+  });
+
+  // Generic handler for our built-in tools
+  const toolHandler = async (
+    spec: ToolDefinition,
+    toolFn: (inputs: any) => Promise<any>,
+    request: ToolRequest,
+  ): Promise<ToolResponse> => {
+    // Basic validation, a real implementation should use Zod or similar
+    const inputArgs = request.arguments as Record<string, any>;
+    const requiredParams = spec.inputSchema.required || [];
+    for (const param of requiredParams) {
+      if (inputArgs[param] === undefined) {
+        return {
+          toolName: spec.name,
+          id: request.id,
+          data: {
+            error: `Missing required parameter: ${param}`,
+          },
+          success: false,
+        };
+      }
+    }
+    const result = await toolFn(inputArgs);
+    return {
+      toolName: spec.name,
+      id: request.id,
+      data: result,
+      success: true,
+    };
+  };
+
+  mcpClient.setRequestHandler(ToolRequestSchema, async (request) => {
+    switch (request.toolName) {
+      case 'implementer':
+        return toolHandler(implementerToolSpec, implementerTool, request);
+      case 'tester':
+        return toolHandler(testerToolSpec, testerTool, request);
+      case 'reviewer':
+        return toolHandler(reviewerToolSpec, reviewerTool, request);
+      default:
+        return {
+          toolName: request.toolName,
+          id: request.id,
+          data: {
+            error: `Tool '${request.toolName}' not found.`,
+          },
+          success: false,
+        };
+    }
   });
 
   let unlistenDirectories: Unsubscribe | undefined =

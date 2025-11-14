@@ -6,9 +6,9 @@
 
 import type React from 'react';
 import { Box, Text } from 'ink';
-import type { LoadableSettingScope } from '../../../config/settings.js';
-import { getScopeItems } from '../../../utils/dialogScopeUtils.js';
-import { RadioButtonSelect } from './RadioButtonSelect.js';
+import type { LoadableSettingScope } from '../../../gemini-base/config/settings.ts';
+import { getScopeItems } from '../../../gemini-base/utils/dialogScopeUtils.ts';
+import { RadioButtonSelect } from './RadioButtonSelect.tsx';
 
 interface ScopeSelectorProps {
   /** Callback function when a scope is selected */

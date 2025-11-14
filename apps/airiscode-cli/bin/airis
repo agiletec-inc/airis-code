@@ -1,7 +1,61 @@
 #!/usr/bin/env node
 
-// Load the compiled CLI
-import('../dist/index.js').catch((err) => {
-  console.error('Failed to load AIRIS Code CLI:', err.message);
-  process.exit(1);
-});
+import { existsSync } from 'node:fs';
+import path from 'node:path';
+import { spawn } from 'node:child_process';
+import { createRequire } from 'node:module';
+import { fileURLToPath, pathToFileURL } from 'node:url';
+
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
+const distEntry = path.join(__dirname, '..', 'dist', 'index.js');
+
+await (async () => {
+  if (existsSync(distEntry)) {
+    try {
+      await import(pathToFileURL(distEntry).href);
+      return;
+    } catch (error) {
+      console.warn(
+        '⚠️  Failed to load compiled AIRIS CLI, falling back to TypeScript sources.',
+      );
+      console.warn(String(error));
+    }
+  }
+
+  await runFromSource();
+})();
+
+async function runFromSource() {
+  const require = createRequire(import.meta.url);
+  let tsxCliPath;
+  try {
+    tsxCliPath = require.resolve('tsx/cli');
+  } catch (error) {
+    console.error(
+      'Failed to load AIRIS Code CLI: build artifacts missing and `tsx` is not installed or resolvable.',
+    );
+    console.error(error);
+    console.error(
+      'Please run `pnpm install` (installs dev deps, including tsx) or build with `pnpm --filter @airiscode/cli build`.',
+    );
+    process.exit(1);
+  }
+
+  const tsEntry = path.join(__dirname, '..', 'src', 'index.tsx');
+  const child = spawn(
+    process.execPath,
+    [tsxCliPath, tsEntry, ...process.argv.slice(2)],
+    {
+      stdio: 'inherit',
+      env: process.env,
+    },
+  );
+
+  child.on('exit', (code, signal) => {
+    if (signal) {
+      process.kill(process.pid, signal);
+      return;
+    }
+    process.exit(code ?? 1);
+  });
+}

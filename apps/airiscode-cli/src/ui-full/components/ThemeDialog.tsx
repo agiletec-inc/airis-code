@@ -7,20 +7,20 @@
 import type React from 'react';
 import { useCallback, useState } from 'react';
 import { Box, Text } from 'ink';
-import { theme } from '../semantic-colors.js';
-import { themeManager, DEFAULT_THEME } from '../themes/theme-manager.js';
-import { RadioButtonSelect } from './shared/RadioButtonSelect.js';
-import { DiffRenderer } from './messages/DiffRenderer.js';
-import { colorizeCode } from '../utils/CodeColorizer.js';
+import { theme } from '../semantic-colors.ts';
+import { themeManager, DEFAULT_THEME } from '../themes/theme-manager.ts';
+import { RadioButtonSelect } from './shared/RadioButtonSelect.tsx';
+import { DiffRenderer } from './messages/DiffRenderer.tsx';
+import { colorizeCode } from '../utils/CodeColorizer.tsx';
 import type {
   LoadableSettingScope,
   LoadedSettings,
-} from '../../config/settings.js';
-import { SettingScope } from '../../config/settings.js';
-import { getScopeMessageForSetting } from '../../utils/dialogScopeUtils.js';
-import { useKeypress } from '../hooks/useKeypress.js';
-import { useAlternateBuffer } from '../hooks/useAlternateBuffer.js';
-import { ScopeSelector } from './shared/ScopeSelector.js';
+} from '../../gemini-base/config/settings.ts';
+import { SettingScope } from '../../gemini-base/config/settings.ts';
+import { getScopeMessageForSetting } from '../../gemini-base/utils/dialogScopeUtils.ts';
+import { useKeypress } from '../hooks/useKeypress.ts';
+import { useAlternateBuffer } from '../hooks/useAlternateBuffer.ts';
+import { ScopeSelector } from './shared/ScopeSelector.tsx';
 
 interface ThemeDialogProps {
   /** Callback function when a theme is selected */

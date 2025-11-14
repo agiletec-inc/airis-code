@@ -104,7 +104,9 @@ async function promptForConsentInteractive(
  * extensionConfig.
  */
 function extensionConsentString(extensionConfig: ExtensionConfig): string {
-  const sanitizedConfig = escapeAnsiCtrlCodes(extensionConfig);
+  const sanitizedConfig = escapeAnsiCtrlCodes(
+    extensionConfig,
+  ) as ExtensionConfig;
   const output: string[] = [];
   const mcpServerEntries = Object.entries(sanitizedConfig.mcpServers || {});
   output.push(`Installing extension "${sanitizedConfig.name}".`);

@@ -5,3 +5,4 @@ packages:
   - 'packages/adapters/*'
   - 'packages/mcp/*'
   - 'packages/runners/*'
+  - 'packages/airis-tools'

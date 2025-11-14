@@ -4,8 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import type { ExtensionUpdateInfo } from '../../config/extension.js';
-import { checkExhaustive } from '../../utils/checks.js';
+import type { ExtensionUpdateInfo } from '../../gemini-base/config/extension.ts';
+import { checkExhaustive } from '../../gemini-base/utils/checks.ts';
 
 export enum ExtensionUpdateState {
   CHECKING_FOR_UPDATES = 'checking for updates',

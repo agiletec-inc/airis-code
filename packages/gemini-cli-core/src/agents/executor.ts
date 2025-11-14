@@ -87,6 +87,7 @@ export class AgentExecutor<TOutput extends z.ZodTypeAny> {
   private readonly onActivity?: ActivityCallback;
   private readonly compressionService: ChatCompressionService;
   private hasFailedCompressionAttempt = false;
+  private turnHistory: string[] = [];
 
   /**
    * Creates and validates a new `AgentExecutor` instance.
@@ -221,6 +222,10 @@ export class AgentExecutor<TOutput extends z.ZodTypeAny> {
 
     const { nextMessage, submittedOutput, taskCompleted } =
       await this.processFunctionCalls(functionCalls, combinedSignal, promptId);
+
+    // Add a signature of the turn to the history for loop detection.
+    const turnSignature = this.getTurnSignature(functionCalls, nextMessage);
+    this.turnHistory.push(turnSignature);
 
     if (taskCompleted) {
       const finalResult = submittedOutput ?? 'Task completed successfully.';
@@ -395,8 +400,8 @@ export class AgentExecutor<TOutput extends z.ZodTypeAny> {
       let currentMessage: Content = { role: 'user', parts: [{ text: query }] };
 
       while (true) {
-        // Check for termination conditions like max turns.
-        const reason = this.checkTermination(startTime, turnCounter);
+        // Check for termination conditions like max turns or loops.
+        const reason = this.checkTermination(turnCounter);
         if (reason) {
           terminateReason = reason;
           break;
@@ -439,7 +444,8 @@ export class AgentExecutor<TOutput extends z.ZodTypeAny> {
       if (
         terminateReason !== AgentTerminateMode.ERROR &&
         terminateReason !== AgentTerminateMode.ABORTED &&
-        terminateReason !== AgentTerminateMode.GOAL
+        terminateReason !== AgentTerminateMode.GOAL &&
+        terminateReason !== AgentTerminateMode.LOOP_DETECTED
       ) {
         const recoveryResult = await this.executeFinalWarningTurn(
           chat,
@@ -488,6 +494,14 @@ export class AgentExecutor<TOutput extends z.ZodTypeAny> {
           result: finalResult || 'Task completed.',
           terminate_reason: terminateReason,
         };
+      }
+
+      if (terminateReason === AgentTerminateMode.LOOP_DETECTED) {
+        finalResult = 'Agent terminated due to detected loop.';
+        this.emitActivity('ERROR', {
+          error: finalResult,
+          context: 'loop_detected',
+        });
       }
 
       return {
@@ -1064,18 +1078,54 @@ Important Rules:
   }
 
   /**
+   * Creates a stable signature for a turn based on the actions taken and the results.
+   * @param functionCalls The function calls made by the model.
+   * @param nextMessage The message containing the tool responses.
+   * @returns A string signature of the turn.
+   */
+  private getTurnSignature(
+    functionCalls: FunctionCall[],
+    nextMessage: Content,
+  ): string {
+    const calls = functionCalls.map((call) => ({
+      name: call.name,
+      args: call.args,
+    }));
+    const results = (nextMessage.parts ?? []).map((part) => {
+      if ('functionResponse' in part && part.functionResponse) {
+        return {
+          name: part.functionResponse.name,
+          response: part.functionResponse.response,
+        };
+      }
+      return { text: part.text };
+    });
+    return JSON.stringify({ calls, results });
+  }
+
+  /**
    * Checks if the agent should terminate due to exceeding configured limits.
    *
    * @returns The reason for termination, or `null` if execution can continue.
    */
-  private checkTermination(
-    startTime: number,
-    turnCounter: number,
-  ): AgentTerminateMode | null {
+  private checkTermination(turnCounter: number): AgentTerminateMode | null {
     const { runConfig } = this.definition;
 
+    // Check for max turns
     if (runConfig.max_turns && turnCounter >= runConfig.max_turns) {
       return AgentTerminateMode.MAX_TURNS;
+    }
+
+    // Check for loops
+    const historySize = this.turnHistory.length;
+    if (historySize >= 3) {
+      const lastThree = this.turnHistory.slice(-3);
+      if (
+        lastThree[0] === lastThree[1] &&
+        lastThree[1] === lastThree[2]
+      ) {
+        return AgentTerminateMode.LOOP_DETECTED;
+      }
     }
 
     return null;

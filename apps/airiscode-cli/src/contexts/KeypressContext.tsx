@@ -6,9 +6,12 @@
 
 // Debug logger stub (removed gemini-cli-core dependency)
 const debugLogger = {
-  debug: (...args: any[]) => {
+  log: (..._args: any[]) => {
     // Optional: enable for debugging
     // console.log('[KeypressContext]', ...args);
+  },
+  debug: (..._args: any[]) => {
+    // Optional: enable for debugging
   },
 };
 

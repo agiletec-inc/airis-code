@@ -6,8 +6,8 @@
 
 import type React from 'react';
 import { Box, Text } from 'ink';
-import { theme } from '../semantic-colors.js';
-import { GIT_COMMIT_INFO } from '../../generated/git-commit.js';
+import { theme } from '../semantic-colors.ts';
+import { GIT_COMMIT_INFO } from '../../generated/git-commit.ts';
 
 interface AboutBoxProps {
   cliVersion: string;

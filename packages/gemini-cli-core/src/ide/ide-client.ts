@@ -682,7 +682,8 @@ export class IdeClient {
       };
       const options = fetchOptions as unknown as import('undici').RequestInit;
       const response = await fetchFn(url, options);
-      return new Response(response.body as ReadableStream<unknown> | null, {
+      const body = response.body as ReadableStream<Uint8Array> | null;
+      return new Response(body as unknown as BodyInit, {
         status: response.status,
         statusText: response.statusText,
         headers: [...response.headers.entries()],

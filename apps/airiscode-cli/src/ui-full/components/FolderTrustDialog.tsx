@@ -7,13 +7,13 @@
 import { Box, Text } from 'ink';
 import type React from 'react';
 import { useEffect, useState } from 'react';
-import { theme } from '../semantic-colors.js';
-import type { RadioSelectItem } from './shared/RadioButtonSelect.js';
-import { RadioButtonSelect } from './shared/RadioButtonSelect.js';
-import { useKeypress } from '../hooks/useKeypress.js';
+import { theme } from '../semantic-colors.ts';
+import type { RadioSelectItem } from './shared/RadioButtonSelect.tsx';
+import { RadioButtonSelect } from './shared/RadioButtonSelect.tsx';
+import { useKeypress } from '../hooks/useKeypress.ts';
 import * as process from 'node:process';
 import * as path from 'node:path';
-import { relaunchApp } from '../../utils/processUtils.js';
+import { relaunchApp } from '../../gemini-base/utils/processUtils.ts';
 
 export enum FolderTrustChoice {
   TRUST_FOLDER = 'trust_folder',

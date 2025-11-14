@@ -6,18 +6,18 @@
 
 import React, { useState, useEffect } from 'react';
 import { Box, Text } from 'ink';
-import { theme } from '../semantic-colors.js';
+import { theme } from '../semantic-colors.ts';
 import type {
   LoadableSettingScope,
   LoadedSettings,
   Settings,
-} from '../../config/settings.js';
-import { SettingScope } from '../../config/settings.js';
+} from '../../gemini-base/config/settings.ts';
+import { SettingScope } from '../../gemini-base/config/settings.ts';
 import {
   getScopeItems,
   getScopeMessageForSetting,
-} from '../../utils/dialogScopeUtils.js';
-import { RadioButtonSelect } from './shared/RadioButtonSelect.js';
+} from '../../gemini-base/utils/dialogScopeUtils.ts';
+import { RadioButtonSelect } from './shared/RadioButtonSelect.tsx';
 import {
   getDialogSettingKeys,
   setPendingSettingValue,
@@ -32,17 +32,17 @@ import {
   setPendingSettingValueAny,
   getNestedValue,
   getEffectiveValue,
-} from '../../utils/settingsUtils.js';
-import { useVimMode } from '../contexts/VimModeContext.js';
-import { useKeypress } from '../hooks/useKeypress.js';
+} from '../../gemini-base/utils/settingsUtils.ts';
+import { useVimMode } from '../contexts/VimModeContext.tsx';
+import { useKeypress } from '../hooks/useKeypress.ts';
 import chalk from 'chalk';
-import { cpSlice, cpLen, stripUnsafeCharacters } from '../utils/textUtils.js';
+import { cpSlice, cpLen, stripUnsafeCharacters } from '../utils/textUtils.ts';
 import {
   type SettingsValue,
   TOGGLE_TYPES,
-} from '../../config/settingsSchema.js';
+} from '../../gemini-base/config/settingsSchema.ts';
 import { debugLogger } from '@airiscode/gemini-cli-core';
-import { keyMatchers, Command } from '../keyMatchers.js';
+import { keyMatchers, Command } from '../keyMatchers.ts';
 
 interface SettingsDialogProps {
   settings: LoadedSettings;

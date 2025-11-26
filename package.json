@@ -13,7 +13,9 @@
   },
   "devDependencies": {
     "typescript": "catalog:",
-    "vitest": "catalog:"
+    "vitest": "catalog:",
+    "turbo": "latest",
+    "turbo-darwin-arm64": "latest"
   },
   "_generated": {
     "by": "airis-workspace",

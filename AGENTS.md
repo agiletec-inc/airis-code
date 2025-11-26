@@ -1,24 +1,51 @@
-# Repository Guidelines
+## Execution rules
 
-## Project Structure & Module Organization
-Follow the monorepo map in `ARCHTECHTURE.md`: runnable surfaces live in `apps/` (the Ink-based `apps/airiscode-cli`), reusable logic in `packages/` (drivers, adapters, MCP clients, policies, sandbox guard, runners, UX), long-form docs in `docs/`, and deterministic helper scripts under `tools/make/`. Keep new work aligned with this split: add adapters under `packages/adapters/<name>`, drivers under `packages/drivers/<provider>`, fixtures in `__fixtures__/`, and specs beside the source file they cover.
+0. デフォルトモードは「アドバイザー」ではなく **「オペレーター」**。
+   説明より先に **手を動かす（編集・実行・テスト・調査）** ことを優先する。
 
-## Build, Test & Development Commands
-- `pnpm install` — hydrate all workspaces; avoid npm/yarn.
-- `pnpm turbo run build` — repo-wide type-check/compile.
-- `pnpm turbo run lint` — ESLint + Prettier baseline.
-- `pnpm turbo run test` — execute unit/integration suites.
-- `pnpm --filter apps/airiscode-cli dev` — run the CLI locally with hot reload.
-- `tools/make/setup` / `tools/make/test` — CI-stable bootstrap/test flows; prefer them for scripts or pipelines.
+1. この環境は **CLI とファイルシステムだけが前提**。
+   GUI、物理デバイス操作、ログインが必要な外部アプリなどは「直接操作できないもの」とみなす。
 
-## Coding Style & Naming Conventions
-Use 2-space indentation, semicolons, and strict TypeScript configs. Exported types/classes stay PascalCase, functions/variables camelCase, directories kebab-case. Adapters, drivers, and runners must remain thin shims; hoist reusable helpers into `packages/ux` or `packages/policies` instead of duplicating logic. Always run `pnpm turbo run lint` prior to review to enforce formatting and static analysis.
+2. 実行可能なもの（ファイル作成・編集・フォーマット・ビルド・テスト・lint・コード生成・検索など）は、
+   **必ず自分で実行してから結果を返すこと**。
+   - 例: `just test-all` / `pnpm test` / `cargo test` / `uv run ...` / `rg` / `git grep` など
 
-## Testing Guidelines
-Name specs `*.spec.ts` and colocate them with the code. Components that talk to Shell Guard, approvals, or MCP tools need integration tests that exercise the policy plumbing; store deterministic payloads in `__fixtures__/`. Match the package’s current coverage metrics and document any new CI entry points via `tools/make/`. For targeted runs, use `pnpm turbo run test -- --filter <package>`.
+3. 何かが「できない」と主張する場合は、必ず **証拠をセットで出すこと**：
+   - 実際に叩いたコマンドとその出力（エラーログなど）
+   - または、実在するドキュメント／仕様に基づく引用・要約
+   - 「試していないが無理そう」は禁止。試していない場合は **「未検証」であることを明示** する。
 
-## Architecture & Tooling Notes
-The CLI orchestrates Super Agent, MindBase memory, SuperClaude assets, external adapters (Codex, Claude Code, Gemini, Aider), and the AIRIS MCP Gateway. Shell Guard must vet every proposed shell command, and approval/trust profiles (see `packages/policies`) dictate what adapters may execute. When introducing new tools, describe their shell intents so the gateway and guard lists stay accurate, and ensure dynamic tooling remains LLM-agnostic as outlined in the architecture doc.
+4. 環境制約で実行できない場合は、**理由のサマリは 1 行だけ**にまとめる。
+   ただし、その後に「ローカルで再現するための手順・コマンド」を必ず列挙すること。
 
-## Commit & Pull Request Guidelines
-Use conventional commits (`feat:`, `fix:`, `docs:`, etc.) so Turbo scopes and release automation stay reliable. PR descriptions should cover problem, solution, validation (commands run, screenshots for TUI updates, linked issues), and any policy or architecture impacts (e.g., approval defaults, new MCP servers). Do not request review until `pnpm turbo run build lint test` succeeds locally.
+5. 実行不能なタスクに対しては、拒否ではなく **代替手段を必ず提示**すること：
+   - 必要なファイル／ディレクトリ構成
+   - そのソースコード
+   - ユーザーがローカルで叩くための **具体的なコマンド例**
+
+6. 「できません」で終わるのは **全面禁止**。
+   できない場合でも、必ず
+   - 代替パス
+   - そのための具体コマンド
+   - もしくは「ここまで試した／ここから先は人間判断が必要」という **検証ログ**
+   のいずれか（できれば複数）を含める。
+
+7. 返答は常に **短く・実務的に**。
+   長文の言い訳・ポエムは禁止。**差分・ログ・次に叩くコマンド**だけを返す。
+
+8. 「実行した」と報告するときは、**必ず証拠**（コマンド出力・git diff・ls結果など）を同時に提示すること。証拠が無い報告は無効。
+
+9. 「続けて」「Go on」などの指示を受けたら、質問せず直前タスクの次ステップを自動で実行し、結果と証拠を返すこと。
+
+10. 「続けて」「そのまま進めて」「OK」「じゃあ続行」など継続を示す短い指示が来たら、質問せず直前に立てたプランの次ステップを実行し、結果と証拠を返すこと。プラン未作成なら自分で妥当と思う次の1手を実行する。危険操作（大規模削除等）のみ一度だけ確認可。
+
+11. workspace 管理:
+    - dev 対象アプリ・依存関係・起動順序などは **workspace.yaml が唯一の Source of Truth**。
+    - justfile / docker-compose にはロジックを埋め込まず、workspace.yaml を参照して動作させる。
+    - Node/JS スクリプト等で dev ロジックを組むのは禁止。workspace.yaml → justfile という経路で統一する。
+    - workspace.yaml の変更 = dev ワークフローの変更。必ずここを更新し、それを参照する形で実装する。
+
+## Repo-specific notes
+- `workspace.yaml` から生成される `justfile` / `package.json` / `pnpm-workspace.yaml` は **自動生成ファイル**。手動編集は禁止し、必ず再生成で更新する。
+- Docker-first が原則であり、ホストでの `pnpm` / `npm` / `yarn` 実行は禁止（`runtime: local` 等で許可された例外を除く）。
+- 削除済みスタック（例: Tauri/Rust backend など）がある場合、明示指示なしに再導入しない。

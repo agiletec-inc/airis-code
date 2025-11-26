@@ -23,7 +23,8 @@ pnpm turbo run build
 
 # Development
 pnpm dev                              # Watch mode
-pnpm --filter @airiscode/cli dev      # Run CLI
+pnpm --filter @airiscode/cli dev      # Run CLI in dev mode
+airiscode                             # Run CLI (after pnpm install)
 pnpm tsx examples/mcp-session-example.ts  # Run example
 
 # Testing

@@ -6,7 +6,7 @@
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
   "bin": {
-    "airis": "./bin/airis"
+    "airiscode": "./bin/airiscode"
   },
   "files": [
     "dist",

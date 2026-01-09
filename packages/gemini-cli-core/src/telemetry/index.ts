@@ -16,6 +16,7 @@ export { DEFAULT_TELEMETRY_TARGET, DEFAULT_OTLP_ENDPOINT };
 export {
   initializeTelemetry,
   shutdownTelemetry,
+  flushTelemetry,
   isTelemetrySdkInitialized,
 } from './sdk.js';
 export {
@@ -41,13 +42,10 @@ export {
   logChatCompression,
   logToolOutputTruncated,
   logExtensionEnable,
-  logExtensionDisable,
   logExtensionInstallEvent,
   logExtensionUninstall,
   logExtensionUpdateEvent,
-  logModelSlashCommand,
   logWebFetchFallbackAttempt,
-  logIdeConnection,
 } from './loggers.js';
 export type { SlashCommandEvent, ChatCompressionEvent } from './types.js';
 export {
@@ -64,14 +62,6 @@ export {
   ToolOutputTruncatedEvent,
   WebFetchFallbackAttemptEvent,
   ToolCallDecision,
-  ExtensionEnableEvent,
-  ExtensionDisableEvent,
-  ExtensionInstallEvent,
-  ExtensionUninstallEvent,
-  ExtensionUpdateEvent,
-  IdeConnectionEvent,
-  IdeConnectionType,
-  ModelSlashCommandEvent,
 } from './types.js';
 export { makeSlashCommandEvent, makeChatCompressionEvent } from './types.js';
 export type { TelemetryEvent } from './types.js';
@@ -148,3 +138,4 @@ export {
   GenAiTokenType,
 } from './metrics.js';
 export { runInDevTraceSpan, type SpanMetadata } from './trace.js';
+export { startupProfiler, StartupProfiler } from './startupProfiler.js';

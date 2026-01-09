@@ -4,11 +4,13 @@
     "composite": true,
     "outDir": "dist",
     "rootDir": "src",
-    "jsx": "react-jsx"
+    "jsx": "react-jsx",
+    "lib": ["DOM", "DOM.Iterable", "ES2023"],
+    "types": ["node"]
   },
   "include": ["src/**/*"],
   "exclude": ["node_modules", "dist", "**/*.test.ts", "**/*.test.tsx", "**/*.spec.ts", "**/*.spec.tsx"],
   "references": [
-    { "path": "../core-gemini" }
+    { "path": "../gemini-cli-core" }
   ]
 }

@@ -12,7 +12,6 @@ import type {
   Content,
   Part,
   FunctionCall,
-  GenerateContentConfig,
   FunctionDeclaration,
   Schema,
 } from '@google/genai';
@@ -53,6 +52,7 @@ import { parseThought } from '../utils/thoughtUtils.js';
 import { type z } from 'zod';
 import { zodToJsonSchema } from 'zod-to-json-schema';
 import { debugLogger } from '../utils/debugLogger.js';
+import { getModelConfigAlias } from './registry.js';
 
 /** A callback function to report on agent activity. */
 export type ActivityCallback = (activity: SubagentActivityEvent) => void;
@@ -87,7 +87,6 @@ export class AgentExecutor<TOutput extends z.ZodTypeAny> {
   private readonly onActivity?: ActivityCallback;
   private readonly compressionService: ChatCompressionService;
   private hasFailedCompressionAttempt = false;
-  private turnHistory: string[] = [];
 
   /**
    * Creates and validates a new `AgentExecutor` instance.
@@ -183,7 +182,6 @@ export class AgentExecutor<TOutput extends z.ZodTypeAny> {
   private async executeTurn(
     chat: GeminiChat,
     currentMessage: Content,
-    tools: FunctionDeclaration[],
     turnCounter: number,
     combinedSignal: AbortSignal,
     timeoutSignal: AbortSignal, // Pass the timeout controller's signal
@@ -193,7 +191,7 @@ export class AgentExecutor<TOutput extends z.ZodTypeAny> {
     await this.tryCompressChat(chat, promptId);
 
     const { functionCalls } = await promptIdContext.run(promptId, async () =>
-      this.callModel(chat, currentMessage, tools, combinedSignal, promptId),
+      this.callModel(chat, currentMessage, combinedSignal, promptId),
     );
 
     if (combinedSignal.aborted) {
@@ -222,10 +220,6 @@ export class AgentExecutor<TOutput extends z.ZodTypeAny> {
 
     const { nextMessage, submittedOutput, taskCompleted } =
       await this.processFunctionCalls(functionCalls, combinedSignal, promptId);
-
-    // Add a signature of the turn to the history for loop detection.
-    const turnSignature = this.getTurnSignature(functionCalls, nextMessage);
-    this.turnHistory.push(turnSignature);
 
     if (taskCompleted) {
       const finalResult = submittedOutput ?? 'Task completed successfully.';
@@ -277,7 +271,6 @@ export class AgentExecutor<TOutput extends z.ZodTypeAny> {
    */
   private async executeFinalWarningTurn(
     chat: GeminiChat,
-    tools: FunctionDeclaration[],
     turnCounter: number,
     reason:
       | AgentTerminateMode.TIMEOUT
@@ -314,7 +307,6 @@ export class AgentExecutor<TOutput extends z.ZodTypeAny> {
       const turnResult = await this.executeTurn(
         chat,
         recoveryMessage,
-        tools,
         turnCounter, // This will be the "last" turn number
         combinedSignal,
         graceTimeoutController.signal, // Pass grace signal to identify a *grace* timeout
@@ -392,16 +384,16 @@ export class AgentExecutor<TOutput extends z.ZodTypeAny> {
     let chat: GeminiChat | undefined;
     let tools: FunctionDeclaration[] | undefined;
     try {
-      chat = await this.createChatObject(inputs);
       tools = this.prepareToolsList();
+      chat = await this.createChatObject(inputs, tools);
       const query = this.definition.promptConfig.query
         ? templateString(this.definition.promptConfig.query, inputs)
         : 'Get Started!';
       let currentMessage: Content = { role: 'user', parts: [{ text: query }] };
 
       while (true) {
-        // Check for termination conditions like max turns or loops.
-        const reason = this.checkTermination(turnCounter);
+        // Check for termination conditions like max turns.
+        const reason = this.checkTermination(startTime, turnCounter);
         if (reason) {
           terminateReason = reason;
           break;
@@ -419,7 +411,6 @@ export class AgentExecutor<TOutput extends z.ZodTypeAny> {
         const turnResult = await this.executeTurn(
           chat,
           currentMessage,
-          tools,
           turnCounter++,
           combinedSignal,
           timeoutController.signal,
@@ -444,12 +435,10 @@ export class AgentExecutor<TOutput extends z.ZodTypeAny> {
       if (
         terminateReason !== AgentTerminateMode.ERROR &&
         terminateReason !== AgentTerminateMode.ABORTED &&
-        terminateReason !== AgentTerminateMode.GOAL &&
-        terminateReason !== AgentTerminateMode.LOOP_DETECTED
+        terminateReason !== AgentTerminateMode.GOAL
       ) {
         const recoveryResult = await this.executeFinalWarningTurn(
           chat,
-          tools,
           turnCounter, // Use current turnCounter for the recovery attempt
           terminateReason,
           signal, // Pass the external signal
@@ -496,14 +485,6 @@ export class AgentExecutor<TOutput extends z.ZodTypeAny> {
         };
       }
 
-      if (terminateReason === AgentTerminateMode.LOOP_DETECTED) {
-        finalResult = 'Agent terminated due to detected loop.';
-        this.emitActivity('ERROR', {
-          error: finalResult,
-          context: 'loop_detected',
-        });
-      }
-
       return {
         result:
           finalResult || 'Agent execution was terminated before completion.',
@@ -523,7 +504,6 @@ export class AgentExecutor<TOutput extends z.ZodTypeAny> {
         if (chat && tools) {
           const recoveryResult = await this.executeFinalWarningTurn(
             chat,
-            tools,
             turnCounter, // Use current turnCounter
             AgentTerminateMode.TIMEOUT,
             signal,
@@ -605,22 +585,17 @@ export class AgentExecutor<TOutput extends z.ZodTypeAny> {
   private async callModel(
     chat: GeminiChat,
     message: Content,
-    tools: FunctionDeclaration[],
     signal: AbortSignal,
     promptId: string,
   ): Promise<{ functionCalls: FunctionCall[]; textResponse: string }> {
-    const messageParams = {
-      message: message.parts || [],
-      config: {
-        abortSignal: signal,
-        tools: tools.length > 0 ? [{ functionDeclarations: tools }] : undefined,
-      },
-    };
-
     const responseStream = await chat.sendMessageStream(
-      this.definition.modelConfig.model,
-      messageParams,
+      {
+        model: getModelConfigAlias(this.definition),
+        overrideScope: this.definition.name,
+      },
+      message.parts || [],
       promptId,
+      signal,
     );
 
     const functionCalls: FunctionCall[] = [];
@@ -663,8 +638,11 @@ export class AgentExecutor<TOutput extends z.ZodTypeAny> {
   }
 
   /** Initializes a `GeminiChat` instance for the agent run. */
-  private async createChatObject(inputs: AgentInputs): Promise<GeminiChat> {
-    const { promptConfig, modelConfig } = this.definition;
+  private async createChatObject(
+    inputs: AgentInputs,
+    tools: FunctionDeclaration[],
+  ): Promise<GeminiChat> {
+    const { promptConfig } = this.definition;
 
     if (!promptConfig.systemPrompt && !promptConfig.initialMessages) {
       throw new Error(
@@ -683,22 +661,10 @@ export class AgentExecutor<TOutput extends z.ZodTypeAny> {
       : undefined;
 
     try {
-      const generationConfig: GenerateContentConfig = {
-        temperature: modelConfig.temp,
-        topP: modelConfig.top_p,
-        thinkingConfig: {
-          includeThoughts: true,
-          thinkingBudget: modelConfig.thinkingBudget ?? -1,
-        },
-      };
-
-      if (systemInstruction) {
-        generationConfig.systemInstruction = systemInstruction;
-      }
-
       return new GeminiChat(
         this.runtimeContext,
-        generationConfig,
+        systemInstruction,
+        [{ functionDeclarations: tools }],
         startHistory,
       );
     } catch (error) {
@@ -1078,54 +1044,18 @@ Important Rules:
   }
 
   /**
-   * Creates a stable signature for a turn based on the actions taken and the results.
-   * @param functionCalls The function calls made by the model.
-   * @param nextMessage The message containing the tool responses.
-   * @returns A string signature of the turn.
-   */
-  private getTurnSignature(
-    functionCalls: FunctionCall[],
-    nextMessage: Content,
-  ): string {
-    const calls = functionCalls.map((call) => ({
-      name: call.name,
-      args: call.args,
-    }));
-    const results = (nextMessage.parts ?? []).map((part) => {
-      if ('functionResponse' in part && part.functionResponse) {
-        return {
-          name: part.functionResponse.name,
-          response: part.functionResponse.response,
-        };
-      }
-      return { text: part.text };
-    });
-    return JSON.stringify({ calls, results });
-  }
-
-  /**
    * Checks if the agent should terminate due to exceeding configured limits.
    *
    * @returns The reason for termination, or `null` if execution can continue.
    */
-  private checkTermination(turnCounter: number): AgentTerminateMode | null {
+  private checkTermination(
+    startTime: number,
+    turnCounter: number,
+  ): AgentTerminateMode | null {
     const { runConfig } = this.definition;
 
-    // Check for max turns
     if (runConfig.max_turns && turnCounter >= runConfig.max_turns) {
       return AgentTerminateMode.MAX_TURNS;
-    }
-
-    // Check for loops
-    const historySize = this.turnHistory.length;
-    if (historySize >= 3) {
-      const lastThree = this.turnHistory.slice(-3);
-      if (
-        lastThree[0] === lastThree[1] &&
-        lastThree[1] === lastThree[2]
-      ) {
-        return AgentTerminateMode.LOOP_DETECTED;
-      }
     }
 
     return null;

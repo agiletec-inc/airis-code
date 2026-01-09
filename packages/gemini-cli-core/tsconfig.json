@@ -4,7 +4,9 @@
     "outDir": "./dist",
     "rootDir": "./src",
     "composite": true,
-    "skipLibCheck": true
+    "skipLibCheck": true,
+    "lib": ["DOM", "DOM.Iterable", "ES2023"],
+    "types": ["node"]
   },
   "include": ["src/**/*"],
   "exclude": [

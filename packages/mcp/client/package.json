@@ -11,7 +11,7 @@
     }
   },
   "scripts": {
-    "build": "echo Skipping mcp-client build",
+    "build": "tsc",
     "dev": "tsc --watch",
     "clean": "rm -rf dist",
     "lint": "eslint src --ext .ts",

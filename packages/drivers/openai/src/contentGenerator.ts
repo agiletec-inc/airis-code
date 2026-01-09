@@ -12,7 +12,7 @@ import type {
   CountTokensParameters,
   EmbedContentResponse,
   EmbedContentParameters,
-} from "@airiscode/core-gemini/src/types";
+} from "@airiscode/core-gemini";
 
 export interface OpenAIOptions {
   apiKey: string;

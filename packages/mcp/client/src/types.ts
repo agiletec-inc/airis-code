@@ -24,8 +24,10 @@ export interface McpToolSpec {
   description: string;
   /** JSON Schema for parameters */
   inputSchema: Record<string, unknown>;
+  /** JSON Schema for output (optional) */
+  outputSchema?: Record<string, unknown>;
   /** Server providing this tool */
-  server: string;
+  server?: string;
 }
 
 /**

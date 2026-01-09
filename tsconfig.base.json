@@ -7,7 +7,7 @@
     "forceConsistentCasingInFileNames": true,
     "module": "NodeNext",
     "moduleResolution": "nodenext",
-    "verbatimModuleSyntax": true,
+    "verbatimModuleSyntax": false,
     "resolveJsonModule": true,
     "isolatedModules": true,
     "noEmit": false,

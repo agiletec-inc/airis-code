@@ -12,10 +12,10 @@ class Airiscode < Formula
 
     # Install the CLI globally
     libexec.install Dir["*"]
-    bin.install_symlink libexec/"apps/airiscode-cli/bin/airis"
+    bin.install_symlink libexec/"apps/airiscode-cli/bin/airiscode"
   end
 
   test do
-    assert_match "AIRIS Code", shell_output("#{bin}/airis --version")
+    assert_match "AIRIS Code", shell_output("#{bin}/airiscode --version")
   end
 end

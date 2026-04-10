@@ -8,11 +8,41 @@ catalog:
   vitest: 4.0.15
 workspaces:
   apps:
-  - name: dashboard
-    type: nextjs
+  - name: airiscode-cli
+    type: node
+  libs:
+  - name: adapters
+    type: node
+  - name: airis-tools
+    type: node
   - name: api
     type: node
-  libs: []
+  - name: core-gemini
+    type: node
+  - name: drivers
+    type: node
+  - name: gemini-cli-core
+    type: node
+  - name: gemini-core
+    type: node
+  - name: mcp
+    type: node
+  - name: mindbase
+    type: node
+  - name: policies
+    type: node
+  - name: runners
+    type: node
+  - name: sandbox
+    type: node
+  - name: super-agent
+    type: node
+  - name: types
+    type: node
+  - name: ui-gemini
+    type: node
+  - name: ux
+    type: node
 apps: {}
 docker:
   baseImage: node:22-alpine

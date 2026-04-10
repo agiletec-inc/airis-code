@@ -1,0 +1,6 @@
+# Qwen Code upstream tracking
+# Used for future cherry-pick reference
+source: https://github.com/QwenLM/qwen-code
+commit: 760df2c144af1d7319be65134d3f0d5da0bff500
+date: 2026-04-10
+packages: core, cli

@@ -101,6 +101,13 @@ export class MCPSessionManager {
   }
 
   /**
+   * Get Gateway status
+   */
+  async getGatewayStatus() {
+    return await this.client.getStatus();
+  }
+
+  /**
    * Invoke a tool
    */
   async invokeTool(

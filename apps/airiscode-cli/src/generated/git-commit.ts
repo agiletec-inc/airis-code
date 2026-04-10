@@ -1,1 +1,0 @@
-export const GIT_COMMIT_INFO = 'dev-mode-no-commit-info';

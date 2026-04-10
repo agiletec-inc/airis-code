@@ -32,7 +32,7 @@ brew tap agiletec-inc/tap
 brew install airiscode
 
 # Verify installation
-airis --version
+airiscode --version
 ```
 
 ## Updating the formula

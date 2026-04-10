@@ -15,11 +15,11 @@ class Airiscode < Formula
 
     # Install CLI binary
     libexec.install Dir["*"]
-    bin.install_symlink "#{libexec}/apps/airiscode-cli/bin/airis"
+    bin.install_symlink "#{libexec}/apps/airiscode-cli/bin/airiscode"
   end
 
   test do
-    system "#{bin}/airis", "--version"
-    system "#{bin}/airis", "--help"
+    system "#{bin}/airiscode", "--version"
+    system "#{bin}/airiscode", "--help"
   end
 end

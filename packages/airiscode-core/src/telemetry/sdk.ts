@@ -14,7 +14,7 @@ import { OTLPMetricExporter as OTLPMetricExporterHttp } from '@opentelemetry/exp
 import { CompressionAlgorithm } from '@opentelemetry/otlp-exporter-base';
 import { NodeSDK } from '@opentelemetry/sdk-node';
 import { SemanticResourceAttributes } from '@opentelemetry/semantic-conventions';
-import { resourceFromAttributes } from '@opentelemetry/resources';
+import { Resource } from '@opentelemetry/resources';
 import {
   BatchSpanProcessor,
   ConsoleSpanExporter,
@@ -79,7 +79,7 @@ export function initializeTelemetry(config: Config): void {
   }
 
   const debugLogger = createDebugLogger('OTEL');
-  const resource = resourceFromAttributes({
+  const resource: any = new Resource({
     [SemanticResourceAttributes.SERVICE_NAME]: SERVICE_NAME,
     [SemanticResourceAttributes.SERVICE_VERSION]: process.version,
     'session.id': config.getSessionId(),
@@ -101,7 +101,9 @@ export function initializeTelemetry(config: Config): void {
     | OTLPLogExporterHttp
     | FileLogExporter
     | ConsoleLogRecordExporter;
-  let metricReader: PeriodicExportingMetricReader;
+  let metricReader: any;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- OTel version mismatch workaround
+  let metricExporter: any;
 
   if (useOtlp) {
     if (otlpProtocol === 'http') {
@@ -114,7 +116,7 @@ export function initializeTelemetry(config: Config): void {
       metricReader = new PeriodicExportingMetricReader({
         exporter: new OTLPMetricExporterHttp({
           url: parsedEndpoint,
-        }),
+        }) as any,
         exportIntervalMillis: 10000,
       });
     } else {
@@ -131,7 +133,7 @@ export function initializeTelemetry(config: Config): void {
         exporter: new OTLPMetricExporter({
           url: parsedEndpoint,
           compression: CompressionAlgorithm.GZIP,
-        }),
+        }) as any,
         exportIntervalMillis: 10000,
       });
     }
@@ -153,9 +155,9 @@ export function initializeTelemetry(config: Config): void {
 
   sdk = new NodeSDK({
     resource,
-    spanProcessors: [new BatchSpanProcessor(spanExporter)],
-    logRecordProcessors: [new BatchLogRecordProcessor(logExporter)],
-    metricReader,
+    spanProcessors: [new BatchSpanProcessor(spanExporter as any) as any],
+    logRecordProcessors: [new BatchLogRecordProcessor(logExporter) as any],
+    metricReader: metricReader as any,
     instrumentations: [new HttpInstrumentation()],
   });
 

@@ -13,7 +13,8 @@ import type {
   WebSearchResultItem,
   DashScopeProviderConfig,
 } from '../types.js';
-import type { QwenCredentials } from '../../../qwen/qwenOAuth2.js';
+// QwenCredentials type removed - DashScope auth handled via OpenAI compat
+type QwenCredentials = { accessToken?: string; access_token?: string; baseUrl?: string; expiry_date?: number; resource_url?: string };
 
 interface DashScopeSearchItem {
   _id: string;

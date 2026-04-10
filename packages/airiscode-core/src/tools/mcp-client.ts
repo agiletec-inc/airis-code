@@ -26,8 +26,11 @@ import {
 import { parse } from 'shell-quote';
 import type { Config, MCPServerConfig } from '../config/config.js';
 import { AuthProviderType, isSdkMcpServerConfig } from '../config/config.js';
-import { GoogleCredentialProvider } from '../mcp/google-auth-provider.js';
-import { ServiceAccountImpersonationProvider } from '../mcp/sa-impersonation-provider.js';
+// Google auth providers removed - not needed for AIRIS Code
+// import { GoogleCredentialProvider } from '../mcp/google-auth-provider.js';
+// import { ServiceAccountImpersonationProvider } from '../mcp/sa-impersonation-provider.js';
+const GoogleCredentialProvider = null as any;
+const ServiceAccountImpersonationProvider = null as any;
 import { DiscoveredMCPTool } from './mcp-tool.js';
 import type { McpToolAnnotations } from './mcp-tool.js';
 import { SdkControlClientTransport } from './sdk-control-client-transport.js';

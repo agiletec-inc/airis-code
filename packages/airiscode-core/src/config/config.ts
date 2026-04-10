@@ -881,7 +881,7 @@ export class Config {
                   (input['tool_input'] as Record<string, unknown>) || {},
                   (input['tool_response'] as Record<string, unknown>) || {},
                   (input['tool_use_id'] as string) || '',
-                  (input['permission_mode'] as PermissionMode) || 'default',
+                  (input['permission_mode'] as any) || 'default',
                   signal,
                 );
                 break;
@@ -892,15 +892,14 @@ export class Config {
                   (input['tool_input'] as Record<string, unknown>) || {},
                   (input['error'] as string) || '',
                   input['is_interrupt'] as boolean | undefined,
-                  (input['permission_mode'] as PermissionMode) || 'default',
+                  (input['permission_mode'] as any) || 'default',
                   signal,
                 );
                 break;
               case 'Notification':
                 result = await hookSystem.fireNotificationEvent(
                   (input['message'] as string) || '',
-                  (input['notification_type'] as NotificationType) ||
-                    'permission_prompt',
+                  ((input['notification_type'] || 'permission_prompt') as any),
                   (input['title'] as string) || undefined,
                   signal,
                 );
@@ -909,7 +908,7 @@ export class Config {
                 result = await hookSystem.firePermissionRequestEvent(
                   (input['tool_name'] as string) || '',
                   (input['tool_input'] as Record<string, unknown>) || {},
-                  (input['permission_mode'] as PermissionMode) ||
+                  (input['permission_mode'] as any) ||
                     PermissionMode.Default,
                   (input['permission_suggestions'] as
                     | PermissionSuggestion[]
@@ -921,7 +920,7 @@ export class Config {
                 result = await hookSystem.fireSubagentStartEvent(
                   (input['agent_id'] as string) || '',
                   (input['agent_type'] as string) || '',
-                  (input['permission_mode'] as PermissionMode) ||
+                  (input['permission_mode'] as any) ||
                     PermissionMode.Default,
                   signal,
                 );
@@ -933,7 +932,7 @@ export class Config {
                   (input['agent_transcript_path'] as string) || '',
                   (input['last_assistant_message'] as string) || '',
                   (input['stop_hook_active'] as boolean) || false,
-                  (input['permission_mode'] as PermissionMode) ||
+                  (input['permission_mode'] as any) ||
                     PermissionMode.Default,
                   signal,
                 );

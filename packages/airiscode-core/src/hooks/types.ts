@@ -300,8 +300,8 @@ export class PreToolUseHookOutput extends DefaultHookOutput {
  * This follows the security model of allowing by default unless explicitly blocked.
  */
 export class PostToolUseHookOutput extends DefaultHookOutput {
-  override decision: HookDecision;
-  override reason: string;
+  declare decision: HookDecision;
+  declare reason: string;
 
   constructor(data: Partial<HookOutput> = {}) {
     super(data);
@@ -340,7 +340,7 @@ export class PostToolUseFailureHookOutput extends DefaultHookOutput {
  * Specific hook output class for Stop events.
  */
 export class StopHookOutput extends DefaultHookOutput {
-  override stopReason?: string;
+  declare stopReason?: string;
 
   constructor(data: Partial<HookOutput> = {}) {
     super(data);

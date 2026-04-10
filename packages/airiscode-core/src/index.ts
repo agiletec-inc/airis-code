@@ -256,7 +256,6 @@ export * from './utils/yaml-parser.js';
 // OAuth & Authentication
 // ============================================================================
 
-export * from './qwen/qwenOAuth2.js';
 
 // ============================================================================
 // Testing Utilities

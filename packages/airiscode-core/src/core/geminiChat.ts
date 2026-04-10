@@ -801,8 +801,8 @@ export class GeminiChat {
       for (const tool of tools) {
         if (
           (tool.schema.parametersJsonSchema &&
-            hasCycleInSchema(tool.schema.parametersJsonSchema)) ||
-          (tool.schema.parameters && hasCycleInSchema(tool.schema.parameters))
+            hasCycleInSchema(tool.schema.parametersJsonSchema as any)) ||
+          (tool.schema.parameters && hasCycleInSchema(tool.schema.parameters as any))
         ) {
           cyclicSchemaTools.push(tool.displayName);
         }

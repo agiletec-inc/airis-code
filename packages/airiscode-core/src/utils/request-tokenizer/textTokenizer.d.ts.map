@@ -1,0 +1,1 @@
+{"version":3,"file":"textTokenizer.d.ts","sourceRoot":"","sources":["textTokenizer.ts"],"names":[],"mappings":"AAAA;;;;GAIG;AAEH;;;;;;;;;GASG;AACH,qBAAa,aAAa;IACxB;;;;;OAKG;IACG,eAAe,CAAC,IAAI,EAAE,MAAM,GAAG,OAAO,CAAC,MAAM,CAAC;IAIpD;;;;;OAKG;IACG,oBAAoB,CAAC,KAAK,EAAE,MAAM,EAAE,GAAG,OAAO,CAAC,MAAM,EAAE,CAAC;IAI9D,OAAO,CAAC,mBAAmB;CAoB5B"}

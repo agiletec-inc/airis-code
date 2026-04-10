@@ -67,20 +67,15 @@ export const AUTH_ENV_MAPPINGS = {
     baseUrl: ['OPENAI_BASE_URL'],
     model: ['OPENAI_MODEL', 'AIRISCODE_MODEL'],
   },
+  ollama: {
+    apiKey: [],
+    baseUrl: ['OLLAMA_HOST'],
+    model: ['OLLAMA_MODEL', 'AIRISCODE_MODEL'],
+  },
   anthropic: {
     apiKey: ['ANTHROPIC_API_KEY'],
     baseUrl: ['ANTHROPIC_BASE_URL'],
     model: ['ANTHROPIC_MODEL'],
-  },
-  gemini: {
-    apiKey: ['GEMINI_API_KEY'],
-    baseUrl: [],
-    model: ['GEMINI_MODEL'],
-  },
-  'vertex-ai': {
-    apiKey: ['GOOGLE_API_KEY'],
-    baseUrl: [],
-    model: ['GOOGLE_MODEL'],
   },
   'qwen-oauth': {
     apiKey: [],

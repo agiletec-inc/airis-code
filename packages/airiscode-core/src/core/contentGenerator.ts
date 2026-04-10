@@ -56,6 +56,8 @@ export enum AuthType {
   USE_OPENAI = 'openai',
   USE_OLLAMA = 'ollama',
   USE_ANTHROPIC = 'anthropic',
+  /** @deprecated DashScope Qwen OAuth - kept for DashScope API compatibility */
+  QWEN_OAUTH = 'qwen-oauth',
 }
 
 /**
@@ -222,7 +224,7 @@ export function validateModelConfig(
   // Ollama doesn't need API key validation - it runs locally
   if (config.authType === AuthType.USE_OLLAMA) {
     if (!config.model) {
-      errors.push(new MissingModelError(config.authType));
+      errors.push(new MissingModelError(config.authType as any));
     }
     return { valid: errors.length === 0, errors };
   }
@@ -239,14 +241,14 @@ export function validateModelConfig(
       );
     } else {
       const envKey =
-        config.apiKeyEnvKey || getDefaultApiKeyEnvVar(config.authType);
+        config.apiKeyEnvKey || getDefaultApiKeyEnvVar(config.authType as any);
       errors.push(
         new MissingApiKeyError({
-          authType: config.authType,
+          authType: config.authType as any,
           model: config.model,
           baseUrl: config.baseUrl,
           envKey,
-        }),
+        } as any),
       );
     }
   }
@@ -309,7 +311,8 @@ export async function createContentGenerator(
 
   if (
     authType === AuthType.USE_OPENAI ||
-    authType === AuthType.USE_OLLAMA
+    authType === AuthType.USE_OLLAMA ||
+    authType === AuthType.QWEN_OAUTH
   ) {
     const { createOpenAIContentGenerator } = await import(
       './openaiContentGenerator/index.js'

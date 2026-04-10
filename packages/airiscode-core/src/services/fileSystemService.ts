@@ -15,11 +15,10 @@ import {
   isUtf8CompatibleEncoding,
 } from '../utils/iconvHelper.js';
 import { getSystemEncoding } from '../utils/systemEncoding.js';
-import type {
-  ReadTextFileRequest,
-  WriteTextFileRequest,
-  WriteTextFileResponse,
-} from '@agentclientprotocol/sdk';
+// ACP SDK types inlined (was @agentclientprotocol/sdk)
+type ReadTextFileRequest = { path: string; encoding?: string; line?: number; limit?: number; _meta?: Record<string, unknown> };
+type WriteTextFileRequest = { path: string; content: string; encoding?: string; _meta?: Record<string, unknown> };
+type WriteTextFileResponse = { path: string; _meta?: Record<string, unknown> };
 
 export type LineEnding = 'crlf' | 'lf';
 
@@ -259,7 +258,7 @@ export class StandardFileSystemService implements FileSystemService {
     } else {
       await fs.writeFile(filePath, content, 'utf-8');
     }
-    return { _meta };
+    return { path: filePath, _meta };
   }
 
   findFiles(fileName: string, searchPaths: readonly string[]): string[] {

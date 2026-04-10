@@ -136,8 +136,9 @@ export class Storage {
     return path.join(Storage.getGlobalQwenDir(), 'installation_id');
   }
 
+  /** @deprecated Google accounts no longer used */
   static getGoogleAccountsPath(): string {
-    return path.join(Storage.getGlobalQwenDir(), GOOGLE_ACCOUNTS_FILENAME);
+    return path.join(Storage.getGlobalQwenDir(), 'google_accounts.json');
   }
 
   static getUserCommandsDir(): string {
@@ -204,8 +205,9 @@ export class Storage {
     fs.mkdirSync(this.getProjectTempDir(), { recursive: true });
   }
 
+  /** @deprecated OAuth creds no longer used */
   static getOAuthCredsPath(): string {
-    return path.join(Storage.getGlobalQwenDir(), OAUTH_FILE);
+    return path.join(Storage.getGlobalQwenDir(), 'oauth_creds.json');
   }
 
   getProjectRoot(): string {

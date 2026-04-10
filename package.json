@@ -11,6 +11,14 @@
       "vitest": "4.0.15"
     }
   },
+  "scripts": {
+    "build": "turbo run build",
+    "test": "turbo run test",
+    "lint": "turbo run lint",
+    "typecheck": "turbo run typecheck",
+    "clean": "turbo run clean",
+    "dev": "turbo run dev"
+  },
   "devDependencies": {
     "typescript": "catalog:",
     "vitest": "catalog:",

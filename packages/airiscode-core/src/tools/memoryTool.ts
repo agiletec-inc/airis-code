@@ -80,11 +80,13 @@ export const DEFAULT_CONTEXT_FILENAME = 'AIRISCODE.md';
 export const AGENT_CONTEXT_FILENAME = 'AGENTS.md';
 export const MEMORY_SECTION_HEADER = '## Auto-saved Memories';
 
-// This variable will hold the currently configured filename for context files.
-// It defaults to include both AIRISCODE.md and AGENTS.md but can be overridden by setGeminiMdFilename.
-// AIRISCODE.md is first to maintain backward compatibility (used by /init command and save_memory tool).
+// Context files loaded at session start.
+// Reads AIRISCODE.md, CLAUDE.md, and AGENTS.md for Claude Code compatibility.
+// AIRISCODE.md is first (used by /init and save_memory). CLAUDE.md enables
+// projects that use both Claude Code and AIRIS Code to share context.
 let currentGeminiMdFilename: string | string[] = [
   DEFAULT_CONTEXT_FILENAME,
+  'CLAUDE.md',
   AGENT_CONTEXT_FILENAME,
 ];
 

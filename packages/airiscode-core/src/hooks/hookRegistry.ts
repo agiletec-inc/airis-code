@@ -126,7 +126,7 @@ export class HookRegistry {
   private getHookName(
     entry: HookRegistryEntry | { config: HookConfig },
   ): string {
-    return entry.config.name || entry.config.command || 'unknown-command';
+    return entry.config.name || ('command' in entry.config ? entry.config.command : 'inject') || 'unknown-hook';
   }
 
   /**

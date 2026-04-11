@@ -62,7 +62,22 @@ export interface CommandHookConfig {
   env?: Record<string, string>;
 }
 
-export type HookConfig = CommandHookConfig;
+/**
+ * Inject hook - injects content as a system message without spawning a subprocess.
+ * This is an AIRIS Code extension (not in Claude Code's public spec).
+ * Useful for forcing context injection (e.g., "read docs before editing").
+ */
+export interface InjectHookConfig {
+  type: HookType.Inject;
+  content: string;
+  name?: string;
+  description?: string;
+  /** Where to inject: main agent, subagent, or both */
+  target?: 'main' | 'subagent' | 'both';
+  source?: HooksConfigSource;
+}
+
+export type HookConfig = CommandHookConfig | InjectHookConfig;
 
 /**
  * Hook definition with matcher
@@ -78,6 +93,8 @@ export interface HookDefinition {
  */
 export enum HookType {
   Command = 'command',
+  /** Context injection hook - AIRIS Code extension */
+  Inject = 'inject',
 }
 
 /**
@@ -85,6 +102,9 @@ export enum HookType {
  */
 export function getHookKey(hook: HookConfig): string {
   const name = hook.name ?? '';
+  if (hook.type === HookType.Inject) {
+    return name ? `inject:${name}` : `inject:${hook.content.slice(0, 50)}`;
+  }
   return name ? `${name}:${hook.command}` : hook.command;
 }
 

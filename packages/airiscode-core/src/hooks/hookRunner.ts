@@ -5,9 +5,11 @@
  */
 
 import { spawn } from 'node:child_process';
-import { HookEventName } from './types.js';
+import { HookEventName, HookType } from './types.js';
 import type {
   HookConfig,
+  CommandHookConfig,
+  InjectHookConfig,
   HookInput,
   HookOutput,
   HookExecutionResult,
@@ -61,7 +63,7 @@ export class HookRunner {
 
     // Check if already aborted before starting
     if (signal?.aborted) {
-      const hookId = hookConfig.name || hookConfig.command || 'unknown';
+      const hookId = hookConfig.name || ('command' in hookConfig ? hookConfig.command : 'inject') || 'unknown';
       return {
         hookConfig,
         eventName,
@@ -72,8 +74,18 @@ export class HookRunner {
     }
 
     try {
+      // Inject hooks return content as systemMessage without spawning a process
+      if (hookConfig.type === HookType.Inject) {
+        return this.executeInjectHook(
+          hookConfig as InjectHookConfig,
+          eventName,
+          input,
+          startTime,
+        );
+      }
+
       return await this.executeCommandHook(
-        hookConfig,
+        hookConfig as CommandHookConfig,
         eventName,
         input,
         startTime,
@@ -81,7 +93,7 @@ export class HookRunner {
       );
     } catch (error) {
       const duration = Date.now() - startTime;
-      const hookId = hookConfig.name || hookConfig.command || 'unknown';
+      const hookId = hookConfig.name || ('command' in hookConfig ? hookConfig.command : 'inject') || 'unknown';
       const errorMessage = `Hook execution failed for event '${eventName}' (hook: ${hookId}): ${error}`;
       debugLogger.warn(`Hook execution error (non-fatal): ${errorMessage}`);
 
@@ -221,8 +233,59 @@ export class HookRunner {
    * @param startTime Start time for duration calculation
    * @param signal Optional AbortSignal to cancel hook execution
    */
+  /**
+   * Execute an inject hook - returns content as a system message
+   * without spawning an external process. Supports simple variable
+   * substitution ($TOOL_NAME, $TOOL_INPUT, $SESSION_ID).
+   */
+  private executeInjectHook(
+    hookConfig: InjectHookConfig,
+    eventName: HookEventName,
+    input: HookInput,
+    startTime: number,
+  ): HookExecutionResult {
+    const duration = Date.now() - startTime;
+
+    // Simple template variable substitution
+    let content = hookConfig.content;
+    content = content.replace(/\$SESSION_ID/g, input.session_id || '');
+    content = content.replace(/\$CWD/g, input.cwd || '');
+    content = content.replace(/\$EVENT/g, eventName);
+
+    // For PreToolUse events, substitute tool-specific variables
+    if ('tool_name' in input) {
+      content = content.replace(
+        /\$TOOL_NAME/g,
+        (input as PreToolUseInput).tool_name || '',
+      );
+    }
+    if ('tool_input' in input) {
+      content = content.replace(
+        /\$TOOL_INPUT/g,
+        JSON.stringify((input as any).tool_input || ''),
+      );
+    }
+
+    debugLogger.debug(
+      `Inject hook executed for ${eventName}: ${content.slice(0, 100)}...`,
+    );
+
+    const output: HookOutput = {
+      continue: true,
+      systemMessage: content,
+    };
+
+    return {
+      hookConfig,
+      eventName,
+      success: true,
+      output,
+      duration,
+    };
+  }
+
   private async executeCommandHook(
-    hookConfig: HookConfig,
+    hookConfig: CommandHookConfig,
     eventName: HookEventName,
     input: HookInput,
     startTime: number,
@@ -263,7 +326,7 @@ export class HookRunner {
         GEMINI_PROJECT_DIR: input.cwd,
         CLAUDE_PROJECT_DIR: input.cwd, // For compatibility
         QWEN_PROJECT_DIR: input.cwd, // For AIRIS Code compatibility
-        ...hookConfig.env,
+        ...('env' in hookConfig ? hookConfig.env : {}),
       };
 
       const child = spawn(

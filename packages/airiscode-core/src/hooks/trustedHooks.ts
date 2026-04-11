@@ -82,7 +82,7 @@ export class TrustedHooksManager {
           const key = getHookKey(hook);
           if (!trustedKeys.has(key)) {
             // Return friendly name or command
-            untrusted.push(hook.name || hook.command || 'unknown-hook');
+            untrusted.push(hook.name || ('command' in hook ? hook.command : 'inject') || 'unknown-hook');
           }
         }
       }

@@ -20,8 +20,11 @@ import { SessionStartSource, PreCompactTrigger } from '../hooks/types.js';
 /**
  * Threshold for compression token count as a fraction of the model's token limit.
  * If the chat history exceeds this threshold, it will be compressed.
+ *
+ * Set to 0.6 (vs upstream 0.7) because local models via Ollama typically
+ * have smaller context windows (32K for qwen3:8b) and need earlier compaction.
  */
-export const COMPRESSION_TOKEN_THRESHOLD = 0.7;
+export const COMPRESSION_TOKEN_THRESHOLD = 0.6;
 
 /**
  * The fraction of the latest chat history to keep. A value of 0.3

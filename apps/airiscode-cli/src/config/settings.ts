@@ -673,6 +673,28 @@ export function loadSettings(
     );
   }
 
+  // Load workspace-local settings (.airiscode/settings.local.json)
+  // This file is gitignored and has higher priority than workspace settings
+  let workspaceLocalSettings: Settings = {};
+  if (realWorkspaceDir !== realHomeDir) {
+    const localSettingsPath = path.join(
+      path.dirname(workspaceSettingsPath),
+      'settings.local.json',
+    );
+    try {
+      if (fs.existsSync(localSettingsPath)) {
+        const content = fs.readFileSync(localSettingsPath, 'utf-8');
+        const parsed = JSON.parse(stripJsonComments(content));
+        if (typeof parsed === 'object' && parsed !== null && !Array.isArray(parsed)) {
+          workspaceLocalSettings = parsed as Settings;
+          debugLogger.debug(`Loaded local settings from ${localSettingsPath}`);
+        }
+      }
+    } catch (e) {
+      debugLogger.warn(`Failed to load local settings: ${e}`);
+    }
+  }
+
   const systemOriginalSettings = structuredClone(systemResult.settings);
   const systemDefaultsOriginalSettings = structuredClone(
     systemDefaultsResult.settings,
@@ -685,6 +707,15 @@ export function loadSettings(
   systemDefaultSettings = resolveEnvVarsInObject(systemDefaultsResult.settings);
   userSettings = resolveEnvVarsInObject(userResult.settings);
   workspaceSettings = resolveEnvVarsInObject(workspaceResult.settings);
+
+  // Merge workspace-local settings on top of workspace settings
+  if (Object.keys(workspaceLocalSettings).length > 0) {
+    workspaceSettings = customDeepMerge(
+      getMergeStrategyForPath,
+      workspaceSettings,
+      resolveEnvVarsInObject(workspaceLocalSettings),
+    );
+  }
 
   // Support legacy theme names
   if (userSettings.ui?.theme === 'VS') {

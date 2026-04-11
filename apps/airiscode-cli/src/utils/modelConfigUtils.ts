@@ -46,10 +46,7 @@ export interface ResolvedCliGenerationConfig {
 }
 
 export function getAuthTypeFromEnv(): AuthType | undefined {
-  if (process.env['QWEN_OAUTH']) {
-    return AuthType.QWEN_OAUTH;
-  }
-
+  // Explicit OpenAI configuration
   if (
     process.env['OPENAI_API_KEY'] &&
     process.env['OPENAI_MODEL'] &&
@@ -58,14 +55,7 @@ export function getAuthTypeFromEnv(): AuthType | undefined {
     return AuthType.USE_OPENAI;
   }
 
-  if (process.env['GEMINI_API_KEY'] && process.env['GEMINI_MODEL']) {
-    return AuthType.USE_GEMINI;
-  }
-
-  if (process.env['GOOGLE_API_KEY'] && process.env['GOOGLE_MODEL']) {
-    return AuthType.USE_VERTEX_AI;
-  }
-
+  // Anthropic configuration
   if (
     process.env['ANTHROPIC_API_KEY'] &&
     process.env['ANTHROPIC_MODEL'] &&
@@ -74,7 +64,18 @@ export function getAuthTypeFromEnv(): AuthType | undefined {
     return AuthType.USE_ANTHROPIC;
   }
 
-  return undefined;
+  // DashScope / Qwen OAuth (legacy)
+  if (process.env['QWEN_OAUTH']) {
+    return AuthType.QWEN_OAUTH;
+  }
+
+  // Ollama: explicit OLLAMA_HOST or OLLAMA_MODEL, or fallback when no other auth is configured
+  if (process.env['OLLAMA_HOST'] || process.env['OLLAMA_MODEL']) {
+    return AuthType.USE_OLLAMA;
+  }
+
+  // Default to Ollama when no API keys are set (local-first philosophy)
+  return AuthType.USE_OLLAMA;
 }
 
 /**

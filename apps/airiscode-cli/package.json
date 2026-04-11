@@ -32,12 +32,14 @@
     "dist"
   ],
   "dependencies": {
+    "@airiscode/core": "workspace:*",
     "@google/genai": "1.30.0",
     "@iarna/toml": "^2.2.5",
     "@modelcontextprotocol/sdk": "^1.25.1",
-    "@airiscode/core": "workspace:*",
     "@types/update-notifier": "^6.0.8",
     "ansi-regex": "^6.2.2",
+    "chalk": "^5.6.2",
+    "cli-spinners": "^3.4.0",
     "command-exists": "^1.2.9",
     "comment-json": "^4.2.5",
     "diff": "^7.0.0",
@@ -72,6 +74,7 @@
     "@types/command-exists": "^1.2.3",
     "@types/diff": "^7.0.2",
     "@types/dotenv": "^6.1.1",
+    "@types/hast": "^3.0.4",
     "@types/node": "^20.11.24",
     "@types/prompts": "^2.4.9",
     "@types/react": "^19.1.8",

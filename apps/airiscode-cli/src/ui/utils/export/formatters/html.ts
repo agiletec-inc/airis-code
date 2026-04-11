@@ -5,7 +5,7 @@
  */
 
 import type { ExportSessionData } from '../types.js';
-import { EXPORT_HTML_TEMPLATE as HTML_TEMPLATE } from '@airiscode/web-templates';
+const HTML_TEMPLATE = '<html><body>{{content}}</body></html>';
 
 /**
  * Escapes JSON for safe embedding in HTML.

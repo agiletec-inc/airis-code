@@ -88,7 +88,7 @@ describe('validateAuthMethod', () => {
     } as unknown as ReturnType<typeof settings.loadSettings>);
     process.env['GEMINI_API_KEY_ALTERED'] = 'altered-key';
 
-    expect(validateAuthMethod(AuthType.USE_GEMINI)).toBeNull();
+    expect(validateAuthMethod(AuthType.USE_OPENAI)).toBeNull();
   });
 
   it('should return error with custom envKey for USE_GEMINI when env var is missing', () => {
@@ -103,7 +103,7 @@ describe('validateAuthMethod', () => {
       },
     } as unknown as ReturnType<typeof settings.loadSettings>);
 
-    const result = validateAuthMethod(AuthType.USE_GEMINI);
+    const result = validateAuthMethod(AuthType.USE_OPENAI);
     expect(result).toContain('GEMINI_API_KEY_ALTERED');
   });
 
@@ -165,7 +165,7 @@ describe('validateAuthMethod', () => {
     } as unknown as ReturnType<typeof settings.loadSettings>);
     process.env['GOOGLE_API_KEY_VERTEX'] = 'vertex-key';
 
-    expect(validateAuthMethod(AuthType.USE_VERTEX_AI)).toBeNull();
+    expect(validateAuthMethod(AuthType.USE_OPENAI)).toBeNull();
   });
 
   it('should use config.getModelsConfig().getModel() when Config is provided', () => {

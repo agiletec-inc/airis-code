@@ -18,9 +18,8 @@ import { t } from '../i18n/index.js';
  */
 const DEFAULT_ENV_KEYS: Record<string, string> = {
   [AuthType.USE_OPENAI]: 'OPENAI_API_KEY',
+  [AuthType.USE_OLLAMA]: '',
   [AuthType.USE_ANTHROPIC]: 'ANTHROPIC_API_KEY',
-  [AuthType.USE_GEMINI]: 'GEMINI_API_KEY',
-  [AuthType.USE_VERTEX_AI]: 'GOOGLE_API_KEY',
 };
 
 /**
@@ -201,21 +200,11 @@ export function validateAuthMethod(
     return null;
   }
 
-  if (authMethod === AuthType.USE_GEMINI) {
+  if (authMethod === AuthType.USE_OPENAI) {
     const apiKeyError = getApiKeyError(authMethod, settings.merged, config);
     if (apiKeyError) {
       return apiKeyError;
     }
-    return null;
-  }
-
-  if (authMethod === AuthType.USE_VERTEX_AI) {
-    const apiKeyError = getApiKeyError(authMethod, settings.merged, config);
-    if (apiKeyError) {
-      return apiKeyError;
-    }
-
-    process.env['GOOGLE_GENAI_USE_VERTEXAI'] = 'true';
     return null;
   }
 

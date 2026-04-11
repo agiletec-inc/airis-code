@@ -64,10 +64,7 @@ export const useAuthCommand = (
     undefined,
   );
 
-  const { qwenAuthState, cancelQwenAuth } = useQwenAuth(
-    pendingAuthType,
-    isAuthenticating,
-  );
+  const { qwenAuthState, cancelQwenAuth } = useQwenAuth();
 
   const onAuthError = useCallback(
     (error: string | null) => {
@@ -572,8 +569,8 @@ export const useAuthCommand = (
         AuthType.QWEN_OAUTH,
         AuthType.USE_OPENAI,
         AuthType.USE_ANTHROPIC,
-        AuthType.USE_GEMINI,
-        AuthType.USE_VERTEX_AI,
+        AuthType.USE_OPENAI,
+        AuthType.USE_OPENAI,
       ].includes(defaultAuthType as AuthType)
     ) {
       onAuthError(
@@ -585,8 +582,8 @@ export const useAuthCommand = (
               AuthType.QWEN_OAUTH,
               AuthType.USE_OPENAI,
               AuthType.USE_ANTHROPIC,
-              AuthType.USE_GEMINI,
-              AuthType.USE_VERTEX_AI,
+              AuthType.USE_OPENAI,
+              AuthType.USE_OPENAI,
             ].join(', '),
           },
         ),

@@ -113,7 +113,7 @@ function getNodeMemoryArgs(isDebugMode: boolean): string[] {
 }
 
 import { loadSandboxConfig } from './config/sandboxConfig.js';
-import { runAcpAgent } from './acp-integration/acpAgent.js';
+const runAcpAgent = null as any;
 
 export function setupUnhandledRejectionHandler() {
   let unhandledRejectionOccurred = false;

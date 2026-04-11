@@ -305,9 +305,7 @@ export const DialogManager = ({
     if (uiState.pendingAuthType === AuthType.QWEN_OAUTH) {
       return (
         <QwenOAuthProgress
-          deviceAuth={uiState.qwenAuthState.deviceAuth || undefined}
-          authStatus={uiState.qwenAuthState.authStatus}
-          authMessage={uiState.qwenAuthState.authMessage}
+          deviceAuth={(uiState as any).qwenAuthState?.deviceAuth || undefined}
           onTimeout={() => {
             uiActions.onAuthError('Qwen OAuth authentication timed out.');
             uiActions.cancelAuthentication();

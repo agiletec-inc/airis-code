@@ -53,9 +53,7 @@ export function useCodingPlanUpdates(
         // Get current configs
         const currentConfigs =
           (
-            settings.merged.modelProviders as
-              | Record<string, Array<Record<string, unknown>>>
-              | undefined
+            settings.merged.modelProviders as any
           )?.[AuthType.USE_OPENAI] || [];
 
         // Filter out all Coding Plan configs (since they are mutually exclusive)

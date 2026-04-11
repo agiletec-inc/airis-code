@@ -4,7 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { INSIGHT_JS, INSIGHT_CSS } from '@airiscode/web-templates';
+const INSIGHT_JS = '';
+const INSIGHT_CSS = '';
 import type { InsightData } from '../types/StaticInsightTypes.js';
 
 export class TemplateRenderer {

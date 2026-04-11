@@ -45,7 +45,7 @@ function isValidHookConfig(config: unknown): config is HookConfig {
     config !== null &&
     'type' in config &&
     'command' in config &&
-    typeof (config as HookConfig).command === 'string'
+    ('command' in (config as any) && typeof (config as any).command === 'string')
   );
 }
 

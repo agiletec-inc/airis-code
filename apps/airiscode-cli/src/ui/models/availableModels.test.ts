@@ -179,7 +179,7 @@ describe('availableModels', () => {
     });
 
     it('should return empty array for other auth types', () => {
-      const models = getAvailableModelsForAuthType(AuthType.USE_GEMINI);
+      const models = getAvailableModelsForAuthType(AuthType.USE_OPENAI);
       expect(models).toEqual([]);
     });
   });

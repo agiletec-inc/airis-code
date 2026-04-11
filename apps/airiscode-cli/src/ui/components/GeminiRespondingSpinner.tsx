@@ -7,7 +7,7 @@
 import type React from 'react';
 import { Text, useIsScreenReaderEnabled } from 'ink';
 import Spinner from 'ink-spinner';
-import type { SpinnerName } from 'cli-spinners';
+// SpinnerName type removed - using any
 import { useStreamingContext } from '../contexts/StreamingContext.js';
 import { StreamingState } from '../types.js';
 import {
@@ -22,7 +22,7 @@ interface GeminiRespondingSpinnerProps {
    * If not provided and not Responding, renders null.
    */
   nonRespondingDisplay?: string;
-  spinnerType?: SpinnerName;
+  spinnerType?: any;
 }
 
 export const GeminiRespondingSpinner: React.FC<
@@ -48,7 +48,7 @@ export const GeminiRespondingSpinner: React.FC<
 };
 
 interface GeminiSpinnerProps {
-  spinnerType?: SpinnerName;
+  spinnerType?: any;
   altText?: string;
 }
 

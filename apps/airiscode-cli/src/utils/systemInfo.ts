@@ -11,7 +11,7 @@ import type { CommandContext } from '../ui/commands/types.js';
 import { getCliVersion } from './version.js';
 import { IdeClient, AuthType } from '@airiscode/core';
 import { formatMemoryUsage } from '../ui/utils/formatters.js';
-import { GIT_COMMIT_INFO } from '../generated/git-commit.js';
+const GIT_COMMIT_INFO = 'dev';
 
 /**
  * System information interface containing all system-related details

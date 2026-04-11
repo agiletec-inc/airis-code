@@ -289,7 +289,7 @@ export class FileCommandLoader implements ICommandLoader {
     return createSlashCommandFromDefinition(
       filePath,
       baseDir,
-      validDef,
+      validDef as any,
       extensionName,
       '.toml',
     );

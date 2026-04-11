@@ -53,7 +53,7 @@ describe('useQwenAuth', () => {
 
   it('should initialize with default state when not Qwen auth', () => {
     const { result } = renderHook(() =>
-      useQwenAuth(AuthType.USE_GEMINI, false),
+      useQwenAuth(AuthType.USE_OPENAI, false),
     );
 
     expect(result.current.qwenAuthState).toEqual({
@@ -249,7 +249,7 @@ describe('useQwenAuth', () => {
     );
 
     // Change to non-Qwen auth
-    rerender({ pendingAuthType: AuthType.USE_GEMINI, isAuthenticating: true });
+    rerender({ pendingAuthType: AuthType.USE_OPENAI, isAuthenticating: true });
 
     expect(mockQwenOAuth2Events.off).toHaveBeenCalledWith(
       QwenOAuth2Event.AuthUri,
@@ -328,7 +328,7 @@ describe('useQwenAuth', () => {
     expect(result.current.qwenAuthState.authStatus).toBe('polling');
 
     // Switch to different auth type
-    rerender({ pendingAuthType: AuthType.USE_GEMINI, isAuthenticating: true });
+    rerender({ pendingAuthType: AuthType.USE_OPENAI, isAuthenticating: true });
 
     expect(result.current.qwenAuthState.deviceAuth).toBe(null);
     expect(result.current.qwenAuthState.authStatus).toBe('idle');
@@ -406,7 +406,7 @@ describe('useQwenAuth', () => {
 
     // Test with other auth types - should not set up event listeners
     const { result: geminiResult } = renderHook(() =>
-      useQwenAuth(AuthType.USE_GEMINI, true),
+      useQwenAuth(AuthType.USE_OPENAI, true),
     );
     expect(geminiResult.current.qwenAuthState.authStatus).toBe('idle');
 

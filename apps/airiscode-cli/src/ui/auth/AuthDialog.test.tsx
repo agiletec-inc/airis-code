@@ -103,14 +103,14 @@ describe('AuthDialog', () => {
         settings: {
           security: {
             auth: {
-              selectedType: AuthType.USE_GEMINI,
+              selectedType: AuthType.USE_OPENAI,
             },
           },
         },
         originalSettings: {
           security: {
             auth: {
-              selectedType: AuthType.USE_GEMINI,
+              selectedType: AuthType.USE_OPENAI,
             },
           },
         },

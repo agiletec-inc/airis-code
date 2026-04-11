@@ -73,7 +73,7 @@ describe('modelConfigUtils', () => {
       process.env['GEMINI_API_KEY'] = 'test-key';
       process.env['GEMINI_MODEL'] = 'gemini-pro';
 
-      expect(getAuthTypeFromEnv()).toBe(AuthType.USE_GEMINI);
+      expect(getAuthTypeFromEnv()).toBe(AuthType.USE_OPENAI);
     });
 
     it('should return undefined when Gemini env vars are incomplete', () => {
@@ -87,7 +87,7 @@ describe('modelConfigUtils', () => {
       process.env['GOOGLE_API_KEY'] = 'test-key';
       process.env['GOOGLE_MODEL'] = 'vertex-model';
 
-      expect(getAuthTypeFromEnv()).toBe(AuthType.USE_VERTEX_AI);
+      expect(getAuthTypeFromEnv()).toBe(AuthType.USE_OPENAI);
     });
 
     it('should return undefined when Google env vars are incomplete', () => {

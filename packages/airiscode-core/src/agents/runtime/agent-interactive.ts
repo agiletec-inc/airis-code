@@ -24,7 +24,7 @@ import type { AgentStatsSummary } from './agent-statistics.js';
 import type { AgentCore } from './agent-core.js';
 import type { ContextState } from './agent-headless.js';
 import type { GeminiChat } from '../../core/geminiChat.js';
-import type { FunctionDeclaration } from '@google/genai';
+import type { FunctionDeclaration } from '../../types/llm.js';
 import {
   ToolConfirmationOutcome,
   type ToolCallConfirmationDetails,

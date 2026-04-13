@@ -37,7 +37,7 @@ import type {
   GenerateContentConfig,
   FunctionDeclaration,
   GenerateContentResponseUsageMetadata,
-} from '@google/genai';
+} from '../../types/llm.js';
 import { GeminiChat } from '../../core/geminiChat.js';
 import type {
   PromptConfig,

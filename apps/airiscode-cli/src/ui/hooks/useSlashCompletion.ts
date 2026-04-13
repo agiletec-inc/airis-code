@@ -256,7 +256,7 @@ function useCommandSuggestions(
               const fzfResults = await fzfInstance.fzf.find(partial);
               if (signal.aborted) return;
               const uniqueCommands = new Set<SlashCommand>();
-              fzfResults.forEach((result: FzfCommandResult) => {
+              (fzfResults as unknown as FzfCommandResult[]).forEach((result) => {
                 const cmd = fzfInstance.commandMap.get(result.item);
                 if (cmd && cmd.description) {
                   uniqueCommands.add(cmd);

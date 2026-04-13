@@ -53,7 +53,7 @@ interface MergedSettingsWithCodingPlan {
  * Handles the authentication process based on the specified command and options
  */
 export async function handleQwenAuth(
-  command: 'qwen-oauth' | 'coding-plan',
+  command: 'coding-plan',
   options: QwenAuthOptions,
 ) {
   try {
@@ -119,9 +119,7 @@ export async function handleQwenAuth(
       [], // No extensions for auth command
     );
 
-    if (command === 'qwen-oauth') {
-      await handleQwenOAuth(config, settings);
-    } else if (command === 'coding-plan') {
+    if (command === 'coding-plan') {
       await handleCodePlanAuth(config, settings, options);
     }
 
@@ -130,38 +128,6 @@ export async function handleQwenAuth(
     process.exit(0);
   } catch (error) {
     writeStderrLine(getErrorMessage(error));
-    process.exit(1);
-  }
-}
-
-/**
- * Handles Qwen OAuth authentication
- */
-async function handleQwenOAuth(
-  config: Config,
-  settings: LoadedSettings,
-): Promise<void> {
-  writeStdoutLine(t('Starting Qwen OAuth authentication...'));
-
-  try {
-    await config.refreshAuth(AuthType.QWEN_OAUTH);
-
-    // Persist the auth type
-    const authTypeScope = getPersistScopeForModelSelection(settings);
-    settings.setValue(
-      authTypeScope,
-      'security.auth.selectedType',
-      AuthType.QWEN_OAUTH,
-    );
-
-    writeStdoutLine(t('Successfully authenticated with Qwen OAuth.'));
-    process.exit(0);
-  } catch (error) {
-    writeStderrLine(
-      t('Failed to authenticate with Qwen OAuth: {{error}}', {
-        error: getErrorMessage(error),
-      }),
-    );
     process.exit(1);
   }
 }
@@ -368,11 +334,6 @@ export async function runInteractiveAuth() {
   const selector = new InteractiveSelector(
     [
       {
-        value: 'qwen-oauth' as const,
-        label: t('Qwen OAuth'),
-        description: t('Free · Up to 1,000 requests/day · Qwen latest models'),
-      },
-      {
         value: 'coding-plan' as const,
         label: t('Alibaba Cloud Coding Plan'),
         description: t(
@@ -387,8 +348,6 @@ export async function runInteractiveAuth() {
 
   if (choice === 'coding-plan') {
     await handleQwenAuth('coding-plan', {});
-  } else {
-    await handleQwenAuth('qwen-oauth', {});
   }
 }
 
@@ -410,11 +369,6 @@ export async function showAuthStatus(): Promise<void> {
       writeStdoutLine(t('Run one of the following commands to get started:\n'));
       writeStdoutLine(
         t(
-          '  qwen auth qwen-oauth     - Authenticate with Qwen OAuth (free tier)',
-        ),
-      );
-      writeStdoutLine(
-        t(
           '  qwen auth coding-plan      - Authenticate with Alibaba Cloud Coding Plan\n',
         ),
       );
@@ -426,12 +380,7 @@ export async function showAuthStatus(): Promise<void> {
     }
 
     // Display status based on auth type
-    if (selectedType === AuthType.QWEN_OAUTH) {
-      writeStdoutLine(t('✓ Authentication Method: Qwen OAuth'));
-      writeStdoutLine(t('  Type: Free tier'));
-      writeStdoutLine(t('  Limit: Up to 1,000 requests/day'));
-      writeStdoutLine(t('  Models: Qwen latest models\n'));
-    } else if (selectedType === AuthType.USE_OPENAI) {
+    if (selectedType === AuthType.USE_OPENAI) {
       // Check for Coding Plan configuration
       const codingPlanRegion = mergedSettings.codingPlan?.region;
       const codingPlanVersion = mergedSettings.codingPlan?.version;

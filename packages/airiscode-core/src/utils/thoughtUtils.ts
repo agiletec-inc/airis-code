@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import type { GenerateContentResponse } from '@google/genai';
+import type { GenerateContentResponse } from '../types/llm.js';
 
 export type ThoughtSummary = {
   subject: string;

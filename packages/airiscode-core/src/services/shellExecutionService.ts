@@ -10,7 +10,19 @@ import { getPty } from '../utils/getPty.js';
 import { spawn as cpSpawn, spawnSync } from 'node:child_process';
 import { TextDecoder } from 'node:util';
 import os from 'node:os';
-import type { IPty } from '@lydell/node-pty';
+// Local stub for @lydell/node-pty — the optional native dep is not installed
+// in this build. Consumers that actually need PTY support must wire it up
+// through getPty() which provides a runtime implementation.
+interface IPty {
+  pid: number;
+  write(data: string): void;
+  resize(cols: number, rows: number): void;
+  kill(signal?: string): void;
+  onData(cb: (data: string) => void): { dispose: () => void };
+  onExit(cb: (data: { exitCode: number; signal?: number }) => void): {
+    dispose: () => void;
+  };
+}
 import { getCachedEncodingForBuffer } from '../utils/systemEncoding.js';
 import { isBinary } from '../utils/textUtils.js';
 import { getShellConfiguration } from '../utils/shell-utils.js';

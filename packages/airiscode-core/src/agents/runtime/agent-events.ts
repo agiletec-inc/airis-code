@@ -19,7 +19,7 @@ import type {
   ToolConfirmationOutcome,
   ToolResultDisplay,
 } from '../../tools/tools.js';
-import type { Part, GenerateContentResponseUsageMetadata } from '@google/genai';
+import type { Part, GenerateContentResponseUsageMetadata } from '../../types/llm.js';
 import type { AgentStatus } from './agent-types.js';
 
 // ─── Event Types ────────────────────────────────────────────

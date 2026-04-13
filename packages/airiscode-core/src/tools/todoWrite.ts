@@ -6,7 +6,7 @@
 
 import type { ToolResult } from './tools.js';
 import { BaseDeclarativeTool, BaseToolInvocation, Kind } from './tools.js';
-import type { FunctionDeclaration } from '@google/genai';
+import type { FunctionDeclaration } from '../types/llm.js';
 import * as fs from 'fs/promises';
 import * as fsSync from 'fs';
 import * as path from 'path';

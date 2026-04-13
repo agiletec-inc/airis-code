@@ -20,7 +20,7 @@ import {
   createDebugLogger,
   getMCPServerStatus,
 } from '@airiscode/core';
-import type { Part, PartListUnion } from '@google/genai';
+import type { Part, PartListUnion } from '@airiscode/core';
 import type {
   CLIUserMessage,
   Usage,

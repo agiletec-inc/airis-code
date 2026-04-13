@@ -8,9 +8,9 @@
  * Enables cache-aware secondary LLM calls that share the main conversation's
  * prompt prefix (systemInstruction + history) for cache hits.
  *
- * DashScope already enables cache_control via X-DashScope-CacheControl header.
  * By constructing the forked GeminiChat with identical generationConfig and
- * history prefix, the fork automatically benefits from prefix caching.
+ * history prefix, the fork automatically benefits from prefix caching when the
+ * provider supports it.
  *
  * Note: `runForkedQuery` overrides `tools: []` at the per-request level so the
  * model cannot produce function calls. `createForkedChat` retains the full
@@ -21,7 +21,7 @@ import type {
   Content,
   GenerateContentConfig,
   GenerateContentResponseUsageMetadata,
-} from '@google/genai';
+} from '../types/llm.js';
 import { GeminiChat, StreamEventType } from '../core/geminiChat.js';
 import type { Config } from '../config/config.js';
 

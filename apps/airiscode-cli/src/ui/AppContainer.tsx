@@ -75,7 +75,13 @@ import { VerboseModeProvider } from './contexts/VerboseModeContext.js';
 import { useTerminalSize } from './hooks/useTerminalSize.js';
 import { calculatePromptWidths } from './components/InputPrompt.js';
 import { useStdin, useStdout } from 'ink';
-import ansiEscapes from 'ansi-escapes';
+// Minimal ansi-escapes replacement (only clearTerminal used)
+const ansiEscapes = {
+  clearTerminal:
+    process.platform === 'win32'
+      ? '\x1b[2J\x1b[0f'
+      : '\x1b[2J\x1b[3J\x1b[H',
+};
 import * as fs from 'node:fs';
 import { basename } from 'node:path';
 import { computeWindowTitle } from '../utils/windowTitle.js';

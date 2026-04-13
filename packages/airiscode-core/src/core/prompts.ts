@@ -11,7 +11,7 @@ import { ToolNames } from '../tools/tool-names.js';
 import process from 'node:process';
 import { isGitRepository } from '../utils/gitUtils.js';
 import { AIRISCODE_CONFIG_DIR } from '../tools/memoryTool.js';
-import type { GenerateContentConfig } from '@google/genai';
+import type { GenerateContentConfig } from '../types/llm.js';
 import { createDebugLogger } from '../utils/debugLogger.js';
 
 const debugLogger = createDebugLogger('PROMPTS');
@@ -92,10 +92,18 @@ export function getCustomSystemPrompt(
       .join('');
   } else if (customInstruction && 'parts' in customInstruction) {
     // Content
-    instructionText =
-      customInstruction.parts
-        ?.map((part) => (typeof part === 'string' ? part : part.text || ''))
-        .join('') || '';
+    const parts = (customInstruction as { parts?: unknown[] }).parts;
+    if (Array.isArray(parts)) {
+      instructionText = parts
+        .map((part: unknown) =>
+          typeof part === 'string'
+            ? part
+            : part && typeof part === 'object' && 'text' in part
+              ? (part as { text?: string }).text || ''
+              : '',
+        )
+        .join('');
+    }
   } else if (customInstruction && 'text' in customInstruction) {
     // PartUnion (single part)
     instructionText = customInstruction.text || '';

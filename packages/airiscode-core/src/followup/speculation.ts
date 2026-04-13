@@ -15,7 +15,7 @@
  * 4. User types → abortSpeculation() cleans up
  */
 
-import type { Content, Part } from '@google/genai';
+import type { Content, Part } from '../types/llm.js';
 import type { Config } from '../config/config.js';
 import type { GeminiClient } from '../core/client.js';
 import { StreamEventType } from '../core/geminiChat.js';

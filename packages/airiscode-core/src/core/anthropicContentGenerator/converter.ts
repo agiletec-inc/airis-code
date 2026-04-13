@@ -16,8 +16,8 @@ import type {
   PartUnion,
   Tool,
   ToolListUnion,
-} from '@google/genai';
-import { FinishReason, GenerateContentResponse } from '@google/genai';
+} from '../../types/llm.js';
+import { FinishReason, GenerateContentResponse } from '../../types/llm.js';
 import type Anthropic from '@anthropic-ai/sdk';
 import { safeJsonParse } from '../../utils/safeJsonParse.js';
 import {

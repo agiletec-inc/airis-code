@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import type { Content } from '@google/genai';
+import type { Content } from '../../types/llm.js';
 import type { WorktreeInfo } from '../../services/gitWorktreeService.js';
 import type { DisplayMode } from '../backends/types.js';
 import type { AgentStatus } from '../runtime/agent-types.js';

@@ -7,7 +7,6 @@ import {
   UserFeedbackEvent,
   type UserFeedbackRating,
   isNodeError,
-  AuthType,
 } from '@airiscode/core';
 import { StreamingState, MessageType, type HistoryItem } from '../types.js';
 import {
@@ -19,68 +18,15 @@ import type { SessionStatsState } from '../contexts/SessionContext.js';
 import { FEEDBACK_OPTIONS } from '../FeedbackDialog.js';
 import stripJsonComments from 'strip-json-comments';
 
-const FEEDBACK_SHOW_PROBABILITY = 0.25; // 25% probability of showing feedback dialog
-const MIN_TOOL_CALLS = 10; // Minimum tool calls to show feedback dialog
-const MIN_USER_MESSAGES = 5; // Minimum user messages to show feedback dialog
-
-// Fatigue mechanism constants
-const FEEDBACK_COOLDOWN_HOURS = 24; // Hours to wait before showing feedback dialog again
 const debugLogger = createDebugLogger('FEEDBACK_DIALOG');
-
-/**
- * Check if the last message in the conversation history is an AI response
- */
-const lastMessageIsAIResponse = (history: HistoryItem[]): boolean =>
-  history.length > 0 && history[history.length - 1].type === MessageType.GEMINI;
-
-/**
- * Read feedbackLastShownTimestamp directly from the user settings file
- */
-const getFeedbackLastShownTimestampFromFile = (): number => {
-  try {
-    if (fs.existsSync(USER_SETTINGS_PATH)) {
-      const content = fs.readFileSync(USER_SETTINGS_PATH, 'utf-8');
-      const settings = JSON.parse(stripJsonComments(content));
-      return settings?.ui?.feedbackLastShownTimestamp ?? 0;
-    }
-  } catch (error) {
-    if (isNodeError(error) && error.code !== 'ENOENT') {
-      debugLogger.warn(
-        'Failed to read feedbackLastShownTimestamp from settings file:',
-        error,
-      );
-    }
-  }
-  return 0;
-};
-
-/**
- * Check if we should show the feedback dialog based on fatigue mechanism
- */
-const shouldShowFeedbackBasedOnFatigue = (): boolean => {
-  const feedbackLastShownTimestamp = getFeedbackLastShownTimestampFromFile();
-
-  const now = Date.now();
-  const timeSinceLastShown = now - feedbackLastShownTimestamp;
-  const cooldownMs = FEEDBACK_COOLDOWN_HOURS * 60 * 60 * 1000;
-
-  return timeSinceLastShown >= cooldownMs;
-};
-
-/**
- * Check if the session meets the minimum requirements for showing feedback
- * Either tool calls > 10 OR user messages > 5
- */
-const meetsMinimumSessionRequirements = (
-  sessionStats: SessionStatsState,
-): boolean => {
-  const toolCallsCount = sessionStats.metrics.tools.totalCalls;
-  const userMessagesCount = sessionStats.promptCount;
-
-  return (
-    toolCallsCount > MIN_TOOL_CALLS || userMessagesCount > MIN_USER_MESSAGES
-  );
-};
+// Auto-prompted feedback dialog removed with Qwen OAuth. Helpers below are stubs
+// so existing imports continue to resolve; the dialog is only shown manually now.
+void debugLogger;
+void fs;
+void USER_SETTINGS_PATH;
+void stripJsonComments;
+void isNodeError;
+void MessageType;
 
 export interface UseFeedbackDialogProps {
   config: Config;
@@ -144,37 +90,16 @@ export const useFeedbackDialog = ({
   );
 
   useEffect(() => {
-    const checkAndShowFeedback = () => {
-      if (streamingState === StreamingState.Idle && history.length > 0) {
-        // Show feedback dialog if:
-        // 1. User is authenticated via QWEN_OAUTH
-        // 2. Qwen logger is enabled (required for feedback submission)
-        // 3. User feedback is enabled in settings
-        // 4. The last message is an AI response
-        // 5. Random chance (25% probability)
-        // 6. Meets minimum requirements (tool calls > 10 OR user messages > 5)
-        // 7. Fatigue mechanism allows showing (not shown recently across sessions)
-        // 8. Not temporarily dismissed
-        if (
-          config.getAuthType() !== AuthType.QWEN_OAUTH ||
-          !config.getUsageStatisticsEnabled() ||
-          settings.merged.ui?.enableUserFeedback === false ||
-          !lastMessageIsAIResponse(history) ||
-          Math.random() > FEEDBACK_SHOW_PROBABILITY ||
-          !meetsMinimumSessionRequirements(sessionStats) ||
-          isFeedbackDismissedTemporarily
-        ) {
-          return;
-        }
-
-        // Check fatigue mechanism (synchronous)
-        if (shouldShowFeedbackBasedOnFatigue()) {
-          openFeedbackDialog();
-        }
-      }
-    };
-
-    checkAndShowFeedback();
+    // Qwen OAuth feedback dialog removed; feedback prompts no longer auto-open.
+    // Conditions previously required QWEN_OAUTH auth + telemetry + enableUserFeedback,
+    // but the OAuth flow is gone in this fork.
+    void streamingState;
+    void history;
+    void sessionStats;
+    void config;
+    void settings;
+    void openFeedbackDialog;
+    void isFeedbackDismissedTemporarily;
   }, [
     streamingState,
     history,

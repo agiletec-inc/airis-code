@@ -12,7 +12,7 @@ import {
   type FunctionCall,
   type FunctionDeclaration,
   type GenerateContentResponseUsageMetadata,
-} from '@google/genai';
+} from '../types/llm.js';
 import type {
   ToolCallConfirmationDetails,
   ToolResult,
@@ -428,7 +428,9 @@ export class Turn {
 }
 
 function getCitations(resp: GenerateContentResponse): string[] {
-  return (resp.candidates?.[0]?.citationMetadata?.citations ?? [])
+  const citations = (resp.candidates?.[0]?.citationMetadata?.citations ??
+    []) as Array<{ uri?: string; title?: string }>;
+  return citations
     .filter((citation) => citation.uri !== undefined)
     .map((citation) => {
       if (citation.title) {

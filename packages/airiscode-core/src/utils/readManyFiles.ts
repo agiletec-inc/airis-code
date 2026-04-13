@@ -6,7 +6,7 @@
 
 import * as fs from 'node:fs';
 import * as path from 'node:path';
-import type { Part, PartListUnion } from '@google/genai';
+import type { Part, PartListUnion } from '../types/llm.js';
 import type { Config } from '../config/config.js';
 import { getErrorMessage } from './errors.js';
 import { processSingleFileContent } from './fileUtils.js';

@@ -1,5 +1,5 @@
 import OpenAI from 'openai';
-import type { GenerateContentConfig } from '@google/genai';
+import type { GenerateContentConfig } from '../../../types/llm.js';
 import type { Config } from '../../../config/config.js';
 import type { ContentGeneratorConfig } from '../../contentGenerator.js';
 import { DEFAULT_TIMEOUT, DEFAULT_MAX_RETRIES } from '../constants.js';

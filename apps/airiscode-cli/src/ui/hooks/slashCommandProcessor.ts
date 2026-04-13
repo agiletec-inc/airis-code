@@ -5,7 +5,7 @@
  */
 
 import { useCallback, useMemo, useEffect, useRef, useState } from 'react';
-import { type PartListUnion } from '@google/genai';
+import { type PartListUnion } from '@airiscode/core';
 import type { UseHistoryManagerReturn } from './useHistoryManager.js';
 import type { ArenaDialogType } from './useArenaCommand.js';
 import {

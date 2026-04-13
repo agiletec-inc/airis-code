@@ -6,7 +6,7 @@
 
 import * as fs from 'node:fs/promises';
 import * as path from 'node:path';
-import type { PartListUnion } from '@google/genai';
+import type { PartListUnion } from '@airiscode/core';
 import type { Config } from '@airiscode/core';
 import {
   getErrorMessage,

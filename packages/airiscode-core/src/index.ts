@@ -38,7 +38,6 @@ export {
   type ModelProvidersConfig,
   type ModelSwitchMetadata,
   type OnModelChangeCallback,
-  QWEN_OAUTH_MODELS,
   resolveModelConfig,
   type ResolvedModelConfig,
   validateModelConfig,
@@ -164,7 +163,6 @@ export type {
 // Telemetry
 // ============================================================================
 
-export { QwenLogger } from './telemetry/qwen-logger/qwen-logger.js';
 export * from './telemetry/index.js';
 export {
   logAuth,
@@ -278,3 +276,59 @@ export {
   firePermissionRequestHook,
   type NotificationHookResult,
 } from './core/toolHookTriggers.js';
+
+// ============================================================================
+// LLM Types (self-hosted replacement for @google/genai)
+// ============================================================================
+
+export {
+  FinishReason,
+  Type,
+  HarmCategory,
+  HarmBlockThreshold,
+  BlockedReason,
+  Modality,
+  GenerateContentResponse,
+  ApiError as LlmApiError,
+  createUserContent,
+  createModelContent,
+  mcpToTool,
+  type Schema,
+  type FunctionCall,
+  type FunctionResponse,
+  type InlineData,
+  type FileData,
+  type ExecutableCode,
+  type CodeExecutionResult,
+  type Part,
+  type FunctionResponsePart,
+  type PartUnion,
+  type PartListUnion,
+  type Content,
+  type ContentUnion,
+  type ContentListUnion,
+  type FunctionDeclaration,
+  type Tool as LlmTool,
+  type ToolUnion,
+  type ToolListUnion,
+  type ToolConfig as LlmToolConfig,
+  type ToolUseConfig,
+  type CallableTool,
+  type SafetySetting,
+  type SafetyRating,
+  type CitationMetadata,
+  type ContentEmbedding,
+  type GenerationConfig,
+  type ThinkingConfig,
+  type GenerateContentConfig,
+  type GenerateContentParameters,
+  type SendMessageParameters,
+  type CountTokensParameters,
+  type CountTokensResponse,
+  type EmbedContentParameters,
+  type EmbedContentResponse,
+  type GenerateContentResponseUsageMetadata,
+  type Candidate,
+  type PromptFeedback,
+  type ApiErrorInit,
+} from './types/llm.js';

@@ -11,7 +11,7 @@ import type { ToolInvocation, ToolLocation, ToolResult } from './tools.js';
 import { BaseDeclarativeTool, BaseToolInvocation, Kind } from './tools.js';
 import { ToolNames, ToolDisplayNames } from './tool-names.js';
 
-import type { PartUnion } from '@google/genai';
+import type { PartUnion } from '../types/llm.js';
 import type { PermissionDecision } from '../permissions/types.js';
 import {
   processSingleFileContent,

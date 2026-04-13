@@ -5,7 +5,7 @@
  */
 
 import type { MutableRefObject, ReactNode } from 'react';
-import type { Content, PartListUnion } from '@google/genai';
+import type { Content, PartListUnion } from '@airiscode/core';
 import type { Config, GitService, Logger } from '@airiscode/core';
 import type {
   HistoryItemWithoutId,

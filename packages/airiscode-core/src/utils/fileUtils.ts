@@ -7,7 +7,7 @@
 import fs from 'node:fs';
 import fsPromises from 'node:fs/promises';
 import path from 'node:path';
-import type { PartUnion } from '@google/genai';
+import type { PartUnion } from '../types/llm.js';
 import mime from 'mime/lite';
 import {
   iconvDecode,

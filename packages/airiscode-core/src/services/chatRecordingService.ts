@@ -14,7 +14,7 @@ import {
   type GenerateContentResponseUsageMetadata,
   createUserContent,
   createModelContent,
-} from '@google/genai';
+} from '../types/llm.js';
 import * as jsonl from '../utils/jsonl-utils.js';
 import { getGitBranch } from '../utils/gitUtils.js';
 import { createDebugLogger } from '../utils/debugLogger.js';

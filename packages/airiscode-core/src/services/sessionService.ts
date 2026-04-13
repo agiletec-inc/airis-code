@@ -9,7 +9,7 @@ import { getProjectHash } from '../utils/paths.js';
 import path from 'node:path';
 import fs from 'node:fs';
 import readline from 'node:readline';
-import type { Content, Part } from '@google/genai';
+import type { Content, Part } from '../types/llm.js';
 import * as jsonl from '../utils/jsonl-utils.js';
 import type {
   ChatCompressionRecordPayload,

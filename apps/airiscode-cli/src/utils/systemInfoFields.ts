@@ -94,25 +94,11 @@ function formatAuth(info: ExtendedSystemInfo): string {
     return t('Alibaba Cloud Coding Plan');
   }
 
-  if (
-    info.selectedAuthType.startsWith('oauth') ||
-    info.selectedAuthType === 'qwen-oauth'
-  ) {
-    return 'Qwen OAuth';
-  }
-
   return `API Key - ${info.selectedAuthType}`;
 }
 
 function formatBaseUrl(info: ExtendedSystemInfo): string {
   if (!info.selectedAuthType || !info.baseUrl) {
-    return '';
-  }
-
-  if (
-    info.selectedAuthType.startsWith('oauth') ||
-    info.selectedAuthType === 'qwen-oauth'
-  ) {
     return '';
   }
 

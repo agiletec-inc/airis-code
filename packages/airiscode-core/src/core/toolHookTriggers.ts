@@ -20,7 +20,7 @@ import {
   type PermissionSuggestion,
 } from '../hooks/types.js';
 import { createDebugLogger } from '../utils/debugLogger.js';
-import type { Part, PartListUnion } from '@google/genai';
+import type { Part, PartListUnion } from '../types/llm.js';
 
 const debugLogger = createDebugLogger('TOOL_HOOKS');
 

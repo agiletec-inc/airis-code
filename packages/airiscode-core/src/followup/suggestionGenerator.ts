@@ -9,7 +9,7 @@
  * type next (Next-step Suggestion / NES).
  */
 
-import type { Content } from '@google/genai';
+import type { Content } from '../types/llm.js';
 import type { Config } from '../config/config.js';
 import { getCacheSafeParams, runForkedQuery } from './forkedQuery.js';
 import {

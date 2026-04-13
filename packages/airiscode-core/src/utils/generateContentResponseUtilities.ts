@@ -8,7 +8,7 @@ import type {
   GenerateContentResponse,
   Part,
   FunctionCall,
-} from '@google/genai';
+} from '../types/llm.js';
 import { getResponseText } from './partUtils.js';
 
 export function getResponseTextFromParts(parts: Part[]): string | undefined {

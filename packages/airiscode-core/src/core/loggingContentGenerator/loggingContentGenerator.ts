@@ -18,7 +18,7 @@ import {
   type Part,
   type PartUnion,
   type FinishReason,
-} from '@google/genai';
+} from '../../types/llm.js';
 import type OpenAI from 'openai';
 import {
   ApiRequestEvent,
@@ -492,10 +492,11 @@ export class LoggingContentGenerator implements ContentGenerator {
     }
     if ('parts' in content) {
       // it's a Content - process parts to handle thought filtering
+      const parts = (content as Content).parts;
       return {
-        ...content,
-        parts: content.parts
-          ? this.toParts(content.parts.filter((p) => p != null))
+        ...(content as Content),
+        parts: Array.isArray(parts)
+          ? this.toParts(parts.filter((p): p is Part => p != null))
           : [],
       };
     }

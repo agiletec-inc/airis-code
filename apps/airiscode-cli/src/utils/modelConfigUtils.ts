@@ -64,11 +64,6 @@ export function getAuthTypeFromEnv(): AuthType | undefined {
     return AuthType.USE_ANTHROPIC;
   }
 
-  // DashScope / Qwen OAuth (legacy)
-  if (process.env['QWEN_OAUTH']) {
-    return AuthType.QWEN_OAUTH;
-  }
-
   // Ollama: explicit OLLAMA_HOST or OLLAMA_MODEL, or fallback when no other auth is configured
   if (process.env['OLLAMA_HOST'] || process.env['OLLAMA_MODEL']) {
     return AuthType.USE_OLLAMA;

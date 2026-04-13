@@ -266,9 +266,7 @@ export class SystemController extends BaseController {
 
     switch (value) {
       case AuthProviderType.DYNAMIC_DISCOVERY:
-      case AuthProviderType.GOOGLE_CREDENTIALS:
-      case AuthProviderType.SERVICE_ACCOUNT_IMPERSONATION:
-        return value;
+        return value as AuthProviderType;
       default:
         debugLogger.warn(
           `[SystemController] Unsupported authProviderType '${value}', skipping`,

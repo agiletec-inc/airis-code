@@ -42,7 +42,7 @@ import {
   isSupportedImageMimeType,
   getUnsupportedImageFormatWarning,
 } from '@airiscode/core';
-import { type Part, type PartListUnion, FinishReason } from '@google/genai';
+import { type Part, type PartListUnion, FinishReason } from '@airiscode/core';
 import type {
   HistoryItem,
   HistoryItemWithoutId,

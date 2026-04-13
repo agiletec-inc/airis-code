@@ -13,7 +13,7 @@ import type {
   ToolResultDisplay,
   AgentStatus,
 } from '@airiscode/core';
-import type { PartListUnion } from '@google/genai';
+import type { PartListUnion } from '@airiscode/core';
 import { type ReactNode } from 'react';
 
 export type { ThoughtSummary };

@@ -11,7 +11,7 @@ import type {
   EmbedContentResponse,
   GenerateContentParameters,
   GenerateContentResponse,
-} from '@google/genai';
+} from '../types/llm.js';
 import type { Config } from '../config/config.js';
 import { LoggingContentGenerator } from './loggingContentGenerator/index.js';
 import type {
@@ -56,8 +56,6 @@ export enum AuthType {
   USE_OPENAI = 'openai',
   USE_OLLAMA = 'ollama',
   USE_ANTHROPIC = 'anthropic',
-  /** @deprecated DashScope Qwen OAuth - kept for DashScope API compatibility */
-  QWEN_OAUTH = 'qwen-oauth',
 }
 
 /**
@@ -83,7 +81,7 @@ export type ContentGeneratorConfig = {
   timeout?: number; // Timeout configuration in milliseconds
   maxRetries?: number; // Maximum retries for rate-limit errors
   retryErrorCodes?: number[]; // Additional error codes that trigger rate-limit retry
-  enableCacheControl?: boolean; // Enable cache control for DashScope providers
+  enableCacheControl?: boolean; // Enable cache control for compatible providers
   samplingParams?: {
     top_p?: number;
     top_k?: number;
@@ -311,8 +309,7 @@ export async function createContentGenerator(
 
   if (
     authType === AuthType.USE_OPENAI ||
-    authType === AuthType.USE_OLLAMA ||
-    authType === AuthType.QWEN_OAUTH
+    authType === AuthType.USE_OLLAMA
   ) {
     const { createOpenAIContentGenerator } = await import(
       './openaiContentGenerator/index.js'

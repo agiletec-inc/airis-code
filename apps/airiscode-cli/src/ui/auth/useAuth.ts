@@ -25,7 +25,6 @@ export interface OpenAICredentials {
   baseUrl?: string;
   model?: string;
 }
-import { useQwenAuth } from '../hooks/useQwenAuth.js';
 import { AuthState, MessageType } from '../types.js';
 import type { HistoryItem } from '../types.js';
 import { t } from '../../i18n/index.js';
@@ -42,7 +41,8 @@ import {
   type AlibabaStandardRegion,
 } from '../../constants/alibabaStandardApiKey.js';
 
-export type { QwenAuthState } from '../hooks/useQwenAuth.js';
+// Qwen OAuth removed - keep type alias for downstream compatibility
+export type QwenAuthState = 'idle' | 'authenticating' | 'authenticated' | 'error';
 
 export const useAuthCommand = (
   settings: LoadedSettings,
@@ -64,7 +64,8 @@ export const useAuthCommand = (
     undefined,
   );
 
-  const { qwenAuthState, cancelQwenAuth } = useQwenAuth();
+  // Qwen OAuth removed - stub state value
+  const qwenAuthState: QwenAuthState = 'idle';
 
   const onAuthError = useCallback(
     (error: string | null) => {
@@ -123,9 +124,8 @@ export const useAuthCommand = (
           );
         }
 
-        // Only update credentials if not switching to QWEN_OAUTH,
-        // so that OpenAI credentials are preserved when switching to QWEN_OAUTH.
-        if (authType !== AuthType.QWEN_OAUTH && credentials) {
+        // Persist credentials when provided
+        if (credentials) {
           if (credentials?.apiKey != null) {
             settings.setValue(
               authTypeScope,
@@ -271,10 +271,6 @@ export const useAuthCommand = (
   }, []);
 
   const cancelAuthentication = useCallback(() => {
-    if (isAuthenticating && pendingAuthType === AuthType.QWEN_OAUTH) {
-      cancelQwenAuth();
-    }
-
     // Log authentication cancellation
     if (isAuthenticating && pendingAuthType) {
       const authEvent = new AuthEvent(pendingAuthType, 'manual', 'cancelled');
@@ -285,7 +281,7 @@ export const useAuthCommand = (
     setIsAuthenticating(false);
     setIsAuthDialogOpen(true);
     setAuthError(null);
-  }, [isAuthenticating, pendingAuthType, cancelQwenAuth, config]);
+  }, [isAuthenticating, pendingAuthType, config]);
 
   /**
    * Handle coding plan submission - generates configs from template and stores api-key
@@ -566,11 +562,9 @@ export const useAuthCommand = (
     if (
       defaultAuthType &&
       ![
-        AuthType.QWEN_OAUTH,
         AuthType.USE_OPENAI,
         AuthType.USE_ANTHROPIC,
-        AuthType.USE_OPENAI,
-        AuthType.USE_OPENAI,
+        AuthType.USE_OLLAMA,
       ].includes(defaultAuthType as AuthType)
     ) {
       onAuthError(
@@ -579,11 +573,9 @@ export const useAuthCommand = (
           {
             value: defaultAuthType,
             validValues: [
-              AuthType.QWEN_OAUTH,
               AuthType.USE_OPENAI,
               AuthType.USE_ANTHROPIC,
-              AuthType.USE_OPENAI,
-              AuthType.USE_OPENAI,
+              AuthType.USE_OLLAMA,
             ].join(', '),
           },
         ),

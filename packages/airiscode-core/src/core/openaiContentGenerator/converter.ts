@@ -16,8 +16,8 @@ import type {
   ContentUnion,
   PartUnion,
   Candidate,
-} from '@google/genai';
-import { GenerateContentResponse, FinishReason } from '@google/genai';
+} from '../../types/llm.js';
+import { GenerateContentResponse, FinishReason } from '../../types/llm.js';
 import type OpenAI from 'openai';
 import { safeJsonParse } from '../../utils/safeJsonParse.js';
 import { createDebugLogger } from '../../utils/debugLogger.js';
@@ -980,8 +980,8 @@ export class OpenAIContentConverter {
       let toolCallsTruncated = false;
       if (choice.finish_reason) {
         // Detect truncation the provider may not report correctly.
-        // Some providers (e.g. DashScope/Qwen) send "stop" or "tool_calls"
-        // even when output was cut off mid-JSON due to max_tokens.
+        // Some providers send "stop" or "tool_calls" even when output was cut
+        // off mid-JSON due to max_tokens.
         toolCallsTruncated =
           this.streamingToolCallParser.hasIncompleteToolCalls();
 

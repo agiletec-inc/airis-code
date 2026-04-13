@@ -59,7 +59,7 @@ export function useCodingPlanUpdates(
         // Filter out all Coding Plan configs (since they are mutually exclusive)
         // Keep only non-Coding-Plan user custom configs
         const nonCodingPlanConfigs = currentConfigs.filter(
-          (cfg) =>
+          (cfg: any) =>
             !isCodingPlanConfig(
               cfg['baseUrl'] as string | undefined,
               cfg['envKey'] as string | undefined,

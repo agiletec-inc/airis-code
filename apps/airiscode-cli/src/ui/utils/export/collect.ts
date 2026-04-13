@@ -6,7 +6,7 @@
 
 import { randomUUID } from 'node:crypto';
 import type { Config, ChatRecord } from '@airiscode/core';
-import type { GenerateContentResponseUsageMetadata } from '@google/genai';
+import type { GenerateContentResponseUsageMetadata } from '@airiscode/core';
 type SessionContext = any;
 type SessionUpdate = any;
 type ToolCall = any;

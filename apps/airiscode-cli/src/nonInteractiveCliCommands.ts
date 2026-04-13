@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import type { PartListUnion } from '@google/genai';
+import type { PartListUnion } from '@airiscode/core';
 import { parseSlashCommand } from './utils/commands.js';
 import {
   Logger,

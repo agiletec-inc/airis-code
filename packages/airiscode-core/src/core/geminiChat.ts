@@ -15,8 +15,8 @@ import type {
   Part,
   Tool,
   GenerateContentResponseUsageMetadata,
-} from '@google/genai';
-import { createUserContent, FinishReason } from '@google/genai';
+} from '../types/llm.js';
+import { createUserContent, FinishReason } from '../types/llm.js';
 import { retryWithBackoff } from '../utils/retry.js';
 import { getErrorStatus } from '../utils/errors.js';
 import { createDebugLogger } from '../utils/debugLogger.js';
@@ -78,7 +78,7 @@ const INVALID_STREAM_RETRY_CONFIG = {
 
 /**
  * Options for retrying on rate-limit throttling errors returned as stream content.
- * Fixed 60s delay matches the DashScope per-minute quota window.
+ * Fixed 60s delay matches a typical per-minute quota window.
  * 10 retries aligns with Claude Code's retry behavior.
  */
 const RATE_LIMIT_RETRY_OPTIONS = {
@@ -136,7 +136,7 @@ function delay(
 /**
  * Returns true if the response is valid, false otherwise.
  *
- * The DashScope provider may return the last 2 chunks as:
+ * Some providers may return the last 2 chunks as:
  * 1. A choice(candidate) with finishReason and empty content
  * 2. Empty choices with usage metadata
  * We'll check separately for both of these cases.

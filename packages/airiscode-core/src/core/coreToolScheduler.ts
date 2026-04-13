@@ -47,7 +47,7 @@ import type {
   FunctionResponsePart,
   Part,
   PartListUnion,
-} from '@google/genai';
+} from '../types/llm.js';
 import { ToolNames } from '../tools/tool-names.js';
 import {
   buildPermissionCheckContext,
@@ -190,7 +190,7 @@ function createFunctionResponsePart(
   callId: string,
   toolName: string,
   output: string,
-  mediaParts?: FunctionResponsePart[],
+  mediaParts?: Part[],
 ): Part {
   const functionResponse: FunctionResponse = {
     id: callId,
@@ -222,7 +222,7 @@ export function convertToFunctionResponse(
     // Extract text and media from all parts so that EVERYTHING is inside
     // the FunctionResponse.
     const textParts: string[] = [];
-    const mediaParts: FunctionResponsePart[] = [];
+    const mediaParts: Part[] = [];
 
     for (const part of toParts(contentToProcess)) {
       if (part.text !== undefined) {
@@ -255,7 +255,7 @@ export function convertToFunctionResponse(
   }
 
   if (contentToProcess.inlineData || contentToProcess.fileData) {
-    const mediaParts: FunctionResponsePart[] = [];
+    const mediaParts: Part[] = [];
     if (contentToProcess.inlineData) {
       mediaParts.push({ inlineData: contentToProcess.inlineData });
     }

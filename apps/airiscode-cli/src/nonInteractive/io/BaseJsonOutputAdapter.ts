@@ -19,7 +19,7 @@ import {
   ToolErrorType,
   parseAndFormatApiError,
 } from '@airiscode/core';
-import type { Part, GenerateContentResponseUsageMetadata } from '@google/genai';
+import type { Part, GenerateContentResponseUsageMetadata } from '@airiscode/core';
 import type {
   CLIAssistantMessage,
   CLIMessage,

@@ -12,14 +12,7 @@ import {
 } from './auth/handler.js';
 import { t } from '../i18n/index.js';
 
-// Define subcommands separately
-const qwenOauthCommand = {
-  command: 'qwen-oauth',
-  describe: t('Authenticate using Qwen OAuth'),
-  handler: async () => {
-    await handleQwenAuth('qwen-oauth', {});
-  },
-};
+// Qwen OAuth subcommand removed - use coding-plan or interactive auth instead.
 
 const codePlanCommand = {
   command: 'coding-plan',
@@ -61,11 +54,10 @@ const statusCommand = {
 export const authCommand: CommandModule = {
   command: 'auth',
   describe: t(
-    'Configure Qwen authentication information with Qwen-OAuth or Alibaba Cloud Coding Plan',
+    'Configure authentication information with Alibaba Cloud Coding Plan',
   ),
   builder: (yargs: Argv) =>
     yargs
-      .command(qwenOauthCommand)
       .command(codePlanCommand)
       .command(statusCommand)
       .demandCommand(0) // Don't require a subcommand

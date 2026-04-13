@@ -1,33 +1,25 @@
 # Development Dockerfile for AIRIS Code
-FROM node:25-bookworm
+FROM node:24-bookworm
 
-# Install system dependencies
-RUN apt-get update && apt-get install -y \
+RUN apt-get update && apt-get install -y --no-install-recommends \
     git \
     python3 \
     make \
     g++ \
     && rm -rf /var/lib/apt/lists/*
 
-# Install pnpm
 RUN corepack enable && corepack prepare pnpm@10.21.0 --activate
 
-# Set working directory
-WORKDIR /workspace
+WORKDIR /app
 
-# Copy package files
-COPY package.json pnpm-workspace.yaml pnpm-lock.yaml ./
-COPY turbo.json tsconfig.base.json ./
+COPY package.json pnpm-workspace.yaml ./
+COPY tsconfig.base.json tsconfig.json ./
+COPY apps/airiscode-cli/package.json ./apps/airiscode-cli/
+COPY packages/airiscode-core/package.json ./packages/airiscode-core/
 
-# Copy all workspace packages
-COPY packages/ ./packages/
-COPY apps/ ./apps/
+RUN pnpm install --frozen-lockfile=false
 
-# Install dependencies
-RUN pnpm install
+COPY apps ./apps
+COPY packages ./packages
 
-# Build all packages
-RUN pnpm turbo run build
-
-# Default command
-CMD ["pnpm", "--filter", "@airiscode/cli", "dev"]
+CMD ["sleep", "infinity"]

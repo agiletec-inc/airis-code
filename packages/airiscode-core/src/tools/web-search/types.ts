@@ -128,29 +128,9 @@ export interface GoogleProviderConfig {
 }
 
 /**
- * Base configuration for DashScope provider.
- */
-export interface DashScopeProviderConfig {
-  type: 'dashscope';
-  apiKey?: string;
-  uid?: string;
-  appId?: string;
-  maxResults?: number;
-  scene?: string;
-  timeout?: number;
-  /**
-   * Optional auth type to determine provider availability.
-   * If set to 'qwen-oauth', the provider will be available.
-   * If set to other values or undefined, the provider will check auth type dynamically.
-   */
-  authType?: string;
-}
-
-/**
  * Discriminated union type for web search provider configurations.
  * This ensures type safety when working with different provider configs.
  */
 export type WebSearchProviderConfig =
   | TavilyProviderConfig
-  | GoogleProviderConfig
-  | DashScopeProviderConfig;
+  | GoogleProviderConfig;

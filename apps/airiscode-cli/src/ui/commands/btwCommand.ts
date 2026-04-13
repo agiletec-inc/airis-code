@@ -14,7 +14,7 @@ import { MessageType } from '../types.js';
 import type { HistoryItemBtw } from '../types.js';
 import { t } from '../../i18n/index.js';
 import type { GeminiClient } from '@airiscode/core';
-import type { Content } from '@google/genai';
+import type { Content } from '@airiscode/core';
 
 function makeBtwPromptId(sessionId: string): string {
   return `${sessionId}########btw-${Date.now()}`;

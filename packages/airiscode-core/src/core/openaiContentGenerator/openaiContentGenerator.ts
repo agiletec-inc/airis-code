@@ -8,7 +8,7 @@ import type {
   EmbedContentResponse,
   GenerateContentParameters,
   GenerateContentResponse,
-} from '@google/genai';
+} from '../../types/llm.js';
 import type { PipelineConfig } from './pipeline.js';
 import { ContentGenerationPipeline } from './pipeline.js';
 import { EnhancedErrorHandler } from './errorHandler.js';
@@ -115,12 +115,13 @@ export class OpenAIContentGenerator implements ContentGenerator {
       text = request.contents
         .map((content) => {
           if (typeof content === 'string') return content;
-          if ('parts' in content && content.parts) {
-            return content.parts
-              .map((part) =>
+          const parts = (content as { parts?: unknown[] }).parts;
+          if (Array.isArray(parts)) {
+            return parts
+              .map((part: unknown) =>
                 typeof part === 'string'
                   ? part
-                  : 'text' in part
+                  : part && typeof part === 'object' && 'text' in part
                     ? (part as { text?: string }).text || ''
                     : '',
               )
@@ -132,12 +133,19 @@ export class OpenAIContentGenerator implements ContentGenerator {
     } else if (request.contents) {
       if (typeof request.contents === 'string') {
         text = request.contents;
-      } else if ('parts' in request.contents && request.contents.parts) {
-        text = request.contents.parts
-          .map((part) =>
-            typeof part === 'string' ? part : 'text' in part ? part.text : '',
-          )
-          .join(' ');
+      } else {
+        const parts = (request.contents as { parts?: unknown[] }).parts;
+        if (Array.isArray(parts)) {
+          text = parts
+            .map((part: unknown) =>
+              typeof part === 'string'
+                ? part
+                : part && typeof part === 'object' && 'text' in part
+                  ? (part as { text?: string }).text || ''
+                  : '',
+            )
+            .join(' ');
+        }
       }
     }
 

@@ -9,7 +9,7 @@ import type {
   Content,
   Part,
   PartUnion,
-} from '@google/genai';
+} from '../../types/llm.js';
 import type { TokenCalculationResult } from './types.js';
 import { TextTokenizer } from './textTokenizer.js';
 import { ImageTokenizer } from './imageTokenizer.js';
@@ -215,6 +215,19 @@ export class RequestTokenizer {
       : [request.contents];
 
     for (const content of contents) {
+      // ContentUnion may itself be a PartUnion[]; in that case iterate parts.
+      if (Array.isArray(content)) {
+        for (const part of content) {
+          this.processPart(
+            part,
+            textContents,
+            imageContents,
+            audioContents,
+            otherContents,
+          );
+        }
+        continue;
+      }
       this.processContent(
         content,
         textContents,
@@ -244,15 +257,18 @@ export class RequestTokenizer {
       return;
     }
 
-    if ('parts' in content && content.parts) {
-      for (const part of content.parts) {
-        this.processPart(
-          part,
-          textContents,
-          imageContents,
-          audioContents,
-          otherContents,
-        );
+    if ('parts' in content) {
+      const parts = (content as Content).parts;
+      if (Array.isArray(parts)) {
+        for (const part of parts) {
+          this.processPart(
+            part,
+            textContents,
+            imageContents,
+            audioContents,
+            otherContents,
+          );
+        }
       }
       return;
     }

@@ -7,7 +7,7 @@
 import { promises as fs } from 'node:fs';
 import path from 'node:path';
 import { glob } from 'glob';
-import type { PartUnion } from '@google/genai';
+import type { PartUnion } from '../types/llm.js';
 import { processSingleFileContent } from './fileUtils.js';
 import type { Config } from '../config/config.js';
 

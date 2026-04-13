@@ -506,9 +506,7 @@ export async function parseArguments(): Promise<CliArgs> {
           choices: [
             AuthType.USE_OPENAI,
             AuthType.USE_ANTHROPIC,
-            AuthType.QWEN_OAUTH,
-            AuthType.USE_OPENAI,
-            AuthType.USE_OPENAI,
+            AuthType.USE_OLLAMA,
           ],
           description: 'Authentication type',
         })

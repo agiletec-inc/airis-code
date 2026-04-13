@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import type { Content } from '@google/genai';
+import type { Content } from '../types/llm.js';
 import { createDebugLogger } from './debugLogger.js';
 
 const debugLogger = createDebugLogger('ERROR_REPORT');

@@ -11,7 +11,7 @@
  * run, tool), termination modes, and interactive agent types.
  */
 
-import type { Content, FunctionDeclaration } from '@google/genai';
+import type { Content, FunctionDeclaration } from '../../types/llm.js';
 
 // ─── Agent Configuration ─────────────────────────────────────
 

@@ -34,12 +34,9 @@ function getAuthDisplayType(
     return AuthDisplayType.CODING_PLAN;
   }
 
-  switch (authType) {
-    case AuthType.QWEN_OAUTH:
-      return AuthDisplayType.QWEN_OAUTH;
-    default:
-      return AuthDisplayType.API_KEY;
-  }
+  // All non-coding-plan auth types map to API_KEY display
+  void authType;
+  return AuthDisplayType.API_KEY;
 }
 
 export const AppHeader = ({ version }: AppHeaderProps) => {

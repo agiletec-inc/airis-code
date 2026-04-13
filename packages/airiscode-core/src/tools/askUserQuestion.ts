@@ -16,7 +16,7 @@ import {
   Kind,
   ToolConfirmationOutcome,
 } from './tools.js';
-import type { FunctionDeclaration } from '@google/genai';
+import type { FunctionDeclaration } from '../types/llm.js';
 import type { Config } from '../config/config.js';
 import { ToolDisplayNames, ToolNames } from './tool-names.js';
 import { createDebugLogger } from '../utils/debugLogger.js';

@@ -11,7 +11,7 @@
  * These types are used across different agent orchestration modes.
  */
 
-import type { Content } from '@google/genai';
+import type { Content } from '../../types/llm.js';
 import type { AnsiOutput } from '../../utils/terminalSerializer.js';
 import type {
   PromptConfig,

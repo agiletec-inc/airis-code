@@ -12,7 +12,7 @@ import type {
   FunctionDeclaration,
   Tool,
   Schema,
-} from '@google/genai';
+} from '../types/llm.js';
 import type { Config } from '../config/config.js';
 import type { ContentGenerator } from './contentGenerator.js';
 import { reportError } from '../utils/errorReporting.js';

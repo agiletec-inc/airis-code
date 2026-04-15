@@ -1,66 +1,86 @@
 #!/usr/bin/env node
+
 /**
- * AIRIS Code CLI
- * Terminal-first autonomous coding runner
+ * @license
+ * Copyright 2025 Google LLC
+ * SPDX-License-Identifier: Apache-2.0
  */
 
-import { Command } from 'commander';
-import chalk from 'chalk';
-import { createCodeCommand } from './commands/code.js';
-import { createConfigCommand } from './commands/config.js';
-import { createSessionCommand } from './commands/session.js';
-import { createChatCommand } from './commands/chat.js';
+import './gemini.js';
+import { main } from './gemini.js';
+import { FatalError } from '@airiscode/core';
+import { writeStderrLine } from './utils/stdioHelpers.js';
 
-const program = new Command();
+// --- Global Entry Point ---
 
-program
-  .name('airis')
-  .description('AIRIS Code - Terminal-first autonomous coding runner')
-  .version('0.1.0');
+// Suppress known race conditions in @lydell/node-pty.
+//
+// PTY errors that are expected due to timing races between process exit
+// and I/O operations. These should not crash the app.
+//
+// References:
+// - https://github.com/microsoft/node-pty/issues/178 (EIO on macOS/Linux)
+// - https://github.com/microsoft/node-pty/issues/827 (resize on Windows)
+const getErrnoCode = (error: unknown): string | undefined => {
+  if (!error || typeof error !== 'object') {
+    return undefined;
+  }
+  const code = (error as { code?: unknown }).code;
+  return typeof code === 'string' ? code : undefined;
+};
 
-// Add subcommands
-program.addCommand(createCodeCommand());
-program.addCommand(createConfigCommand());
-program.addCommand(createSessionCommand());
-program.addCommand(createChatCommand());
+const isExpectedPtyRaceError = (error: unknown): boolean => {
+  if (!(error instanceof Error)) {
+    return false;
+  }
 
-// Default action - treat as 'code' command when task is provided directly
-program
-  .argument('[task]', 'Task description (shorthand for "airis code <task>")')
-  .option('-d, --driver <name>', 'Driver to use (ollama, openai)')
-  .option('-a, --adapter <name>', 'Adapter to use (claude-code, cursor)')
-  .option('-p, --policy <level>', 'Policy level (restricted, sandboxed, untrusted)')
-  .option('--cwd <dir>', 'Working directory')
-  .option('-s, --session <name>', 'Session name')
-  .option('--json', 'Output in JSON format')
-  .option('-v, --verbose', 'Verbose output')
-  .action(async (task, options) => {
-    if (task) {
-      // If task is provided, execute as 'code' command
-      const { executeCodeCommand } = await import('./commands/code.js');
-      await executeCodeCommand(task, options);
-    } else {
-      // No task provided, start interactive chat mode
-      const { executeChatCommand } = await import('./commands/chat.js');
-      await executeChatCommand({ cwd: options.cwd });
-    }
-  });
+  const message = error.message;
+  const code = getErrnoCode(error);
 
-// Global error handler
+  if (
+    (code === 'EIO' && message.includes('read')) ||
+    message.includes('read EIO')
+  ) {
+    return true;
+  }
+
+  if (
+    message.includes('ioctl(2) failed, EBADF') ||
+    message.includes('Cannot resize a pty that has already exited')
+  ) {
+    return true;
+  }
+
+  return false;
+};
+
 process.on('uncaughtException', (error) => {
-  console.error(chalk.red('\nUncaught Exception:'));
-  console.error(chalk.red(error.message));
-  if (process.env.DEBUG) {
-    console.error(error.stack);
+  if (isExpectedPtyRaceError(error)) {
+    return;
+  }
+
+  if (error instanceof Error) {
+    writeStderrLine(error.stack ?? error.message);
+  } else {
+    writeStderrLine(String(error));
   }
   process.exit(1);
 });
 
-process.on('unhandledRejection', (reason) => {
-  console.error(chalk.red('\nUnhandled Rejection:'));
-  console.error(chalk.red(String(reason)));
+main().catch((error) => {
+  if (error instanceof FatalError) {
+    let errorMessage = error.message;
+    if (!process.env['NO_COLOR']) {
+      errorMessage = `\x1b[31m${errorMessage}\x1b[0m`;
+    }
+    console.error(errorMessage);
+    process.exit(error.exitCode);
+  }
+  console.error('An unexpected critical error occurred:');
+  if (error instanceof Error) {
+    console.error(error.stack);
+  } else {
+    console.error(String(error));
+  }
   process.exit(1);
 });
-
-// Parse arguments
-program.parse(process.argv);

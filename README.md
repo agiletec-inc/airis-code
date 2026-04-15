@@ -41,7 +41,7 @@ uv run airis-agent install-suite --profile core
 
 # Option 3: Just use airiscode standalone
 npm install -g @airiscode/cli
-airis "your task"
+airiscode "your task"
 ```
 
 **What you get with the full suite:**
@@ -76,7 +76,7 @@ brew tap agiletec-inc/tap
 brew install airiscode
 
 # Verify installation
-airis --version
+airiscode --version
 ```
 
 **npm (Alternative)**
@@ -85,7 +85,7 @@ airis --version
 npm install -g @airiscode/cli
 
 # Verify installation
-airis --version
+airiscode --version
 ```
 
 ### For Developers
@@ -116,7 +116,7 @@ make test
 pnpm link --global
 
 # Verify installation
-airis --version
+airiscode --version
 ```
 
 ### Development
@@ -181,31 +181,31 @@ airiscode/
 
 ```bash
 # Shorthand - execute task directly
-airis "Add a /health endpoint to the API"
+airiscode "Add a /health endpoint to the API"
 
 # With options
-airis "Refactor authentication" --adapter claude-code --policy sandboxed --verbose
+airiscode "Refactor authentication" --adapter claude-code --policy sandboxed --verbose
 
 # Explicit code command (also works)
-airis code "Add authentication feature"
+airiscode code "Add authentication feature"
 
 # Interactive mode with restricted access
-airis "Review security" --policy restricted
+airiscode "Review security" --policy restricted
 
 # Use specific adapter and driver
-airis "Fix bug #123" --adapter claude-code --driver ollama
+airiscode "Fix bug #123" --adapter claude-code --driver ollama
 
 # JSON output for CI/CD
-airis "Run tests" --json
+airiscode "Run tests" --json
 
 # Configuration management
-airis config --list
-airis config --set defaultDriver=ollama
+airiscode config --list
+airiscode config --set defaultDriver=ollama
 
 # Session management
-airis session --list
-airis session --show <session-id>
-airis session --resume <session-id>
+airiscode session --list
+airiscode session --show <session-id>
+airiscode session --resume <session-id>
 ```
 
 ## Policy Levels
@@ -258,7 +258,7 @@ See [実装計画プランニング.md](./実装計画プランニング.md) for
 
 - [x] **Phase 5 - CLI** (1 package)
   - `@airiscode/cli` - Commander.js-based CLI with 3 commands
-  - Shorthand command support: `airis "task"`
+  - Shorthand command support: `airiscode "task"`
   - Session management
   - Configuration management
 

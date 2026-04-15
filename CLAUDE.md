@@ -4,119 +4,153 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Quick Reference
 
-**Read PROJECT_INDEX.md first** - Complete codebase navigation (3K tokens vs 58K full read). Contains package structure, entry points, implementation status, and all documentation links.
+- **Navigation**: `PROJECT_INDEX.md` (concise) and `ARCHTECHTURE.md` (full architecture).
+- **Status / known issues**: `STATUS.md`.
+- **Upstream marker**: `.airiscode-upstream` tracks the Qwen Code commit this repo was forked from.
 
 ## Project Overview
 
-**airiscode** is a terminal-first autonomous coding runner that orchestrates multiple CLI coding assistants (Claude Code, Codex, Gemini CLI, Aider) through a unified interface. It integrates Super Agent runtime, SuperClaude assets, MindBase (local semantic memory), and AIRIS MCP Gateway.
+**airiscode** is a terminal-first autonomous coding agent. Current branch
+`feat/qwen-code-fork-ollama-backend` reflects the v1 direction: **fork Qwen Code's
+`packages/core` + `packages/cli`, add an Ollama backend, and migrate the Claude Code
+public specs** (hooks, subagents, skills, settings, memory, `CLAUDE.md` / `.claude/rules/`
+loading).
 
-**Status**: Pre-Alpha v0.1.0 (93% complete). Core packages built: LLM drivers (OpenAI, Anthropic, Ollama), MCP integration (gateway-client, registry, session), CLI with tool execution loop.
+Key product bet: model intelligence matters less than the workflow structure — hooks +
+skills + subagents force the agent to "not proceed without reading." That's the core
+value of v1.
+
+## Repository Layout
+
+Two layers coexist in this monorepo. Know which one you're touching.
+
+### Layer 1 — Active Qwen Code fork (where most new work happens)
+
+- `packages/airiscode-core/` — `@airiscode/core`. Copied from Qwen `packages/core`
+  (commit pinned in `.airiscode-upstream`). Contains the agent runtime:
+  `agents/`, `subagents/`, `skills/`, `hooks/`, `permissions/`, `config/`, `core/`,
+  `mcp/`, `models/`, `prompts/`, `services/`, `tools/`, `telemetry/`, `ide/`, `lsp/`,
+  plus bundled `vendor/` (ripgrep, tree-sitter).
+- `apps/airiscode-cli/` — `@airiscode/cli`. Copied from Qwen `packages/cli`. Ink-based
+  TUI entry at `src/gemini.tsx`, non-interactive mode at `src/nonInteractiveCli.ts`.
+  Binary: `airiscode` (see `bin/`).
+
+Branding: `.qwen` → `.airiscode`. Gemini / Google OAuth / Vertex AI paths are being
+removed, not extended.
+
+### Layer 2 — Pre-fork skeleton (older design, partially superseded)
+
+Under `packages/`: `drivers/` (openai, anthropic, ollama), `mcp/` (gateway-client,
+registry, lazy-loader, session), `policies/`, `sandbox/`, `types/`, `adapters/`,
+`runners/`, `gemini-core/`, `core-gemini/`, `ui-gemini/`, `super-agent/`, `mindbase/`,
+`airis-tools/`, `api/`, `ux/`. These were built before the Qwen fork decision. Some
+concepts (MCP gateway integration, policies) will be re-homed into `airiscode-core`;
+others are dormant. **Check `STATUS.md` and `git log` before extending anything in
+Layer 2** — you may be editing code that's about to be removed.
+
+Rule of thumb: new features go in `packages/airiscode-core` or `apps/airiscode-cli`.
 
 ## Development Commands
 
-**Monorepo**: pnpm + Turbo. Required: pnpm 10.21.0+, Node 25.0.0+, Turbo 2.6.1
+Monorepo tooling: **pnpm + Turbo**. `package.json` is `_generated` by `airis-workspace`
+from `workspace.yaml` — do not hand-edit it; regenerate via `airis generate`.
 
 ```bash
-# Setup
 pnpm install
-pnpm turbo run build
+pnpm build                                  # turbo run build
+pnpm test                                   # turbo run test (Vitest)
+pnpm lint
+pnpm typecheck
+pnpm dev                                    # turbo run dev (watch)
 
-# Development
-pnpm dev                              # Watch mode
-pnpm --filter @airiscode/cli dev      # Run CLI in dev mode
-airiscode                             # Run CLI (after pnpm install)
-pnpm tsx examples/mcp-session-example.ts  # Run example
+# Scoped builds / tests
+pnpm --filter @airiscode/core build
+pnpm --filter @airiscode/cli build
+pnpm --filter @airiscode/cli test -- <pattern>   # single-file test
 
-# Testing
-pnpm turbo run test                   # All tests (Vitest)
-pnpm turbo run test --filter <pkg>   # Single package
-
-# Build specific categories
-pnpm turbo run build --filter='@airiscode/mcp-*'
-pnpm turbo run build --filter='@airiscode/driver-*'
-
-# Cleanup
-pnpm turbo run clean
+# Run the CLI during development
+pnpm --filter @airiscode/cli start          # node dist/index.js
 ```
 
-## Architecture Essentials
+Both `@airiscode/core` and `@airiscode/cli` use plain `tsc` for build (not tsup) — if a
+type error shows up, `pnpm --filter <pkg> typecheck` reproduces it fastest.
 
-### Core Principles
-1. **No reimplementation** - Wrap existing CLIs (Claude Code, Codex, etc.) as child processes; never fork upstream
-2. **LLM-agnostic** - Support OpenAI, Anthropic, Google, Ollama/MLX via unified ModelDriver interface
-3. **Dynamic tooling** - MCP Gateway advertises tools lazily; only describe to LLM when selected
-4. **Local memory** - MindBase keeps conversation + task logs local (pgvector + Ollama embeddings)
-5. **Strict policies** - Enforce `--approvals` (never/on-failure/on-request) and `--trust` (restricted/sandboxed/untrusted)
-6. **Terminal-first** - Ink TUI + `--json` headless mode for CI/CD
-
-### Package Categories (22 packages)
-
-**✅ Built & Integrated**:
-- `drivers/*` - LLM abstraction (openai, anthropic, ollama)
-- `mcp/*` - MCP Gateway integration (gateway-client, registry, lazy-loader, session)
-- `policies/` - Security policies (ApprovalsLevel, TrustLevel)
-- `gemini-core/`, `core-gemini/` - Gemini CLI adaptation
-- `types/` - Shared types & Result pattern
-
-**⏳ Skeleton/Pending**:
-- `adapters/*` - CLI wrappers (claude-code, codex, gemini, aider)
-- `sandbox/` - Shell Guard (command safety analysis)
-- `runners/*` - git-runner, docker-runner, test-runner
-
-### Key Execution Flow
-1. User command → Session bootstrap (load policy, init MindBase, detect adapters)
-2. Planning → Super Agent confidence gating, deep research, repo indexing
-3. Tool orchestration → MCP Gateway exposes tools lazily
-4. Adapter invocation → Child process with Shell Guard filtering
-5. Runners & verification → git-runner stages diffs, docker-runner spins services
-6. Reporting → TUI + optional `--json`, MindBase stores conversation
-
-### MCP Tool Execution Loop
-**Implemented**: `@airiscode/mcp-session` + CLI integration
-
-Flow: User → LLM → Tool Call → MCP Gateway → Tool Result → LLM → Response
-
-Features: Autonomous execution, lazy server loading, loop safety (max 10 iterations), error handling
-
-Implementation: `apps/airiscode-cli/src/hooks/useChatSession.tsx`
+Docker dev shells: `Dockerfile.dev` + `docker-compose.dev.yml` exist for containerized
+development per the global docker-first policy.
 
 ## Coding Standards
 
-- **TypeScript**: 2-space indent, semicolons, `"strict": true`
-- **Naming**: PascalCase (types/classes), camelCase (functions/vars), kebab-case (dirs)
-- **Tests**: `*.spec.ts` alongside source or `__tests__/` dirs. Use Vitest.
-- **Commits**: Conventional commits (`feat:`, `fix:`, `docs:`, `refactor:`)
-- **Module organization**: `packages/adapters/<name>/`, `packages/drivers/<name>/`
+- TypeScript strict mode, 2-space indent, semicolons.
+- PascalCase types/classes, camelCase functions/vars, kebab-case dirs.
+- Tests: Vitest, `*.test.ts(x)` or `*.spec.ts` alongside source, or `__tests__/`.
+- Conventional commits (`feat:`, `fix:`, `refactor:`, `docs:`).
+- Code comments in English even when chatting in Japanese.
+- When porting from upstream Qwen Code, keep the diff surface minimal so future
+  cherry-picks stay tractable. Record the upstream commit in `.airiscode-upstream` when
+  you re-sync.
 
-## Security
+## Architecture Notes
 
-When adding tools/adapters:
-1. Route shell execution through `packages/sandbox/` utilities
-2. Never downgrade `--approvals` or `--trust` defaults
-3. Document shell commands for Shell Guard review
-4. Respect policy profiles from `packages/policies/`
+### Claude Code compatibility surface
 
-Shell Guard blocks: `rm -rf /`, `docker system prune`, fork bombs, etc.
+The core runtime reads both Qwen-style configs and Claude Code specs:
 
-## Key Integration Points
+- `.claude/rules/*.md` and `CLAUDE.md` are loaded as project instructions (see
+  commit `3d308de2`).
+- `settings.local.json` provides workspace-local overrides (commit `14bf3db4`).
+- Hooks, subagents, and skills mirror the Claude Code layout so users can bring their
+  existing assets.
+- Context compaction threshold is lowered to 60% to accommodate smaller local-model
+  context windows (commit `c5db893c`).
 
-- **Super Agent** (`/Users/kazuki/github/superagent`) - Confidence gating, deep research, repo indexing
-- **MindBase** (`/Users/kazuki/github/mindbase`) - Local semantic memory (MCP tools: `mindbase_store`, `mindbase_search`)
-- **AIRIS MCP Gateway** (`/Users/kazuki/github/airis-mcp-gateway`) - 25+ MCP servers, lazy tool streaming
+### LLM backend selection
+
+Default backend is **Ollama** when no cloud API keys are present (commit `95b33b09`).
+Anthropic / OpenAI / Google backends remain available when keys are configured.
+
+### MCP integration
+
+Two paths exist:
+
+1. **Layer 1**: `packages/airiscode-core/src/mcp/` (inherited from Qwen) — the path
+   currently wired into the CLI.
+2. **Layer 2**: `packages/mcp/*` (gateway-client / registry / lazy-loader / session) —
+   the older dedicated MCP Gateway client. Features from here are being folded into
+   Layer 1 as needed.
+
+If you're adding MCP functionality, check Layer 1 first.
+
+### Tool execution loop
+
+User → LLM → tool call → MCP / local tool → result → LLM → response. Iteration cap
+(safety against runaway loops) lives in the core runtime. Lazy MCP server activation:
+servers are only spun up when the LLM actually requests one of their tools.
+
+## Safety & Policies
+
+- Do **not** weaken or bypass hooks (`--no-verify`, rewriting `core.hooksPath`, etc.).
+- Shell execution should route through the sandbox / permissions layer, not raw
+  `child_process` in new code.
+- Keep `--approvals` and `--trust` defaults intact when adding adapters.
+- Before pushing, confirm `pnpm test` / `pnpm typecheck` pass; don't claim completion
+  on untested work.
+
+## External Integration Points
+
+- **airis-mcp-gateway** — unified MCP proxy (lazy loading, token reduction).
+- **mindbase** — local cross-session memory (`mindbase_store`, `mindbase_search`).
+- **airis-agent** — confidence gating / deep research / repo indexing layer.
+- **airis-workspace** — generates `package.json`, Dockerfiles, CI config from
+  `workspace.yaml` / `manifest.toml`. Do not hand-edit generated files.
 
 ## Documentation
 
-**Essential**:
-- PROJECT_INDEX.md - Codebase navigation
-- ARCHTECHTURE.md - Complete architecture, execution flows, sequence diagrams
-- STATUS.md - Implementation progress, known issues
-- AGENTS.md - Repository guidelines, coding standards
-
-**Implementation Guides**:
-- docs/MCP_INTEGRATION.md - MCP integration with examples
-- docs/TOOL_EXECUTION_LOOP.md - LLM↔MCP tool execution flow
-- docs/INTEGRATION_GUIDE.md - Integrating new components
-
-## Development Target
-
-**Mac M4 Air** (32GB) - Ollama local inference, Docker Desktop for MindBase/gateway
+- `PROJECT_INDEX.md` — navigation, entry points, package map.
+- `ARCHTECHTURE.md` — execution flows, sequence diagrams.
+- `STATUS.md` — what's built, what's pending, known issues.
+- `AGENTS.md`, `CONTRIBUTING.md` — contributor guidelines.
+- `docs/MCP_INTEGRATION.md`, `docs/TOOL_EXECUTION_LOOP.md`,
+  `docs/INTEGRATION_GUIDE.md` — implementation guides (note: some predate the Qwen
+  fork; cross-check with current `packages/airiscode-core` code).
+- `CLI統合仕様.md`, `CLI自律実行リサーチ.md`, `実装計画プランニング.md` — Japanese
+  design notes driving the v1 rebuild.

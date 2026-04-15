@@ -2,6 +2,7 @@
   "name": "@airiscode/sandbox",
   "version": "0.1.0",
   "description": "Shell Guard and command safety validation",
+  "type": "module",
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
   "exports": {

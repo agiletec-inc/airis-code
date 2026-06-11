@@ -10,3 +10,8 @@ jobs:
     uses: agiletec-inc/.github/.github/workflows/secret-scan.yml@main
   ci:
     uses: agiletec-inc/.github/.github/workflows/node-pnpm-ci.yml@main
+    with:
+      # Fork-in-progress (Qwen Code): keep the deliberate turbo-scoped gate.
+      # Full baseline (typecheck/audit/whole-repo lint) deferred until the
+      # dormant Layer 2 packages are removed.
+      run-command: pnpm turbo run build lint test

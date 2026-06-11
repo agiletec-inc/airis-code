@@ -1,0 +1,64 @@
+services:
+  cli:
+    image: node:24-bookworm
+    container_name: '-cli'
+    volumes:
+    - '.:/app/apps/airiscode-cli'
+    - /app/apps/airiscode-cli/dist
+    - /app/apps/airiscode-cli/node_modules
+    - /app/apps/airiscode-cli/build
+    - /app/apps/airiscode-cli/out
+    - /app/apps/airiscode-cli/.turbo
+    - /app/apps/airiscode-cli/.cache
+    working_dir: /app/apps/airiscode-cli
+  core:
+    image: node:24-bookworm
+    container_name: '-core'
+    volumes:
+    - '.:/app/packages/airiscode-core'
+    - /app/packages/airiscode-core/dist
+    - /app/packages/airiscode-core/node_modules
+    - /app/packages/airiscode-core/build
+    - /app/packages/airiscode-core/out
+    - /app/packages/airiscode-core/.turbo
+    - /app/packages/airiscode-core/.cache
+    working_dir: /app/packages/airiscode-core
+  workspace:
+    image: node:24-bookworm
+    container_name: '-workspace'
+    volumes:
+    - '.:/app'
+    - '-pnpm-store:/root/.local/share/pnpm/store'
+    - /app/node_modules
+    - /app/.pnpm-store
+    - '-cargo-registry:/usr/local/cargo/registry'
+    - /app/target
+    - '-uv-cache:/root/.cache/uv'
+    - /app/.venv
+    - /app/__pycache__
+    - /app/.ruff_cache
+    - /app/.mypy_cache
+    - /app/.pytest_cache
+    - /app/apps/airiscode-cli/dist
+    - /app/apps/airiscode-cli/node_modules
+    - /app/apps/airiscode-cli/build
+    - /app/apps/airiscode-cli/out
+    - /app/apps/airiscode-cli/.turbo
+    - /app/apps/airiscode-cli/.cache
+    - /app/packages/airiscode-core/dist
+    - /app/packages/airiscode-core/node_modules
+    - /app/packages/airiscode-core/build
+    - /app/packages/airiscode-core/out
+    - /app/packages/airiscode-core/.turbo
+    - /app/packages/airiscode-core/.cache
+    environment:
+      NODE_ENV: development
+      PNPM_HOME: /root/.local/share/pnpm
+      PATH: /root/.local/share/pnpm:$PATH
+      PYTHONUNBUFFERED: '1'
+      UV_CACHE_DIR: /root/.cache/uv
+    working_dir: /app
+volumes:
+  '-pnpm-store': {}
+  '-cargo-registry': {}
+  '-uv-cache': {}

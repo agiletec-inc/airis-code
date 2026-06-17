@@ -4,18 +4,14 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import v8 from 'node:v8';
-import process from 'node:process';
-import type { Config } from '../config/config.js';
-import { bytesToMB } from '../utils/formatters.js';
-import { isUserActive } from './activity-detector.js';
-import { HighWaterMarkTracker } from './high-water-mark-tracker.js';
-import {
-  recordMemoryUsage,
-  MemoryMetricType,
-  isPerformanceMonitoringActive,
-} from './metrics.js';
-import { RateLimiter } from './rate-limiter.js';
+import process from "node:process";
+import v8 from "node:v8";
+import type { Config } from "../config/config.js";
+import { bytesToMB } from "../utils/formatters.js";
+import { isUserActive } from "./activity-detector.js";
+import { HighWaterMarkTracker } from "./high-water-mark-tracker.js";
+import { isPerformanceMonitoringActive, MemoryMetricType, recordMemoryUsage } from "./metrics.js";
+import { RateLimiter } from "./rate-limiter.js";
 
 export interface MemorySnapshot {
   timestamp: number;
@@ -64,7 +60,7 @@ export class MemoryMonitor {
     this.isRunning = true;
 
     // Take initial snapshot
-    this.takeSnapshot('monitoring_start', config);
+    this.takeSnapshot("monitoring_start", config);
 
     // Set up periodic monitoring with enhanced logic
     this.intervalId = setInterval(() => {
@@ -80,7 +76,7 @@ export class MemoryMonitor {
 
     if (!this.useEnhancedMonitoring) {
       // Fall back to original behavior
-      this.takeSnapshot('periodic', config);
+      this.takeSnapshot("periodic", config);
       return;
     }
 
@@ -93,29 +89,23 @@ export class MemoryMonitor {
     const currentMemory = this.getCurrentMemoryUsage();
 
     // Check if RSS has grown significantly (5% threshold)
-    const shouldRecordRss = this.highWaterMarkTracker.shouldRecordMetric(
-      'rss',
-      currentMemory.rss,
-    );
+    const shouldRecordRss = this.highWaterMarkTracker.shouldRecordMetric("rss", currentMemory.rss);
     const shouldRecordHeap = this.highWaterMarkTracker.shouldRecordMetric(
-      'heap_used',
+      "heap_used",
       currentMemory.heapUsed,
     );
 
     // Also check rate limiting
-    const canRecordPeriodic = this.rateLimiter.shouldRecord('periodic_memory');
-    const canRecordHighWater = this.rateLimiter.shouldRecord(
-      'high_water_memory',
-      true,
-    ); // High priority
+    const canRecordPeriodic = this.rateLimiter.shouldRecord("periodic_memory");
+    const canRecordHighWater = this.rateLimiter.shouldRecord("high_water_memory", true); // High priority
 
     // Record if we have significant growth and aren't rate limited
     if ((shouldRecordRss || shouldRecordHeap) && canRecordHighWater) {
-      const context = shouldRecordRss ? 'rss_growth' : 'heap_growth';
+      const context = shouldRecordRss ? "rss_growth" : "heap_growth";
       this.takeSnapshot(context, config);
     } else if (canRecordPeriodic) {
       // Occasionally record even without growth for baseline tracking
-      this.takeSnapshotWithoutRecording('periodic_check', config);
+      this.takeSnapshotWithoutRecording("periodic_check", config);
     }
   }
 
@@ -124,10 +114,7 @@ export class MemoryMonitor {
    */
   private performPeriodicCleanup(): void {
     const now = Date.now();
-    if (
-      now - this.lastCleanupTimestamp <
-      MemoryMonitor.STATE_CLEANUP_INTERVAL_MS
-    ) {
+    if (now - this.lastCleanupTimestamp < MemoryMonitor.STATE_CLEANUP_INTERVAL_MS) {
       return;
     }
 
@@ -151,7 +138,7 @@ export class MemoryMonitor {
 
     // Take final snapshot if config is provided
     if (config) {
-      this.takeSnapshot('monitoring_stop', config);
+      this.takeSnapshot("monitoring_stop", config);
     }
     this.isRunning = false;
   }
@@ -200,10 +187,7 @@ export class MemoryMonitor {
   /**
    * Take a memory snapshot without recording metrics (for internal tracking)
    */
-  private takeSnapshotWithoutRecording(
-    _context: string,
-    _config: Config,
-  ): MemorySnapshot {
+  private takeSnapshotWithoutRecording(_context: string, _config: Config): MemorySnapshot {
     const memUsage = process.memoryUsage();
     const heapStats = v8.getHeapStatistics();
 
@@ -218,11 +202,8 @@ export class MemoryMonitor {
     };
 
     // Update internal tracking but don't record metrics
-    this.highWaterMarkTracker.shouldRecordMetric('rss', snapshot.rss);
-    this.highWaterMarkTracker.shouldRecordMetric(
-      'heap_used',
-      snapshot.heapUsed,
-    );
+    this.highWaterMarkTracker.shouldRecordMetric("rss", snapshot.rss);
+    this.highWaterMarkTracker.shouldRecordMetric("heap_used", snapshot.heapUsed);
 
     this.lastSnapshot = snapshot;
     return snapshot;
@@ -297,10 +278,7 @@ export class MemoryMonitor {
     component: string,
     operation?: string,
   ): MemorySnapshot {
-    const snapshot = this.takeSnapshot(
-      operation ? `${component}_${operation}` : component,
-      config,
-    );
+    const snapshot = this.takeSnapshot(operation ? `${component}_${operation}` : component, config);
     return snapshot;
   }
 
@@ -362,11 +340,8 @@ export class MemoryMonitor {
   /**
    * Force record memory metrics (bypasses rate limiting for critical events)
    */
-  forceRecordMemory(
-    config: Config,
-    context: string = 'forced',
-  ): MemorySnapshot {
-    this.rateLimiter.forceRecord('forced_memory');
+  forceRecordMemory(config: Config, context: string = "forced"): MemorySnapshot {
+    this.rateLimiter.forceRecord("forced_memory");
     return this.takeSnapshot(context, config);
   }
 
@@ -410,10 +385,7 @@ export function getMemoryMonitor(): MemoryMonitor | null {
 /**
  * Record memory usage for current operation
  */
-export function recordCurrentMemoryUsage(
-  config: Config,
-  context: string,
-): MemorySnapshot {
+export function recordCurrentMemoryUsage(config: Config, context: string): MemorySnapshot {
   const monitor = initializeMemoryMonitor();
   return monitor.takeSnapshot(context, config);
 }
@@ -421,10 +393,7 @@ export function recordCurrentMemoryUsage(
 /**
  * Start global memory monitoring
  */
-export function startGlobalMemoryMonitoring(
-  config: Config,
-  intervalMs: number = 10000,
-): void {
+export function startGlobalMemoryMonitoring(config: Config, intervalMs: number = 10000): void {
   const monitor = initializeMemoryMonitor();
   monitor.start(config, intervalMs);
 }

@@ -4,10 +4,9 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import type { Part } from '@airiscode/core';
-import { ExitPlanModeTool, ToolNames } from '@airiscode/core';
-import type { ChatRecord, Config, Kind } from '@airiscode/core';
-import type { ExportMessage, ExportSessionData } from './types.js';
+import type { ChatRecord, Config, Kind, Part } from "@airiscode/core";
+import { ExitPlanModeTool, ToolNames } from "@airiscode/core";
+import type { ExportMessage, ExportSessionData } from "./types.js";
 
 /**
  * Normalizes export session data by merging tool call information from tool_result records.
@@ -23,7 +22,7 @@ export function normalizeSessionData(
 
   // Build index of tool call messages
   normalized.forEach((message, index) => {
-    if (message.type === 'tool_call' && message.toolCall?.toolCallId) {
+    if (message.type === "tool_call" && message.toolCall?.toolCallId) {
       toolCallIndexById.set(message.toolCall.toolCallId, index);
     }
   });
@@ -31,35 +30,30 @@ export function normalizeSessionData(
   // Build index of assistant messages by uuid for usageMetadata merging
   const assistantMessageIndexByUuid = new Map<string, number>();
   normalized.forEach((message, index) => {
-    if (message.type === 'assistant') {
+    if (message.type === "assistant") {
       assistantMessageIndexByUuid.set(message.uuid, index);
     }
   });
 
   // Merge tool result information into tool call messages
   for (const record of originalRecords) {
-    if (record.type !== 'tool_result') continue;
+    if (record.type !== "tool_result") continue;
 
     const toolCallMessage = buildToolCallMessageFromResult(record, config);
     if (!toolCallMessage?.toolCall) continue;
 
-    const existingIndex = toolCallIndexById.get(
-      toolCallMessage.toolCall.toolCallId,
-    );
+    const existingIndex = toolCallIndexById.get(toolCallMessage.toolCall.toolCallId);
 
     if (existingIndex === undefined) {
       // No existing tool call, add this one
-      toolCallIndexById.set(
-        toolCallMessage.toolCall.toolCallId,
-        normalized.length,
-      );
+      toolCallIndexById.set(toolCallMessage.toolCall.toolCallId, normalized.length);
       normalized.push(toolCallMessage);
       continue;
     }
 
     // Merge into existing tool call
     const existingMessage = normalized[existingIndex];
-    if (existingMessage.type !== 'tool_call' || !existingMessage.toolCall) {
+    if (existingMessage.type !== "tool_call" || !existingMessage.toolCall) {
       continue;
     }
 
@@ -68,7 +62,7 @@ export function normalizeSessionData(
 
   // Merge usageMetadata from assistant records
   for (const record of originalRecords) {
-    if (record.type !== 'assistant') continue;
+    if (record.type !== "assistant") continue;
     if (!record.usageMetadata) continue;
 
     const existingIndex = assistantMessageIndexByUuid.get(record.uuid);
@@ -90,22 +84,22 @@ export function normalizeSessionData(
  * Merges incoming tool call data into existing tool call.
  */
 function mergeToolCallData(
-  existing: NonNullable<ExportMessage['toolCall']>,
-  incoming: NonNullable<ExportMessage['toolCall']>,
+  existing: NonNullable<ExportMessage["toolCall"]>,
+  incoming: NonNullable<ExportMessage["toolCall"]>,
 ): void {
   if (!existing.content || existing.content.length === 0) {
     existing.content = incoming.content;
   }
-  if (existing.status === 'pending' || existing.status === 'in_progress') {
+  if (existing.status === "pending" || existing.status === "in_progress") {
     existing.status = incoming.status;
   }
   if (!existing.rawInput && incoming.rawInput) {
     existing.rawInput = incoming.rawInput;
   }
-  if (!existing.kind || existing.kind === 'other') {
+  if (!existing.kind || existing.kind === "other") {
     existing.kind = incoming.kind;
   }
-  if ((!existing.title || existing.title === '') && incoming.title) {
+  if ((!existing.title || existing.title === "") && incoming.title) {
     existing.title = incoming.title;
   }
   if (
@@ -120,10 +114,7 @@ function mergeToolCallData(
 /**
  * Builds a tool call message from a tool_result ChatRecord.
  */
-function buildToolCallMessageFromResult(
-  record: ChatRecord,
-  config: Config,
-): ExportMessage | null {
+function buildToolCallMessageFromResult(record: ChatRecord, config: Config): ExportMessage | null {
   const toolCallResult = record.toolCallResult;
   const toolName = extractToolNameFromRecord(record);
 
@@ -138,12 +129,10 @@ function buildToolCallMessageFromResult(
   const { kind, title, locations } = resolveToolMetadata(
     config,
     toolName,
-    functionCallArgs ??
-      (toolCallResult as { args?: Record<string, unknown> } | undefined)?.args,
+    functionCallArgs ?? (toolCallResult as { args?: Record<string, unknown> } | undefined)?.args,
   );
   const rawInput = normalizeRawInput(
-    functionCallArgs ??
-      (toolCallResult as { args?: unknown } | undefined)?.args,
+    functionCallArgs ?? (toolCallResult as { args?: unknown } | undefined)?.args,
   );
 
   const content =
@@ -155,12 +144,12 @@ function buildToolCallMessageFromResult(
     parentUuid: record.parentUuid,
     sessionId: record.sessionId,
     timestamp: record.timestamp,
-    type: 'tool_call',
+    type: "tool_call",
     toolCall: {
       toolCallId,
       kind,
       title,
-      status: toolCallResult?.error ? 'failed' : 'completed',
+      status: toolCallResult?.error ? "failed" : "completed",
       rawInput,
       content,
       locations,
@@ -174,30 +163,28 @@ function buildToolCallMessageFromResult(
  */
 function extractToolNameFromRecord(record: ChatRecord): string {
   if (!record.message?.parts) {
-    return '';
+    return "";
   }
 
   for (const part of record.message.parts) {
-    if ('functionResponse' in part && part.functionResponse?.name) {
+    if ("functionResponse" in part && part.functionResponse?.name) {
       return part.functionResponse.name;
     }
   }
 
-  return '';
+  return "";
 }
 
 /**
  * Extracts function call args from a ChatRecord.
  */
-function extractFunctionCallArgs(
-  record: ChatRecord,
-): Record<string, unknown> | undefined {
+function extractFunctionCallArgs(record: ChatRecord): Record<string, unknown> | undefined {
   if (!record.message?.parts) {
     return undefined;
   }
 
   for (const part of record.message.parts) {
-    if ('functionCall' in part && part.functionCall?.args) {
+    if ("functionCall" in part && part.functionCall?.args) {
       return part.functionCall.args as Record<string, unknown>;
     }
   }
@@ -220,7 +207,7 @@ function resolveToolMetadata(
   const toolRegistry = config.getToolRegistry?.();
   const tool = toolName ? toolRegistry?.getTool?.(toolName) : undefined;
 
-  let title: string | object = tool?.displayName ?? toolName ?? 'tool_call';
+  let title: string | object = tool?.displayName ?? toolName ?? "tool_call";
   let locations: Array<{ path: string; line?: number | null }> | undefined;
   const kind = mapToolKind(tool?.kind as Kind | undefined, toolName);
 
@@ -245,30 +232,30 @@ function resolveToolMetadata(
  */
 function mapToolKind(kind: Kind | undefined, toolName?: string): string {
   if (toolName && toolName === ExitPlanModeTool.Name) {
-    return 'switch_mode';
+    return "switch_mode";
   }
 
   if (toolName && toolName === ToolNames.TODO_WRITE) {
-    return 'todowrite';
+    return "todowrite";
   }
 
   const allowedKinds = new Set<string>([
-    'read',
-    'edit',
-    'delete',
-    'move',
-    'search',
-    'execute',
-    'think',
-    'fetch',
-    'other',
+    "read",
+    "edit",
+    "delete",
+    "move",
+    "search",
+    "execute",
+    "think",
+    "fetch",
+    "other",
   ]);
 
   if (kind && allowedKinds.has(kind)) {
     return kind;
   }
 
-  return 'other';
+  return "other";
 }
 
 /**
@@ -277,18 +264,18 @@ function mapToolKind(kind: Kind | undefined, toolName?: string): string {
 function extractDiffContent(
   resultDisplay: unknown,
 ): Array<{ type: string; [key: string]: unknown }> | null {
-  if (!resultDisplay || typeof resultDisplay !== 'object') {
+  if (!resultDisplay || typeof resultDisplay !== "object") {
     return null;
   }
 
   const display = resultDisplay as Record<string, unknown>;
-  if ('fileName' in display && 'newContent' in display) {
+  if ("fileName" in display && "newContent" in display) {
     return [
       {
-        type: 'diff',
-        path: display['fileName'] as string,
-        oldText: (display['originalContent'] as string) ?? '',
-        newText: display['newContent'] as string,
+        type: "diff",
+        path: display["fileName"] as string,
+        oldText: (display["originalContent"] as string) ?? "",
+        newText: display["newContent"] as string,
       },
     ];
   }
@@ -300,8 +287,8 @@ function extractDiffContent(
  * Normalizes raw input to string or object.
  */
 function normalizeRawInput(value: unknown): string | object | undefined {
-  if (typeof value === 'string') return value;
-  if (typeof value === 'object' && value !== null) return value;
+  if (typeof value === "string") return value;
+  if (typeof value === "object" && value !== null) return value;
   return undefined;
 }
 
@@ -314,30 +301,27 @@ function transformPartsToToolCallContent(
   const content: Array<{ type: string; [key: string]: unknown }> = [];
 
   for (const part of parts) {
-    if ('text' in part && part.text) {
+    if ("text" in part && part.text) {
       content.push({
-        type: 'content',
-        content: { type: 'text', text: part.text },
+        type: "content",
+        content: { type: "text", text: part.text },
       });
       continue;
     }
 
-    if ('functionResponse' in part && part.functionResponse) {
-      const response = part.functionResponse.response as Record<
-        string,
-        unknown
-      >;
-      const outputField = response?.['output'];
-      const errorField = response?.['error'];
+    if ("functionResponse" in part && part.functionResponse) {
+      const response = part.functionResponse.response as Record<string, unknown>;
+      const outputField = response?.["output"];
+      const errorField = response?.["error"];
       const responseText =
-        typeof outputField === 'string'
+        typeof outputField === "string"
           ? outputField
-          : typeof errorField === 'string'
+          : typeof errorField === "string"
             ? errorField
             : JSON.stringify(response);
       content.push({
-        type: 'content',
-        content: { type: 'text', text: responseText },
+        type: "content",
+        content: { type: "text", text: responseText },
       });
     }
   }

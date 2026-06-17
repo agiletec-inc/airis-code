@@ -12,16 +12,10 @@
  * different model or provider than the parent process.
  */
 
-import type { Config } from '../config/config.js';
-import {
-  type AuthType,
-  type ContentGeneratorConfig,
-} from '../core/contentGenerator.js';
-import {
-  AUTH_ENV_MAPPINGS,
-  MODEL_GENERATION_CONFIG_FIELDS,
-} from './constants.js';
-import type { ResolvedModelConfig } from './types.js';
+import type { Config } from "../config/config.js";
+import { type AuthType, type ContentGeneratorConfig } from "../core/contentGenerator.js";
+import { AUTH_ENV_MAPPINGS, MODEL_GENERATION_CONFIG_FIELDS } from "./constants.js";
+import type { ResolvedModelConfig } from "./types.js";
 
 export interface AuthOverrides {
   authType: string;
@@ -67,12 +61,7 @@ export function buildAgentContentGeneratorConfig(
   }
 
   if (resolvedModel) {
-    applyResolvedModelConfig(
-      nextConfig,
-      resolvedModel,
-      parentConfig,
-      authOverrides,
-    );
+    applyResolvedModelConfig(nextConfig, resolvedModel, parentConfig, authOverrides);
     return nextConfig;
   }
 
@@ -80,7 +69,7 @@ export function buildAgentContentGeneratorConfig(
     authOverrides.apiKey,
     sameProvider ? parentConfig.apiKey : undefined,
     authOverrides.authType,
-    'apiKey',
+    "apiKey",
   );
   nextConfig.baseUrl =
     authOverrides.baseUrl ??
@@ -88,11 +77,9 @@ export function buildAgentContentGeneratorConfig(
       undefined,
       sameProvider ? parentConfig.baseUrl : undefined,
       authOverrides.authType,
-      'baseUrl',
+      "baseUrl",
     );
-  nextConfig.apiKeyEnvKey = sameProvider
-    ? parentConfig.apiKeyEnvKey
-    : undefined;
+  nextConfig.apiKeyEnvKey = sameProvider ? parentConfig.apiKeyEnvKey : undefined;
 
   return nextConfig;
 }
@@ -122,11 +109,9 @@ function applyResolvedModelConfig(
       authOverrides.apiKey,
       sameProvider ? parentConfig.apiKey : undefined,
       authOverrides.authType,
-      'apiKey',
+      "apiKey",
     );
-    targetConfig.apiKeyEnvKey = sameProvider
-      ? parentConfig.apiKeyEnvKey
-      : undefined;
+    targetConfig.apiKeyEnvKey = sameProvider ? parentConfig.apiKeyEnvKey : undefined;
   }
 
   // Apply registry-defined generation config fields. Cross-provider
@@ -149,13 +134,12 @@ export function resolveCredentialField(
   explicitValue: string | undefined,
   inheritedValue: string | undefined,
   authType: string,
-  field: 'apiKey' | 'baseUrl',
+  field: "apiKey" | "baseUrl",
 ): string | undefined {
   if (explicitValue) return explicitValue;
   if (inheritedValue) return inheritedValue;
 
-  const envMapping =
-    AUTH_ENV_MAPPINGS[authType as keyof typeof AUTH_ENV_MAPPINGS];
+  const envMapping = AUTH_ENV_MAPPINGS[authType as keyof typeof AUTH_ENV_MAPPINGS];
   if (!envMapping) return undefined;
 
   for (const envKey of envMapping[field]) {

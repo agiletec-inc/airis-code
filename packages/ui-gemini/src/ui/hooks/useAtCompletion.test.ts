@@ -4,16 +4,16 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { describe, it, expect, beforeEach, vi, afterEach } from 'vitest';
-import { act, useState } from 'react';
-import { renderHook } from '../../test-utils/render.js';
-import { waitFor } from '../../test-utils/async.js';
-import { useAtCompletion } from './useAtCompletion.js';
-import type { Config, FileSearch } from '@airiscode/gemini-cli-core';
-import { FileSearchFactory } from '@airiscode/gemini-cli-core';
-import type { FileSystemStructure } from '@airiscode/ui-gemini-test-utils';
-import { createTmpDir, cleanupTmpDir } from '@airiscode/ui-gemini-test-utils';
-import type { Suggestion } from '../components/SuggestionsDisplay.js';
+import type { Config, FileSearch } from "@airiscode/gemini-cli-core";
+import { FileSearchFactory } from "@airiscode/gemini-cli-core";
+import type { FileSystemStructure } from "@airiscode/ui-gemini-test-utils";
+import { cleanupTmpDir, createTmpDir } from "@airiscode/ui-gemini-test-utils";
+import { act, useState } from "react";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { waitFor } from "../../test-utils/async.js";
+import { renderHook } from "../../test-utils/render.js";
+import type { Suggestion } from "../components/SuggestionsDisplay.js";
+import { useAtCompletion } from "./useAtCompletion.js";
 
 // Test harness to capture the state from the hook's callbacks.
 function useTestHarnessForAtCompletion(
@@ -37,7 +37,7 @@ function useTestHarnessForAtCompletion(
   return { suggestions, isLoadingSuggestions };
 }
 
-describe('useAtCompletion', () => {
+describe("useAtCompletion", () => {
   let testRootDir: string;
   let mockConfig: Config;
 
@@ -63,19 +63,19 @@ describe('useAtCompletion', () => {
     vi.restoreAllMocks();
   });
 
-  describe('File Search Logic', () => {
-    it('should perform a recursive search for an empty pattern', async () => {
+  describe("File Search Logic", () => {
+    it("should perform a recursive search for an empty pattern", async () => {
       const structure: FileSystemStructure = {
-        'file.txt': '',
+        "file.txt": "",
         src: {
-          'index.js': '',
-          components: ['Button.tsx', 'Button with spaces.tsx'],
+          "index.js": "",
+          components: ["Button.tsx", "Button with spaces.tsx"],
         },
       };
       testRootDir = await createTmpDir(structure);
 
       const { result } = renderHook(() =>
-        useTestHarnessForAtCompletion(true, '', mockConfig, testRootDir),
+        useTestHarnessForAtCompletion(true, "", mockConfig, testRootDir),
       );
 
       await waitFor(() => {
@@ -84,29 +84,29 @@ describe('useAtCompletion', () => {
 
       expect(result.current.suggestions.length).toBeGreaterThan(0);
       expect(result.current.suggestions.map((s) => s.value)).toEqual([
-        'src/',
-        'src/components/',
-        'file.txt',
-        'src/components/Button\\ with\\ spaces.tsx',
-        'src/components/Button.tsx',
-        'src/index.js',
+        "src/",
+        "src/components/",
+        "file.txt",
+        "src/components/Button\\ with\\ spaces.tsx",
+        "src/components/Button.tsx",
+        "src/index.js",
       ]);
     });
 
-    it('should correctly filter the recursive list based on a pattern', async () => {
+    it("should correctly filter the recursive list based on a pattern", async () => {
       const structure: FileSystemStructure = {
-        'file.txt': '',
+        "file.txt": "",
         src: {
-          'index.js': '',
+          "index.js": "",
           components: {
-            'Button.tsx': '',
+            "Button.tsx": "",
           },
         },
       };
       testRootDir = await createTmpDir(structure);
 
       const { result } = renderHook(() =>
-        useTestHarnessForAtCompletion(true, 'src/', mockConfig, testRootDir),
+        useTestHarnessForAtCompletion(true, "src/", mockConfig, testRootDir),
       );
 
       await waitFor(() => {
@@ -114,36 +114,33 @@ describe('useAtCompletion', () => {
       });
 
       expect(result.current.suggestions.map((s) => s.value)).toEqual([
-        'src/',
-        'src/components/',
-        'src/index.js',
-        'src/components/Button.tsx',
+        "src/",
+        "src/components/",
+        "src/index.js",
+        "src/components/Button.tsx",
       ]);
     });
 
-    it('should append a trailing slash to directory paths in suggestions', async () => {
+    it("should append a trailing slash to directory paths in suggestions", async () => {
       const structure: FileSystemStructure = {
-        'file.txt': '',
+        "file.txt": "",
         dir: {},
       };
       testRootDir = await createTmpDir(structure);
 
       const { result } = renderHook(() =>
-        useTestHarnessForAtCompletion(true, '', mockConfig, testRootDir),
+        useTestHarnessForAtCompletion(true, "", mockConfig, testRootDir),
       );
 
       await waitFor(() => {
         expect(result.current.suggestions.length).toBeGreaterThan(0);
       });
 
-      expect(result.current.suggestions.map((s) => s.value)).toEqual([
-        'dir/',
-        'file.txt',
-      ]);
+      expect(result.current.suggestions.map((s) => s.value)).toEqual(["dir/", "file.txt"]);
     });
 
-    it('should perform a case-insensitive search by lowercasing the pattern', async () => {
-      testRootDir = await createTmpDir({ 'cRaZycAsE.txt': '' });
+    it("should perform a case-insensitive search by lowercasing the pattern", async () => {
+      testRootDir = await createTmpDir({ "cRaZycAsE.txt": "" });
 
       const fileSearch = FileSearchFactory.create({
         projectRoot: testRootDir,
@@ -157,56 +154,48 @@ describe('useAtCompletion', () => {
       });
       await fileSearch.initialize();
 
-      vi.spyOn(FileSearchFactory, 'create').mockReturnValue(fileSearch);
+      vi.spyOn(FileSearchFactory, "create").mockReturnValue(fileSearch);
 
       const { result } = renderHook(() =>
-        useTestHarnessForAtCompletion(
-          true,
-          'CrAzYCaSe',
-          mockConfig,
-          testRootDir,
-        ),
+        useTestHarnessForAtCompletion(true, "CrAzYCaSe", mockConfig, testRootDir),
       );
 
       // The hook should find 'cRaZycAsE.txt' even though the pattern is 'CrAzYCaSe'.
       await waitFor(() => {
-        expect(result.current.suggestions.map((s) => s.value)).toEqual([
-          'cRaZycAsE.txt',
-        ]);
+        expect(result.current.suggestions.map((s) => s.value)).toEqual(["cRaZycAsE.txt"]);
       });
     });
   });
 
-  describe('MCP resource suggestions', () => {
-    it('should include MCP resources in the suggestion list using fuzzy matching', async () => {
+  describe("MCP resource suggestions", () => {
+    it("should include MCP resources in the suggestion list using fuzzy matching", async () => {
       mockConfig.getResourceRegistry = vi.fn().mockReturnValue({
         getAllResources: () => [
           {
-            serverName: 'server-1',
-            uri: 'file:///tmp/server-1/logs.txt',
-            name: 'logs',
+            serverName: "server-1",
+            uri: "file:///tmp/server-1/logs.txt",
+            name: "logs",
             discoveredAt: Date.now(),
           },
         ],
       });
 
       const { result } = renderHook(() =>
-        useTestHarnessForAtCompletion(true, 'logs', mockConfig, '/tmp'),
+        useTestHarnessForAtCompletion(true, "logs", mockConfig, "/tmp"),
       );
 
       await waitFor(() => {
         expect(
           result.current.suggestions.some(
-            (suggestion) =>
-              suggestion.value === 'server-1:file:///tmp/server-1/logs.txt',
+            (suggestion) => suggestion.value === "server-1:file:///tmp/server-1/logs.txt",
           ),
         ).toBe(true);
       });
     });
   });
 
-  describe('UI State and Loading Behavior', () => {
-    it('should be in a loading state during initial file system crawl', async () => {
+  describe("UI State and Loading Behavior", () => {
+    it("should be in a loading state during initial file system crawl", async () => {
       testRootDir = await createTmpDir({});
 
       // Mock FileSearch to be slow to catch the loading state
@@ -216,12 +205,12 @@ describe('useAtCompletion', () => {
         }),
         search: vi.fn().mockResolvedValue([]),
       };
-      vi.spyOn(FileSearchFactory, 'create').mockReturnValue(
+      vi.spyOn(FileSearchFactory, "create").mockReturnValue(
         mockFileSearch as unknown as FileSearch,
       );
 
       const { result } = renderHook(() =>
-        useTestHarnessForAtCompletion(true, '', mockConfig, testRootDir),
+        useTestHarnessForAtCompletion(true, "", mockConfig, testRootDir),
       );
 
       // It's initially true because the effect runs synchronously.
@@ -235,37 +224,32 @@ describe('useAtCompletion', () => {
       });
     });
 
-    it('should NOT show a loading indicator for subsequent searches that complete under 200ms', async () => {
-      const structure: FileSystemStructure = { 'a.txt': '', 'b.txt': '' };
+    it("should NOT show a loading indicator for subsequent searches that complete under 200ms", async () => {
+      const structure: FileSystemStructure = { "a.txt": "", "b.txt": "" };
       testRootDir = await createTmpDir(structure);
 
       const { result, rerender } = renderHook(
-        ({ pattern }) =>
-          useTestHarnessForAtCompletion(true, pattern, mockConfig, testRootDir),
-        { initialProps: { pattern: 'a' } },
+        ({ pattern }) => useTestHarnessForAtCompletion(true, pattern, mockConfig, testRootDir),
+        { initialProps: { pattern: "a" } },
       );
 
       await waitFor(() => {
-        expect(result.current.suggestions.map((s) => s.value)).toEqual([
-          'a.txt',
-        ]);
+        expect(result.current.suggestions.map((s) => s.value)).toEqual(["a.txt"]);
       });
       expect(result.current.isLoadingSuggestions).toBe(false);
 
-      rerender({ pattern: 'b' });
+      rerender({ pattern: "b" });
 
       // Wait for the final result
       await waitFor(() => {
-        expect(result.current.suggestions.map((s) => s.value)).toEqual([
-          'b.txt',
-        ]);
+        expect(result.current.suggestions.map((s) => s.value)).toEqual(["b.txt"]);
       });
 
       expect(result.current.isLoadingSuggestions).toBe(false);
     });
 
-    it('should show a loading indicator and clear old suggestions for subsequent searches that take longer than 200ms', async () => {
-      const structure: FileSystemStructure = { 'a.txt': '', 'b.txt': '' };
+    it("should show a loading indicator and clear old suggestions for subsequent searches that take longer than 200ms", async () => {
+      const structure: FileSystemStructure = { "a.txt": "", "b.txt": "" };
       testRootDir = await createTmpDir(structure);
 
       const realFileSearch = FileSearchFactory.create({
@@ -285,23 +269,18 @@ describe('useAtCompletion', () => {
         initialize: vi.fn().mockResolvedValue(undefined),
         search: vi
           .fn()
-          .mockImplementation(async (pattern, options) =>
-            realFileSearch.search(pattern, options),
-          ),
+          .mockImplementation(async (pattern, options) => realFileSearch.search(pattern, options)),
       };
-      vi.spyOn(FileSearchFactory, 'create').mockReturnValue(mockFileSearch);
+      vi.spyOn(FileSearchFactory, "create").mockReturnValue(mockFileSearch);
 
       const { result, rerender } = renderHook(
-        ({ pattern }) =>
-          useTestHarnessForAtCompletion(true, pattern, mockConfig, testRootDir),
-        { initialProps: { pattern: 'a' } },
+        ({ pattern }) => useTestHarnessForAtCompletion(true, pattern, mockConfig, testRootDir),
+        { initialProps: { pattern: "a" } },
       );
 
       // Wait for the initial search to complete (using real timers)
       await waitFor(() => {
-        expect(result.current.suggestions.map((s) => s.value)).toEqual([
-          'a.txt',
-        ]);
+        expect(result.current.suggestions.map((s) => s.value)).toEqual(["a.txt"]);
       });
 
       // Now switch to fake timers for precise control of the loading behavior
@@ -309,7 +288,7 @@ describe('useAtCompletion', () => {
 
       // Trigger the second search
       act(() => {
-        rerender({ pattern: 'b' });
+        rerender({ pattern: "b" });
       });
 
       // Initially, loading should be false (before 200ms timer)
@@ -329,46 +308,40 @@ describe('useAtCompletion', () => {
 
       // Wait for the search results to be processed
       await waitFor(() => {
-        expect(result.current.suggestions.map((s) => s.value)).toEqual([
-          'b.txt',
-        ]);
+        expect(result.current.suggestions.map((s) => s.value)).toEqual(["b.txt"]);
       });
 
       expect(result.current.isLoadingSuggestions).toBe(false);
     });
 
-    it('should abort the previous search when a new one starts', async () => {
-      const structure: FileSystemStructure = { 'a.txt': '', 'b.txt': '' };
+    it("should abort the previous search when a new one starts", async () => {
+      const structure: FileSystemStructure = { "a.txt": "", "b.txt": "" };
       testRootDir = await createTmpDir(structure);
 
-      const abortSpy = vi.spyOn(AbortController.prototype, 'abort');
+      const abortSpy = vi.spyOn(AbortController.prototype, "abort");
       const mockFileSearch: FileSearch = {
         initialize: vi.fn().mockResolvedValue(undefined),
         search: vi.fn().mockImplementation(async (pattern: string) => {
-          const delay = pattern === 'a' ? 500 : 50;
+          const delay = pattern === "a" ? 500 : 50;
           await new Promise((resolve) => setTimeout(resolve, delay));
           return [pattern];
         }),
       };
-      vi.spyOn(FileSearchFactory, 'create').mockReturnValue(mockFileSearch);
+      vi.spyOn(FileSearchFactory, "create").mockReturnValue(mockFileSearch);
 
       const { result, rerender } = renderHook(
-        ({ pattern }) =>
-          useTestHarnessForAtCompletion(true, pattern, mockConfig, testRootDir),
-        { initialProps: { pattern: 'a' } },
+        ({ pattern }) => useTestHarnessForAtCompletion(true, pattern, mockConfig, testRootDir),
+        { initialProps: { pattern: "a" } },
       );
 
       // Wait for the hook to be ready (initialization is complete)
       await waitFor(() => {
-        expect(mockFileSearch.search).toHaveBeenCalledWith(
-          'a',
-          expect.any(Object),
-        );
+        expect(mockFileSearch.search).toHaveBeenCalledWith("a", expect.any(Object));
       });
 
       // Now that the first search is in-flight, trigger the second one.
       act(() => {
-        rerender({ pattern: 'b' });
+        rerender({ pattern: "b" });
       });
 
       // The abort should have been called for the first search.
@@ -377,35 +350,29 @@ describe('useAtCompletion', () => {
       // Wait for the final result, which should be from the second, faster search.
       await waitFor(
         () => {
-          expect(result.current.suggestions.map((s) => s.value)).toEqual(['b']);
+          expect(result.current.suggestions.map((s) => s.value)).toEqual(["b"]);
         },
         { timeout: 1000 },
       );
 
       // The search spy should have been called for both patterns.
-      expect(mockFileSearch.search).toHaveBeenCalledWith(
-        'b',
-        expect.any(Object),
-      );
+      expect(mockFileSearch.search).toHaveBeenCalledWith("b", expect.any(Object));
     });
   });
 
-  describe('State Management', () => {
-    it('should reset the state when disabled after being in a READY state', async () => {
-      const structure: FileSystemStructure = { 'a.txt': '' };
+  describe("State Management", () => {
+    it("should reset the state when disabled after being in a READY state", async () => {
+      const structure: FileSystemStructure = { "a.txt": "" };
       testRootDir = await createTmpDir(structure);
 
       const { result, rerender } = renderHook(
-        ({ enabled }) =>
-          useTestHarnessForAtCompletion(enabled, 'a', mockConfig, testRootDir),
+        ({ enabled }) => useTestHarnessForAtCompletion(enabled, "a", mockConfig, testRootDir),
         { initialProps: { enabled: true } },
       );
 
       // Wait for the hook to be ready and have suggestions
       await waitFor(() => {
-        expect(result.current.suggestions.map((s) => s.value)).toEqual([
-          'a.txt',
-        ]);
+        expect(result.current.suggestions.map((s) => s.value)).toEqual(["a.txt"]);
       });
 
       // Now, disable the hook
@@ -415,21 +382,18 @@ describe('useAtCompletion', () => {
       expect(result.current.suggestions).toEqual([]);
     });
 
-    it('should reset the state when disabled after being in an ERROR state', async () => {
+    it("should reset the state when disabled after being in an ERROR state", async () => {
       testRootDir = await createTmpDir({});
 
       // Force an error during initialization
       const mockFileSearch: FileSearch = {
-        initialize: vi
-          .fn()
-          .mockRejectedValue(new Error('Initialization failed')),
+        initialize: vi.fn().mockRejectedValue(new Error("Initialization failed")),
         search: vi.fn(),
       };
-      vi.spyOn(FileSearchFactory, 'create').mockReturnValue(mockFileSearch);
+      vi.spyOn(FileSearchFactory, "create").mockReturnValue(mockFileSearch);
 
       const { result, rerender } = renderHook(
-        ({ enabled }) =>
-          useTestHarnessForAtCompletion(enabled, '', mockConfig, testRootDir),
+        ({ enabled }) => useTestHarnessForAtCompletion(enabled, "", mockConfig, testRootDir),
         { initialProps: { enabled: true } },
       );
 
@@ -449,33 +413,30 @@ describe('useAtCompletion', () => {
     });
   });
 
-  describe('Filtering and Configuration', () => {
-    it('should respect .gitignore files', async () => {
-      const gitignoreContent = ['dist/', '*.log'].join('\n');
+  describe("Filtering and Configuration", () => {
+    it("should respect .gitignore files", async () => {
+      const gitignoreContent = ["dist/", "*.log"].join("\n");
       const structure: FileSystemStructure = {
-        '.git': {},
-        '.gitignore': gitignoreContent,
+        ".git": {},
+        ".gitignore": gitignoreContent,
         dist: {},
-        'test.log': '',
+        "test.log": "",
         src: {},
       };
       testRootDir = await createTmpDir(structure);
 
       const { result } = renderHook(() =>
-        useTestHarnessForAtCompletion(true, '', mockConfig, testRootDir),
+        useTestHarnessForAtCompletion(true, "", mockConfig, testRootDir),
       );
 
       await waitFor(() => {
         expect(result.current.suggestions.length).toBeGreaterThan(0);
       });
 
-      expect(result.current.suggestions.map((s) => s.value)).toEqual([
-        'src/',
-        '.gitignore',
-      ]);
+      expect(result.current.suggestions.map((s) => s.value)).toEqual(["src/", ".gitignore"]);
     });
 
-    it('should work correctly when config is undefined', async () => {
+    it("should work correctly when config is undefined", async () => {
       const structure: FileSystemStructure = {
         node_modules: {},
         src: {},
@@ -483,46 +444,40 @@ describe('useAtCompletion', () => {
       testRootDir = await createTmpDir(structure);
 
       const { result } = renderHook(() =>
-        useTestHarnessForAtCompletion(true, '', undefined, testRootDir),
+        useTestHarnessForAtCompletion(true, "", undefined, testRootDir),
       );
 
       await waitFor(() => {
         expect(result.current.suggestions.length).toBeGreaterThan(0);
       });
 
-      expect(result.current.suggestions.map((s) => s.value)).toEqual([
-        'node_modules/',
-        'src/',
-      ]);
+      expect(result.current.suggestions.map((s) => s.value)).toEqual(["node_modules/", "src/"]);
     });
 
-    it('should reset and re-initialize when the cwd changes', async () => {
-      const structure1: FileSystemStructure = { 'file1.txt': '' };
+    it("should reset and re-initialize when the cwd changes", async () => {
+      const structure1: FileSystemStructure = { "file1.txt": "" };
       const rootDir1 = await createTmpDir(structure1);
-      const structure2: FileSystemStructure = { 'file2.txt': '' };
+      const structure2: FileSystemStructure = { "file2.txt": "" };
       const rootDir2 = await createTmpDir(structure2);
 
       const { result, rerender } = renderHook(
-        ({ cwd, pattern }) =>
-          useTestHarnessForAtCompletion(true, pattern, mockConfig, cwd),
+        ({ cwd, pattern }) => useTestHarnessForAtCompletion(true, pattern, mockConfig, cwd),
         {
           initialProps: {
             cwd: rootDir1,
-            pattern: 'file',
+            pattern: "file",
           },
         },
       );
 
       // Wait for initial suggestions from the first directory
       await waitFor(() => {
-        expect(result.current.suggestions.map((s) => s.value)).toEqual([
-          'file1.txt',
-        ]);
+        expect(result.current.suggestions.map((s) => s.value)).toEqual(["file1.txt"]);
       });
 
       // Change the CWD
       act(() => {
-        rerender({ cwd: rootDir2, pattern: 'file' });
+        rerender({ cwd: rootDir2, pattern: "file" });
       });
 
       // After CWD changes, suggestions should be cleared and it should load again.
@@ -533,9 +488,7 @@ describe('useAtCompletion', () => {
 
       // Wait for the new suggestions from the second directory
       await waitFor(() => {
-        expect(result.current.suggestions.map((s) => s.value)).toEqual([
-          'file2.txt',
-        ]);
+        expect(result.current.suggestions.map((s) => s.value)).toEqual(["file2.txt"]);
       });
       expect(result.current.isLoadingSuggestions).toBe(false);
 
@@ -543,11 +496,11 @@ describe('useAtCompletion', () => {
       await cleanupTmpDir(rootDir2);
     });
 
-    it('should perform a non-recursive search when enableRecursiveFileSearch is false', async () => {
+    it("should perform a non-recursive search when enableRecursiveFileSearch is false", async () => {
       const structure: FileSystemStructure = {
-        'file.txt': '',
+        "file.txt": "",
         src: {
-          'index.js': '',
+          "index.js": "",
         },
       };
       testRootDir = await createTmpDir(structure);
@@ -562,12 +515,7 @@ describe('useAtCompletion', () => {
       } as unknown as Config;
 
       const { result } = renderHook(() =>
-        useTestHarnessForAtCompletion(
-          true,
-          '',
-          nonRecursiveConfig,
-          testRootDir,
-        ),
+        useTestHarnessForAtCompletion(true, "", nonRecursiveConfig, testRootDir),
       );
 
       await waitFor(() => {
@@ -575,10 +523,7 @@ describe('useAtCompletion', () => {
       });
 
       // Should only contain top-level items
-      expect(result.current.suggestions.map((s) => s.value)).toEqual([
-        'src/',
-        'file.txt',
-      ]);
+      expect(result.current.suggestions.map((s) => s.value)).toEqual(["src/", "file.txt"]);
     });
   });
 });

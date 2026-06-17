@@ -4,19 +4,19 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+import { appendFileSync } from "node:fs";
 import type {
+  CountTokensParameters,
   CountTokensResponse,
+  EmbedContentParameters,
+  EmbedContentResponse,
   GenerateContentParameters,
   GenerateContentResponse,
-  CountTokensParameters,
-  EmbedContentResponse,
-  EmbedContentParameters,
-} from '@google/genai';
-import { appendFileSync } from 'node:fs';
-import type { ContentGenerator } from './contentGenerator.js';
-import type { FakeResponse } from './fakeContentGenerator.js';
-import type { UserTierId } from '../code_assist/types.js';
-import { safeJsonStringify } from '../utils/safeJsonStringify.js';
+} from "@google/genai";
+import type { UserTierId } from "../code_assist/types.js";
+import { safeJsonStringify } from "../utils/safeJsonStringify.js";
+import type { ContentGenerator } from "./contentGenerator.js";
+import type { FakeResponse } from "./fakeContentGenerator.js";
 
 // A ContentGenerator that wraps another content generator and records all the
 // responses, with the ability to write them out to a file. These files are
@@ -36,12 +36,9 @@ export class RecordingContentGenerator implements ContentGenerator {
     request: GenerateContentParameters,
     userPromptId: string,
   ): Promise<GenerateContentResponse> {
-    const response = await this.realGenerator.generateContent(
-      request,
-      userPromptId,
-    );
+    const response = await this.realGenerator.generateContent(request, userPromptId);
     const recordedResponse: FakeResponse = {
-      method: 'generateContent',
+      method: "generateContent",
       response: {
         candidates: response.candidates,
         usageMetadata: response.usageMetadata,
@@ -56,14 +53,11 @@ export class RecordingContentGenerator implements ContentGenerator {
     userPromptId: string,
   ): Promise<AsyncGenerator<GenerateContentResponse>> {
     const recordedResponse: FakeResponse = {
-      method: 'generateContentStream',
+      method: "generateContentStream",
       response: [],
     };
 
-    const realResponses = await this.realGenerator.generateContentStream(
-      request,
-      userPromptId,
-    );
+    const realResponses = await this.realGenerator.generateContentStream(request, userPromptId);
 
     async function* stream(filePath: string) {
       for await (const response of realResponses) {
@@ -79,12 +73,10 @@ export class RecordingContentGenerator implements ContentGenerator {
     return Promise.resolve(stream(this.filePath));
   }
 
-  async countTokens(
-    request: CountTokensParameters,
-  ): Promise<CountTokensResponse> {
+  async countTokens(request: CountTokensParameters): Promise<CountTokensResponse> {
     const response = await this.realGenerator.countTokens(request);
     const recordedResponse: FakeResponse = {
-      method: 'countTokens',
+      method: "countTokens",
       response: {
         totalTokens: response.totalTokens,
         cachedContentTokenCount: response.cachedContentTokenCount,
@@ -94,13 +86,11 @@ export class RecordingContentGenerator implements ContentGenerator {
     return response;
   }
 
-  async embedContent(
-    request: EmbedContentParameters,
-  ): Promise<EmbedContentResponse> {
+  async embedContent(request: EmbedContentParameters): Promise<EmbedContentResponse> {
     const response = await this.realGenerator.embedContent(request);
 
     const recordedResponse: FakeResponse = {
-      method: 'embedContent',
+      method: "embedContent",
       response: {
         embeddings: response.embeddings,
         metadata: response.metadata,

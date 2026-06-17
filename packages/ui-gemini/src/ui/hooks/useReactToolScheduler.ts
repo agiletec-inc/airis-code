@@ -5,28 +5,25 @@
  */
 
 import type {
-  Config,
-  ToolCallRequestInfo,
-  ExecutingToolCall,
-  ScheduledToolCall,
-  ValidatingToolCall,
-  WaitingToolCall,
-  CompletedToolCall,
-  CancelledToolCall,
-  OutputUpdateHandler,
   AllToolCallsCompleteHandler,
-  ToolCallsUpdateHandler,
-  ToolCall,
+  CancelledToolCall,
+  CompletedToolCall,
+  Config,
   Status as CoreStatus,
   EditorType,
-} from '@airiscode/gemini-cli-core';
-import { CoreToolScheduler, debugLogger } from '@airiscode/gemini-cli-core';
-import { useCallback, useState, useMemo, useEffect, useRef } from 'react';
-import type {
-  HistoryItemToolGroup,
-  IndividualToolCallDisplay,
-} from '../types.js';
-import { ToolCallStatus } from '../types.js';
+  ExecutingToolCall,
+  OutputUpdateHandler,
+  ScheduledToolCall,
+  ToolCall,
+  ToolCallRequestInfo,
+  ToolCallsUpdateHandler,
+  ValidatingToolCall,
+  WaitingToolCall,
+} from "@airiscode/gemini-cli-core";
+import { CoreToolScheduler, debugLogger } from "@airiscode/gemini-cli-core";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import type { HistoryItemToolGroup, IndividualToolCallDisplay } from "../types.js";
+import { ToolCallStatus } from "../types.js";
 
 export type ScheduleFn = (
   request: ToolCallRequestInfo | ToolCallRequestInfo[],
@@ -76,9 +73,7 @@ export function useReactToolScheduler(
   CancelAllFn,
   number,
 ] {
-  const [toolCallsForDisplay, setToolCallsForDisplay] = useState<
-    TrackedToolCall[]
-  >([]);
+  const [toolCallsForDisplay, setToolCallsForDisplay] = useState<TrackedToolCall[]>([]);
   const [lastToolOutputTime, setLastToolOutputTime] = useState<number>(0);
 
   // Store callbacks in refs to keep them up-to-date without causing re-renders.
@@ -93,21 +88,18 @@ export function useReactToolScheduler(
     getPreferredEditorRef.current = getPreferredEditor;
   }, [getPreferredEditor]);
 
-  const outputUpdateHandler: OutputUpdateHandler = useCallback(
-    (toolCallId, outputChunk) => {
-      setLastToolOutputTime(Date.now());
-      setToolCallsForDisplay((prevCalls) =>
-        prevCalls.map((tc) => {
-          if (tc.request.callId === toolCallId && tc.status === 'executing') {
-            const executingTc = tc as TrackedExecutingToolCall;
-            return { ...executingTc, liveOutput: outputChunk };
-          }
-          return tc;
-        }),
-      );
-    },
-    [],
-  );
+  const outputUpdateHandler: OutputUpdateHandler = useCallback((toolCallId, outputChunk) => {
+    setLastToolOutputTime(Date.now());
+    setToolCallsForDisplay((prevCalls) =>
+      prevCalls.map((tc) => {
+        if (tc.request.callId === toolCallId && tc.status === "executing") {
+          const executingTc = tc as TrackedExecutingToolCall;
+          return { ...executingTc, liveOutput: outputChunk };
+        }
+        return tc;
+      }),
+    );
+  }, []);
 
   const allToolCallsCompleteHandler: AllToolCallsCompleteHandler = useCallback(
     async (completedToolCalls) => {
@@ -119,20 +111,16 @@ export function useReactToolScheduler(
   const toolCallsUpdateHandler: ToolCallsUpdateHandler = useCallback(
     (allCoreToolCalls: ToolCall[]) => {
       setToolCallsForDisplay((prevTrackedCalls) => {
-        const prevCallsMap = new Map(
-          prevTrackedCalls.map((c) => [c.request.callId, c]),
-        );
+        const prevCallsMap = new Map(prevTrackedCalls.map((c) => [c.request.callId, c]));
 
         return allCoreToolCalls.map((coreTc): TrackedToolCall => {
           const existingTrackedCall = prevCallsMap.get(coreTc.request.callId);
 
-          const responseSubmittedToGemini =
-            existingTrackedCall?.responseSubmittedToGemini ?? false;
+          const responseSubmittedToGemini = existingTrackedCall?.responseSubmittedToGemini ?? false;
 
-          if (coreTc.status === 'executing') {
+          if (coreTc.status === "executing") {
             // Preserve live output if it exists from a previous render.
-            const liveOutput = (existingTrackedCall as TrackedExecutingToolCall)
-              ?.liveOutput;
+            const liveOutput = (existingTrackedCall as TrackedExecutingToolCall)?.liveOutput;
             return {
               ...coreTc,
               responseSubmittedToGemini,
@@ -151,10 +139,7 @@ export function useReactToolScheduler(
     [setToolCallsForDisplay],
   );
 
-  const stableGetPreferredEditor = useCallback(
-    () => getPreferredEditorRef.current(),
-    [],
-  );
+  const stableGetPreferredEditor = useCallback(() => getPreferredEditorRef.current(), []);
 
   const scheduler = useMemo(
     () =>
@@ -175,28 +160,20 @@ export function useReactToolScheduler(
   );
 
   const schedule: ScheduleFn = useCallback(
-    (
-      request: ToolCallRequestInfo | ToolCallRequestInfo[],
-      signal: AbortSignal,
-    ) => {
+    (request: ToolCallRequestInfo | ToolCallRequestInfo[], signal: AbortSignal) => {
       setToolCallsForDisplay([]);
       void scheduler.schedule(request, signal);
     },
     [scheduler, setToolCallsForDisplay],
   );
 
-  const markToolsAsSubmitted: MarkToolsAsSubmittedFn = useCallback(
-    (callIdsToMark: string[]) => {
-      setToolCallsForDisplay((prevCalls) =>
-        prevCalls.map((tc) =>
-          callIdsToMark.includes(tc.request.callId)
-            ? { ...tc, responseSubmittedToGemini: true }
-            : tc,
-        ),
-      );
-    },
-    [],
-  );
+  const markToolsAsSubmitted: MarkToolsAsSubmittedFn = useCallback((callIdsToMark: string[]) => {
+    setToolCallsForDisplay((prevCalls) =>
+      prevCalls.map((tc) =>
+        callIdsToMark.includes(tc.request.callId) ? { ...tc, responseSubmittedToGemini: true } : tc,
+      ),
+    );
+  }, []);
 
   const cancelAllToolCalls = useCallback(
     (signal: AbortSignal) => {
@@ -220,19 +197,19 @@ export function useReactToolScheduler(
  */
 function mapCoreStatusToDisplayStatus(coreStatus: CoreStatus): ToolCallStatus {
   switch (coreStatus) {
-    case 'validating':
+    case "validating":
       return ToolCallStatus.Executing;
-    case 'awaiting_approval':
+    case "awaiting_approval":
       return ToolCallStatus.Confirming;
-    case 'executing':
+    case "executing":
       return ToolCallStatus.Executing;
-    case 'success':
+    case "success":
       return ToolCallStatus.Success;
-    case 'cancelled':
+    case "cancelled":
       return ToolCallStatus.Canceled;
-    case 'error':
+    case "error":
       return ToolCallStatus.Error;
-    case 'scheduled':
+    case "scheduled":
       return ToolCallStatus.Pending;
     default: {
       const exhaustiveCheck: never = coreStatus;
@@ -250,99 +227,94 @@ export function mapToDisplay(
 ): HistoryItemToolGroup {
   const toolCalls = Array.isArray(toolOrTools) ? toolOrTools : [toolOrTools];
 
-  const toolDisplays = toolCalls.map(
-    (trackedCall): IndividualToolCallDisplay => {
-      let displayName: string;
-      let description: string;
-      let renderOutputAsMarkdown = false;
+  const toolDisplays = toolCalls.map((trackedCall): IndividualToolCallDisplay => {
+    let displayName: string;
+    let description: string;
+    let renderOutputAsMarkdown = false;
 
-      if (trackedCall.status === 'error') {
-        displayName =
-          trackedCall.tool === undefined
-            ? trackedCall.request.name
-            : trackedCall.tool.displayName;
-        description = JSON.stringify(trackedCall.request.args);
-      } else {
-        displayName = trackedCall.tool.displayName;
-        description = trackedCall.invocation.getDescription();
-        renderOutputAsMarkdown = trackedCall.tool.isOutputMarkdown;
+    if (trackedCall.status === "error") {
+      displayName =
+        trackedCall.tool === undefined ? trackedCall.request.name : trackedCall.tool.displayName;
+      description = JSON.stringify(trackedCall.request.args);
+    } else {
+      displayName = trackedCall.tool.displayName;
+      description = trackedCall.invocation.getDescription();
+      renderOutputAsMarkdown = trackedCall.tool.isOutputMarkdown;
+    }
+
+    const baseDisplayProperties: Omit<
+      IndividualToolCallDisplay,
+      "status" | "resultDisplay" | "confirmationDetails"
+    > = {
+      callId: trackedCall.request.callId,
+      name: displayName,
+      description,
+      renderOutputAsMarkdown,
+    };
+
+    switch (trackedCall.status) {
+      case "success":
+        return {
+          ...baseDisplayProperties,
+          status: mapCoreStatusToDisplayStatus(trackedCall.status),
+          resultDisplay: trackedCall.response.resultDisplay,
+          confirmationDetails: undefined,
+          outputFile: trackedCall.response.outputFile,
+        };
+      case "error":
+        return {
+          ...baseDisplayProperties,
+          status: mapCoreStatusToDisplayStatus(trackedCall.status),
+          resultDisplay: trackedCall.response.resultDisplay,
+          confirmationDetails: undefined,
+        };
+      case "cancelled":
+        return {
+          ...baseDisplayProperties,
+          status: mapCoreStatusToDisplayStatus(trackedCall.status),
+          resultDisplay: trackedCall.response.resultDisplay,
+          confirmationDetails: undefined,
+        };
+      case "awaiting_approval":
+        return {
+          ...baseDisplayProperties,
+          status: mapCoreStatusToDisplayStatus(trackedCall.status),
+          resultDisplay: undefined,
+          confirmationDetails: trackedCall.confirmationDetails,
+        };
+      case "executing":
+        return {
+          ...baseDisplayProperties,
+          status: mapCoreStatusToDisplayStatus(trackedCall.status),
+          resultDisplay: (trackedCall as TrackedExecutingToolCall).liveOutput ?? undefined,
+          confirmationDetails: undefined,
+          ptyId: (trackedCall as TrackedExecutingToolCall).pid,
+        };
+      case "validating": // Fallthrough
+      case "scheduled":
+        return {
+          ...baseDisplayProperties,
+          status: mapCoreStatusToDisplayStatus(trackedCall.status),
+          resultDisplay: undefined,
+          confirmationDetails: undefined,
+        };
+      default: {
+        const exhaustiveCheck: never = trackedCall;
+        return {
+          callId: (exhaustiveCheck as TrackedToolCall).request.callId,
+          name: "Unknown Tool",
+          description: "Encountered an unknown tool call state.",
+          status: ToolCallStatus.Error,
+          resultDisplay: "Unknown tool call state",
+          confirmationDetails: undefined,
+          renderOutputAsMarkdown: false,
+        };
       }
-
-      const baseDisplayProperties: Omit<
-        IndividualToolCallDisplay,
-        'status' | 'resultDisplay' | 'confirmationDetails'
-      > = {
-        callId: trackedCall.request.callId,
-        name: displayName,
-        description,
-        renderOutputAsMarkdown,
-      };
-
-      switch (trackedCall.status) {
-        case 'success':
-          return {
-            ...baseDisplayProperties,
-            status: mapCoreStatusToDisplayStatus(trackedCall.status),
-            resultDisplay: trackedCall.response.resultDisplay,
-            confirmationDetails: undefined,
-            outputFile: trackedCall.response.outputFile,
-          };
-        case 'error':
-          return {
-            ...baseDisplayProperties,
-            status: mapCoreStatusToDisplayStatus(trackedCall.status),
-            resultDisplay: trackedCall.response.resultDisplay,
-            confirmationDetails: undefined,
-          };
-        case 'cancelled':
-          return {
-            ...baseDisplayProperties,
-            status: mapCoreStatusToDisplayStatus(trackedCall.status),
-            resultDisplay: trackedCall.response.resultDisplay,
-            confirmationDetails: undefined,
-          };
-        case 'awaiting_approval':
-          return {
-            ...baseDisplayProperties,
-            status: mapCoreStatusToDisplayStatus(trackedCall.status),
-            resultDisplay: undefined,
-            confirmationDetails: trackedCall.confirmationDetails,
-          };
-        case 'executing':
-          return {
-            ...baseDisplayProperties,
-            status: mapCoreStatusToDisplayStatus(trackedCall.status),
-            resultDisplay:
-              (trackedCall as TrackedExecutingToolCall).liveOutput ?? undefined,
-            confirmationDetails: undefined,
-            ptyId: (trackedCall as TrackedExecutingToolCall).pid,
-          };
-        case 'validating': // Fallthrough
-        case 'scheduled':
-          return {
-            ...baseDisplayProperties,
-            status: mapCoreStatusToDisplayStatus(trackedCall.status),
-            resultDisplay: undefined,
-            confirmationDetails: undefined,
-          };
-        default: {
-          const exhaustiveCheck: never = trackedCall;
-          return {
-            callId: (exhaustiveCheck as TrackedToolCall).request.callId,
-            name: 'Unknown Tool',
-            description: 'Encountered an unknown tool call state.',
-            status: ToolCallStatus.Error,
-            resultDisplay: 'Unknown tool call state',
-            confirmationDetails: undefined,
-            renderOutputAsMarkdown: false,
-          };
-        }
-      }
-    },
-  );
+    }
+  });
 
   return {
-    type: 'tool_group',
+    type: "tool_group",
     tools: toolDisplays,
   };
 }

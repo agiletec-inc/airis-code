@@ -4,9 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import * as fs from 'node:fs/promises';
-import path from 'node:path';
-import { z } from 'zod';
+import * as fs from "node:fs/promises";
+import path from "node:path";
 import {
   type Config,
   formatCheckpointDisplayList,
@@ -14,15 +13,16 @@ import {
   getTruncatedCheckpointNames,
   performRestore,
   type ToolCallData,
-} from '@airiscode/gemini-cli-core';
+} from "@airiscode/gemini-cli-core";
+import type { Content } from "@google/genai";
+import { z } from "zod";
+import type { HistoryItem } from "../types.js";
 import {
   type CommandContext,
+  CommandKind,
   type SlashCommand,
   type SlashCommandActionReturn,
-  CommandKind,
-} from './types.js';
-import type { HistoryItem } from '../types.js';
-import type { Content } from '@google/genai';
+} from "./types.js";
 
 const HistoryItemSchema = z
   .object({
@@ -45,9 +45,9 @@ async function restoreAction(
 
   if (!checkpointDir) {
     return {
-      type: 'message',
-      messageType: 'error',
-      content: 'Could not determine the .gemini directory path.',
+      type: "message",
+      messageType: "error",
+      content: "Could not determine the .gemini directory path.",
     };
   }
 
@@ -55,42 +55,42 @@ async function restoreAction(
     // Ensure the directory exists before trying to read it.
     await fs.mkdir(checkpointDir, { recursive: true });
     const files = await fs.readdir(checkpointDir);
-    const jsonFiles = files.filter((file) => file.endsWith('.json'));
+    const jsonFiles = files.filter((file) => file.endsWith(".json"));
 
     if (!args) {
       if (jsonFiles.length === 0) {
         return {
-          type: 'message',
-          messageType: 'info',
-          content: 'No restorable tool calls found.',
+          type: "message",
+          messageType: "info",
+          content: "No restorable tool calls found.",
         };
       }
       const fileList = formatCheckpointDisplayList(jsonFiles);
       return {
-        type: 'message',
-        messageType: 'info',
+        type: "message",
+        messageType: "info",
         content: `Available tool calls to restore:\n\n${fileList}`,
       };
     }
 
-    const selectedFile = args.endsWith('.json') ? args : `${args}.json`;
+    const selectedFile = args.endsWith(".json") ? args : `${args}.json`;
 
     if (!jsonFiles.includes(selectedFile)) {
       return {
-        type: 'message',
-        messageType: 'error',
+        type: "message",
+        messageType: "error",
         content: `File not found: ${selectedFile}`,
       };
     }
 
     const filePath = path.join(checkpointDir, selectedFile);
-    const data = await fs.readFile(filePath, 'utf-8');
+    const data = await fs.readFile(filePath, "utf-8");
     const parseResult = ToolCallDataSchema.safeParse(JSON.parse(data));
 
     if (!parseResult.success) {
       return {
-        type: 'message',
-        messageType: 'error',
+        type: "message",
+        messageType: "error",
         content: `Checkpoint file is invalid: ${parseResult.error.message}`,
       };
     }
@@ -98,15 +98,12 @@ async function restoreAction(
     // We safely cast here because:
     // 1. ToolCallDataSchema strictly validates the existence of 'history' as an array and 'id'/'type' on each item.
     // 2. We trust that files valid according to this schema (written by useGeminiStream) contain the full HistoryItem structure.
-    const toolCallData = parseResult.data as ToolCallData<
-      HistoryItem[],
-      Record<string, unknown>
-    >;
+    const toolCallData = parseResult.data as ToolCallData<HistoryItem[], Record<string, unknown>>;
 
     const actionStream = performRestore(toolCallData, gitService);
 
     for await (const action of actionStream) {
-      if (action.type === 'message') {
+      if (action.type === "message") {
         addItem(
           {
             type: action.messageType,
@@ -114,34 +111,29 @@ async function restoreAction(
           },
           Date.now(),
         );
-      } else if (action.type === 'load_history' && loadHistory) {
+      } else if (action.type === "load_history" && loadHistory) {
         loadHistory(action.history);
         if (action.clientHistory) {
-          await config
-            ?.getGeminiClient()
-            ?.setHistory(action.clientHistory as Content[]);
+          await config?.getGeminiClient()?.setHistory(action.clientHistory as Content[]);
         }
       }
     }
 
     return {
-      type: 'tool',
+      type: "tool",
       toolName: toolCallData.toolCall.name,
       toolArgs: toolCallData.toolCall.args,
     };
   } catch (error) {
     return {
-      type: 'message',
-      messageType: 'error',
+      type: "message",
+      messageType: "error",
       content: `Could not read restorable tool calls. This is the error: ${error}`,
     };
   }
 }
 
-async function completion(
-  context: CommandContext,
-  _partialArg: string,
-): Promise<string[]> {
+async function completion(context: CommandContext, _partialArg: string): Promise<string[]> {
   const { services } = context;
   const { config } = services;
   const checkpointDir = config?.storage.getProjectTempCheckpointsDir();
@@ -150,7 +142,7 @@ async function completion(
   }
   try {
     const files = await fs.readdir(checkpointDir);
-    const jsonFiles = files.filter((file) => file.endsWith('.json'));
+    const jsonFiles = files.filter((file) => file.endsWith(".json"));
     return getTruncatedCheckpointNames(jsonFiles);
   } catch (_err) {
     return [];
@@ -163,9 +155,9 @@ export const restoreCommand = (config: Config | null): SlashCommand | null => {
   }
 
   return {
-    name: 'restore',
+    name: "restore",
     description:
-      'Restore a tool call. This will reset the conversation and file history to the state it was in when the tool call was suggested',
+      "Restore a tool call. This will reset the conversation and file history to the state it was in when the tool call was suggested",
     kind: CommandKind.BUILT_IN,
     autoExecute: true,
     action: restoreAction,

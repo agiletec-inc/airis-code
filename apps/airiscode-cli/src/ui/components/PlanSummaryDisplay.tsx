@@ -4,11 +4,11 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import type React from 'react';
-import { Box, Text } from 'ink';
-import { MarkdownDisplay } from '../utils/MarkdownDisplay.js';
-import { Colors } from '../colors.js';
-import type { PlanResultDisplay } from '@airiscode/core';
+import type { PlanResultDisplay } from "@airiscode/core";
+import { Box, Text } from "ink";
+import type React from "react";
+import { Colors } from "../colors.js";
+import { MarkdownDisplay } from "../utils/MarkdownDisplay.js";
 
 interface PlanSummaryDisplayProps {
   data: PlanResultDisplay;

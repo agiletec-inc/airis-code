@@ -4,22 +4,22 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { useCallback, useMemo, useEffect } from 'react';
-import type { Suggestion } from '../components/SuggestionsDisplay.js';
-import type { CommandContext, SlashCommand } from '../commands/types.js';
-import type { TextBuffer } from '../components/shared/text-buffer.js';
-import { logicalPosToOffset } from '../components/shared/text-buffer.js';
-import { isSlashCommand } from '../utils/commandUtils.js';
-import { toCodePoints } from '../utils/textUtils.js';
-import { useAtCompletion } from './useAtCompletion.js';
-import { useSlashCompletion } from './useSlashCompletion.js';
-import type { Config } from '@airiscode/core';
-import { useCompletion } from './useCompletion.js';
+import type { Config } from "@airiscode/core";
+import { useCallback, useEffect, useMemo } from "react";
+import type { CommandContext, SlashCommand } from "../commands/types.js";
+import type { Suggestion } from "../components/SuggestionsDisplay.js";
+import type { TextBuffer } from "../components/shared/text-buffer.js";
+import { logicalPosToOffset } from "../components/shared/text-buffer.js";
+import { isSlashCommand } from "../utils/commandUtils.js";
+import { toCodePoints } from "../utils/textUtils.js";
+import { useAtCompletion } from "./useAtCompletion.js";
+import { useCompletion } from "./useCompletion.js";
+import { useSlashCompletion } from "./useSlashCompletion.js";
 
 export enum CompletionMode {
-  IDLE = 'IDLE',
-  AT = 'AT',
-  SLASH = 'SLASH',
+  IDLE = "IDLE",
+  AT = "AT",
+  SLASH = "SLASH",
 }
 
 export interface UseCommandCompletionReturn {
@@ -70,70 +70,69 @@ export function useCommandCompletion(
   const cursorRow = buffer.cursor[0];
   const cursorCol = buffer.cursor[1];
 
-  const { completionMode, query, completionStart, completionEnd } =
-    useMemo(() => {
-      const currentLine = buffer.lines[cursorRow] || '';
+  const { completionMode, query, completionStart, completionEnd } = useMemo(() => {
+    const currentLine = buffer.lines[cursorRow] || "";
 
-      // Check for @ completion first, so that typing @ after a slash command
-      // still triggers file search (see #2518).
-      const codePoints = toCodePoints(currentLine);
-      for (let i = cursorCol - 1; i >= 0; i--) {
-        const char = codePoints[i];
+    // Check for @ completion first, so that typing @ after a slash command
+    // still triggers file search (see #2518).
+    const codePoints = toCodePoints(currentLine);
+    for (let i = cursorCol - 1; i >= 0; i--) {
+      const char = codePoints[i];
 
-        if (char === ' ') {
-          let backslashCount = 0;
-          for (let j = i - 1; j >= 0 && codePoints[j] === '\\'; j--) {
-            backslashCount++;
-          }
-          if (backslashCount % 2 === 0) {
-            break;
-          }
-        } else if (char === '@') {
-          let end = codePoints.length;
-          for (let i = cursorCol; i < codePoints.length; i++) {
-            if (codePoints[i] === ' ') {
-              let backslashCount = 0;
-              for (let j = i - 1; j >= 0 && codePoints[j] === '\\'; j--) {
-                backslashCount++;
-              }
+      if (char === " ") {
+        let backslashCount = 0;
+        for (let j = i - 1; j >= 0 && codePoints[j] === "\\"; j--) {
+          backslashCount++;
+        }
+        if (backslashCount % 2 === 0) {
+          break;
+        }
+      } else if (char === "@") {
+        let end = codePoints.length;
+        for (let i = cursorCol; i < codePoints.length; i++) {
+          if (codePoints[i] === " ") {
+            let backslashCount = 0;
+            for (let j = i - 1; j >= 0 && codePoints[j] === "\\"; j--) {
+              backslashCount++;
+            }
 
-              if (backslashCount % 2 === 0) {
-                end = i;
-                break;
-              }
+            if (backslashCount % 2 === 0) {
+              end = i;
+              break;
             }
           }
-          const pathStart = i + 1;
-          const partialPath = currentLine.substring(pathStart, end);
-          return {
-            completionMode: CompletionMode.AT,
-            query: partialPath,
-            completionStart: pathStart,
-            completionEnd: end,
-          };
         }
-      }
-
-      if (cursorRow === 0 && isSlashCommand(currentLine.trim())) {
+        const pathStart = i + 1;
+        const partialPath = currentLine.substring(pathStart, end);
         return {
-          completionMode: CompletionMode.SLASH,
-          query: currentLine,
-          completionStart: 0,
-          completionEnd: currentLine.length,
+          completionMode: CompletionMode.AT,
+          query: partialPath,
+          completionStart: pathStart,
+          completionEnd: end,
         };
       }
+    }
 
+    if (cursorRow === 0 && isSlashCommand(currentLine.trim())) {
       return {
-        completionMode: CompletionMode.IDLE,
-        query: null,
-        completionStart: -1,
-        completionEnd: -1,
+        completionMode: CompletionMode.SLASH,
+        query: currentLine,
+        completionStart: 0,
+        completionEnd: currentLine.length,
       };
-    }, [cursorRow, cursorCol, buffer.lines]);
+    }
+
+    return {
+      completionMode: CompletionMode.IDLE,
+      query: null,
+      completionStart: -1,
+      completionEnd: -1,
+    };
+  }, [cursorRow, cursorCol, buffer.lines]);
 
   useAtCompletion({
     enabled: completionMode === CompletionMode.AT,
-    pattern: query || '',
+    pattern: query || "",
     config,
     cwd,
     setSuggestions,
@@ -156,11 +155,7 @@ export function useCommandCompletion(
   }, [suggestions, setActiveSuggestionIndex, setVisibleStartIndex]);
 
   useEffect(() => {
-    if (
-      completionMode === CompletionMode.IDLE ||
-      reverseSearchActive ||
-      !active
-    ) {
+    if (completionMode === CompletionMode.IDLE || reverseSearchActive || !active) {
       resetCompletionState();
       return;
     }
@@ -196,19 +191,15 @@ export function useCommandCompletion(
 
       let suggestionText = suggestion;
       if (completionMode === CompletionMode.SLASH) {
-        if (
-          start === end &&
-          start > 1 &&
-          (buffer.lines[cursorRow] || '')[start - 1] !== ' '
-        ) {
-          suggestionText = ' ' + suggestionText;
+        if (start === end && start > 1 && (buffer.lines[cursorRow] || "")[start - 1] !== " ") {
+          suggestionText = " " + suggestionText;
         }
       }
 
-      const lineCodePoints = toCodePoints(buffer.lines[cursorRow] || '');
+      const lineCodePoints = toCodePoints(buffer.lines[cursorRow] || "");
       const charAfterCompletion = lineCodePoints[end];
-      if (charAfterCompletion !== ' ') {
-        suggestionText += ' ';
+      if (charAfterCompletion !== " ") {
+        suggestionText += " ";
       }
 
       buffer.replaceRangeByOffset(

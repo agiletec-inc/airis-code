@@ -1,24 +1,20 @@
-import { useState, useCallback, useEffect } from 'react';
-import * as fs from 'node:fs';
+import * as fs from "node:fs";
 import {
   type Config,
   createDebugLogger,
+  isNodeError,
   logUserFeedback,
   UserFeedbackEvent,
   type UserFeedbackRating,
-  isNodeError,
-} from '@airiscode/core';
-import { StreamingState, MessageType, type HistoryItem } from '../types.js';
-import {
-  SettingScope,
-  type LoadedSettings,
-  USER_SETTINGS_PATH,
-} from '../../config/settings.js';
-import type { SessionStatsState } from '../contexts/SessionContext.js';
-import { FEEDBACK_OPTIONS } from '../FeedbackDialog.js';
-import stripJsonComments from 'strip-json-comments';
+} from "@airiscode/core";
+import { useCallback, useEffect, useState } from "react";
+import stripJsonComments from "strip-json-comments";
+import { type LoadedSettings, SettingScope, USER_SETTINGS_PATH } from "../../config/settings.js";
+import type { SessionStatsState } from "../contexts/SessionContext.js";
+import { FEEDBACK_OPTIONS } from "../FeedbackDialog.js";
+import { type HistoryItem, MessageType, StreamingState } from "../types.js";
 
-const debugLogger = createDebugLogger('FEEDBACK_DIALOG');
+const debugLogger = createDebugLogger("FEEDBACK_DIALOG");
 // Auto-prompted feedback dialog removed with Qwen OAuth. Helpers below are stubs
 // so existing imports continue to resolve; the dialog is only shown manually now.
 void debugLogger;
@@ -45,17 +41,13 @@ export const useFeedbackDialog = ({
 }: UseFeedbackDialogProps) => {
   // Feedback dialog state
   const [isFeedbackDialogOpen, setIsFeedbackDialogOpen] = useState(false);
-  const [isFeedbackDismissedTemporarily, setIsFeedbackDismissedTemporarily] =
-    useState(false);
+  const [isFeedbackDismissedTemporarily, setIsFeedbackDismissedTemporarily] = useState(false);
 
   const openFeedbackDialog = useCallback(() => {
     setIsFeedbackDialogOpen(true);
   }, []);
 
-  const closeFeedbackDialog = useCallback(
-    () => setIsFeedbackDialogOpen(false),
-    [],
-  );
+  const closeFeedbackDialog = useCallback(() => setIsFeedbackDialogOpen(false), []);
 
   const temporaryCloseFeedbackDialog = useCallback(() => {
     setIsFeedbackDialogOpen(false);
@@ -78,11 +70,7 @@ export const useFeedbackDialog = ({
       }
 
       // Record the timestamp when feedback dialog is submitted
-      settings.setValue(
-        SettingScope.User,
-        'ui.feedbackLastShownTimestamp',
-        Date.now(),
-      );
+      settings.setValue(SettingScope.User, "ui.feedbackLastShownTimestamp", Date.now());
 
       closeFeedbackDialog();
     },
@@ -113,10 +101,7 @@ export const useFeedbackDialog = ({
 
   // Reset temporary dismissal when a new AI response starts streaming
   useEffect(() => {
-    if (
-      streamingState === StreamingState.Responding &&
-      isFeedbackDismissedTemporarily
-    ) {
+    if (streamingState === StreamingState.Responding && isFeedbackDismissedTemporarily) {
       setIsFeedbackDismissedTemporarily(false);
     }
   }, [streamingState, isFeedbackDismissedTemporarily]);

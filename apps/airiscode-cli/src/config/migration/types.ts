@@ -34,10 +34,7 @@ export interface SettingsMigration {
    * @returns The migrated settings object of version N+1 with optional warnings
    * @throws Error if the migration fails
    */
-  migrate(
-    settings: unknown,
-    scope: string,
-  ): { settings: unknown; warnings: string[] };
+  migrate(settings: unknown, scope: string): { settings: unknown; warnings: string[] };
 }
 
 /**

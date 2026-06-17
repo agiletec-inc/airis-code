@@ -4,22 +4,18 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import type { CommandModule } from 'yargs';
-
+import { ExtensionManager, parseInstallSource } from "@airiscode/core";
+import type { CommandModule } from "yargs";
+import { loadSettings } from "../../config/settings.js";
+import { isWorkspaceTrusted } from "../../config/trustedFolders.js";
+import { t } from "../../i18n/index.js";
+import { getErrorMessage } from "../../utils/errors.js";
+import { writeStderrLine, writeStdoutLine } from "../../utils/stdioHelpers.js";
 import {
-  ExtensionManager,
-  parseInstallSource,
-} from '@airiscode/core';
-import { getErrorMessage } from '../../utils/errors.js';
-import { writeStdoutLine, writeStderrLine } from '../../utils/stdioHelpers.js';
-import { isWorkspaceTrusted } from '../../config/trustedFolders.js';
-import { loadSettings } from '../../config/settings.js';
-import {
-  requestConsentOrFail,
-  requestConsentNonInteractive,
   requestChoicePluginNonInteractive,
-} from './consent.js';
-import { t } from '../../i18n/index.js';
+  requestConsentNonInteractive,
+  requestConsentOrFail,
+} from "./consent.js";
 
 interface InstallArgs {
   source: string;
@@ -35,32 +31,30 @@ export async function handleInstall(args: InstallArgs) {
     const installMetadata = await parseInstallSource(args.source);
 
     if (
-      installMetadata.type !== 'git' &&
-      installMetadata.type !== 'github-release' &&
-      installMetadata.type !== 'npm'
+      installMetadata.type !== "git" &&
+      installMetadata.type !== "github-release" &&
+      installMetadata.type !== "npm"
     ) {
       if (args.ref || args.autoUpdate) {
         throw new Error(
-          t(
-            '--ref and --auto-update are not applicable for marketplace extensions.',
-          ),
+          t("--ref and --auto-update are not applicable for marketplace extensions."),
         );
       }
     }
 
-    if (installMetadata.type === 'npm' && args.ref) {
+    if (installMetadata.type === "npm" && args.ref) {
       throw new Error(
         t(
-          '--ref is not applicable for npm extensions. Use @version suffix instead (e.g. @scope/package@1.2.0).',
+          "--ref is not applicable for npm extensions. Use @version suffix instead (e.g. @scope/package@1.2.0).",
         ),
       );
     }
 
-    if (installMetadata.type !== 'npm' && args.registry) {
-      throw new Error(t('--registry is only applicable for npm extensions.'));
+    if (installMetadata.type !== "npm" && args.registry) {
+      throw new Error(t("--registry is only applicable for npm extensions."));
     }
 
-    if (installMetadata.type === 'npm' && args.registry) {
+    if (installMetadata.type === "npm" && args.registry) {
       installMetadata.registryUrl = args.registry;
     }
 
@@ -70,9 +64,7 @@ export async function handleInstall(args: InstallArgs) {
     const workspaceDir = process.cwd();
     const extensionManager = new ExtensionManager({
       workspaceDir,
-      isWorkspaceTrusted: !!isWorkspaceTrusted(
-        loadSettings(workspaceDir).merged,
-      ),
+      isWorkspaceTrusted: !!isWorkspaceTrusted(loadSettings(workspaceDir).merged),
       requestConsent,
       requestChoicePlugin: requestChoicePluginNonInteractive,
     });
@@ -99,56 +91,56 @@ export async function handleInstall(args: InstallArgs) {
 }
 
 export const installCommand: CommandModule = {
-  command: 'install <source>',
+  command: "install <source>",
   describe: t(
-    'Installs an extension from a git repository URL, local path, scoped npm package (@scope/name), or claude marketplace (marketplace-url:plugin-name).',
+    "Installs an extension from a git repository URL, local path, scoped npm package (@scope/name), or claude marketplace (marketplace-url:plugin-name).",
   ),
   builder: (yargs) =>
     yargs
-      .positional('source', {
+      .positional("source", {
         describe: t(
-          'The github URL, local path, or marketplace source (marketplace-url:plugin-name) of the extension to install.',
+          "The github URL, local path, or marketplace source (marketplace-url:plugin-name) of the extension to install.",
         ),
-        type: 'string',
+        type: "string",
         demandOption: true,
       })
-      .option('ref', {
-        describe: t('The git ref to install from.'),
-        type: 'string',
+      .option("ref", {
+        describe: t("The git ref to install from."),
+        type: "string",
       })
-      .option('auto-update', {
-        describe: t('Enable auto-update for this extension.'),
-        type: 'boolean',
+      .option("auto-update", {
+        describe: t("Enable auto-update for this extension."),
+        type: "boolean",
       })
-      .option('pre-release', {
-        describe: t('Enable pre-release versions for this extension.'),
-        type: 'boolean',
+      .option("pre-release", {
+        describe: t("Enable pre-release versions for this extension."),
+        type: "boolean",
       })
-      .option('registry', {
-        describe: t('Custom npm registry URL (only for npm extensions).'),
-        type: 'string',
+      .option("registry", {
+        describe: t("Custom npm registry URL (only for npm extensions)."),
+        type: "string",
       })
-      .option('consent', {
+      .option("consent", {
         describe: t(
-          'Acknowledge the security risks of installing an extension and skip the confirmation prompt.',
+          "Acknowledge the security risks of installing an extension and skip the confirmation prompt.",
         ),
-        type: 'boolean',
+        type: "boolean",
         default: false,
       })
       .check((argv) => {
         if (!argv.source) {
-          throw new Error(t('The source argument must be provided.'));
+          throw new Error(t("The source argument must be provided."));
         }
         return true;
       }),
   handler: async (argv) => {
     await handleInstall({
-      source: argv['source'] as string,
-      ref: argv['ref'] as string | undefined,
-      autoUpdate: argv['auto-update'] as boolean | undefined,
-      allowPreRelease: argv['pre-release'] as boolean | undefined,
-      consent: argv['consent'] as boolean | undefined,
-      registry: argv['registry'] as string | undefined,
+      source: argv["source"] as string,
+      ref: argv["ref"] as string | undefined,
+      autoUpdate: argv["auto-update"] as boolean | undefined,
+      allowPreRelease: argv["pre-release"] as boolean | undefined,
+      consent: argv["consent"] as boolean | undefined,
+      registry: argv["registry"] as string | undefined,
     });
   },
 };

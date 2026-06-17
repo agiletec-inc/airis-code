@@ -4,16 +4,16 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import type { Config } from '../config/config.js';
-import { HookRegistry } from './hookRegistry.js';
-import { HookRunner } from './hookRunner.js';
-import { HookAggregator } from './hookAggregator.js';
-import { HookPlanner } from './hookPlanner.js';
-import { HookEventHandler } from './hookEventHandler.js';
-import type { HookRegistryEntry } from './hookRegistry.js';
-import { logs, type Logger } from '@opentelemetry/api-logs';
-import { SERVICE_NAME } from '../telemetry/constants.js';
-import { debugLogger } from '../utils/debugLogger.js';
+import { type Logger, logs } from "@opentelemetry/api-logs";
+import type { Config } from "../config/config.js";
+import { SERVICE_NAME } from "../telemetry/constants.js";
+import { debugLogger } from "../utils/debugLogger.js";
+import { HookAggregator } from "./hookAggregator.js";
+import { HookEventHandler } from "./hookEventHandler.js";
+import { HookPlanner } from "./hookPlanner.js";
+import type { HookRegistryEntry } from "./hookRegistry.js";
+import { HookRegistry } from "./hookRegistry.js";
+import { HookRunner } from "./hookRunner.js";
 
 /**
  * Main hook system that coordinates all hook-related functionality
@@ -55,7 +55,7 @@ export class HookSystem {
 
     await this.hookRegistry.initialize();
     this.initialized = true;
-    debugLogger.debug('Hook system initialized successfully');
+    debugLogger.debug("Hook system initialized successfully");
   }
 
   /**
@@ -63,7 +63,7 @@ export class HookSystem {
    */
   getEventHandler(): HookEventHandler {
     if (!this.initialized) {
-      throw new Error('Hook system not initialized');
+      throw new Error("Hook system not initialized");
     }
     return this.hookEventHandler;
   }

@@ -4,8 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { vi } from 'vitest';
-import type { WorkspaceContext } from '../utils/workspaceContext.js';
+import { vi } from "vitest";
+import type { WorkspaceContext } from "../utils/workspaceContext.js";
 
 /**
  * Creates a mock WorkspaceContext for testing
@@ -24,9 +24,7 @@ export function createMockWorkspaceContext(
     getDirectories: vi.fn().mockReturnValue(allDirs),
     isPathWithinWorkspace: vi
       .fn()
-      .mockImplementation((path: string) =>
-        allDirs.some((dir) => path.startsWith(dir)),
-      ),
+      .mockImplementation((path: string) => allDirs.some((dir) => path.startsWith(dir))),
   } as unknown as WorkspaceContext;
 
   return mockWorkspaceContext;

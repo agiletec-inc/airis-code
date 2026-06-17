@@ -4,18 +4,18 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import * as fs from 'node:fs/promises';
-import * as fsSync from 'node:fs';
-import * as path from 'node:path';
-import type { FileDiscoveryService } from '../services/fileDiscoveryService.js';
-import type { FileFilteringOptions } from '../config/constants.js';
-import { debugLogger } from './debugLogger.js';
+import * as fsSync from "node:fs";
+import * as fs from "node:fs/promises";
+import * as path from "node:path";
+import type { FileFilteringOptions } from "../config/constants.js";
+import type { FileDiscoveryService } from "../services/fileDiscoveryService.js";
+import { debugLogger } from "./debugLogger.js";
+
 // Simple console logger for now.
 // TODO: Integrate with a more robust server-side logger.
 const logger = {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  debug: (...args: any[]) =>
-    debugLogger.debug('[DEBUG] [BfsFileSearch]', ...args),
+  debug: (...args: any[]) => debugLogger.debug("[DEBUG] [BfsFileSearch]", ...args),
 };
 
 interface BfsFileSearchOptions {
@@ -68,9 +68,7 @@ export async function bfsFileSearch(
     if (currentBatch.length === 0) continue;
 
     if (debug) {
-      logger.debug(
-        `Scanning [${scannedDirCount}/${maxDirs}]: batch of ${currentBatch.length}`,
-      );
+      logger.debug(`Scanning [${scannedDirCount}/${maxDirs}]: batch of ${currentBatch.length}`);
     }
 
     // Read directories in parallel instead of one by one
@@ -80,10 +78,8 @@ export async function bfsFileSearch(
         return { currentDir, entries };
       } catch (error) {
         // Warn user that a directory could not be read, as this affects search results.
-        const message = (error as Error)?.message ?? 'Unknown error';
-        debugLogger.warn(
-          `[WARN] Skipping unreadable directory: ${currentDir} (${message})`,
-        );
+        const message = (error as Error)?.message ?? "Unknown error";
+        debugLogger.warn(`[WARN] Skipping unreadable directory: ${currentDir} (${message})`);
         if (debug) {
           logger.debug(`Full error for ${currentDir}:`, error);
         }
@@ -94,14 +90,7 @@ export async function bfsFileSearch(
     const results = await Promise.all(readPromises);
 
     for (const { currentDir, entries } of results) {
-      processDirEntries(
-        currentDir,
-        entries,
-        options,
-        ignoreDirsSet,
-        queue,
-        foundFiles,
-      );
+      processDirEntries(currentDir, entries, options, ignoreDirsSet, queue, foundFiles);
     }
   }
 
@@ -115,10 +104,7 @@ export async function bfsFileSearch(
  * @param options Configuration for the search.
  * @returns An array of paths where the file was found.
  */
-export function bfsFileSearchSync(
-  rootDir: string,
-  options: BfsFileSearchOptions,
-): string[] {
+export function bfsFileSearchSync(rootDir: string, options: BfsFileSearchOptions): string[] {
   const { ignoreDirs = [], maxDirs = Infinity, debug = false } = options;
   const foundFiles: string[] = [];
   const queue: string[] = [rootDir];
@@ -137,26 +123,15 @@ export function bfsFileSearchSync(
       scannedDirCount++;
 
       if (debug) {
-        logger.debug(
-          `Scanning Sync [${scannedDirCount}/${maxDirs}]: ${currentDir}`,
-        );
+        logger.debug(`Scanning Sync [${scannedDirCount}/${maxDirs}]: ${currentDir}`);
       }
 
       try {
         const entries = fsSync.readdirSync(currentDir, { withFileTypes: true });
-        processDirEntries(
-          currentDir,
-          entries,
-          options,
-          ignoreDirsSet,
-          queue,
-          foundFiles,
-        );
+        processDirEntries(currentDir, entries, options, ignoreDirsSet, queue, foundFiles);
       } catch (error) {
-        const message = (error as Error)?.message ?? 'Unknown error';
-        debugLogger.warn(
-          `[WARN] Skipping unreadable directory: ${currentDir} (${message})`,
-        );
+        const message = (error as Error)?.message ?? "Unknown error";
+        debugLogger.warn(`[WARN] Skipping unreadable directory: ${currentDir} (${message})`);
       }
     }
   }

@@ -4,15 +4,13 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import type { MCPServerDisplayInfo, GroupedServers } from './types.js';
-import { SOURCE_DISPLAY_NAMES } from './constants.js';
+import { SOURCE_DISPLAY_NAMES } from "./constants.js";
+import type { GroupedServers, MCPServerDisplayInfo } from "./types.js";
 
 /**
  * 按来源分组服务器
  */
-export function groupServersBySource(
-  servers: MCPServerDisplayInfo[],
-): GroupedServers[] {
+export function groupServersBySource(servers: MCPServerDisplayInfo[]): GroupedServers[] {
   const groups = new Map<string, MCPServerDisplayInfo[]>();
 
   for (const server of servers) {
@@ -25,7 +23,7 @@ export function groupServersBySource(
   }
 
   // 按优先级排序: user > project > extension
-  const sourceOrder = ['user', 'project', 'extension'];
+  const sourceOrder = ["user", "project", "extension"];
   const result: GroupedServers[] = [];
 
   for (const source of sourceOrder) {
@@ -45,18 +43,16 @@ export function groupServersBySource(
 /**
  * 获取状态颜色
  */
-export function getStatusColor(
-  status: string,
-): 'green' | 'yellow' | 'red' | 'gray' {
+export function getStatusColor(status: string): "green" | "yellow" | "red" | "gray" {
   switch (status) {
-    case 'connected':
-      return 'green';
-    case 'connecting':
-      return 'yellow';
-    case 'disconnected':
-      return 'red';
+    case "connected":
+      return "green";
+    case "connecting":
+      return "yellow";
+    case "disconnected":
+      return "red";
     default:
-      return 'gray';
+      return "gray";
   }
 }
 
@@ -65,14 +61,14 @@ export function getStatusColor(
  */
 export function getStatusIcon(status: string): string {
   switch (status) {
-    case 'connected':
-      return '✓';
-    case 'connecting':
-      return '…';
-    case 'disconnected':
-      return '✗';
+    case "connected":
+      return "✓";
+    case "connecting":
+      return "…";
+    case "disconnected":
+      return "✗";
     default:
-      return '?';
+      return "?";
   }
 }
 
@@ -81,7 +77,7 @@ export function getStatusIcon(status: string): string {
  */
 export function truncateText(text: string, maxLength: number): string {
   if (text.length <= maxLength) return text;
-  return text.substring(0, maxLength - 3) + '...';
+  return text.substring(0, maxLength - 3) + "...";
 }
 
 /**
@@ -96,10 +92,10 @@ export function formatServerCommand(server: MCPServerDisplayInfo): string {
     return `${config.url} (sse)`;
   }
   if (config.command) {
-    const args = config.args?.join(' ') || '';
+    const args = config.args?.join(" ") || "";
     return `${config.command} ${args} (stdio)`.trim();
   }
-  return 'Unknown';
+  return "Unknown";
 }
 
 /**
@@ -118,12 +114,9 @@ export function isToolValid(name?: string, description?: string): boolean {
  * @param description - Tool description
  * @returns Array of missing fields
  */
-export function getToolInvalidReasons(
-  name?: string,
-  description?: string,
-): string[] {
+export function getToolInvalidReasons(name?: string, description?: string): string[] {
   const reasons: string[] = [];
-  if (!name) reasons.push('missing name');
-  if (!description) reasons.push('missing description');
+  if (!name) reasons.push("missing name");
+  if (!description) reasons.push("missing description");
   return reasons;
 }

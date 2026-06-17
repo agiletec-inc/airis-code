@@ -4,16 +4,16 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import React from 'react';
-import { Box, Text } from 'ink';
-import { DiffRenderer } from './DiffRenderer.js';
-import { MarkdownDisplay } from '../../utils/MarkdownDisplay.js';
-import { AnsiOutputText } from '../AnsiOutput.js';
-import { MaxSizedBox } from '../shared/MaxSizedBox.js';
-import { theme } from '../../semantic-colors.js';
-import type { AnsiOutput } from '@airiscode/gemini-cli-core';
-import { useUIState } from '../../contexts/UIStateContext.js';
-import { useAlternateBuffer } from '../../hooks/useAlternateBuffer.js';
+import type { AnsiOutput } from "@airiscode/gemini-cli-core";
+import { Box, Text } from "ink";
+import React from "react";
+import { useUIState } from "../../contexts/UIStateContext.js";
+import { useAlternateBuffer } from "../../hooks/useAlternateBuffer.js";
+import { theme } from "../../semantic-colors.js";
+import { MarkdownDisplay } from "../../utils/MarkdownDisplay.js";
+import { AnsiOutputText } from "../AnsiOutput.js";
+import { MaxSizedBox } from "../shared/MaxSizedBox.js";
+import { DiffRenderer } from "./DiffRenderer.js";
 
 const STATIC_HEIGHT = 1;
 const RESERVED_LINE_COUNT = 5; // for tool name, status, padding etc.
@@ -62,9 +62,9 @@ export const ToolResultDisplay: React.FC<ToolResultDisplayProps> = ({
   const childWidth = terminalWidth - combinedPaddingAndBorderWidth;
 
   const truncatedResultDisplay = React.useMemo(() => {
-    if (typeof resultDisplay === 'string') {
+    if (typeof resultDisplay === "string") {
       if (resultDisplay.length > MAXIMUM_RESULT_DISPLAY_CHARACTERS) {
-        return '...' + resultDisplay.slice(-MAXIMUM_RESULT_DISPLAY_CHARACTERS);
+        return "..." + resultDisplay.slice(-MAXIMUM_RESULT_DISPLAY_CHARACTERS);
       }
     }
     return resultDisplay;
@@ -75,8 +75,7 @@ export const ToolResultDisplay: React.FC<ToolResultDisplayProps> = ({
   return (
     <Box width={childWidth} flexDirection="column">
       <Box flexDirection="column">
-        {typeof truncatedResultDisplay === 'string' &&
-        renderOutputAsMarkdown ? (
+        {typeof truncatedResultDisplay === "string" && renderOutputAsMarkdown ? (
           <Box flexDirection="column">
             <MarkdownDisplay
               text={truncatedResultDisplay}
@@ -85,8 +84,7 @@ export const ToolResultDisplay: React.FC<ToolResultDisplayProps> = ({
               isPending={false}
             />
           </Box>
-        ) : typeof truncatedResultDisplay === 'string' &&
-          !renderOutputAsMarkdown ? (
+        ) : typeof truncatedResultDisplay === "string" && !renderOutputAsMarkdown ? (
           isAlternateBuffer ? (
             <Box flexDirection="column" width={childWidth}>
               <Text wrap="wrap" color={theme.text.primary}>
@@ -102,16 +100,14 @@ export const ToolResultDisplay: React.FC<ToolResultDisplayProps> = ({
               </Box>
             </MaxSizedBox>
           )
-        ) : typeof truncatedResultDisplay === 'object' &&
-          'fileDiff' in truncatedResultDisplay ? (
+        ) : typeof truncatedResultDisplay === "object" && "fileDiff" in truncatedResultDisplay ? (
           <DiffRenderer
             diffContent={(truncatedResultDisplay as FileDiffResult).fileDiff}
             filename={(truncatedResultDisplay as FileDiffResult).fileName}
             availableTerminalHeight={availableHeight}
             terminalWidth={childWidth}
           />
-        ) : typeof truncatedResultDisplay === 'object' &&
-          'todos' in truncatedResultDisplay ? (
+        ) : typeof truncatedResultDisplay === "object" && "todos" in truncatedResultDisplay ? (
           // display nothing, as the TodoTray will handle rendering todos
           <></>
         ) : (

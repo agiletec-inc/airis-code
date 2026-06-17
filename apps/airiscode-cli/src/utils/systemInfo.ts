@@ -4,14 +4,15 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import process from 'node:process';
-import os from 'node:os';
-import { execSync } from 'node:child_process';
-import type { CommandContext } from '../ui/commands/types.js';
-import { getCliVersion } from './version.js';
-import { IdeClient, AuthType } from '@airiscode/core';
-import { formatMemoryUsage } from '../ui/utils/formatters.js';
-const GIT_COMMIT_INFO = 'dev';
+import { execSync } from "node:child_process";
+import os from "node:os";
+import process from "node:process";
+import { AuthType, IdeClient } from "@airiscode/core";
+import type { CommandContext } from "../ui/commands/types.js";
+import { formatMemoryUsage } from "../ui/utils/formatters.js";
+import { getCliVersion } from "./version.js";
+
+const GIT_COMMIT_INFO = "dev";
 
 /**
  * System information interface containing all system-related details
@@ -50,9 +51,9 @@ export interface ExtendedSystemInfo extends SystemInfo {
  */
 export async function getNpmVersion(): Promise<string> {
   try {
-    return execSync('npm --version', { encoding: 'utf-8' }).trim();
+    return execSync("npm --version", { encoding: "utf-8" }).trim();
   } catch {
-    return 'unknown';
+    return "unknown";
   }
 }
 
@@ -60,17 +61,15 @@ export async function getNpmVersion(): Promise<string> {
  * Gets the IDE client name if IDE mode is enabled.
  * Returns empty string if IDE mode is disabled or IDE client is not detected.
  */
-export async function getIdeClientName(
-  context: CommandContext,
-): Promise<string> {
+export async function getIdeClientName(context: CommandContext): Promise<string> {
   if (!context.services.config?.getIdeMode()) {
-    return '';
+    return "";
   }
   try {
     const ideClient = await IdeClient.getInstance();
-    return ideClient?.getDetectedIdeDisplayName() ?? '';
+    return ideClient?.getDetectedIdeDisplayName() ?? "";
   } catch {
-    return '';
+    return "";
   }
 }
 
@@ -82,19 +81,19 @@ export async function getIdeClientName(
  * @param stripPrefix - Whether to strip 'qwen-' prefix (used for bug reports)
  */
 export function getSandboxEnv(stripPrefix = false): string {
-  const sandbox = process.env['SANDBOX'];
+  const sandbox = process.env["SANDBOX"];
 
-  if (!sandbox || sandbox === 'sandbox-exec') {
-    if (sandbox === 'sandbox-exec') {
-      const profile = process.env['SEATBELT_PROFILE'] || 'unknown';
+  if (!sandbox || sandbox === "sandbox-exec") {
+    if (sandbox === "sandbox-exec") {
+      const profile = process.env["SEATBELT_PROFILE"] || "unknown";
       return `sandbox-exec (${profile})`;
     }
-    return 'no sandbox';
+    return "no sandbox";
   }
 
   // For bug reports, remove qwen- prefix
   if (stripPrefix) {
-    return sandbox.replace(/^qwen-(?:code-)?/, '');
+    return sandbox.replace(/^qwen-(?:code-)?/, "");
   }
 
   return sandbox;
@@ -108,20 +107,18 @@ export function getSandboxEnv(stripPrefix = false): string {
  * @param context - Command context containing config and settings
  * @returns Promise resolving to SystemInfo object with all collected information
  */
-export async function getSystemInfo(
-  context: CommandContext,
-): Promise<SystemInfo> {
+export async function getSystemInfo(context: CommandContext): Promise<SystemInfo> {
   const osPlatform = process.platform;
   const osArch = process.arch;
   const osRelease = os.release();
   const nodeVersion = process.version;
   const npmVersion = await getNpmVersion();
   const sandboxEnv = getSandboxEnv();
-  const modelVersion = context.services.config?.getModel() || 'Unknown';
+  const modelVersion = context.services.config?.getModel() || "Unknown";
   const cliVersion = await getCliVersion();
-  const selectedAuthType = context.services.config?.getAuthType() || '';
+  const selectedAuthType = context.services.config?.getAuthType() || "";
   const ideClient = await getIdeClientName(context);
-  const sessionId = context.services.config?.getSessionId() || 'unknown';
+  const sessionId = context.services.config?.getSessionId() || "unknown";
   const proxy = context.services.config?.getProxy();
 
   return {
@@ -147,9 +144,7 @@ export async function getSystemInfo(
  * @param context - Command context containing config and settings
  * @returns Promise resolving to ExtendedSystemInfo object
  */
-export async function getExtendedSystemInfo(
-  context: CommandContext,
-): Promise<ExtendedSystemInfo> {
+export async function getExtendedSystemInfo(context: CommandContext): Promise<ExtendedSystemInfo> {
   const baseInfo = await getSystemInfo(context);
   const memoryUsage = formatMemoryUsage(process.memoryUsage().rss);
 
@@ -167,9 +162,7 @@ export async function getExtendedSystemInfo(
 
   // Get git commit info
   const gitCommit =
-    GIT_COMMIT_INFO && !['N/A'].includes(GIT_COMMIT_INFO)
-      ? GIT_COMMIT_INFO
-      : undefined;
+    GIT_COMMIT_INFO && !["N/A"].includes(GIT_COMMIT_INFO) ? GIT_COMMIT_INFO : undefined;
 
   // Get fast model from settings
   const fastModel = context.services.settings?.merged?.fastModel || undefined;

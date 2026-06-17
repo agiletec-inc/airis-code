@@ -5,42 +5,31 @@
  */
 
 import type {
-  Part,
-  PartListUnion,
-  GenerateContentResponse,
+  FinishReason,
   FunctionCall,
   FunctionDeclaration,
-  FinishReason,
+  GenerateContentResponse,
   GenerateContentResponseUsageMetadata,
-} from '@google/genai';
-import type {
-  ToolCallConfirmationDetails,
-  ToolResult,
-  ToolResultDisplay,
-} from '../tools/tools.js';
-import type { ToolErrorType } from '../tools/tool-error.js';
-import { getResponseText } from '../utils/partUtils.js';
-import { reportError } from '../utils/errorReporting.js';
-import {
-  getErrorMessage,
-  UnauthorizedError,
-  toFriendlyError,
-} from '../utils/errors.js';
-import type { GeminiChat } from './geminiChat.js';
-import { InvalidStreamError } from './geminiChat.js';
-import { parseThought, type ThoughtSummary } from '../utils/thoughtUtils.js';
-import { createUserContent } from '@google/genai';
-import type { ModelConfigKey } from '../services/modelConfigService.js';
+  Part,
+  PartListUnion,
+} from "@google/genai";
+import { createUserContent } from "@google/genai";
+import type { ModelConfigKey } from "../services/modelConfigService.js";
+import type { ToolErrorType } from "../tools/tool-error.js";
+import type { ToolCallConfirmationDetails, ToolResult, ToolResultDisplay } from "../tools/tools.js";
+import { reportError } from "../utils/errorReporting.js";
+import { getErrorMessage, toFriendlyError, UnauthorizedError } from "../utils/errors.js";
+import { getResponseText } from "../utils/partUtils.js";
+import { parseThought, type ThoughtSummary } from "../utils/thoughtUtils.js";
+import type { GeminiChat } from "./geminiChat.js";
+import { InvalidStreamError } from "./geminiChat.js";
 
 // Define a structure for tools passed to the server
 export interface ServerTool {
   name: string;
   schema: FunctionDeclaration;
   // The execute method signature might differ slightly or be wrapped
-  execute(
-    params: Record<string, unknown>,
-    signal?: AbortSignal,
-  ): Promise<ToolResult>;
+  execute(params: Record<string, unknown>, signal?: AbortSignal): Promise<ToolResult>;
   shouldConfirmExecute(
     params: Record<string, unknown>,
     abortSignal: AbortSignal,
@@ -48,22 +37,22 @@ export interface ServerTool {
 }
 
 export enum GeminiEventType {
-  Content = 'content',
-  ToolCallRequest = 'tool_call_request',
-  ToolCallResponse = 'tool_call_response',
-  ToolCallConfirmation = 'tool_call_confirmation',
-  UserCancelled = 'user_cancelled',
-  Error = 'error',
-  ChatCompressed = 'chat_compressed',
-  Thought = 'thought',
-  MaxSessionTurns = 'max_session_turns',
-  Finished = 'finished',
-  LoopDetected = 'loop_detected',
-  Citation = 'citation',
-  Retry = 'retry',
-  ContextWindowWillOverflow = 'context_window_will_overflow',
-  InvalidStream = 'invalid_stream',
-  ModelInfo = 'model_info',
+  Content = "content",
+  ToolCallRequest = "tool_call_request",
+  ToolCallResponse = "tool_call_response",
+  ToolCallConfirmation = "tool_call_confirmation",
+  UserCancelled = "user_cancelled",
+  Error = "error",
+  ChatCompressed = "chat_compressed",
+  Thought = "thought",
+  MaxSessionTurns = "max_session_turns",
+  Finished = "finished",
+  LoopDetected = "loop_detected",
+  Citation = "citation",
+  Retry = "retry",
+  ContextWindowWillOverflow = "context_window_will_overflow",
+  InvalidStream = "invalid_stream",
+  ModelInfo = "model_info",
 }
 
 export type ServerGeminiRetryEvent = {
@@ -258,7 +247,7 @@ export class Turn {
         }
 
         // Handle the new RETRY event
-        if (streamEvent.type === 'retry') {
+        if (streamEvent.type === "retry") {
           yield { type: GeminiEventType.Retry };
           continue; // Skip to the next event in the stream
         }
@@ -273,7 +262,7 @@ export class Turn {
 
         const thoughtPart = resp.candidates?.[0]?.content?.parts?.[0];
         if (thoughtPart?.thought) {
-          const thought = parseThought(thoughtPart.text ?? '');
+          const thought = parseThought(thoughtPart.text ?? "");
           yield {
             type: GeminiEventType.Thought,
             value: thought,
@@ -308,7 +297,7 @@ export class Turn {
           if (this.pendingCitations.size > 0) {
             yield {
               type: GeminiEventType.Citation,
-              value: `Citations:\n${[...this.pendingCitations].sort().join('\n')}`,
+              value: `Citations:\n${[...this.pendingCitations].sort().join("\n")}`,
             };
             this.pendingCitations.clear();
           }
@@ -340,21 +329,18 @@ export class Turn {
         throw error;
       }
 
-      const contextForReport = [
-        ...this.chat.getHistory(/*curated*/ true),
-        createUserContent(req),
-      ];
+      const contextForReport = [...this.chat.getHistory(/*curated*/ true), createUserContent(req)];
       await reportError(
         error,
-        'Error when talking to Gemini API',
+        "Error when talking to Gemini API",
         contextForReport,
-        'Turn.run-sendMessageStream',
+        "Turn.run-sendMessageStream",
       );
       const status =
-        typeof error === 'object' &&
+        typeof error === "object" &&
         error !== null &&
-        'status' in error &&
-        typeof (error as { status: unknown }).status === 'number'
+        "status" in error &&
+        typeof (error as { status: unknown }).status === "number"
           ? (error as { status: number }).status
           : undefined;
       const structuredError: StructuredError = {
@@ -367,13 +353,10 @@ export class Turn {
     }
   }
 
-  private handlePendingFunctionCall(
-    fnCall: FunctionCall,
-  ): ServerGeminiStreamEvent | null {
+  private handlePendingFunctionCall(fnCall: FunctionCall): ServerGeminiStreamEvent | null {
     const callId =
-      fnCall.id ??
-      `${fnCall.name}-${Date.now()}-${Math.random().toString(16).slice(2)}`;
-    const name = fnCall.name || 'undefined_tool_name';
+      fnCall.id ?? `${fnCall.name}-${Date.now()}-${Math.random().toString(16).slice(2)}`;
+    const name = fnCall.name || "undefined_tool_name";
     const args = (fnCall.args || {}) as Record<string, unknown>;
 
     const toolCallRequest: ToolCallRequestInfo = {
@@ -402,7 +385,7 @@ export class Turn {
     return this.debugResponses
       .map((response) => getResponseText(response))
       .filter((text): text is string => text !== null)
-      .join(' ');
+      .join(" ");
   }
 }
 

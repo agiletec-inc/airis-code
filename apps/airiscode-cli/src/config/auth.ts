@@ -9,17 +9,17 @@ import {
   type Config,
   type ModelProvidersConfig,
   type ProviderModelConfig,
-} from '@airiscode/core';
-import { loadEnvironment, loadSettings, type Settings } from './settings.js';
-import { t } from '../i18n/index.js';
+} from "@airiscode/core";
+import { t } from "../i18n/index.js";
+import { loadEnvironment, loadSettings, type Settings } from "./settings.js";
 
 /**
  * Default environment variable names for each auth type
  */
 const DEFAULT_ENV_KEYS: Record<string, string> = {
-  [AuthType.USE_OPENAI]: 'OPENAI_API_KEY',
-  [AuthType.USE_OLLAMA]: '',
-  [AuthType.USE_ANTHROPIC]: 'ANTHROPIC_API_KEY',
+  [AuthType.USE_OPENAI]: "OPENAI_API_KEY",
+  [AuthType.USE_OLLAMA]: "",
+  [AuthType.USE_ANTHROPIC]: "ANTHROPIC_API_KEY",
 };
 
 /**
@@ -55,9 +55,7 @@ function hasApiKeyForAuth(
   checkedEnvKey: string | undefined;
   isExplicitEnvKey: boolean;
 } {
-  const modelProviders = settings.modelProviders as
-    | ModelProvidersConfig
-    | undefined;
+  const modelProviders = settings.modelProviders as ModelProvidersConfig | undefined;
 
   // Use config.getModelsConfig().getModel() if available for accurate model ID resolution
   // that accounts for CLI args, env vars, and settings. Fall back to settings.model.name.
@@ -104,11 +102,7 @@ function hasApiKeyForAuth(
  * Generate API key error message based on auth check result.
  * Returns null if API key is present, otherwise returns the appropriate error message.
  */
-function getApiKeyError(
-  authMethod: string,
-  settings: Settings,
-  config?: Config,
-): string | null {
+function getApiKeyError(authMethod: string, settings: Settings, config?: Config): string | null {
   const { hasKey, checkedEnvKey, isExplicitEnvKey } = hasApiKeyForAuth(
     authMethod,
     settings,
@@ -121,12 +115,12 @@ function getApiKeyError(
   const envKeyHint = checkedEnvKey || DEFAULT_ENV_KEYS[authMethod];
   if (isExplicitEnvKey) {
     return t(
-      '{{envKeyHint}} environment variable not found. Please set it in your .env file or environment variables.',
+      "{{envKeyHint}} environment variable not found. Please set it in your .env file or environment variables.",
       { envKeyHint },
     );
   }
   return t(
-    '{{envKeyHint}} environment variable not found (or set settings.security.auth.apiKey). Please set it in your .env file or environment variables.',
+    "{{envKeyHint}} environment variable not found (or set settings.security.auth.apiKey). Please set it in your .env file or environment variables.",
     { envKeyHint },
   );
 }
@@ -134,10 +128,7 @@ function getApiKeyError(
 /**
  * Validate that the required credentials and configuration exist for the given auth method.
  */
-export function validateAuthMethod(
-  authMethod: string,
-  config?: Config,
-): string | null {
+export function validateAuthMethod(authMethod: string, config?: Config): string | null {
   const settings = loadSettings();
   loadEnvironment(settings.merged);
 
@@ -148,19 +139,17 @@ export function validateAuthMethod(
       config,
     );
     if (!hasKey) {
-      const envKeyHint = checkedEnvKey
-        ? `'${checkedEnvKey}'`
-        : "'OPENAI_API_KEY'";
+      const envKeyHint = checkedEnvKey ? `'${checkedEnvKey}'` : "'OPENAI_API_KEY'";
       if (isExplicitEnvKey) {
         // Explicit envKey configured - only suggest setting the env var
         return t(
-          'Missing API key for OpenAI-compatible auth. Set the {{envKeyHint}} environment variable.',
+          "Missing API key for OpenAI-compatible auth. Set the {{envKeyHint}} environment variable.",
           { envKeyHint },
         );
       }
       // Default env key - can use either apiKey or env var
       return t(
-        'Missing API key for OpenAI-compatible auth. Set settings.security.auth.apiKey, or set the {{envKeyHint}} environment variable.',
+        "Missing API key for OpenAI-compatible auth. Set settings.security.auth.apiKey, or set the {{envKeyHint}} environment variable.",
         { envKeyHint },
       );
     }
@@ -174,21 +163,16 @@ export function validateAuthMethod(
     }
 
     // Check baseUrl - can come from modelProviders or environment
-    const modelProviders = settings.merged.modelProviders as
-      | ModelProvidersConfig
-      | undefined;
+    const modelProviders = settings.merged.modelProviders as ModelProvidersConfig | undefined;
     // Use config.getModelsConfig().getModel() if available for accurate model ID
-    const modelId =
-      config?.getModelsConfig().getModel() ?? settings.merged.model?.name;
+    const modelId = config?.getModelsConfig().getModel() ?? settings.merged.model?.name;
     const modelConfig = findModelConfig(modelProviders, authMethod, modelId);
 
     if (modelConfig && !modelConfig.baseUrl) {
-      return t(
-        'Anthropic provider missing required baseUrl in modelProviders[].baseUrl.',
-      );
+      return t("Anthropic provider missing required baseUrl in modelProviders[].baseUrl.");
     }
-    if (!modelConfig && !process.env['ANTHROPIC_BASE_URL']) {
-      return t('ANTHROPIC_BASE_URL environment variable not found.');
+    if (!modelConfig && !process.env["ANTHROPIC_BASE_URL"]) {
+      return t("ANTHROPIC_BASE_URL environment variable not found.");
     }
 
     return null;
@@ -202,5 +186,5 @@ export function validateAuthMethod(
     return null;
   }
 
-  return t('Invalid auth method selected.');
+  return t("Invalid auth method selected.");
 }

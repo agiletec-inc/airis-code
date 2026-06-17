@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { act } from 'react';
+import { act } from "react";
 
 // The waitFor from vitest doesn't properly wrap in act(), so we have to
 // implement our own like the one in @testing-library/react

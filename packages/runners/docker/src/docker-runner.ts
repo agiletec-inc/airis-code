@@ -2,33 +2,33 @@
  * Docker runner implementation
  */
 
-import Docker from 'dockerode';
-import { ok, err } from '@airiscode/types';
+import { err, ok } from "@airiscode/types";
+import { spawn } from "child_process";
+import Docker from "dockerode";
 import type {
-  ComposeUpOptions,
   ComposeDownOptions,
-  ContainerInfo,
-  ContainerHealth,
-  ContainerStats,
-  ContainerLogsOptions,
-  ImageInfo,
-  NetworkInfo,
-  VolumeInfo,
-  DockerRunnerError,
-  ComposeUpResult,
   ComposeDownResult,
   ComposeLogsResult,
-  ContainerListResult,
+  ComposeUpOptions,
+  ComposeUpResult,
+  ContainerHealth,
   ContainerHealthResult,
-  ContainerStatsResult,
+  ContainerInfo,
+  ContainerListResult,
+  ContainerLogsOptions,
   ContainerLogsResult,
+  ContainerStats,
+  ContainerStatsResult,
+  DockerRunnerError,
+  ImageInfo,
   ImageListResult,
   ImagePullResult,
+  NetworkInfo,
   NetworkListResult,
+  VolumeInfo,
   VolumeListResult,
-} from './types.js';
-import { DockerRunnerError as DockerError, DockerOperation } from './types.js';
-import { spawn } from 'child_process';
+} from "./types.js";
+import { DockerRunnerError as DockerError, DockerOperation } from "./types.js";
 
 /**
  * Docker operations runner
@@ -45,7 +45,7 @@ export class DockerRunner {
 
   constructor(
     private workingDir: string,
-    dockerOptions?: Docker.DockerOptions
+    dockerOptions?: Docker.DockerOptions,
   ) {
     this.docker = new Docker(dockerOptions);
   }
@@ -55,43 +55,43 @@ export class DockerRunner {
    */
   async composeUp(options: ComposeUpOptions = {}): Promise<ComposeUpResult> {
     try {
-      const args = ['compose'];
+      const args = ["compose"];
 
       if (options.file) {
-        args.push('-f', options.file);
+        args.push("-f", options.file);
       }
 
       if (options.projectName) {
-        args.push('-p', options.projectName);
+        args.push("-p", options.projectName);
       }
 
-      args.push('up');
+      args.push("up");
 
       if (options.build) {
-        args.push('--build');
+        args.push("--build");
       }
 
       if (options.detach) {
-        args.push('-d');
+        args.push("-d");
       }
 
       if (options.removeOrphans) {
-        args.push('--remove-orphans');
+        args.push("--remove-orphans");
       }
 
       if (options.forceRecreate) {
-        args.push('--force-recreate');
+        args.push("--force-recreate");
       }
 
-      await this.execCommand('docker', args);
+      await this.execCommand("docker", args);
       return ok(undefined);
     } catch (error) {
       return err<DockerRunnerError>(
         new DockerError(
-          'Failed to start Docker Compose services',
+          "Failed to start Docker Compose services",
           DockerOperation.COMPOSE_UP,
-          error instanceof Error ? error : undefined
-        )
+          error instanceof Error ? error : undefined,
+        ),
       ) as ComposeUpResult;
     }
   }
@@ -101,35 +101,35 @@ export class DockerRunner {
    */
   async composeDown(options: ComposeDownOptions = {}): Promise<ComposeDownResult> {
     try {
-      const args = ['compose'];
+      const args = ["compose"];
 
       if (options.file) {
-        args.push('-f', options.file);
+        args.push("-f", options.file);
       }
 
       if (options.projectName) {
-        args.push('-p', options.projectName);
+        args.push("-p", options.projectName);
       }
 
-      args.push('down');
+      args.push("down");
 
       if (options.volumes) {
-        args.push('-v');
+        args.push("-v");
       }
 
       if (options.removeImages) {
-        args.push('--rmi', options.removeImages);
+        args.push("--rmi", options.removeImages);
       }
 
-      await this.execCommand('docker', args);
+      await this.execCommand("docker", args);
       return ok(undefined);
     } catch (error) {
       return err<DockerRunnerError>(
         new DockerError(
-          'Failed to stop Docker Compose services',
+          "Failed to stop Docker Compose services",
           DockerOperation.COMPOSE_DOWN,
-          error instanceof Error ? error : undefined
-        )
+          error instanceof Error ? error : undefined,
+        ),
       ) as ComposeDownResult;
     }
   }
@@ -138,34 +138,34 @@ export class DockerRunner {
    * Get Docker Compose logs
    */
   async composeLogs(
-    options: { file?: string; projectName?: string; follow?: boolean } = {}
+    options: { file?: string; projectName?: string; follow?: boolean } = {},
   ): Promise<ComposeLogsResult> {
     try {
-      const args = ['compose'];
+      const args = ["compose"];
 
       if (options.file) {
-        args.push('-f', options.file);
+        args.push("-f", options.file);
       }
 
       if (options.projectName) {
-        args.push('-p', options.projectName);
+        args.push("-p", options.projectName);
       }
 
-      args.push('logs');
+      args.push("logs");
 
       if (options.follow) {
-        args.push('-f');
+        args.push("-f");
       }
 
-      const output = await this.execCommand('docker', args);
+      const output = await this.execCommand("docker", args);
       return ok(output);
     } catch (error) {
       return err<DockerRunnerError>(
         new DockerError(
-          'Failed to get Docker Compose logs',
+          "Failed to get Docker Compose logs",
           DockerOperation.COMPOSE_LOGS,
-          error instanceof Error ? error : undefined
-        )
+          error instanceof Error ? error : undefined,
+        ),
       ) as ComposeLogsResult;
     }
   }
@@ -179,14 +179,14 @@ export class DockerRunner {
 
       const result: ContainerInfo[] = containers.map((container) => ({
         id: container.Id,
-        name: container.Names[0]?.replace(/^\//, '') || '',
+        name: container.Names[0]?.replace(/^\//, "") || "",
         image: container.Image,
-        state: container.State as ContainerInfo['state'],
+        state: container.State as ContainerInfo["state"],
         status: container.Status,
         ports: container.Ports.map((port) => ({
           privatePort: port.PrivatePort,
           publicPort: port.PublicPort,
-          type: port.Type as 'tcp' | 'udp',
+          type: port.Type as "tcp" | "udp",
         })),
         created: new Date(container.Created * 1000),
       }));
@@ -195,10 +195,10 @@ export class DockerRunner {
     } catch (error) {
       return err<DockerRunnerError>(
         new DockerError(
-          'Failed to list containers',
+          "Failed to list containers",
           DockerOperation.CONTAINER_LIST,
-          error instanceof Error ? error : undefined
-        )
+          error instanceof Error ? error : undefined,
+        ),
       ) as ContainerListResult;
     }
   }
@@ -214,7 +214,7 @@ export class DockerRunner {
       if (!info.State.Health) {
         return ok({
           containerId,
-          status: 'none',
+          status: "none",
           failingStreak: 0,
         }) as ContainerHealthResult;
       }
@@ -224,7 +224,7 @@ export class DockerRunner {
 
       return ok({
         containerId,
-        status: health.Status as ContainerHealth['status'],
+        status: health.Status as ContainerHealth["status"],
         failingStreak: health.FailingStreak || 0,
         lastCheck: lastLog
           ? {
@@ -238,10 +238,10 @@ export class DockerRunner {
     } catch (error) {
       return err<DockerRunnerError>(
         new DockerError(
-          'Failed to get container health',
+          "Failed to get container health",
           DockerOperation.HEALTH_CHECK,
-          error instanceof Error ? error : undefined
-        )
+          error instanceof Error ? error : undefined,
+        ),
       ) as ContainerHealthResult;
     }
   }
@@ -256,14 +256,10 @@ export class DockerRunner {
 
       // Calculate CPU percentage
       const cpuDelta =
-        stats.cpu_stats.cpu_usage.total_usage -
-        stats.precpu_stats.cpu_usage.total_usage;
-      const systemDelta =
-        stats.cpu_stats.system_cpu_usage - stats.precpu_stats.system_cpu_usage;
+        stats.cpu_stats.cpu_usage.total_usage - stats.precpu_stats.cpu_usage.total_usage;
+      const systemDelta = stats.cpu_stats.system_cpu_usage - stats.precpu_stats.system_cpu_usage;
       const cpuPercent =
-        systemDelta > 0
-          ? (cpuDelta / systemDelta) * stats.cpu_stats.online_cpus * 100
-          : 0;
+        systemDelta > 0 ? (cpuDelta / systemDelta) * stats.cpu_stats.online_cpus * 100 : 0;
 
       // Memory stats
       const memoryUsage = stats.memory_stats.usage || 0;
@@ -284,8 +280,8 @@ export class DockerRunner {
       let readBytes = 0;
       let writeBytes = 0;
       for (const io of ioStats) {
-        if (io.op === 'read') readBytes += io.value;
-        if (io.op === 'write') writeBytes += io.value;
+        if (io.op === "read") readBytes += io.value;
+        if (io.op === "write") writeBytes += io.value;
       }
 
       const result: ContainerStats = {
@@ -311,10 +307,10 @@ export class DockerRunner {
     } catch (error) {
       return err<DockerRunnerError>(
         new DockerError(
-          'Failed to get container stats',
+          "Failed to get container stats",
           DockerOperation.CONTAINER_STATS,
-          error instanceof Error ? error : undefined
-        )
+          error instanceof Error ? error : undefined,
+        ),
       ) as ContainerStatsResult;
     }
   }
@@ -324,7 +320,7 @@ export class DockerRunner {
    */
   async getContainerLogs(
     containerId: string,
-    options: ContainerLogsOptions = {}
+    options: ContainerLogsOptions = {},
   ): Promise<ContainerLogsResult> {
     try {
       const container = this.docker.getContainer(containerId);
@@ -336,23 +332,23 @@ export class DockerRunner {
         timestamps: options.timestamps || false,
         tail: options.tail,
         since: options.since
-          ? typeof options.since === 'number'
+          ? typeof options.since === "number"
             ? options.since
             : Math.floor(options.since.getTime() / 1000)
           : undefined,
       };
 
       const buffer = await container.logs(logOptions);
-      const logs = buffer.toString('utf-8');
+      const logs = buffer.toString("utf-8");
 
       return ok(logs);
     } catch (error) {
       return err<DockerRunnerError>(
         new DockerError(
-          'Failed to get container logs',
+          "Failed to get container logs",
           DockerOperation.CONTAINER_LOGS,
-          error instanceof Error ? error : undefined
-        )
+          error instanceof Error ? error : undefined,
+        ),
       ) as ContainerLogsResult;
     }
   }
@@ -375,10 +371,10 @@ export class DockerRunner {
     } catch (error) {
       return err<DockerRunnerError>(
         new DockerError(
-          'Failed to list images',
+          "Failed to list images",
           DockerOperation.IMAGE_LIST,
-          error instanceof Error ? error : undefined
-        )
+          error instanceof Error ? error : undefined,
+        ),
       ) as ImageListResult;
     }
   }
@@ -395,13 +391,10 @@ export class DockerRunner {
             return;
           }
 
-          this.docker.modem.followProgress(
-            stream,
-            (err: Error | null) => {
-              if (err) reject(err);
-              else resolve();
-            }
-          );
+          this.docker.modem.followProgress(stream, (err: Error | null) => {
+            if (err) reject(err);
+            else resolve();
+          });
         });
       });
 
@@ -409,10 +402,10 @@ export class DockerRunner {
     } catch (error) {
       return err<DockerRunnerError>(
         new DockerError(
-          'Failed to pull image',
+          "Failed to pull image",
           DockerOperation.IMAGE_PULL,
-          error instanceof Error ? error : undefined
-        )
+          error instanceof Error ? error : undefined,
+        ),
       ) as ImagePullResult;
     }
   }
@@ -435,10 +428,10 @@ export class DockerRunner {
     } catch (error) {
       return err<DockerRunnerError>(
         new DockerError(
-          'Failed to list networks',
+          "Failed to list networks",
           DockerOperation.NETWORK_LIST,
-          error instanceof Error ? error : undefined
-        )
+          error instanceof Error ? error : undefined,
+        ),
       ) as NetworkListResult;
     }
   }
@@ -462,10 +455,10 @@ export class DockerRunner {
     } catch (error) {
       return err<DockerRunnerError>(
         new DockerError(
-          'Failed to list volumes',
+          "Failed to list volumes",
           DockerOperation.VOLUME_LIST,
-          error instanceof Error ? error : undefined
-        )
+          error instanceof Error ? error : undefined,
+        ),
       ) as VolumeListResult;
     }
   }
@@ -477,21 +470,21 @@ export class DockerRunner {
     return new Promise((resolve, reject) => {
       const proc = spawn(command, args, {
         cwd: this.workingDir,
-        stdio: ['ignore', 'pipe', 'pipe'],
+        stdio: ["ignore", "pipe", "pipe"],
       });
 
-      let stdout = '';
-      let stderr = '';
+      let stdout = "";
+      let stderr = "";
 
-      proc.stdout.on('data', (chunk) => {
+      proc.stdout.on("data", (chunk) => {
         stdout += chunk.toString();
       });
 
-      proc.stderr.on('data', (chunk) => {
+      proc.stderr.on("data", (chunk) => {
         stderr += chunk.toString();
       });
 
-      proc.on('close', (code) => {
+      proc.on("close", (code) => {
         if (code === 0) {
           resolve(stdout);
         } else {
@@ -499,7 +492,7 @@ export class DockerRunner {
         }
       });
 
-      proc.on('error', (error) => {
+      proc.on("error", (error) => {
         reject(error);
       });
     });

@@ -4,26 +4,26 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { renderWithProviders } from '../../../test-utils/render.js';
-import { EnumSelector } from './EnumSelector.js';
-import type { SettingEnumOption } from '../../../config/settingsSchema.js';
-import { describe, it, expect } from 'vitest';
+import { describe, expect, it } from "vitest";
+import type { SettingEnumOption } from "../../../config/settingsSchema.js";
+import { renderWithProviders } from "../../../test-utils/render.js";
+import { EnumSelector } from "./EnumSelector.js";
 
 const LANGUAGE_OPTIONS: readonly SettingEnumOption[] = [
-  { label: 'English', value: 'en' },
-  { label: '中文 (简体)', value: 'zh' },
-  { label: 'Español', value: 'es' },
-  { label: 'Français', value: 'fr' },
+  { label: "English", value: "en" },
+  { label: "中文 (简体)", value: "zh" },
+  { label: "Español", value: "es" },
+  { label: "Français", value: "fr" },
 ];
 
 const NUMERIC_OPTIONS: readonly SettingEnumOption[] = [
-  { label: 'Low', value: 1 },
-  { label: 'Medium', value: 2 },
-  { label: 'High', value: 3 },
+  { label: "Low", value: 1 },
+  { label: "Medium", value: 2 },
+  { label: "High", value: 3 },
 ];
 
-describe('<EnumSelector />', () => {
-  it('renders with string options and matches snapshot', () => {
+describe("<EnumSelector />", () => {
+  it("renders with string options and matches snapshot", () => {
     const { lastFrame } = renderWithProviders(
       <EnumSelector
         options={LANGUAGE_OPTIONS}
@@ -35,7 +35,7 @@ describe('<EnumSelector />', () => {
     expect(lastFrame()).toMatchSnapshot();
   });
 
-  it('renders with numeric options and matches snapshot', () => {
+  it("renders with numeric options and matches snapshot", () => {
     const { lastFrame } = renderWithProviders(
       <EnumSelector
         options={NUMERIC_OPTIONS}
@@ -47,7 +47,7 @@ describe('<EnumSelector />', () => {
     expect(lastFrame()).toMatchSnapshot();
   });
 
-  it('renders inactive state and matches snapshot', () => {
+  it("renders inactive state and matches snapshot", () => {
     const { lastFrame } = renderWithProviders(
       <EnumSelector
         options={LANGUAGE_OPTIONS}
@@ -59,10 +59,8 @@ describe('<EnumSelector />', () => {
     expect(lastFrame()).toMatchSnapshot();
   });
 
-  it('renders with single option and matches snapshot', () => {
-    const singleOption: readonly SettingEnumOption[] = [
-      { label: 'Only Option', value: 'only' },
-    ];
+  it("renders with single option and matches snapshot", () => {
+    const singleOption: readonly SettingEnumOption[] = [{ label: "Only Option", value: "only" }];
     const { lastFrame } = renderWithProviders(
       <EnumSelector
         options={singleOption}
@@ -74,19 +72,14 @@ describe('<EnumSelector />', () => {
     expect(lastFrame()).toMatchSnapshot();
   });
 
-  it('renders nothing when no options are provided', () => {
+  it("renders nothing when no options are provided", () => {
     const { lastFrame } = renderWithProviders(
-      <EnumSelector
-        options={[]}
-        currentValue=""
-        isActive={true}
-        onValueChange={() => {}}
-      />,
+      <EnumSelector options={[]} currentValue="" isActive={true} onValueChange={() => {}} />,
     );
-    expect(lastFrame()).toBe('');
+    expect(lastFrame()).toBe("");
   });
 
-  it('handles currentValue not found in options', () => {
+  it("handles currentValue not found in options", () => {
     const { lastFrame } = renderWithProviders(
       <EnumSelector
         options={LANGUAGE_OPTIONS}
@@ -96,10 +89,10 @@ describe('<EnumSelector />', () => {
       />,
     );
     // Should default to first option
-    expect(lastFrame()).toContain('English');
+    expect(lastFrame()).toContain("English");
   });
 
-  it('updates when currentValue changes externally', () => {
+  it("updates when currentValue changes externally", () => {
     const { rerender, lastFrame } = renderWithProviders(
       <EnumSelector
         options={LANGUAGE_OPTIONS}
@@ -108,7 +101,7 @@ describe('<EnumSelector />', () => {
         onValueChange={() => {}}
       />,
     );
-    expect(lastFrame()).toContain('English');
+    expect(lastFrame()).toContain("English");
 
     rerender(
       <EnumSelector
@@ -118,10 +111,10 @@ describe('<EnumSelector />', () => {
         onValueChange={() => {}}
       />,
     );
-    expect(lastFrame()).toContain('中文 (简体)');
+    expect(lastFrame()).toContain("中文 (简体)");
   });
 
-  it('shows navigation arrows when multiple options available', () => {
+  it("shows navigation arrows when multiple options available", () => {
     const { lastFrame } = renderWithProviders(
       <EnumSelector
         options={LANGUAGE_OPTIONS}
@@ -130,14 +123,12 @@ describe('<EnumSelector />', () => {
         onValueChange={() => {}}
       />,
     );
-    expect(lastFrame()).toContain('←');
-    expect(lastFrame()).toContain('→');
+    expect(lastFrame()).toContain("←");
+    expect(lastFrame()).toContain("→");
   });
 
-  it('hides navigation arrows when single option available', () => {
-    const singleOption: readonly SettingEnumOption[] = [
-      { label: 'Only Option', value: 'only' },
-    ];
+  it("hides navigation arrows when single option available", () => {
+    const singleOption: readonly SettingEnumOption[] = [{ label: "Only Option", value: "only" }];
     const { lastFrame } = renderWithProviders(
       <EnumSelector
         options={singleOption}
@@ -146,7 +137,7 @@ describe('<EnumSelector />', () => {
         onValueChange={() => {}}
       />,
     );
-    expect(lastFrame()).not.toContain('←');
-    expect(lastFrame()).not.toContain('→');
+    expect(lastFrame()).not.toContain("←");
+    expect(lastFrame()).not.toContain("→");
   });
 });

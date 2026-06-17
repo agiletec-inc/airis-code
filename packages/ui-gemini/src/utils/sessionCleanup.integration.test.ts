@@ -4,31 +4,31 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { describe, it, expect, vi } from 'vitest';
-import { cleanupExpiredSessions } from './sessionCleanup.js';
-import type { Settings } from '../config/settings.js';
-import { SESSION_FILE_PREFIX, type Config } from '@airiscode/gemini-cli-core';
+import { type Config, SESSION_FILE_PREFIX } from "@airiscode/gemini-cli-core";
+import { describe, expect, it, vi } from "vitest";
+import type { Settings } from "../config/settings.js";
+import { cleanupExpiredSessions } from "./sessionCleanup.js";
 
 // Create a mock config for integration testing
 function createTestConfig(): Config {
   return {
     storage: {
-      getProjectTempDir: () => '/tmp/nonexistent-test-dir',
+      getProjectTempDir: () => "/tmp/nonexistent-test-dir",
     },
-    getSessionId: () => 'test-session-id',
+    getSessionId: () => "test-session-id",
     getDebugMode: () => false,
     initialize: async () => undefined,
   } as unknown as Config;
 }
 
-describe('Session Cleanup Integration', () => {
-  it('should gracefully handle non-existent directories', async () => {
+describe("Session Cleanup Integration", () => {
+  it("should gracefully handle non-existent directories", async () => {
     const config = createTestConfig();
     const settings: Settings = {
       general: {
         sessionRetention: {
           enabled: true,
-          maxAge: '30d',
+          maxAge: "30d",
         },
       },
     };
@@ -43,7 +43,7 @@ describe('Session Cleanup Integration', () => {
     expect(result.failed).toBe(0);
   });
 
-  it('should not impact startup when disabled', async () => {
+  it("should not impact startup when disabled", async () => {
     const config = createTestConfig();
     const settings: Settings = {
       general: {
@@ -62,14 +62,14 @@ describe('Session Cleanup Integration', () => {
     expect(result.failed).toBe(0);
   });
 
-  it('should handle missing sessionRetention configuration', async () => {
+  it("should handle missing sessionRetention configuration", async () => {
     // Create test session files to verify they are NOT deleted when config is missing
-    const fs = await import('node:fs/promises');
-    const path = await import('node:path');
-    const os = await import('node:os');
+    const fs = await import("node:fs/promises");
+    const path = await import("node:path");
+    const os = await import("node:os");
 
-    const tempDir = await fs.mkdtemp(path.join(os.tmpdir(), 'gemini-test-'));
-    const chatsDir = path.join(tempDir, 'chats');
+    const tempDir = await fs.mkdtemp(path.join(os.tmpdir(), "gemini-test-"));
+    const chatsDir = path.join(tempDir, "chats");
     await fs.mkdir(chatsDir, { recursive: true });
 
     // Create an old session file that would normally be deleted
@@ -81,7 +81,7 @@ describe('Session Cleanup Integration', () => {
     await fs.writeFile(
       sessionFile,
       JSON.stringify({
-        sessionId: 'test123',
+        sessionId: "test123",
         messages: [],
         startTime: oldDate.toISOString(),
         lastUpdated: oldDate.toISOString(),
@@ -103,23 +103,21 @@ describe('Session Cleanup Integration', () => {
 
     // Verify the session file still exists (was not deleted)
     const filesAfter = await fs.readdir(chatsDir);
-    expect(filesAfter).toContain(
-      `${SESSION_FILE_PREFIX}2024-01-01T10-00-00-test123.json`,
-    );
+    expect(filesAfter).toContain(`${SESSION_FILE_PREFIX}2024-01-01T10-00-00-test123.json`);
 
     // Cleanup
     await fs.rm(tempDir, { recursive: true });
   });
 
-  it('should validate configuration and fail gracefully', async () => {
-    const errorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+  it("should validate configuration and fail gracefully", async () => {
+    const errorSpy = vi.spyOn(console, "error").mockImplementation(() => {});
     const config = createTestConfig();
 
     const settings: Settings = {
       general: {
         sessionRetention: {
           enabled: true,
-          maxAge: 'invalid-format',
+          maxAge: "invalid-format",
         },
       },
     };
@@ -134,22 +132,20 @@ describe('Session Cleanup Integration', () => {
 
     // Verify error logging provides visibility into the validation failure
     expect(errorSpy).toHaveBeenCalledWith(
-      expect.stringContaining(
-        'Session cleanup disabled: Error: Invalid retention period format',
-      ),
+      expect.stringContaining("Session cleanup disabled: Error: Invalid retention period format"),
     );
 
     errorSpy.mockRestore();
   });
 
-  it('should clean up expired sessions when they exist', async () => {
+  it("should clean up expired sessions when they exist", async () => {
     // Create a temporary directory with test sessions
-    const fs = await import('node:fs/promises');
-    const path = await import('node:path');
-    const os = await import('node:os');
+    const fs = await import("node:fs/promises");
+    const path = await import("node:path");
+    const os = await import("node:os");
 
-    const tempDir = await fs.mkdtemp(path.join(os.tmpdir(), 'gemini-test-'));
-    const chatsDir = path.join(tempDir, 'chats');
+    const tempDir = await fs.mkdtemp(path.join(os.tmpdir(), "gemini-test-"));
+    const chatsDir = path.join(tempDir, "chats");
     await fs.mkdir(chatsDir, { recursive: true });
 
     // Create test session files with different ages
@@ -165,8 +161,8 @@ describe('Session Cleanup Integration', () => {
     await fs.writeFile(
       oldSessionFile,
       JSON.stringify({
-        sessionId: 'old12345',
-        messages: [{ type: 'user', content: 'test message' }],
+        sessionId: "old12345",
+        messages: [{ type: "user", content: "test message" }],
         startTime: oldDate.toISOString(),
         lastUpdated: oldDate.toISOString(),
       }),
@@ -180,8 +176,8 @@ describe('Session Cleanup Integration', () => {
     await fs.writeFile(
       recentSessionFile,
       JSON.stringify({
-        sessionId: 'recent789',
-        messages: [{ type: 'user', content: 'test message' }],
+        sessionId: "recent789",
+        messages: [{ type: "user", content: "test message" }],
         startTime: recentDate.toISOString(),
         lastUpdated: recentDate.toISOString(),
       }),
@@ -195,8 +191,8 @@ describe('Session Cleanup Integration', () => {
     await fs.writeFile(
       currentSessionFile,
       JSON.stringify({
-        sessionId: 'current123',
-        messages: [{ type: 'user', content: 'test message' }],
+        sessionId: "current123",
+        messages: [{ type: "user", content: "test message" }],
         startTime: now.toISOString(),
         lastUpdated: now.toISOString(),
       }),
@@ -207,7 +203,7 @@ describe('Session Cleanup Integration', () => {
       storage: {
         getProjectTempDir: () => tempDir,
       },
-      getSessionId: () => 'current123',
+      getSessionId: () => "current123",
       getDebugMode: () => false,
       initialize: async () => undefined,
     } as unknown as Config;
@@ -216,7 +212,7 @@ describe('Session Cleanup Integration', () => {
       general: {
         sessionRetention: {
           enabled: true,
-          maxAge: '30d', // Keep sessions for 30 days
+          maxAge: "30d", // Keep sessions for 30 days
         },
       },
     };
@@ -234,12 +230,8 @@ describe('Session Cleanup Integration', () => {
       // Verify files on disk
       const remainingFiles = await fs.readdir(chatsDir);
       expect(remainingFiles).toHaveLength(2); // Only 2 files should remain
-      expect(remainingFiles).toContain(
-        `${SESSION_FILE_PREFIX}2025-01-15T10-00-00-recent789.json`,
-      );
-      expect(remainingFiles).toContain(
-        `${SESSION_FILE_PREFIX}2025-01-20T10-00-00-current123.json`,
-      );
+      expect(remainingFiles).toContain(`${SESSION_FILE_PREFIX}2025-01-15T10-00-00-recent789.json`);
+      expect(remainingFiles).toContain(`${SESSION_FILE_PREFIX}2025-01-20T10-00-00-current123.json`);
       expect(remainingFiles).not.toContain(
         `${SESSION_FILE_PREFIX}2024-12-01T10-00-00-old12345.json`,
       );

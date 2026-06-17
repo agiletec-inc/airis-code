@@ -4,12 +4,12 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import type { GitIgnoreFilter } from '../utils/gitIgnoreParser.js';
-import type { QwenIgnoreFilter } from '../utils/qwenIgnoreParser.js';
-import { GitIgnoreParser } from '../utils/gitIgnoreParser.js';
-import { QwenIgnoreParser } from '../utils/qwenIgnoreParser.js';
-import { isGitRepository } from '../utils/gitUtils.js';
-import * as path from 'node:path';
+import * as path from "node:path";
+import type { GitIgnoreFilter } from "../utils/gitIgnoreParser.js";
+import { GitIgnoreParser } from "../utils/gitIgnoreParser.js";
+import { isGitRepository } from "../utils/gitUtils.js";
+import type { QwenIgnoreFilter } from "../utils/qwenIgnoreParser.js";
+import { QwenIgnoreParser } from "../utils/qwenIgnoreParser.js";
 
 export interface FilterFilesOptions {
   respectGitIgnore?: boolean;
@@ -115,14 +115,9 @@ export class FileDiscoveryService {
   /**
    * Unified method to check if a file should be ignored based on filtering options
    */
-  shouldIgnoreFile(
-    filePath: string,
-    options: FilterFilesOptions = {},
-  ): boolean {
-    const {
-      respectGitIgnore = true,
-      respectAiriscodeIgnore: respectAiriscodeIgnore = true,
-    } = options;
+  shouldIgnoreFile(filePath: string, options: FilterFilesOptions = {}): boolean {
+    const { respectGitIgnore = true, respectAiriscodeIgnore: respectAiriscodeIgnore = true } =
+      options;
 
     if (respectGitIgnore && this.shouldGitIgnoreFile(filePath)) {
       return true;

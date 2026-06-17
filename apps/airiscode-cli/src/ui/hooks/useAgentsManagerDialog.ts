@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { useState, useCallback } from 'react';
+import { useCallback, useState } from "react";
 
 export interface UseAgentsManagerDialogReturn {
   isAgentsManagerDialogOpen: boolean;
@@ -13,8 +13,7 @@ export interface UseAgentsManagerDialogReturn {
 }
 
 export const useAgentsManagerDialog = (): UseAgentsManagerDialogReturn => {
-  const [isAgentsManagerDialogOpen, setIsAgentsManagerDialogOpen] =
-    useState(false);
+  const [isAgentsManagerDialogOpen, setIsAgentsManagerDialogOpen] = useState(false);
 
   const openAgentsManagerDialog = useCallback(() => {
     setIsAgentsManagerDialogOpen(true);

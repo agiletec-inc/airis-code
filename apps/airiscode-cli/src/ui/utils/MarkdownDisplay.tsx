@@ -4,13 +4,13 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import React from 'react';
-import { Text, Box } from 'ink';
-import { theme } from '../semantic-colors.js';
-import { colorizeCode } from './CodeColorizer.js';
-import { TableRenderer } from './TableRenderer.js';
-import { RenderInline } from './InlineMarkdownRenderer.js';
-import { useSettings } from '../contexts/SettingsContext.js';
+import { Box, Text } from "ink";
+import React from "react";
+import { useSettings } from "../contexts/SettingsContext.js";
+import { theme } from "../semantic-colors.js";
+import { colorizeCode } from "./CodeColorizer.js";
+import { RenderInline } from "./InlineMarkdownRenderer.js";
+import { TableRenderer } from "./TableRenderer.js";
 
 interface MarkdownDisplayProps {
   text: string;
@@ -50,7 +50,7 @@ const MarkdownDisplayInternal: React.FC<MarkdownDisplayProps> = ({
   let lastLineEmpty = true;
   let codeBlockContent: string[] = [];
   let codeBlockLang: string | null = null;
-  let codeBlockFence = '';
+  let codeBlockFence = "";
   let inTable = false;
   let tableRows: string[][] = [];
   let tableHeaders: string[] = [];
@@ -85,7 +85,7 @@ const MarkdownDisplayInternal: React.FC<MarkdownDisplayProps> = ({
         inCodeBlock = false;
         codeBlockContent = [];
         codeBlockLang = null;
-        codeBlockFence = '';
+        codeBlockFence = "";
       } else {
         codeBlockContent.push(line);
       }
@@ -106,14 +106,11 @@ const MarkdownDisplayInternal: React.FC<MarkdownDisplayProps> = ({
       codeBlockLang = codeFenceMatch[2] || null;
     } else if (tableRowMatch && !inTable) {
       // Potential table start - check if next line is separator
-      if (
-        index + 1 < lines.length &&
-        lines[index + 1].match(tableSeparatorRegex)
-      ) {
+      if (index + 1 < lines.length && lines[index + 1].match(tableSeparatorRegex)) {
         inTable = true;
         tableHeaders = tableRowMatch[1]
           .split(/(?<!\\)\|/)
-          .map((cell) => cell.trim().replaceAll('\\|', '|'));
+          .map((cell) => cell.trim().replaceAll("\\|", "|"));
         tableRows = [];
       } else {
         // Not a table, treat as regular text
@@ -131,10 +128,10 @@ const MarkdownDisplayInternal: React.FC<MarkdownDisplayProps> = ({
       // Add table row
       const cells = tableRowMatch[1]
         .split(/(?<!\\)\|/)
-        .map((cell) => cell.trim().replaceAll('\\|', '|'));
+        .map((cell) => cell.trim().replaceAll("\\|", "|"));
       // Ensure row has same column count as headers
       while (cells.length < tableHeaders.length) {
-        cells.push('');
+        cells.push("");
       }
       if (cells.length > tableHeaders.length) {
         cells.length = tableHeaders.length;
@@ -245,9 +242,7 @@ const MarkdownDisplayInternal: React.FC<MarkdownDisplayProps> = ({
     } else {
       if (line.trim().length === 0 && !inCodeBlock) {
         if (!lastLineEmpty) {
-          contentBlocks.push(
-            <Box key={`spacer-${index}`} height={EMPTY_LINE_HEIGHT} />,
-          );
+          contentBlocks.push(<Box key={`spacer-${index}`} height={EMPTY_LINE_HEIGHT} />);
           lastLineEmpty = true;
         }
       } else {
@@ -312,25 +307,20 @@ const RenderCodeBlockInternal: React.FC<RenderCodeBlockProps> = ({
   const RESERVED_LINES = 2; // Lines reserved for the message itself and potential padding
 
   if (isPending && availableTerminalHeight !== undefined) {
-    const MAX_CODE_LINES_WHEN_PENDING = Math.max(
-      0,
-      availableTerminalHeight - RESERVED_LINES,
-    );
+    const MAX_CODE_LINES_WHEN_PENDING = Math.max(0, availableTerminalHeight - RESERVED_LINES);
 
     if (content.length > MAX_CODE_LINES_WHEN_PENDING) {
       if (MAX_CODE_LINES_WHEN_PENDING < MIN_LINES_FOR_MESSAGE) {
         // Not enough space to even show the message meaningfully
         return (
           <Box paddingLeft={CODE_BLOCK_PREFIX_PADDING}>
-            <Text color={theme.text.secondary}>
-              ... code is being written ...
-            </Text>
+            <Text color={theme.text.secondary}>... code is being written ...</Text>
           </Box>
         );
       }
       const truncatedContent = content.slice(0, MAX_CODE_LINES_WHEN_PENDING);
       const colorizedTruncatedCode = colorizeCode(
-        truncatedContent.join('\n'),
+        truncatedContent.join("\n"),
         lang,
         availableTerminalHeight,
         contentWidth - CODE_BLOCK_PREFIX_PADDING,
@@ -346,7 +336,7 @@ const RenderCodeBlockInternal: React.FC<RenderCodeBlockProps> = ({
     }
   }
 
-  const fullContent = content.join('\n');
+  const fullContent = content.join("\n");
   const colorizedCode = colorizeCode(
     fullContent,
     lang,
@@ -372,7 +362,7 @@ const RenderCodeBlock = React.memo(RenderCodeBlockInternal);
 
 interface RenderListItemProps {
   itemText: string;
-  type: 'ul' | 'ol';
+  type: "ul" | "ol";
   marker: string;
   leadingWhitespace?: string;
   textColor?: string;
@@ -382,18 +372,15 @@ const RenderListItemInternal: React.FC<RenderListItemProps> = ({
   itemText,
   type,
   marker,
-  leadingWhitespace = '',
+  leadingWhitespace = "",
   textColor = theme.text.primary,
 }) => {
-  const prefix = type === 'ol' ? `${marker}. ` : `${marker} `;
+  const prefix = type === "ol" ? `${marker}. ` : `${marker} `;
   const prefixWidth = prefix.length;
   const indentation = leadingWhitespace.length;
 
   return (
-    <Box
-      paddingLeft={indentation + LIST_ITEM_PREFIX_PADDING}
-      flexDirection="row"
-    >
+    <Box paddingLeft={indentation + LIST_ITEM_PREFIX_PADDING} flexDirection="row">
       <Box width={prefixWidth}>
         <Text color={textColor}>{prefix}</Text>
       </Box>
@@ -414,11 +401,7 @@ interface RenderTableProps {
   contentWidth: number;
 }
 
-const RenderTableInternal: React.FC<RenderTableProps> = ({
-  headers,
-  rows,
-  contentWidth,
-}) => (
+const RenderTableInternal: React.FC<RenderTableProps> = ({ headers, rows, contentWidth }) => (
   <TableRenderer headers={headers} rows={rows} contentWidth={contentWidth} />
 );
 

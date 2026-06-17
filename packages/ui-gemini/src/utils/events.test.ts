@@ -4,22 +4,22 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { describe, it, expect, vi } from 'vitest';
-import { appEvents, AppEvent } from './events.js';
+import { describe, expect, it, vi } from "vitest";
+import { AppEvent, appEvents } from "./events.js";
 
-describe('events', () => {
-  it('should allow registering and emitting events', () => {
+describe("events", () => {
+  it("should allow registering and emitting events", () => {
     const callback = vi.fn();
     appEvents.on(AppEvent.OauthDisplayMessage, callback);
 
-    appEvents.emit(AppEvent.OauthDisplayMessage, 'test message');
+    appEvents.emit(AppEvent.OauthDisplayMessage, "test message");
 
-    expect(callback).toHaveBeenCalledWith('test message');
+    expect(callback).toHaveBeenCalledWith("test message");
 
     appEvents.off(AppEvent.OauthDisplayMessage, callback);
   });
 
-  it('should work with events without data', () => {
+  it("should work with events without data", () => {
     const callback = vi.fn();
     appEvents.on(AppEvent.Flicker, callback);
 

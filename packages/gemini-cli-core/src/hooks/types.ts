@@ -5,33 +5,29 @@
  */
 
 import type {
-  GenerateContentResponse,
-  GenerateContentParameters,
   ToolConfig as GenAIToolConfig,
+  GenerateContentParameters,
+  GenerateContentResponse,
   ToolListUnion,
-} from '@google/genai';
-import type {
-  LLMRequest,
-  LLMResponse,
-  HookToolConfig,
-} from './hookTranslator.js';
-import { defaultHookTranslator } from './hookTranslator.js';
+} from "@google/genai";
+import type { HookToolConfig, LLMRequest, LLMResponse } from "./hookTranslator.js";
+import { defaultHookTranslator } from "./hookTranslator.js";
 
 /**
  * Event names for the hook system
  */
 export enum HookEventName {
-  BeforeTool = 'BeforeTool',
-  AfterTool = 'AfterTool',
-  BeforeAgent = 'BeforeAgent',
-  Notification = 'Notification',
-  AfterAgent = 'AfterAgent',
-  SessionStart = 'SessionStart',
-  SessionEnd = 'SessionEnd',
-  PreCompress = 'PreCompress',
-  BeforeModel = 'BeforeModel',
-  AfterModel = 'AfterModel',
-  BeforeToolSelection = 'BeforeToolSelection',
+  BeforeTool = "BeforeTool",
+  AfterTool = "AfterTool",
+  BeforeAgent = "BeforeAgent",
+  Notification = "Notification",
+  AfterAgent = "AfterAgent",
+  SessionStart = "SessionStart",
+  SessionEnd = "SessionEnd",
+  PreCompress = "PreCompress",
+  BeforeModel = "BeforeModel",
+  AfterModel = "AfterModel",
+  BeforeToolSelection = "BeforeToolSelection",
 }
 
 /**
@@ -58,19 +54,13 @@ export interface HookDefinition {
  * Hook implementation types
  */
 export enum HookType {
-  Command = 'command',
+  Command = "command",
 }
 
 /**
  * Decision types for hook outputs
  */
-export type HookDecision =
-  | 'ask'
-  | 'block'
-  | 'deny'
-  | 'approve'
-  | 'allow'
-  | undefined;
+export type HookDecision = "ask" | "block" | "deny" | "approve" | "allow" | undefined;
 
 /**
  * Base hook input - common fields for all events
@@ -100,16 +90,13 @@ export interface HookOutput {
  * Factory function to create the appropriate hook output class based on event name
  * Returns DefaultHookOutput for all events since it contains all necessary methods
  */
-export function createHookOutput(
-  eventName: string,
-  data: Partial<HookOutput>,
-): DefaultHookOutput {
+export function createHookOutput(eventName: string, data: Partial<HookOutput>): DefaultHookOutput {
   switch (eventName) {
-    case 'BeforeModel':
+    case "BeforeModel":
       return new BeforeModelHookOutput(data);
-    case 'AfterModel':
+    case "AfterModel":
       return new AfterModelHookOutput(data);
-    case 'BeforeToolSelection':
+    case "BeforeToolSelection":
       return new BeforeToolSelectionHookOutput(data);
     default:
       return new DefaultHookOutput(data);
@@ -142,7 +129,7 @@ export class DefaultHookOutput implements HookOutput {
    * Check if this output represents a blocking decision
    */
   isBlockingDecision(): boolean {
-    return this.decision === 'block' || this.decision === 'deny';
+    return this.decision === "block" || this.decision === "deny";
   }
 
   /**
@@ -156,15 +143,13 @@ export class DefaultHookOutput implements HookOutput {
    * Get the effective reason for blocking or stopping
    */
   getEffectiveReason(): string {
-    return this.reason || this.stopReason || 'No reason provided';
+    return this.reason || this.stopReason || "No reason provided";
   }
 
   /**
    * Apply LLM request modifications (specific method for BeforeModel hooks)
    */
-  applyLLMRequestModifications(
-    target: GenerateContentParameters,
-  ): GenerateContentParameters {
+  applyLLMRequestModifications(target: GenerateContentParameters): GenerateContentParameters {
     // Base implementation - overridden by BeforeModelHookOutput
     return target;
   }
@@ -172,10 +157,7 @@ export class DefaultHookOutput implements HookOutput {
   /**
    * Apply tool config modifications (specific method for BeforeToolSelection hooks)
    */
-  applyToolConfigModifications(target: {
-    toolConfig?: GenAIToolConfig;
-    tools?: ToolListUnion;
-  }): {
+  applyToolConfigModifications(target: { toolConfig?: GenAIToolConfig; tools?: ToolListUnion }): {
     toolConfig?: GenAIToolConfig;
     tools?: ToolListUnion;
   } {
@@ -187,12 +169,9 @@ export class DefaultHookOutput implements HookOutput {
    * Get additional context for adding to responses
    */
   getAdditionalContext(): string | undefined {
-    if (
-      this.hookSpecificOutput &&
-      'additionalContext' in this.hookSpecificOutput
-    ) {
-      const context = this.hookSpecificOutput['additionalContext'];
-      return typeof context === 'string' ? context : undefined;
+    if (this.hookSpecificOutput && "additionalContext" in this.hookSpecificOutput) {
+      const context = this.hookSpecificOutput["additionalContext"];
+      return typeof context === "string" ? context : undefined;
     }
     return undefined;
   }
@@ -207,7 +186,7 @@ export class DefaultHookOutput implements HookOutput {
         reason: this.getEffectiveReason(),
       };
     }
-    return { blocked: false, reason: '' };
+    return { blocked: false, reason: "" };
   }
 }
 
@@ -221,10 +200,9 @@ export class BeforeToolHookOutput extends DefaultHookOutput {
   override getEffectiveReason(): string {
     // Check for compatibility fields first
     if (this.hookSpecificOutput) {
-      if ('permissionDecisionReason' in this.hookSpecificOutput) {
-        const compatReason =
-          this.hookSpecificOutput['permissionDecisionReason'];
-        if (typeof compatReason === 'string') {
+      if ("permissionDecisionReason" in this.hookSpecificOutput) {
+        const compatReason = this.hookSpecificOutput["permissionDecisionReason"];
+        if (typeof compatReason === "string") {
           return compatReason;
         }
       }
@@ -238,12 +216,9 @@ export class BeforeToolHookOutput extends DefaultHookOutput {
    */
   override isBlockingDecision(): boolean {
     // Check compatibility field first
-    if (
-      this.hookSpecificOutput &&
-      'permissionDecision' in this.hookSpecificOutput
-    ) {
-      const compatDecision = this.hookSpecificOutput['permissionDecision'];
-      if (compatDecision === 'block' || compatDecision === 'deny') {
+    if (this.hookSpecificOutput && "permissionDecision" in this.hookSpecificOutput) {
+      const compatDecision = this.hookSpecificOutput["permissionDecision"];
+      if (compatDecision === "block" || compatDecision === "deny") {
         return true;
       }
     }
@@ -260,10 +235,8 @@ export class BeforeModelHookOutput extends DefaultHookOutput {
    * Get synthetic LLM response if provided by hook
    */
   getSyntheticResponse(): GenerateContentResponse | undefined {
-    if (this.hookSpecificOutput && 'llm_response' in this.hookSpecificOutput) {
-      const hookResponse = this.hookSpecificOutput[
-        'llm_response'
-      ] as LLMResponse;
+    if (this.hookSpecificOutput && "llm_response" in this.hookSpecificOutput) {
+      const hookResponse = this.hookSpecificOutput["llm_response"] as LLMResponse;
       if (hookResponse) {
         // Convert hook format to SDK format
         return defaultHookTranslator.fromHookLLMResponse(hookResponse);
@@ -278,10 +251,8 @@ export class BeforeModelHookOutput extends DefaultHookOutput {
   override applyLLMRequestModifications(
     target: GenerateContentParameters,
   ): GenerateContentParameters {
-    if (this.hookSpecificOutput && 'llm_request' in this.hookSpecificOutput) {
-      const hookRequest = this.hookSpecificOutput[
-        'llm_request'
-      ] as Partial<LLMRequest>;
+    if (this.hookSpecificOutput && "llm_request" in this.hookSpecificOutput) {
+      const hookRequest = this.hookSpecificOutput["llm_request"] as Partial<LLMRequest>;
       if (hookRequest) {
         // Convert hook format to SDK format
         const sdkRequest = defaultHookTranslator.fromHookLLMRequest(
@@ -309,14 +280,11 @@ export class BeforeToolSelectionHookOutput extends DefaultHookOutput {
     toolConfig?: GenAIToolConfig;
     tools?: ToolListUnion;
   }): { toolConfig?: GenAIToolConfig; tools?: ToolListUnion } {
-    if (this.hookSpecificOutput && 'toolConfig' in this.hookSpecificOutput) {
-      const hookToolConfig = this.hookSpecificOutput[
-        'toolConfig'
-      ] as HookToolConfig;
+    if (this.hookSpecificOutput && "toolConfig" in this.hookSpecificOutput) {
+      const hookToolConfig = this.hookSpecificOutput["toolConfig"] as HookToolConfig;
       if (hookToolConfig) {
         // Convert hook format to SDK format
-        const sdkToolConfig =
-          defaultHookTranslator.fromHookToolConfig(hookToolConfig);
+        const sdkToolConfig = defaultHookTranslator.fromHookToolConfig(hookToolConfig);
         return {
           ...target,
           tools: target.tools || [],
@@ -336,15 +304,11 @@ export class AfterModelHookOutput extends DefaultHookOutput {
    * Get modified LLM response if provided by hook
    */
   getModifiedResponse(): GenerateContentResponse | undefined {
-    if (this.hookSpecificOutput && 'llm_response' in this.hookSpecificOutput) {
-      const hookResponse = this.hookSpecificOutput[
-        'llm_response'
-      ] as Partial<LLMResponse>;
+    if (this.hookSpecificOutput && "llm_response" in this.hookSpecificOutput) {
+      const hookResponse = this.hookSpecificOutput["llm_response"] as Partial<LLMResponse>;
       if (hookResponse?.candidates?.[0]?.content?.parts?.length) {
         // Convert hook format to SDK format
-        return defaultHookTranslator.fromHookLLMResponse(
-          hookResponse as LLMResponse,
-        );
+        return defaultHookTranslator.fromHookLLMResponse(hookResponse as LLMResponse);
       }
     }
 
@@ -354,10 +318,10 @@ export class AfterModelHookOutput extends DefaultHookOutput {
         candidates: [
           {
             content: {
-              role: 'model',
-              parts: [this.getEffectiveReason() || 'Execution stopped by hook'],
+              role: "model",
+              parts: [this.getEffectiveReason() || "Execution stopped by hook"],
             },
-            finishReason: 'STOP',
+            finishReason: "STOP",
           },
         ],
       };
@@ -381,7 +345,7 @@ export interface BeforeToolInput extends HookInput {
  */
 export interface BeforeToolOutput extends HookOutput {
   hookSpecificOutput?: {
-    hookEventName: 'BeforeTool';
+    hookEventName: "BeforeTool";
     permissionDecision?: HookDecision;
     permissionDecisionReason?: string;
   };
@@ -401,7 +365,7 @@ export interface AfterToolInput extends HookInput {
  */
 export interface AfterToolOutput extends HookOutput {
   hookSpecificOutput?: {
-    hookEventName: 'AfterTool';
+    hookEventName: "AfterTool";
     additionalContext?: string;
   };
 }
@@ -418,7 +382,7 @@ export interface BeforeAgentInput extends HookInput {
  */
 export interface BeforeAgentOutput extends HookOutput {
   hookSpecificOutput?: {
-    hookEventName: 'BeforeAgent';
+    hookEventName: "BeforeAgent";
     additionalContext?: string;
   };
 }
@@ -427,7 +391,7 @@ export interface BeforeAgentOutput extends HookOutput {
  * Notification types
  */
 export enum NotificationType {
-  ToolPermission = 'ToolPermission',
+  ToolPermission = "ToolPermission",
 }
 
 /**
@@ -460,9 +424,9 @@ export interface AfterAgentInput extends HookInput {
  * SessionStart source types
  */
 export enum SessionStartSource {
-  Startup = 'startup',
-  Resume = 'resume',
-  Clear = 'clear',
+  Startup = "startup",
+  Resume = "resume",
+  Clear = "clear",
 }
 
 /**
@@ -477,7 +441,7 @@ export interface SessionStartInput extends HookInput {
  */
 export interface SessionStartOutput extends HookOutput {
   hookSpecificOutput?: {
-    hookEventName: 'SessionStart';
+    hookEventName: "SessionStart";
     additionalContext?: string;
   };
 }
@@ -486,11 +450,11 @@ export interface SessionStartOutput extends HookOutput {
  * SessionEnd reason types
  */
 export enum SessionEndReason {
-  Exit = 'exit',
-  Clear = 'clear',
-  Logout = 'logout',
-  PromptInputExit = 'prompt_input_exit',
-  Other = 'other',
+  Exit = "exit",
+  Clear = "clear",
+  Logout = "logout",
+  PromptInputExit = "prompt_input_exit",
+  Other = "other",
 }
 
 /**
@@ -504,8 +468,8 @@ export interface SessionEndInput extends HookInput {
  * PreCompress trigger types
  */
 export enum PreCompressTrigger {
-  Manual = 'manual',
-  Auto = 'auto',
+  Manual = "manual",
+  Auto = "auto",
 }
 
 /**
@@ -535,7 +499,7 @@ export interface BeforeModelInput extends HookInput {
  */
 export interface BeforeModelOutput extends HookOutput {
   hookSpecificOutput?: {
-    hookEventName: 'BeforeModel';
+    hookEventName: "BeforeModel";
     llm_request?: Partial<LLMRequest>;
     llm_response?: LLMResponse;
   };
@@ -554,7 +518,7 @@ export interface AfterModelInput extends HookInput {
  */
 export interface AfterModelOutput extends HookOutput {
   hookSpecificOutput?: {
-    hookEventName: 'AfterModel';
+    hookEventName: "AfterModel";
     llm_response?: Partial<LLMResponse>;
   };
 }
@@ -571,7 +535,7 @@ export interface BeforeToolSelectionInput extends HookInput {
  */
 export interface BeforeToolSelectionOutput extends HookOutput {
   hookSpecificOutput?: {
-    hookEventName: 'BeforeToolSelection';
+    hookEventName: "BeforeToolSelection";
     toolConfig?: HookToolConfig;
   };
 }

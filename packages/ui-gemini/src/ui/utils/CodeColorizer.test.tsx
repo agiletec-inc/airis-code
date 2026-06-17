@@ -4,32 +4,32 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { describe, it, expect } from 'vitest';
-import { colorizeCode } from './CodeColorizer.js';
-import { renderWithProviders } from '../../test-utils/render.js';
-import { LoadedSettings } from '../../config/settings.js';
+import { describe, expect, it } from "vitest";
+import { LoadedSettings } from "../../config/settings.js";
+import { renderWithProviders } from "../../test-utils/render.js";
+import { colorizeCode } from "./CodeColorizer.js";
 
-describe('colorizeCode', () => {
-  it('renders empty lines correctly when useAlternateBuffer is true', () => {
-    const code = 'line 1\n\nline 3';
+describe("colorizeCode", () => {
+  it("renders empty lines correctly when useAlternateBuffer is true", () => {
+    const code = "line 1\n\nline 3";
     const settings = new LoadedSettings(
-      { path: '', settings: {}, originalSettings: {} },
-      { path: '', settings: {}, originalSettings: {} },
+      { path: "", settings: {}, originalSettings: {} },
+      { path: "", settings: {}, originalSettings: {} },
       {
-        path: '',
+        path: "",
         settings: { ui: { useAlternateBuffer: true, showLineNumbers: false } },
         originalSettings: {
           ui: { useAlternateBuffer: true, showLineNumbers: false },
         },
       },
-      { path: '', settings: {}, originalSettings: {} },
+      { path: "", settings: {}, originalSettings: {} },
       true,
       new Set(),
     );
 
     const result = colorizeCode({
       code,
-      language: 'javascript',
+      language: "javascript",
       maxWidth: 80,
       settings,
       hideLineNumbers: true,

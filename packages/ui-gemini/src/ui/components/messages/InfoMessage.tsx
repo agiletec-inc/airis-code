@@ -4,10 +4,10 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import type React from 'react';
-import { Text, Box } from 'ink';
-import { theme } from '../../semantic-colors.js';
-import { RenderInline } from '../../utils/InlineMarkdownRenderer.js';
+import { Box, Text } from "ink";
+import type React from "react";
+import { theme } from "../../semantic-colors.js";
+import { RenderInline } from "../../utils/InlineMarkdownRenderer.js";
 
 interface InfoMessageProps {
   text: string;
@@ -15,13 +15,9 @@ interface InfoMessageProps {
   color?: string;
 }
 
-export const InfoMessage: React.FC<InfoMessageProps> = ({
-  text,
-  icon,
-  color,
-}) => {
+export const InfoMessage: React.FC<InfoMessageProps> = ({ text, icon, color }) => {
   color ??= theme.status.warning;
-  const prefix = icon ?? 'ℹ ';
+  const prefix = icon ?? "ℹ ";
   const prefixWidth = prefix.length;
 
   return (
@@ -30,7 +26,7 @@ export const InfoMessage: React.FC<InfoMessageProps> = ({
         <Text color={color}>{prefix}</Text>
       </Box>
       <Box flexGrow={1} flexDirection="column">
-        {text.split('\n').map((line, index) => (
+        {text.split("\n").map((line, index) => (
           <Text wrap="wrap" key={index}>
             <RenderInline text={line} defaultColor={color} />
           </Text>

@@ -4,14 +4,14 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { debugLogger } from '@airiscode/gemini-cli-core';
+import { debugLogger } from "@airiscode/gemini-cli-core";
 
-import type { ConfirmationRequest } from '../../ui/types.js';
-import { escapeAnsiCtrlCodes } from '../../ui/utils/textUtils.js';
-import type { ExtensionConfig } from '../extension.js';
+import type { ConfirmationRequest } from "../../ui/types.js";
+import { escapeAnsiCtrlCodes } from "../../ui/utils/textUtils.js";
+import type { ExtensionConfig } from "../extension.js";
 
 export const INSTALL_WARNING_MESSAGE =
-  '**The extension you are about to install may have been created by a third-party developer and sourced from a public repository. Google does not vet, endorse, or guarantee the functionality or security of extensions. Please carefully inspect any extension and its source code before installing to understand the permissions it requires and the actions it may perform.**';
+  "**The extension you are about to install may have been created by a third-party developer and sourced from a public repository. Google does not vet, endorse, or guarantee the functionality or security of extensions. Please carefully inspect any extension and its source code before installing to understand the permissions it requires and the actions it may perform.**";
 
 /**
  * Requests consent from the user to perform an action, by reading a Y/n
@@ -22,13 +22,9 @@ export const INSTALL_WARNING_MESSAGE =
  * @param consentDescription The description of the thing they will be consenting to.
  * @returns boolean, whether they consented or not.
  */
-export async function requestConsentNonInteractive(
-  consentDescription: string,
-): Promise<boolean> {
+export async function requestConsentNonInteractive(consentDescription: string): Promise<boolean> {
   debugLogger.log(consentDescription);
-  const result = await promptForConsentNonInteractive(
-    'Do you want to continue? [Y/n]: ',
-  );
+  const result = await promptForConsentNonInteractive("Do you want to continue? [Y/n]: ");
   return result;
 }
 
@@ -46,7 +42,7 @@ export async function requestConsentInteractive(
   addExtensionUpdateConfirmationRequest: (value: ConfirmationRequest) => void,
 ): Promise<boolean> {
   return promptForConsentInteractive(
-    consentDescription + '\n\nDo you want to continue?',
+    consentDescription + "\n\nDo you want to continue?",
     addExtensionUpdateConfirmationRequest,
   );
 }
@@ -59,10 +55,8 @@ export async function requestConsentInteractive(
  * @param prompt A yes/no prompt to ask the user
  * @returns Whether or not the user answers 'y' (yes). Defaults to 'yes' on enter.
  */
-async function promptForConsentNonInteractive(
-  prompt: string,
-): Promise<boolean> {
-  const readline = await import('node:readline');
+async function promptForConsentNonInteractive(prompt: string): Promise<boolean> {
+  const readline = await import("node:readline");
   const rl = readline.createInterface({
     input: process.stdin,
     output: process.stdout,
@@ -71,7 +65,7 @@ async function promptForConsentNonInteractive(
   return new Promise((resolve) => {
     rl.question(prompt, (answer) => {
       rl.close();
-      resolve(['y', ''].includes(answer.trim().toLowerCase()));
+      resolve(["y", ""].includes(answer.trim().toLowerCase()));
     });
   });
 }
@@ -103,10 +97,7 @@ async function promptForConsentInteractive(
  * Builds a consent string for installing an extension based on it's
  * extensionConfig.
  */
-function extensionConsentString(
-  extensionConfig: ExtensionConfig,
-  hasHooks: boolean,
-): string {
+function extensionConsentString(extensionConfig: ExtensionConfig, hasHooks: boolean): string {
   const sanitizedConfig = escapeAnsiCtrlCodes(extensionConfig);
   const output: string[] = [];
   const mcpServerEntries = Object.entries(sanitizedConfig.mcpServers || {});
@@ -114,13 +105,13 @@ function extensionConsentString(
   output.push(INSTALL_WARNING_MESSAGE);
 
   if (mcpServerEntries.length) {
-    output.push('This extension will run the following MCP servers:');
+    output.push("This extension will run the following MCP servers:");
     for (const [key, mcpServer] of mcpServerEntries) {
       const isLocal = !!mcpServer.command;
       const source =
         mcpServer.httpUrl ??
-        `${mcpServer.command || ''}${mcpServer.args ? ' ' + mcpServer.args.join(' ') : ''}`;
-      output.push(`  * ${key} (${isLocal ? 'local' : 'remote'}): ${source}`);
+        `${mcpServer.command || ""}${mcpServer.args ? " " + mcpServer.args.join(" ") : ""}`;
+      output.push(`  * ${key} (${isLocal ? "local" : "remote"}): ${source}`);
     }
   }
   if (sanitizedConfig.contextFileName) {
@@ -134,11 +125,9 @@ function extensionConsentString(
     );
   }
   if (hasHooks) {
-    output.push(
-      '⚠️  This extension contains Hooks which can automatically execute commands.',
-    );
+    output.push("⚠️  This extension contains Hooks which can automatically execute commands.");
   }
-  return output.join('\n');
+  return output.join("\n");
 }
 
 /**

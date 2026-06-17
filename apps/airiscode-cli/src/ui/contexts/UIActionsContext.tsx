@@ -4,21 +4,17 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { createContext, useContext } from 'react';
-import { type Key } from '../hooks/useKeypress.js';
-import { type IdeIntegrationNudgeResult } from '../IdeIntegrationNudge.js';
-import { type CommandMigrationNudgeResult } from '../CommandFormatMigrationNudge.js';
-import { type FolderTrustChoice } from '../components/FolderTrustDialog.js';
-import {
-  type AuthType,
-  type EditorType,
-  type ApprovalMode,
-} from '@airiscode/core';
-import { type SettingScope } from '../../config/settings.js';
-import { type CodingPlanRegion } from '../../constants/codingPlan.js';
-import { type AlibabaStandardRegion } from '../../constants/alibabaStandardApiKey.js';
-import type { AuthState } from '../types.js';
-import { type ArenaDialogType } from '../hooks/useArenaCommand.js';
+import { type ApprovalMode, type AuthType, type EditorType } from "@airiscode/core";
+import { createContext, useContext } from "react";
+import { type SettingScope } from "../../config/settings.js";
+import { type AlibabaStandardRegion } from "../../constants/alibabaStandardApiKey.js";
+import { type CodingPlanRegion } from "../../constants/codingPlan.js";
+import { type CommandMigrationNudgeResult } from "../CommandFormatMigrationNudge.js";
+import { type FolderTrustChoice } from "../components/FolderTrustDialog.js";
+import { type ArenaDialogType } from "../hooks/useArenaCommand.js";
+import { type Key } from "../hooks/useKeypress.js";
+import { type IdeIntegrationNudgeResult } from "../IdeIntegrationNudge.js";
+import type { AuthState } from "../types.js";
 // OpenAICredentials type (previously imported from OpenAIKeyPrompt)
 export interface OpenAICredentials {
   apiKey: string;
@@ -29,23 +25,14 @@ export interface OpenAICredentials {
 export interface UIActions {
   openThemeDialog: () => void;
   openEditorDialog: () => void;
-  handleThemeSelect: (
-    themeName: string | undefined,
-    scope: SettingScope,
-  ) => void;
+  handleThemeSelect: (themeName: string | undefined, scope: SettingScope) => void;
   handleThemeHighlight: (themeName: string | undefined) => void;
-  handleApprovalModeSelect: (
-    mode: ApprovalMode | undefined,
-    scope: SettingScope,
-  ) => void;
+  handleApprovalModeSelect: (mode: ApprovalMode | undefined, scope: SettingScope) => void;
   handleAuthSelect: (
     authType: AuthType | undefined,
     credentials?: OpenAICredentials,
   ) => Promise<void>;
-  handleCodingPlanSubmit: (
-    apiKey: string,
-    region?: CodingPlanRegion,
-  ) => Promise<void>;
+  handleCodingPlanSubmit: (apiKey: string, region?: CodingPlanRegion) => Promise<void>;
   handleAlibabaStandardSubmit: (
     apiKey: string,
     region: AlibabaStandardRegion,
@@ -54,10 +41,7 @@ export interface UIActions {
   setAuthState: (state: AuthState) => void;
   onAuthError: (error: string | null) => void;
   cancelAuthentication: () => void;
-  handleEditorSelect: (
-    editorType: EditorType | undefined,
-    scope: SettingScope,
-  ) => void;
+  handleEditorSelect: (editorType: EditorType | undefined, scope: SettingScope) => void;
   exitEditorDialog: () => void;
   closeSettingsDialog: () => void;
   closeModelDialog: () => void;
@@ -80,7 +64,7 @@ export interface UIActions {
   handleRetryLastPrompt: () => void;
   handleClearScreen: () => void;
   // Welcome back dialog
-  handleWelcomeBackSelection: (choice: 'continue' | 'restart') => void;
+  handleWelcomeBackSelection: (choice: "continue" | "restart") => void;
   handleWelcomeBackClose: () => void;
   // Subagent dialogs
   closeSubagentCreateDialog: () => void;
@@ -109,7 +93,7 @@ export const UIActionsContext = createContext<UIActions | null>(null);
 export const useUIActions = () => {
   const context = useContext(UIActionsContext);
   if (!context) {
-    throw new Error('useUIActions must be used within a UIActionsProvider');
+    throw new Error("useUIActions must be used within a UIActionsProvider");
   }
   return context;
 };

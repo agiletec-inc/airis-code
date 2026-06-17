@@ -4,8 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { vi } from 'vitest';
-import * as actualFsPromises from 'node:fs/promises';
+import * as actualFsPromises from "node:fs/promises";
+import { vi } from "vitest";
 
 const readFileMock = vi.fn();
 

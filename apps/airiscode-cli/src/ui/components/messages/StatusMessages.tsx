@@ -4,11 +4,11 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import type React from 'react';
-import { Box, Text } from 'ink';
-import stringWidth from 'string-width';
-import { theme } from '../../semantic-colors.js';
-import { RenderInline } from '../../utils/InlineMarkdownRenderer.js';
+import { Box, Text } from "ink";
+import type React from "react";
+import stringWidth from "string-width";
+import { theme } from "../../semantic-colors.js";
+import { RenderInline } from "../../utils/InlineMarkdownRenderer.js";
 
 interface StatusMessageProps {
   text: string;
@@ -33,7 +33,7 @@ export const StatusMessage: React.FC<StatusMessageProps> = ({
   textColor,
   children,
 }) => {
-  if (!text || text.trim() === '') {
+  if (!text || text.trim() === "") {
     return null;
   }
 
@@ -81,10 +81,7 @@ export const WarningMessage: React.FC<StatusTextProps> = ({ text }) => (
   />
 );
 
-export const ErrorMessage: React.FC<StatusTextProps & { hint?: string }> = ({
-  text,
-  hint,
-}) => (
+export const ErrorMessage: React.FC<StatusTextProps & { hint?: string }> = ({ text, hint }) => (
   <StatusMessage
     text={text}
     prefix="✕"

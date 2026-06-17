@@ -2,24 +2,24 @@
  * Docker runner types
  */
 
-import type { Result } from '@airiscode/types';
+import type { Result } from "@airiscode/types";
 
 /**
  * Docker operation types
  */
 export enum DockerOperation {
-  COMPOSE_UP = 'compose_up',
-  COMPOSE_DOWN = 'compose_down',
-  COMPOSE_LOGS = 'compose_logs',
-  CONTAINER_LIST = 'container_list',
-  CONTAINER_INSPECT = 'container_inspect',
-  CONTAINER_LOGS = 'container_logs',
-  CONTAINER_STATS = 'container_stats',
-  HEALTH_CHECK = 'health_check',
-  IMAGE_LIST = 'image_list',
-  IMAGE_PULL = 'image_pull',
-  NETWORK_LIST = 'network_list',
-  VOLUME_LIST = 'volume_list',
+  COMPOSE_UP = "compose_up",
+  COMPOSE_DOWN = "compose_down",
+  COMPOSE_LOGS = "compose_logs",
+  CONTAINER_LIST = "container_list",
+  CONTAINER_INSPECT = "container_inspect",
+  CONTAINER_LOGS = "container_logs",
+  CONTAINER_STATS = "container_stats",
+  HEALTH_CHECK = "health_check",
+  IMAGE_LIST = "image_list",
+  IMAGE_PULL = "image_pull",
+  NETWORK_LIST = "network_list",
+  VOLUME_LIST = "volume_list",
 }
 
 /**
@@ -51,7 +51,7 @@ export interface ComposeDownOptions {
   /** Remove volumes */
   volumes?: boolean;
   /** Remove images */
-  removeImages?: 'all' | 'local';
+  removeImages?: "all" | "local";
 }
 
 /**
@@ -65,14 +65,14 @@ export interface ContainerInfo {
   /** Image */
   image: string;
   /** State */
-  state: 'created' | 'running' | 'paused' | 'restarting' | 'removing' | 'exited' | 'dead';
+  state: "created" | "running" | "paused" | "restarting" | "removing" | "exited" | "dead";
   /** Status */
   status: string;
   /** Ports */
   ports: Array<{
     privatePort: number;
     publicPort?: number;
-    type: 'tcp' | 'udp';
+    type: "tcp" | "udp";
   }>;
   /** Created timestamp */
   created: Date;
@@ -85,7 +85,7 @@ export interface ContainerHealth {
   /** Container ID */
   containerId: string;
   /** Health status */
-  status: 'starting' | 'healthy' | 'unhealthy' | 'none';
+  status: "starting" | "healthy" | "unhealthy" | "none";
   /** Failing streak */
   failingStreak: number;
   /** Last check */
@@ -192,10 +192,10 @@ export class DockerRunnerError extends Error {
   constructor(
     message: string,
     public operation: DockerOperation,
-    public cause?: Error
+    public cause?: Error,
   ) {
     super(message);
-    this.name = 'DockerRunnerError';
+    this.name = "DockerRunnerError";
   }
 }
 

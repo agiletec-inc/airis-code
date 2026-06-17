@@ -8,20 +8,16 @@
  * Safely replaces text with literal strings, avoiding ECMAScript GetSubstitution issues.
  * Escapes $ characters to prevent template interpretation.
  */
-export function safeLiteralReplace(
-  str: string,
-  oldString: string,
-  newString: string,
-): string {
-  if (oldString === '' || !str.includes(oldString)) {
+export function safeLiteralReplace(str: string, oldString: string, newString: string): string {
+  if (oldString === "" || !str.includes(oldString)) {
     return str;
   }
 
-  if (!newString.includes('$')) {
+  if (!newString.includes("$")) {
     return str.replaceAll(oldString, newString);
   }
 
-  const escapedNewString = newString.replaceAll('$', '$$$$');
+  const escapedNewString = newString.replaceAll("$", "$$$$");
   return str.replaceAll(oldString, escapedNewString);
 }
 
@@ -32,10 +28,7 @@ export function safeLiteralReplace(
  * @param sampleSize The number of bytes from the start of the buffer to test.
  * @returns True if a NULL byte is found, false otherwise.
  */
-export function isBinary(
-  data: Buffer | null | undefined,
-  sampleSize = 512,
-): boolean {
+export function isBinary(data: Buffer | null | undefined, sampleSize = 512): boolean {
   if (!data) {
     return false;
   }
@@ -66,10 +59,10 @@ export function isBinary(
  */
 export function normalizeContent(content: string): string {
   // Strip UTF-8 BOM to ensure string processing starts at the first real character.
-  let normalized = content.replace(/^\uFEFF/, '');
+  let normalized = content.replace(/^\uFEFF/, "");
 
   // Normalize line endings to LF (\n).
-  normalized = normalized.replace(/\r\n/g, '\n').replace(/\r/g, '\n');
+  normalized = normalized.replace(/\r\n/g, "\n").replace(/\r/g, "\n");
 
   return normalized;
 }

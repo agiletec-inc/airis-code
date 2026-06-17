@@ -7,9 +7,7 @@
 /**
  * Parses custom headers and returns a map of key and vallues
  */
-export function parseCustomHeaders(
-  envValue: string | undefined,
-): Record<string, string> {
+export function parseCustomHeaders(envValue: string | undefined): Record<string, string> {
   const headers: Record<string, string> = {};
   if (!envValue) {
     return headers;
@@ -23,7 +21,7 @@ export function parseCustomHeaders(
       continue;
     }
 
-    const separatorIndex = trimmedEntry.indexOf(':');
+    const separatorIndex = trimmedEntry.indexOf(":");
     if (separatorIndex === -1) {
       continue;
     }

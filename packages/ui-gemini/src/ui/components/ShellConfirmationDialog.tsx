@@ -4,35 +4,30 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { ToolConfirmationOutcome } from '@airiscode/gemini-cli-core';
-import { Box, Text } from 'ink';
-import type React from 'react';
-import { theme } from '../semantic-colors.js';
-import { RenderInline } from '../utils/InlineMarkdownRenderer.js';
-import type { RadioSelectItem } from './shared/RadioButtonSelect.js';
-import { RadioButtonSelect } from './shared/RadioButtonSelect.js';
-import { useKeypress } from '../hooks/useKeypress.js';
+import { ToolConfirmationOutcome } from "@airiscode/gemini-cli-core";
+import { Box, Text } from "ink";
+import type React from "react";
+import { useKeypress } from "../hooks/useKeypress.js";
+import { theme } from "../semantic-colors.js";
+import { RenderInline } from "../utils/InlineMarkdownRenderer.js";
+import type { RadioSelectItem } from "./shared/RadioButtonSelect.js";
+import { RadioButtonSelect } from "./shared/RadioButtonSelect.js";
 
 export interface ShellConfirmationRequest {
   commands: string[];
-  onConfirm: (
-    outcome: ToolConfirmationOutcome,
-    approvedCommands?: string[],
-  ) => void;
+  onConfirm: (outcome: ToolConfirmationOutcome, approvedCommands?: string[]) => void;
 }
 
 export interface ShellConfirmationDialogProps {
   request: ShellConfirmationRequest;
 }
 
-export const ShellConfirmationDialog: React.FC<
-  ShellConfirmationDialogProps
-> = ({ request }) => {
+export const ShellConfirmationDialog: React.FC<ShellConfirmationDialogProps> = ({ request }) => {
   const { commands, onConfirm } = request;
 
   useKeypress(
     (key) => {
-      if (key.name === 'escape') {
+      if (key.name === "escape") {
         onConfirm(ToolConfirmationOutcome.Cancel);
       }
     },
@@ -51,19 +46,19 @@ export const ShellConfirmationDialog: React.FC<
 
   const options: Array<RadioSelectItem<ToolConfirmationOutcome>> = [
     {
-      label: 'Yes, allow once',
+      label: "Yes, allow once",
       value: ToolConfirmationOutcome.ProceedOnce,
-      key: 'Yes, allow once',
+      key: "Yes, allow once",
     },
     {
-      label: 'Yes, allow always for this session',
+      label: "Yes, allow always for this session",
       value: ToolConfirmationOutcome.ProceedAlways,
-      key: 'Yes, allow always for this session',
+      key: "Yes, allow always for this session",
     },
     {
-      label: 'No (esc)',
+      label: "No (esc)",
       value: ToolConfirmationOutcome.Cancel,
-      key: 'No (esc)',
+      key: "No (esc)",
     },
   ];
 

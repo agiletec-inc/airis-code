@@ -4,22 +4,20 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { Box, Text } from 'ink';
-import { theme } from '../../../semantic-colors.js';
-import { type Extension } from '@airiscode/core';
-import { t } from '../../../../i18n/index.js';
+import { type Extension } from "@airiscode/core";
+import { Box, Text } from "ink";
+import { t } from "../../../../i18n/index.js";
+import { theme } from "../../../semantic-colors.js";
 
 interface ExtensionDetailStepProps {
   selectedExtension: Extension | null;
 }
 
-export const ExtensionDetailStep = ({
-  selectedExtension,
-}: ExtensionDetailStepProps) => {
+export const ExtensionDetailStep = ({ selectedExtension }: ExtensionDetailStepProps) => {
   if (!selectedExtension) {
     return (
       <Box>
-        <Text color={theme.status.error}>{t('No extension selected')}</Text>
+        <Text color={theme.status.error}>{t("No extension selected")}</Text>
       </Box>
     );
   }
@@ -27,7 +25,7 @@ export const ExtensionDetailStep = ({
   const ext = selectedExtension;
   const isActive = ext.isActive;
   const activeColor = isActive ? theme.status.success : theme.text.secondary;
-  const activeString = isActive ? t('active') : t('disabled');
+  const activeString = isActive ? t("active") : t("disabled");
 
   // Fixed width for labels to ensure alignment
   const LABEL_WIDTH = 12;
@@ -37,28 +35,28 @@ export const ExtensionDetailStep = ({
       <Box flexDirection="column">
         <Box>
           <Box width={LABEL_WIDTH} flexShrink={0}>
-            <Text color={theme.text.primary}>{t('Name:')}</Text>
+            <Text color={theme.text.primary}>{t("Name:")}</Text>
           </Box>
           <Text>{ext.name}</Text>
         </Box>
 
         <Box>
           <Box width={LABEL_WIDTH} flexShrink={0}>
-            <Text color={theme.text.primary}>{t('Version:')}</Text>
+            <Text color={theme.text.primary}>{t("Version:")}</Text>
           </Box>
           <Text>{ext.version}</Text>
         </Box>
 
         <Box>
           <Box width={LABEL_WIDTH} flexShrink={0}>
-            <Text color={theme.text.primary}>{t('Status:')}</Text>
+            <Text color={theme.text.primary}>{t("Status:")}</Text>
           </Box>
           <Text color={activeColor}>{activeString}</Text>
         </Box>
 
         <Box>
           <Box width={LABEL_WIDTH} flexShrink={0}>
-            <Text color={theme.text.primary}>{t('Path:')}</Text>
+            <Text color={theme.text.primary}>{t("Path:")}</Text>
           </Box>
           <Text>{ext.path}</Text>
         </Box>
@@ -66,7 +64,7 @@ export const ExtensionDetailStep = ({
         {ext.installMetadata && (
           <Box>
             <Box width={LABEL_WIDTH} flexShrink={0}>
-              <Text color={theme.text.primary}>{t('Source:')}</Text>
+              <Text color={theme.text.primary}>{t("Source:")}</Text>
             </Box>
             <Text>{ext.installMetadata.source}</Text>
           </Box>
@@ -75,43 +73,43 @@ export const ExtensionDetailStep = ({
         {ext.mcpServers && Object.keys(ext.mcpServers).length > 0 && (
           <Box>
             <Box width={LABEL_WIDTH} flexShrink={0}>
-              <Text color={theme.text.primary}>{t('MCP Servers:')}</Text>
+              <Text color={theme.text.primary}>{t("MCP Servers:")}</Text>
             </Box>
-            <Text>{Object.keys(ext.mcpServers).join(', ')}</Text>
+            <Text>{Object.keys(ext.mcpServers).join(", ")}</Text>
           </Box>
         )}
 
         {ext.commands && ext.commands.length > 0 && (
           <Box>
             <Box width={LABEL_WIDTH} flexShrink={0}>
-              <Text color={theme.text.primary}>{t('Commands:')}</Text>
+              <Text color={theme.text.primary}>{t("Commands:")}</Text>
             </Box>
-            <Text>{ext.commands.join(', ')}</Text>
+            <Text>{ext.commands.join(", ")}</Text>
           </Box>
         )}
 
         {ext.skills && ext.skills.length > 0 && (
           <Box>
             <Box width={LABEL_WIDTH} flexShrink={0}>
-              <Text color={theme.text.primary}>{t('Skills:')}</Text>
+              <Text color={theme.text.primary}>{t("Skills:")}</Text>
             </Box>
-            <Text>{ext.skills.map((s) => s.name).join(', ')}</Text>
+            <Text>{ext.skills.map((s) => s.name).join(", ")}</Text>
           </Box>
         )}
 
         {ext.agents && ext.agents.length > 0 && (
           <Box>
             <Box width={LABEL_WIDTH} flexShrink={0}>
-              <Text color={theme.text.primary}>{t('Agents:')}</Text>
+              <Text color={theme.text.primary}>{t("Agents:")}</Text>
             </Box>
-            <Text>{ext.agents.map((a) => a.name).join(', ')}</Text>
+            <Text>{ext.agents.map((a) => a.name).join(", ")}</Text>
           </Box>
         )}
 
         {ext.resolvedSettings && ext.resolvedSettings.length > 0 && (
           <Box flexDirection="column" marginTop={1}>
             <Box width={LABEL_WIDTH} flexShrink={0}>
-              <Text color={theme.text.primary}>{t('Settings:')}</Text>
+              <Text color={theme.text.primary}>{t("Settings:")}</Text>
             </Box>
             <Box flexDirection="column" paddingLeft={2}>
               {ext.resolvedSettings.map((setting) => (

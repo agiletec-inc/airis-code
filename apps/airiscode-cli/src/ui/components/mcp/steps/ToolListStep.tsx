@@ -4,19 +4,15 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { useState, useMemo } from 'react';
-import { Box, Text } from 'ink';
-import { theme } from '../../../semantic-colors.js';
-import { useKeypress } from '../../../hooks/useKeypress.js';
-import { t } from '../../../../i18n/index.js';
-import type { ToolListStepProps, MCPToolDisplayInfo } from '../types.js';
-import { VISIBLE_TOOLS_COUNT } from '../constants.js';
+import { Box, Text } from "ink";
+import { useMemo, useState } from "react";
+import { t } from "../../../../i18n/index.js";
+import { useKeypress } from "../../../hooks/useKeypress.js";
+import { theme } from "../../../semantic-colors.js";
+import { VISIBLE_TOOLS_COUNT } from "../constants.js";
+import type { MCPToolDisplayInfo, ToolListStepProps } from "../types.js";
 
-export const ToolListStep: React.FC<ToolListStepProps> = ({
-  tools,
-  onSelect,
-  onBack,
-}) => {
+export const ToolListStep: React.FC<ToolListStepProps> = ({ tools, onSelect, onBack }) => {
   const [selectedIndex, setSelectedIndex] = useState(0);
 
   // 动态计算工具名称列的最大宽度（基于实际内容）
@@ -36,10 +32,7 @@ export const ToolListStep: React.FC<ToolListStepProps> = ({
     if (selectedIndex < VISIBLE_TOOLS_COUNT - 1) {
       return 0;
     }
-    return Math.min(
-      selectedIndex - VISIBLE_TOOLS_COUNT + 1,
-      tools.length - VISIBLE_TOOLS_COUNT,
-    );
+    return Math.min(selectedIndex - VISIBLE_TOOLS_COUNT + 1, tools.length - VISIBLE_TOOLS_COUNT);
   }, [selectedIndex, tools.length]);
 
   // 当前可视的工具列表
@@ -50,13 +43,13 @@ export const ToolListStep: React.FC<ToolListStepProps> = ({
 
   useKeypress(
     (key) => {
-      if (key.name === 'escape') {
+      if (key.name === "escape") {
         onBack();
-      } else if (key.name === 'up') {
+      } else if (key.name === "up") {
         setSelectedIndex((prev) => Math.max(0, prev - 1));
-      } else if (key.name === 'down') {
+      } else if (key.name === "down") {
         setSelectedIndex((prev) => Math.min(tools.length - 1, prev + 1));
-      } else if (key.name === 'return') {
+      } else if (key.name === "return") {
         if (tools[selectedIndex]) {
           onSelect(tools[selectedIndex]);
         }
@@ -68,20 +61,18 @@ export const ToolListStep: React.FC<ToolListStepProps> = ({
   if (tools.length === 0) {
     return (
       <Box flexDirection="column">
-        <Text color={theme.text.secondary}>
-          {t('No tools available for this server.')}
-        </Text>
+        <Text color={theme.text.secondary}>{t("No tools available for this server.")}</Text>
       </Box>
     );
   }
 
   const getToolAnnotations = (tool: MCPToolDisplayInfo): string => {
     const hints: string[] = [];
-    if (tool.annotations?.destructiveHint) hints.push('destructive');
-    if (tool.annotations?.readOnlyHint) hints.push('read-only');
-    if (tool.annotations?.openWorldHint) hints.push('open-world');
-    if (tool.annotations?.idempotentHint) hints.push('idempotent');
-    return hints.join(', ');
+    if (tool.annotations?.destructiveHint) hints.push("destructive");
+    if (tool.annotations?.readOnlyHint) hints.push("read-only");
+    if (tool.annotations?.openWorldHint) hints.push("open-world");
+    if (tool.annotations?.idempotentHint) hints.push("idempotent");
+    return hints.join(", ");
   };
 
   return (
@@ -97,26 +88,21 @@ export const ToolListStep: React.FC<ToolListStepProps> = ({
             <Box key={tool.name}>
               {/* 选择器 */}
               <Box minWidth={2}>
-                <Text
-                  color={isSelected ? theme.text.accent : theme.text.primary}
-                >
-                  {isSelected ? '❯' : ' '}
+                <Text color={isSelected ? theme.text.accent : theme.text.primary}>
+                  {isSelected ? "❯" : " "}
                 </Text>
               </Box>
               {/* 工具名称 - 固定宽度 */}
               <Box width={toolNameWidth}>
-                <Text
-                  color={isSelected ? theme.text.accent : theme.text.primary}
-                  wrap="truncate"
-                >
+                <Text color={isSelected ? theme.text.accent : theme.text.primary} wrap="truncate">
                   {tool.name}
                 </Text>
               </Box>
               {/* 显示无效工具警告 */}
               {!tool.isValid && (
                 <Text color={theme.status.warning}>
-                  {t('invalid: {{reason}}', {
-                    reason: tool.invalidReason || t('unknown'),
+                  {t("invalid: {{reason}}", {
+                    reason: tool.invalidReason || t("unknown"),
                   })}
                 </Text>
               )}
@@ -132,12 +118,12 @@ export const ToolListStep: React.FC<ToolListStepProps> = ({
       {tools.length > VISIBLE_TOOLS_COUNT && (
         <Box marginTop={1}>
           <Text color={theme.text.secondary}>
-            {scrollOffset > 0 ? '↑ ' : '  '}
-            {t('{{current}}/{{total}}', {
+            {scrollOffset > 0 ? "↑ " : "  "}
+            {t("{{current}}/{{total}}", {
               current: (selectedIndex + 1).toString(),
               total: tools.length.toString(),
             })}
-            {scrollOffset + VISIBLE_TOOLS_COUNT < tools.length ? ' ↓' : ''}
+            {scrollOffset + VISIBLE_TOOLS_COUNT < tools.length ? " ↓" : ""}
           </Text>
         </Box>
       )}

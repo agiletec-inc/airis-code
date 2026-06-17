@@ -4,24 +4,18 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+import { ApiError } from "@google/genai";
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { ApiError } from '@google/genai';
-import { AuthType } from '../core/contentGenerator.js';
-import type { HttpError } from './retry.js';
-import { retryWithBackoff } from './retry.js';
-import { setSimulate429 } from './testUtils.js';
-import { debugLogger } from './debugLogger.js';
-import {
-  TerminalQuotaError,
-  RetryableQuotaError,
-} from './googleQuotaErrors.js';
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { AuthType } from "../core/contentGenerator.js";
+import { debugLogger } from "./debugLogger.js";
+import { RetryableQuotaError, TerminalQuotaError } from "./googleQuotaErrors.js";
+import type { HttpError } from "./retry.js";
+import { retryWithBackoff } from "./retry.js";
+import { setSimulate429 } from "./testUtils.js";
 
 // Helper to create a mock function that fails a certain number of times
-const createFailingFunction = (
-  failures: number,
-  successValue: string = 'success',
-) => {
+const createFailingFunction = (failures: number, successValue: string = "success") => {
   let attempts = 0;
   return vi.fn(async () => {
     attempts++;
@@ -39,11 +33,11 @@ const createFailingFunction = (
 class NonRetryableError extends Error {
   constructor(message: string) {
     super(message);
-    this.name = 'NonRetryableError';
+    this.name = "NonRetryableError";
   }
 }
 
-describe('retryWithBackoff', () => {
+describe("retryWithBackoff", () => {
   beforeEach(() => {
     vi.useFakeTimers();
     // Disable 429 simulation for tests
@@ -57,14 +51,14 @@ describe('retryWithBackoff', () => {
     vi.useRealTimers();
   });
 
-  it('should return the result on the first attempt if successful', async () => {
+  it("should return the result on the first attempt if successful", async () => {
     const mockFn = createFailingFunction(0);
     const result = await retryWithBackoff(mockFn);
-    expect(result).toBe('success');
+    expect(result).toBe("success");
     expect(mockFn).toHaveBeenCalledTimes(1);
   });
 
-  it('should retry and succeed if failures are within maxAttempts', async () => {
+  it("should retry and succeed if failures are within maxAttempts", async () => {
     const mockFn = createFailingFunction(2);
     const promise = retryWithBackoff(mockFn, {
       maxAttempts: 3,
@@ -74,11 +68,11 @@ describe('retryWithBackoff', () => {
     await vi.runAllTimersAsync(); // Ensure all delays and retries complete
 
     const result = await promise;
-    expect(result).toBe('success');
+    expect(result).toBe("success");
     expect(mockFn).toHaveBeenCalledTimes(3);
   });
 
-  it('should throw an error if all attempts fail', async () => {
+  it("should throw an error if all attempts fail", async () => {
     const mockFn = createFailingFunction(3);
 
     // 1. Start the retryable operation, which returns a promise.
@@ -89,7 +83,7 @@ describe('retryWithBackoff', () => {
 
     // 2. Run timers and await expectation in parallel.
     await Promise.all([
-      expect(promise).rejects.toThrow('Simulated error attempt 3'),
+      expect(promise).rejects.toThrow("Simulated error attempt 3"),
       vi.runAllTimersAsync(),
     ]);
 
@@ -97,7 +91,7 @@ describe('retryWithBackoff', () => {
     expect(mockFn).toHaveBeenCalledTimes(3);
   });
 
-  it('should default to 3 maxAttempts if no options are provided', async () => {
+  it("should default to 3 maxAttempts if no options are provided", async () => {
     // This function will fail more than 3 times to ensure all retries are used.
     const mockFn = createFailingFunction(10);
 
@@ -105,14 +99,14 @@ describe('retryWithBackoff', () => {
 
     // Expect it to fail with the error from the 5th attempt.
     await Promise.all([
-      expect(promise).rejects.toThrow('Simulated error attempt 3'),
+      expect(promise).rejects.toThrow("Simulated error attempt 3"),
       vi.runAllTimersAsync(),
     ]);
 
     expect(mockFn).toHaveBeenCalledTimes(3);
   });
 
-  it('should default to 3 maxAttempts if options.maxAttempts is undefined', async () => {
+  it("should default to 3 maxAttempts if options.maxAttempts is undefined", async () => {
     // This function will fail more than 3 times to ensure all retries are used.
     const mockFn = createFailingFunction(10);
 
@@ -120,44 +114,43 @@ describe('retryWithBackoff', () => {
 
     // Expect it to fail with the error from the 5th attempt.
     await Promise.all([
-      expect(promise).rejects.toThrow('Simulated error attempt 3'),
+      expect(promise).rejects.toThrow("Simulated error attempt 3"),
       vi.runAllTimersAsync(),
     ]);
 
     expect(mockFn).toHaveBeenCalledTimes(3);
   });
 
-  it('should not retry if shouldRetry returns false', async () => {
+  it("should not retry if shouldRetry returns false", async () => {
     const mockFn = vi.fn(async () => {
-      throw new NonRetryableError('Non-retryable error');
+      throw new NonRetryableError("Non-retryable error");
     });
-    const shouldRetryOnError = (error: Error) =>
-      !(error instanceof NonRetryableError);
+    const shouldRetryOnError = (error: Error) => !(error instanceof NonRetryableError);
 
     const promise = retryWithBackoff(mockFn, {
       shouldRetryOnError,
       initialDelayMs: 10,
     });
 
-    await expect(promise).rejects.toThrow('Non-retryable error');
+    await expect(promise).rejects.toThrow("Non-retryable error");
     expect(mockFn).toHaveBeenCalledTimes(1);
   });
 
-  it('should throw an error if maxAttempts is not a positive number', async () => {
+  it("should throw an error if maxAttempts is not a positive number", async () => {
     const mockFn = createFailingFunction(1);
 
     // Test with 0
     await expect(retryWithBackoff(mockFn, { maxAttempts: 0 })).rejects.toThrow(
-      'maxAttempts must be a positive number.',
+      "maxAttempts must be a positive number.",
     );
 
     // The function should not be called at all if validation fails
     expect(mockFn).not.toHaveBeenCalled();
   });
 
-  it('should use default shouldRetry if not provided, retrying on ApiError 429', async () => {
+  it("should use default shouldRetry if not provided, retrying on ApiError 429", async () => {
     const mockFn = vi.fn(async () => {
-      throw new ApiError({ message: 'Too Many Requests', status: 429 });
+      throw new ApiError({ message: "Too Many Requests", status: 429 });
     });
 
     const promise = retryWithBackoff(mockFn, {
@@ -166,29 +159,29 @@ describe('retryWithBackoff', () => {
     });
 
     await Promise.all([
-      expect(promise).rejects.toThrow('Too Many Requests'),
+      expect(promise).rejects.toThrow("Too Many Requests"),
       vi.runAllTimersAsync(),
     ]);
 
     expect(mockFn).toHaveBeenCalledTimes(2);
   });
 
-  it('should use default shouldRetry if not provided, not retrying on ApiError 400', async () => {
+  it("should use default shouldRetry if not provided, not retrying on ApiError 400", async () => {
     const mockFn = vi.fn(async () => {
-      throw new ApiError({ message: 'Bad Request', status: 400 });
+      throw new ApiError({ message: "Bad Request", status: 400 });
     });
 
     const promise = retryWithBackoff(mockFn, {
       maxAttempts: 2,
       initialDelayMs: 10,
     });
-    await expect(promise).rejects.toThrow('Bad Request');
+    await expect(promise).rejects.toThrow("Bad Request");
     expect(mockFn).toHaveBeenCalledTimes(1);
   });
 
-  it('should use default shouldRetry if not provided, retrying on generic error with status 429', async () => {
+  it("should use default shouldRetry if not provided, retrying on generic error with status 429", async () => {
     const mockFn = vi.fn(async () => {
-      const error = new Error('Too Many Requests') as any;
+      const error = new Error("Too Many Requests") as any;
       error.status = 429;
       throw error;
     });
@@ -200,16 +193,16 @@ describe('retryWithBackoff', () => {
 
     // Run timers and await expectation in parallel.
     await Promise.all([
-      expect(promise).rejects.toThrow('Too Many Requests'),
+      expect(promise).rejects.toThrow("Too Many Requests"),
       vi.runAllTimersAsync(),
     ]);
 
     expect(mockFn).toHaveBeenCalledTimes(2);
   });
 
-  it('should use default shouldRetry if not provided, not retrying on generic error with status 400', async () => {
+  it("should use default shouldRetry if not provided, not retrying on generic error with status 400", async () => {
     const mockFn = vi.fn(async () => {
-      const error = new Error('Bad Request') as any;
+      const error = new Error("Bad Request") as any;
       error.status = 400;
       throw error;
     });
@@ -218,13 +211,13 @@ describe('retryWithBackoff', () => {
       maxAttempts: 2,
       initialDelayMs: 10,
     });
-    await expect(promise).rejects.toThrow('Bad Request');
+    await expect(promise).rejects.toThrow("Bad Request");
     expect(mockFn).toHaveBeenCalledTimes(1);
   });
 
-  it('should respect maxDelayMs', async () => {
+  it("should respect maxDelayMs", async () => {
     const mockFn = createFailingFunction(3);
-    const setTimeoutSpy = vi.spyOn(global, 'setTimeout');
+    const setTimeoutSpy = vi.spyOn(global, "setTimeout");
 
     const promise = retryWithBackoff(mockFn, {
       maxAttempts: 4,
@@ -249,9 +242,9 @@ describe('retryWithBackoff', () => {
     expect(delays[2]).toBeLessThanOrEqual(250 * 1.3);
   });
 
-  it('should handle jitter correctly, ensuring varied delays', async () => {
+  it("should handle jitter correctly, ensuring varied delays", async () => {
     let mockFn = createFailingFunction(5);
-    const setTimeoutSpy = vi.spyOn(global, 'setTimeout');
+    const setTimeoutSpy = vi.spyOn(global, "setTimeout");
 
     // Run retryWithBackoff multiple times to observe jitter
     const runRetry = () =>
@@ -264,14 +257,9 @@ describe('retryWithBackoff', () => {
     // We expect rejections as mockFn fails 5 times
     const promise1 = runRetry();
     // Run timers and await expectation in parallel.
-    await Promise.all([
-      expect(promise1).rejects.toThrow(),
-      vi.runAllTimersAsync(),
-    ]);
+    await Promise.all([expect(promise1).rejects.toThrow(), vi.runAllTimersAsync()]);
 
-    const firstDelaySet = setTimeoutSpy.mock.calls.map(
-      (call) => call[1] as number,
-    );
+    const firstDelaySet = setTimeoutSpy.mock.calls.map((call) => call[1] as number);
     setTimeoutSpy.mockClear(); // Clear calls for the next run
 
     // Reset mockFn to reset its internal attempt counter for the next run
@@ -279,14 +267,9 @@ describe('retryWithBackoff', () => {
 
     const promise2 = runRetry();
     // Run timers and await expectation in parallel.
-    await Promise.all([
-      expect(promise2).rejects.toThrow(),
-      vi.runAllTimersAsync(),
-    ]);
+    await Promise.all([expect(promise2).rejects.toThrow(), vi.runAllTimersAsync()]);
 
-    const secondDelaySet = setTimeoutSpy.mock.calls.map(
-      (call) => call[1] as number,
-    );
+    const secondDelaySet = setTimeoutSpy.mock.calls.map((call) => call[1] as number);
 
     // Check that the delays are not exactly the same due to jitter
     // This is a probabilistic test, but with +/-30% jitter, it's highly likely they differ.
@@ -295,7 +278,7 @@ describe('retryWithBackoff', () => {
       expect(firstDelaySet[0]).not.toBe(secondDelaySet[0]);
     } else {
       // If somehow no delays were captured (e.g. test setup issue), fail explicitly
-      throw new Error('Delays were not captured for jitter test');
+      throw new Error("Delays were not captured for jitter test");
     }
 
     // Ensure delays are within the expected jitter range [70, 130] for initialDelayMs = 100
@@ -305,13 +288,13 @@ describe('retryWithBackoff', () => {
     });
   });
 
-  describe('Fetch error retries', () => {
-    const fetchErrorMsg = 'exception TypeError: fetch failed sending request';
+  describe("Fetch error retries", () => {
+    const fetchErrorMsg = "exception TypeError: fetch failed sending request";
 
-    it('should retry on specific fetch error when retryFetchErrors is true', async () => {
+    it("should retry on specific fetch error when retryFetchErrors is true", async () => {
       const mockFn = vi.fn();
       mockFn.mockRejectedValueOnce(new Error(fetchErrorMsg));
-      mockFn.mockResolvedValueOnce('success');
+      mockFn.mockResolvedValueOnce("success");
 
       const promise = retryWithBackoff(mockFn, {
         retryFetchErrors: true,
@@ -321,35 +304,35 @@ describe('retryWithBackoff', () => {
       await vi.runAllTimersAsync();
 
       const result = await promise;
-      expect(result).toBe('success');
+      expect(result).toBe("success");
       expect(mockFn).toHaveBeenCalledTimes(2);
     });
 
-    it.each([false, undefined])(
-      'should not retry on specific fetch error when retryFetchErrors is %s',
-      async (retryFetchErrors) => {
-        const mockFn = vi.fn().mockRejectedValue(new Error(fetchErrorMsg));
+    it.each([
+      false,
+      undefined,
+    ])("should not retry on specific fetch error when retryFetchErrors is %s", async (retryFetchErrors) => {
+      const mockFn = vi.fn().mockRejectedValue(new Error(fetchErrorMsg));
 
-        const promise = retryWithBackoff(mockFn, {
-          retryFetchErrors,
-        });
+      const promise = retryWithBackoff(mockFn, {
+        retryFetchErrors,
+      });
 
-        await expect(promise).rejects.toThrow(fetchErrorMsg);
-        expect(mockFn).toHaveBeenCalledTimes(1);
-      },
-    );
+      await expect(promise).rejects.toThrow(fetchErrorMsg);
+      expect(mockFn).toHaveBeenCalledTimes(1);
+    });
   });
 
-  describe('Flash model fallback for OAuth users', () => {
-    it('should trigger fallback for OAuth personal users on TerminalQuotaError', async () => {
-      const fallbackCallback = vi.fn().mockResolvedValue('gemini-2.5-flash');
+  describe("Flash model fallback for OAuth users", () => {
+    it("should trigger fallback for OAuth personal users on TerminalQuotaError", async () => {
+      const fallbackCallback = vi.fn().mockResolvedValue("gemini-2.5-flash");
 
       let fallbackOccurred = false;
       const mockFn = vi.fn().mockImplementation(async () => {
         if (!fallbackOccurred) {
-          throw new TerminalQuotaError('Daily limit reached', {} as any);
+          throw new TerminalQuotaError("Daily limit reached", {} as any);
         }
-        return 'success';
+        return "success";
       });
 
       const promise = retryWithBackoff(mockFn, {
@@ -359,23 +342,23 @@ describe('retryWithBackoff', () => {
           fallbackOccurred = true;
           return await fallbackCallback(authType, error);
         },
-        authType: 'oauth-personal',
+        authType: "oauth-personal",
       });
 
       await vi.runAllTimersAsync();
 
-      await expect(promise).resolves.toBe('success');
+      await expect(promise).resolves.toBe("success");
       expect(fallbackCallback).toHaveBeenCalledWith(
-        'oauth-personal',
+        "oauth-personal",
         expect.any(TerminalQuotaError),
       );
       expect(mockFn).toHaveBeenCalledTimes(2);
     });
 
-    it('should use retryDelayMs from RetryableQuotaError', async () => {
-      const setTimeoutSpy = vi.spyOn(global, 'setTimeout');
+    it("should use retryDelayMs from RetryableQuotaError", async () => {
+      const setTimeoutSpy = vi.spyOn(global, "setTimeout");
       const mockFn = vi.fn().mockImplementation(async () => {
-        throw new RetryableQuotaError('Per-minute limit', {} as any, 12.345);
+        throw new RetryableQuotaError("Per-minute limit", {} as any, 12.345);
       });
 
       const promise = retryWithBackoff(mockFn, {
@@ -392,30 +375,31 @@ describe('retryWithBackoff', () => {
       expect(setTimeoutSpy).toHaveBeenCalledWith(expect.any(Function), 12345);
     });
 
-    it.each([[AuthType.USE_GEMINI], [AuthType.USE_VERTEX_AI], [undefined]])(
-      'should not trigger fallback for non-Google auth users (authType: %s) on TerminalQuotaError',
-      async (authType) => {
-        const fallbackCallback = vi.fn();
-        const mockFn = vi.fn().mockImplementation(async () => {
-          throw new TerminalQuotaError('Daily limit reached', {} as any);
-        });
+    it.each([
+      [AuthType.USE_GEMINI],
+      [AuthType.USE_VERTEX_AI],
+      [undefined],
+    ])("should not trigger fallback for non-Google auth users (authType: %s) on TerminalQuotaError", async (authType) => {
+      const fallbackCallback = vi.fn();
+      const mockFn = vi.fn().mockImplementation(async () => {
+        throw new TerminalQuotaError("Daily limit reached", {} as any);
+      });
 
-        const promise = retryWithBackoff(mockFn, {
-          maxAttempts: 3,
-          onPersistent429: fallbackCallback,
-          authType,
-        });
+      const promise = retryWithBackoff(mockFn, {
+        maxAttempts: 3,
+        onPersistent429: fallbackCallback,
+        authType,
+      });
 
-        await expect(promise).rejects.toThrow('Daily limit reached');
-        expect(fallbackCallback).not.toHaveBeenCalled();
-        expect(mockFn).toHaveBeenCalledTimes(1);
-      },
-    );
+      await expect(promise).rejects.toThrow("Daily limit reached");
+      expect(fallbackCallback).not.toHaveBeenCalled();
+      expect(mockFn).toHaveBeenCalledTimes(1);
+    });
   });
-  it('should abort the retry loop when the signal is aborted', async () => {
+  it("should abort the retry loop when the signal is aborted", async () => {
     const abortController = new AbortController();
     const mockFn = vi.fn().mockImplementation(async () => {
-      const error: HttpError = new Error('Server error');
+      const error: HttpError = new Error("Server error");
       error.status = 500;
       throw error;
     });
@@ -428,9 +412,7 @@ describe('retryWithBackoff', () => {
     await vi.advanceTimersByTimeAsync(50);
     abortController.abort();
 
-    await expect(promise).rejects.toThrow(
-      expect.objectContaining({ name: 'AbortError' }),
-    );
+    await expect(promise).rejects.toThrow(expect.objectContaining({ name: "AbortError" }));
     expect(mockFn).toHaveBeenCalledTimes(1);
   });
 });

@@ -14,30 +14,25 @@
  * For persistent interactive agents, see AgentInteractive (Phase 2).
  */
 
-import type { Config } from '../../config/config.js';
-import { createDebugLogger } from '../../utils/debugLogger.js';
+import type { Config } from "../../config/config.js";
+import { DEFAULT_AIRISCODE_MODEL } from "../../config/models.js";
+import { logSubagentExecution } from "../../telemetry/loggers.js";
+import { SubagentExecutionEvent } from "../../telemetry/types.js";
+import { createDebugLogger } from "../../utils/debugLogger.js";
+import { AgentCore } from "./agent-core.js";
 import type {
-  AgentEventEmitter,
-  AgentStartEvent,
   AgentErrorEvent,
+  AgentEventEmitter,
   AgentFinishEvent,
   AgentHooks,
-} from './agent-events.js';
-import { AgentEventType } from './agent-events.js';
-import type { AgentStatsSummary } from './agent-statistics.js';
-import type {
-  PromptConfig,
-  ModelConfig,
-  RunConfig,
-  ToolConfig,
-} from './agent-types.js';
-import { AgentTerminateMode } from './agent-types.js';
-import { logSubagentExecution } from '../../telemetry/loggers.js';
-import { SubagentExecutionEvent } from '../../telemetry/types.js';
-import { AgentCore } from './agent-core.js';
-import { DEFAULT_AIRISCODE_MODEL } from '../../config/models.js';
+  AgentStartEvent,
+} from "./agent-events.js";
+import { AgentEventType } from "./agent-events.js";
+import type { AgentStatsSummary } from "./agent-statistics.js";
+import type { ModelConfig, PromptConfig, RunConfig, ToolConfig } from "./agent-types.js";
+import { AgentTerminateMode } from "./agent-types.js";
 
-const debugLogger = createDebugLogger('SUBAGENT');
+const debugLogger = createDebugLogger("SUBAGENT");
 
 // ─── Utilities (unchanged, re-exported for consumers) ────────
 
@@ -91,10 +86,7 @@ export class ContextState {
  * @returns The populated string with all placeholders replaced.
  * @throws {Error} if any placeholder key is not found in the context.
  */
-export function templateString(
-  template: string,
-  context: ContextState,
-): string {
+export function templateString(template: string, context: ContextState): string {
   const placeholderRegex = /\$\{(\w+)\}/g;
 
   // First, find all unique keys required by the template.
@@ -104,22 +96,14 @@ export function templateString(
 
   // Check if all required keys exist in the context.
   const contextKeys = new Set(context.get_keys());
-  const missingKeys = Array.from(requiredKeys).filter(
-    (key) => !contextKeys.has(key),
-  );
+  const missingKeys = Array.from(requiredKeys).filter((key) => !contextKeys.has(key));
 
   if (missingKeys.length > 0) {
-    throw new Error(
-      `Missing context values for the following keys: ${missingKeys.join(
-        ', ',
-      )}`,
-    );
+    throw new Error(`Missing context values for the following keys: ${missingKeys.join(", ")}`);
   }
 
   // Perform the replacement using a replacer function.
-  return template.replace(placeholderRegex, (_match, key) =>
-    String(context.get(key)),
-  );
+  return template.replace(placeholderRegex, (_match, key) => String(context.get(key)));
 }
 
 // ─── AgentHeadless ──────────────────────────────────────────
@@ -134,7 +118,7 @@ export function templateString(
  */
 export class AgentHeadless {
   private readonly core: AgentCore;
-  private finalText: string = '';
+  private finalText: string = "";
   private terminateMode: AgentTerminateMode = AgentTerminateMode.ERROR;
 
   private constructor(core: AgentCore) {
@@ -189,10 +173,7 @@ export class AgentHeadless {
    * @param context - The current context state containing variables for prompt templating.
    * @param externalSignal - Optional abort signal for external cancellation.
    */
-  async execute(
-    context: ContextState,
-    externalSignal?: AbortSignal,
-  ): Promise<void> {
+  async execute(context: ContextState, externalSignal?: AbortSignal): Promise<void> {
     const chat = await this.core.createChat(context);
 
     if (!chat) {
@@ -206,7 +187,7 @@ export class AgentHeadless {
       abortController.abort();
     };
     if (externalSignal) {
-      externalSignal.addEventListener('abort', onExternalAbort);
+      externalSignal.addEventListener("abort", onExternalAbort);
     }
     if (externalSignal?.aborted) {
       abortController.abort();
@@ -214,12 +195,8 @@ export class AgentHeadless {
 
     const toolsList = this.core.prepareTools();
 
-    const initialTaskText = String(
-      (context.get('task_prompt') as string) ?? 'Get Started!',
-    );
-    const initialMessages = [
-      { role: 'user' as const, parts: [{ text: initialTaskText }] },
-    ];
+    const initialTaskText = String((context.get("task_prompt") as string) ?? "Get Started!");
+    const initialMessages = [{ role: "user" as const, parts: [{ text: initialTaskText }] }];
 
     const startTime = Date.now();
     this.core.executionStats.startTimeMs = startTime;
@@ -234,14 +211,14 @@ export class AgentHeadless {
           this.core.modelConfig.model ||
           this.core.runtimeContext.getModel() ||
           DEFAULT_AIRISCODE_MODEL,
-        tools: (this.core.toolConfig?.tools || ['*']).map((t) =>
-          typeof t === 'string' ? t : t.name,
+        tools: (this.core.toolConfig?.tools || ["*"]).map((t) =>
+          typeof t === "string" ? t : t.name,
         ),
         timestamp: Date.now(),
       } as AgentStartEvent);
 
       // Log telemetry for subagent start
-      const startEvent = new SubagentExecutionEvent(this.core.name, 'started');
+      const startEvent = new SubagentExecutionEvent(this.core.name, "started");
       logSubagentExecution(this.core.runtimeContext, startEvent);
 
       // Delegate to AgentCore's reasoning loop
@@ -260,7 +237,7 @@ export class AgentHeadless {
       this.finalText = result.text;
       this.terminateMode = result.terminateMode ?? AgentTerminateMode.GOAL;
     } catch (error) {
-      debugLogger.error('Error during subagent execution:', error);
+      debugLogger.error("Error during subagent execution:", error);
       this.terminateMode = AgentTerminateMode.ERROR;
       this.core.eventEmitter?.emit(AgentEventType.ERROR, {
         subagentId: this.core.subagentId,
@@ -271,7 +248,7 @@ export class AgentHeadless {
       throw error;
     } finally {
       if (externalSignal) {
-        externalSignal.removeEventListener('abort', onExternalAbort);
+        externalSignal.removeEventListener("abort", onExternalAbort);
       }
       this.core.executionStats.totalDurationMs = Date.now() - startTime;
       const summary = this.core.stats.getSummary(Date.now());
@@ -291,13 +268,11 @@ export class AgentHeadless {
 
       const completionEvent = new SubagentExecutionEvent(
         this.core.name,
-        this.terminateMode === AgentTerminateMode.GOAL ? 'completed' : 'failed',
+        this.terminateMode === AgentTerminateMode.GOAL ? "completed" : "failed",
         {
           terminate_reason: this.terminateMode,
           result: this.finalText,
-          execution_summary: this.core.stats.formatCompact(
-            'Subagent execution completed',
-          ),
+          execution_summary: this.core.stats.formatCompact("Subagent execution completed"),
         },
       );
       logSubagentExecution(this.core.runtimeContext, completionEvent);

@@ -4,17 +4,17 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { BaseDeclarativeTool, BaseToolInvocation, Kind } from './tools.js';
-import { ToolNames, ToolDisplayNames } from './tool-names.js';
-import type { ToolResult, ToolResultDisplay } from './tools.js';
-import type { Config } from '../config/config.js';
-import type { SkillManager } from '../skills/skill-manager.js';
-import type { SkillConfig } from '../skills/types.js';
-import { logSkillLaunch, SkillLaunchEvent } from '../telemetry/index.js';
-import path from 'path';
-import { createDebugLogger } from '../utils/debugLogger.js';
+import path from "path";
+import type { Config } from "../config/config.js";
+import type { SkillManager } from "../skills/skill-manager.js";
+import type { SkillConfig } from "../skills/types.js";
+import { logSkillLaunch, SkillLaunchEvent } from "../telemetry/index.js";
+import { createDebugLogger } from "../utils/debugLogger.js";
+import { ToolDisplayNames, ToolNames } from "./tool-names.js";
+import type { ToolResult, ToolResultDisplay } from "./tools.js";
+import { BaseDeclarativeTool, BaseToolInvocation, Kind } from "./tools.js";
 
-const debugLogger = createDebugLogger('SKILL');
+const debugLogger = createDebugLogger("SKILL");
 
 export interface SkillParams {
   skill: string;
@@ -44,22 +44,22 @@ export class SkillTool extends BaseDeclarativeTool<SkillParams, ToolResult> {
   constructor(private readonly config: Config) {
     // Initialize with a basic schema first
     const initialSchema = {
-      type: 'object',
+      type: "object",
       properties: {
         skill: {
-          type: 'string',
+          type: "string",
           description: 'The skill name (no arguments). E.g., "pdf" or "xlsx"',
         },
       },
-      required: ['skill'],
+      required: ["skill"],
       additionalProperties: false,
-      $schema: 'http://json-schema.org/draft-07/schema#',
+      $schema: "http://json-schema.org/draft-07/schema#",
     };
 
     super(
       SkillTool.Name,
       ToolDisplayNames.SKILL,
-      'Execute a skill within the main conversation. Loading available skills...', // Initial description
+      "Execute a skill within the main conversation. Loading available skills...", // Initial description
       Kind.Read,
       initialSchema,
       false, // isOutputMarkdown
@@ -68,7 +68,7 @@ export class SkillTool extends BaseDeclarativeTool<SkillParams, ToolResult> {
 
     const skillManager = config.getSkillManager();
     if (!skillManager) {
-      throw new Error('SkillManager not available');
+      throw new Error("SkillManager not available");
     }
     this.skillManager = skillManager;
     this.skillManager.addChangeListener(() => {
@@ -88,7 +88,7 @@ export class SkillTool extends BaseDeclarativeTool<SkillParams, ToolResult> {
       this.availableSkills = await this.skillManager.listSkills();
       this.updateDescriptionAndSchema();
     } catch (error) {
-      debugLogger.warn('Failed to load skills for Skills tool:', error);
+      debugLogger.warn("Failed to load skills for Skills tool:", error);
       this.availableSkills = [];
       this.updateDescriptionAndSchema();
     } finally {
@@ -104,10 +104,10 @@ export class SkillTool extends BaseDeclarativeTool<SkillParams, ToolResult> {
    * Updates the tool's description and schema based on available skills.
    */
   private updateDescriptionAndSchema(): void {
-    let skillDescriptions = '';
+    let skillDescriptions = "";
     if (this.availableSkills.length === 0) {
       skillDescriptions =
-        'No skills are currently configured. Skills can be created by adding directories with SKILL.md files to .airiscode/skills/ or ~/.airiscode/skills/.';
+        "No skills are currently configured. Skills can be created by adding directories with SKILL.md files to .airiscode/skills/ or ~/.airiscode/skills/.";
     } else {
       skillDescriptions = this.availableSkills
         .map(
@@ -123,7 +123,7 @@ ${skill.level}
 </location>
 </skill>`,
         )
-        .join('\n');
+        .join("\n");
     }
 
     const baseDescription = `Execute a skill within the main conversation
@@ -161,36 +161,27 @@ ${skillDescriptions}
 
   override validateToolParams(params: SkillParams): string | null {
     // Validate required fields
-    if (
-      !params.skill ||
-      typeof params.skill !== 'string' ||
-      params.skill.trim() === ''
-    ) {
+    if (!params.skill || typeof params.skill !== "string" || params.skill.trim() === "") {
       return 'Parameter "skill" must be a non-empty string.';
     }
 
     // Validate that the skill exists
-    const skillExists = this.availableSkills.some(
-      (skill) => skill.name === params.skill,
-    );
+    const skillExists = this.availableSkills.some((skill) => skill.name === params.skill);
 
     if (!skillExists) {
       const availableNames = this.availableSkills.map((s) => s.name);
       if (availableNames.length === 0) {
         return `Skill "${params.skill}" not found. No skills are currently available.`;
       }
-      return `Skill "${params.skill}" not found. Available skills: ${availableNames.join(', ')}`;
+      return `Skill "${params.skill}" not found. Available skills: ${availableNames.join(", ")}`;
     }
 
     return null;
   }
 
   protected createInvocation(params: SkillParams) {
-    return new SkillToolInvocation(
-      this.config,
-      this.skillManager,
-      params,
-      (name: string) => this.loadedSkillNames.add(name),
+    return new SkillToolInvocation(this.config, this.skillManager, params, (name: string) =>
+      this.loadedSkillNames.add(name),
     );
   }
 
@@ -236,16 +227,11 @@ class SkillToolInvocation extends BaseToolInvocation<SkillParams, ToolResult> {
   ): Promise<ToolResult> {
     try {
       // Load the skill with runtime config (includes additional files)
-      const skill = await this.skillManager.loadSkillForRuntime(
-        this.params.skill,
-      );
+      const skill = await this.skillManager.loadSkillForRuntime(this.params.skill);
 
       if (!skill) {
         // Log failed skill launch
-        logSkillLaunch(
-          this.config,
-          new SkillLaunchEvent(this.params.skill, false),
-        );
+        logSkillLaunch(this.config, new SkillLaunchEvent(this.params.skill, false));
 
         // Get parse errors if any
         const parseErrors = this.skillManager.getParseErrors();
@@ -258,9 +244,7 @@ class SkillToolInvocation extends BaseToolInvocation<SkillParams, ToolResult> {
         }
 
         const errorDetail =
-          errorMessages.length > 0
-            ? `\nErrors:\n${errorMessages.join('\n')}`
-            : '';
+          errorMessages.length > 0 ? `\nErrors:\n${errorMessages.join("\n")}` : "";
 
         return {
           llmContent: `Skill "${this.params.skill}" not found.${errorDetail}`,
@@ -269,10 +253,7 @@ class SkillToolInvocation extends BaseToolInvocation<SkillParams, ToolResult> {
       }
 
       // Log successful skill launch
-      logSkillLaunch(
-        this.config,
-        new SkillLaunchEvent(this.params.skill, true),
-      );
+      logSkillLaunch(this.config, new SkillLaunchEvent(this.params.skill, true));
       this.onSkillLoaded(this.params.skill);
 
       const baseDir = path.dirname(skill.filePath);
@@ -283,15 +264,11 @@ class SkillToolInvocation extends BaseToolInvocation<SkillParams, ToolResult> {
         returnDisplay: skill.description,
       };
     } catch (error) {
-      const errorMessage =
-        error instanceof Error ? error.message : String(error);
+      const errorMessage = error instanceof Error ? error.message : String(error);
       debugLogger.error(`[SkillsTool] Error using skill: ${errorMessage}`);
 
       // Log failed skill launch
-      logSkillLaunch(
-        this.config,
-        new SkillLaunchEvent(this.params.skill, false),
-      );
+      logSkillLaunch(this.config, new SkillLaunchEvent(this.params.skill, false));
 
       return {
         llmContent: `Failed to load skill "${this.params.skill}": ${errorMessage}`,

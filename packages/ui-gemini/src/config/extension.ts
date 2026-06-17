@@ -4,14 +4,11 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import type {
-  MCPServerConfig,
-  ExtensionInstallMetadata,
-} from '@airiscode/gemini-cli-core';
-import * as fs from 'node:fs';
-import * as path from 'node:path';
-import { INSTALL_METADATA_FILENAME } from './extensions/variables.js';
-import type { ExtensionSetting } from './extensions/extensionSettings.js';
+import * as fs from "node:fs";
+import * as path from "node:path";
+import type { ExtensionInstallMetadata, MCPServerConfig } from "@airiscode/gemini-cli-core";
+import type { ExtensionSetting } from "./extensions/extensionSettings.js";
+import { INSTALL_METADATA_FILENAME } from "./extensions/variables.js";
 
 /**
  * Extension definition as written to disk in gemini-extension.json files.
@@ -35,12 +32,10 @@ export interface ExtensionUpdateInfo {
   updatedVersion: string;
 }
 
-export function loadInstallMetadata(
-  extensionDir: string,
-): ExtensionInstallMetadata | undefined {
+export function loadInstallMetadata(extensionDir: string): ExtensionInstallMetadata | undefined {
   const metadataFilePath = path.join(extensionDir, INSTALL_METADATA_FILENAME);
   try {
-    const configContent = fs.readFileSync(metadataFilePath, 'utf-8');
+    const configContent = fs.readFileSync(metadataFilePath, "utf-8");
     const metadata = JSON.parse(configContent) as ExtensionInstallMetadata;
     return metadata;
   } catch (_e) {

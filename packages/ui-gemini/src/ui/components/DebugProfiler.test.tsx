@@ -4,24 +4,24 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { appEvents, AppEvent } from '../../utils/events.js';
+import { FixedDeque } from "mnemonist";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { render } from "../../test-utils/render.js";
+import { AppEvent, appEvents } from "../../utils/events.js";
+import { type UIState, useUIState } from "../contexts/UIStateContext.js";
+import { debugState } from "../debug.js";
 import {
-  profiler,
-  DebugProfiler,
   ACTION_TIMESTAMP_CAPACITY,
+  DebugProfiler,
   FRAME_TIMESTAMP_CAPACITY,
-} from './DebugProfiler.js';
-import { render } from '../../test-utils/render.js';
-import { useUIState, type UIState } from '../contexts/UIStateContext.js';
-import { FixedDeque } from 'mnemonist';
-import { debugState } from '../debug.js';
+  profiler,
+} from "./DebugProfiler.js";
 
-vi.mock('../contexts/UIStateContext.js', () => ({
+vi.mock("../contexts/UIStateContext.js", () => ({
   useUIState: vi.fn(),
 }));
 
-describe('DebugProfiler', () => {
+describe("DebugProfiler", () => {
   beforeEach(() => {
     vi.useFakeTimers();
     profiler.profilersActive = 1;
@@ -30,14 +30,8 @@ describe('DebugProfiler', () => {
     profiler.lastFrameStartTime = 0;
     profiler.openedDebugConsole = false;
     profiler.lastActionTimestamp = 0;
-    profiler.possiblyIdleFrameTimestamps = new FixedDeque<number>(
-      Array,
-      FRAME_TIMESTAMP_CAPACITY,
-    );
-    profiler.actionTimestamps = new FixedDeque<number>(
-      Array,
-      ACTION_TIMESTAMP_CAPACITY,
-    );
+    profiler.possiblyIdleFrameTimestamps = new FixedDeque<number>(Array, FRAME_TIMESTAMP_CAPACITY);
+    profiler.actionTimestamps = new FixedDeque<number>(Array, ACTION_TIMESTAMP_CAPACITY);
     debugState.debugNumAnimatedComponents = 0;
   });
 
@@ -48,7 +42,7 @@ describe('DebugProfiler', () => {
     debugState.debugNumAnimatedComponents = 0;
   });
 
-  it('should not exceed action timestamp capacity', () => {
+  it("should not exceed action timestamp capacity", () => {
     for (let i = 0; i < ACTION_TIMESTAMP_CAPACITY + 10; i++) {
       profiler.reportAction();
       // To ensure we don't trigger the debounce
@@ -57,18 +51,16 @@ describe('DebugProfiler', () => {
     expect(profiler.actionTimestamps.size).toBe(ACTION_TIMESTAMP_CAPACITY);
   });
 
-  it('should not exceed frame timestamp capacity', () => {
+  it("should not exceed frame timestamp capacity", () => {
     for (let i = 0; i < FRAME_TIMESTAMP_CAPACITY + 10; i++) {
       profiler.reportFrameRendered();
       // To ensure we don't trigger the debounce
       profiler.lastFrameStartTime = 0;
     }
-    expect(profiler.possiblyIdleFrameTimestamps.size).toBe(
-      FRAME_TIMESTAMP_CAPACITY,
-    );
+    expect(profiler.possiblyIdleFrameTimestamps.size).toBe(FRAME_TIMESTAMP_CAPACITY);
   });
 
-  it('should drop oldest action timestamps when capacity is reached', () => {
+  it("should drop oldest action timestamps when capacity is reached", () => {
     for (let i = 0; i < ACTION_TIMESTAMP_CAPACITY; i++) {
       profiler.actionTimestamps.push(i);
     }
@@ -79,20 +71,18 @@ describe('DebugProfiler', () => {
     expect(profiler.actionTimestamps.peekFirst()).toBe(1);
   });
 
-  it('should drop oldest frame timestamps when capacity is reached', () => {
+  it("should drop oldest frame timestamps when capacity is reached", () => {
     for (let i = 0; i < FRAME_TIMESTAMP_CAPACITY; i++) {
       profiler.possiblyIdleFrameTimestamps.push(i);
     }
     profiler.lastFrameStartTime = 0;
     profiler.reportFrameRendered();
 
-    expect(profiler.possiblyIdleFrameTimestamps.size).toBe(
-      FRAME_TIMESTAMP_CAPACITY,
-    );
+    expect(profiler.possiblyIdleFrameTimestamps.size).toBe(FRAME_TIMESTAMP_CAPACITY);
     expect(profiler.possiblyIdleFrameTimestamps.peekFirst()).toBe(1);
   });
 
-  it('should not report frames as idle if an action happens shortly after', async () => {
+  it("should not report frames as idle if an action happens shortly after", async () => {
     const startTime = Date.now();
     vi.setSystemTime(startTime);
 
@@ -110,7 +100,7 @@ describe('DebugProfiler', () => {
     expect(profiler.totalIdleFrames).toBe(0);
   });
 
-  it('should report frames as idle if no action happens nearby', async () => {
+  it("should report frames as idle if no action happens nearby", async () => {
     const startTime = Date.now();
     vi.setSystemTime(startTime);
 
@@ -125,7 +115,7 @@ describe('DebugProfiler', () => {
     expect(profiler.totalIdleFrames).toBe(5);
   });
 
-  it('should not report frames as idle if an action happens shortly before', async () => {
+  it("should not report frames as idle if an action happens shortly before", async () => {
     const startTime = Date.now();
     vi.setSystemTime(startTime);
 
@@ -144,7 +134,7 @@ describe('DebugProfiler', () => {
     expect(profiler.totalIdleFrames).toBe(0);
   });
 
-  it('should correctly identify mixed idle and non-idle frames', async () => {
+  it("should correctly identify mixed idle and non-idle frames", async () => {
     const startTime = Date.now();
     vi.setSystemTime(startTime);
 
@@ -169,8 +159,8 @@ describe('DebugProfiler', () => {
     expect(profiler.totalIdleFrames).toBe(3);
   });
 
-  it('should report flicker frames', () => {
-    const reportActionSpy = vi.spyOn(profiler, 'reportAction');
+  it("should report flicker frames", () => {
+    const reportActionSpy = vi.spyOn(profiler, "reportAction");
     const cleanup = profiler.registerFlickerHandler(true);
 
     appEvents.emit(AppEvent.Flicker);
@@ -181,7 +171,7 @@ describe('DebugProfiler', () => {
     cleanup();
   });
 
-  it('should not report idle frames when actions are interleaved', async () => {
+  it("should not report idle frames when actions are interleaved", async () => {
     const startTime = Date.now();
     vi.setSystemTime(startTime);
 
@@ -205,7 +195,7 @@ describe('DebugProfiler', () => {
     expect(profiler.totalIdleFrames).toBe(0);
   });
 
-  it('should not report frames as idle if debugNumAnimatedComponents > 0', async () => {
+  it("should not report frames as idle if debugNumAnimatedComponents > 0", async () => {
     const startTime = Date.now();
     vi.setSystemTime(startTime);
     debugState.debugNumAnimatedComponents = 1;
@@ -222,7 +212,7 @@ describe('DebugProfiler', () => {
   });
 });
 
-describe('DebugProfiler Component', () => {
+describe("DebugProfiler Component", () => {
   beforeEach(() => {
     // Reset the mock implementation before each test
     vi.mocked(useUIState).mockReturnValue({
@@ -241,16 +231,16 @@ describe('DebugProfiler Component', () => {
     vi.restoreAllMocks();
   });
 
-  it('should return null when showDebugProfiler is false', () => {
+  it("should return null when showDebugProfiler is false", () => {
     vi.mocked(useUIState).mockReturnValue({
       showDebugProfiler: false,
       constrainHeight: false,
     } as unknown as UIState);
     const { lastFrame } = render(<DebugProfiler />);
-    expect(lastFrame()).toBe('');
+    expect(lastFrame()).toBe("");
   });
 
-  it('should render stats when showDebugProfiler is true', () => {
+  it("should render stats when showDebugProfiler is true", () => {
     vi.mocked(useUIState).mockReturnValue({
       showDebugProfiler: true,
       constrainHeight: false,
@@ -262,8 +252,8 @@ describe('DebugProfiler Component', () => {
     const { lastFrame } = render(<DebugProfiler />);
     const output = lastFrame();
 
-    expect(output).toContain('Renders: 10 (total)');
-    expect(output).toContain('5 (idle)');
-    expect(output).toContain('2 (flicker)');
+    expect(output).toContain("Renders: 10 (total)");
+    expect(output).toContain("5 (idle)");
+    expect(output).toContain("2 (flicker)");
   });
 });

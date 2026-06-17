@@ -4,12 +4,12 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { createHash } from 'node:crypto';
-import { type Content, Type } from '@google/genai';
-import { type BaseLlmClient } from '../core/baseLlmClient.js';
-import { LruCache } from './LruCache.js';
-import { promptIdContext } from './promptIdContext.js';
-import { debugLogger } from './debugLogger.js';
+import { createHash } from "node:crypto";
+import { type Content, Type } from "@google/genai";
+import { type BaseLlmClient } from "../core/baseLlmClient.js";
+import { debugLogger } from "./debugLogger.js";
+import { LruCache } from "./LruCache.js";
+import { promptIdContext } from "./promptIdContext.js";
 
 const MAX_CACHE_SIZE = 50;
 const GENERATE_JSON_TIMEOUT_MS = 40000; // 40 seconds
@@ -81,17 +81,14 @@ const SearchReplaceEditSchema = {
     replace: { type: Type.STRING },
     noChangesRequired: { type: Type.BOOLEAN },
   },
-  required: ['search', 'replace', 'explanation'],
+  required: ["search", "replace", "explanation"],
 };
 
-const editCorrectionWithInstructionCache = new LruCache<
-  string,
-  SearchReplaceEdit
->(MAX_CACHE_SIZE);
+const editCorrectionWithInstructionCache = new LruCache<string, SearchReplaceEdit>(MAX_CACHE_SIZE);
 
 async function generateJsonWithTimeout<T>(
   client: BaseLlmClient,
-  params: Parameters<BaseLlmClient['generateJson']>[0],
+  params: Parameters<BaseLlmClient["generateJson"]>[0],
   timeoutMs: number,
 ): Promise<T | null> {
   try {
@@ -144,30 +141,22 @@ export async function FixLLMEditWithInstruction(
     );
   }
 
-  const cacheKey = createHash('sha256')
-    .update(
-      JSON.stringify([
-        current_content,
-        old_string,
-        new_string,
-        instruction,
-        error,
-      ]),
-    )
-    .digest('hex');
+  const cacheKey = createHash("sha256")
+    .update(JSON.stringify([current_content, old_string, new_string, instruction, error]))
+    .digest("hex");
   const cachedResult = editCorrectionWithInstructionCache.get(cacheKey);
   if (cachedResult) {
     return cachedResult;
   }
-  const userPrompt = EDIT_USER_PROMPT.replace('{instruction}', instruction)
-    .replace('{old_string}', old_string)
-    .replace('{new_string}', new_string)
-    .replace('{error}', error)
-    .replace('{current_content}', current_content);
+  const userPrompt = EDIT_USER_PROMPT.replace("{instruction}", instruction)
+    .replace("{old_string}", old_string)
+    .replace("{new_string}", new_string)
+    .replace("{error}", error)
+    .replace("{current_content}", current_content);
 
   const contents: Content[] = [
     {
-      role: 'user',
+      role: "user",
       parts: [{ text: userPrompt }],
     },
   ];
@@ -175,7 +164,7 @@ export async function FixLLMEditWithInstruction(
   const result = await generateJsonWithTimeout<SearchReplaceEdit>(
     baseLlmClient,
     {
-      modelConfigKey: { model: 'llm-edit-fixer' },
+      modelConfigKey: { model: "llm-edit-fixer" },
       contents,
       schema: SearchReplaceEditSchema,
       abortSignal,

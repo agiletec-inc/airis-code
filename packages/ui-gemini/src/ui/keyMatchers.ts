@@ -4,9 +4,9 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import type { Key } from './hooks/useKeypress.js';
-import type { KeyBinding, KeyBindingConfig } from '../config/keyBindings.js';
-import { Command, defaultKeyBindings } from '../config/keyBindings.js';
+import type { KeyBinding, KeyBindingConfig } from "../config/keyBindings.js";
+import { Command, defaultKeyBindings } from "../config/keyBindings.js";
+import type { Key } from "./hooks/useKeypress.js";
 
 /**
  * Matches a KeyBinding against an actual Key press
@@ -80,9 +80,7 @@ export type KeyMatchers = {
 /**
  * Creates key matchers from a key binding configuration
  */
-export function createKeyMatchers(
-  config: KeyBindingConfig = defaultKeyBindings,
-): KeyMatchers {
+export function createKeyMatchers(config: KeyBindingConfig = defaultKeyBindings): KeyMatchers {
   const matchers = {} as { [C in Command]: KeyMatcher };
 
   for (const command of Object.values(Command)) {

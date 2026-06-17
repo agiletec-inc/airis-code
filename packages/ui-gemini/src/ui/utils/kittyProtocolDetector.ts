@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import * as fs from 'node:fs';
+import * as fs from "node:fs";
 
 let detectionComplete = false;
 
@@ -34,7 +34,7 @@ export async function detectAndEnableKittyProtocol(): Promise<void> {
       process.stdin.setRawMode(true);
     }
 
-    let responseBuffer = '';
+    let responseBuffer = "";
     let progressiveEnhancementReceived = false;
     let timeoutId: NodeJS.Timeout | undefined;
 
@@ -43,15 +43,15 @@ export async function detectAndEnableKittyProtocol(): Promise<void> {
         clearTimeout(timeoutId);
         timeoutId = undefined;
       }
-      process.stdin.removeListener('data', handleData);
+      process.stdin.removeListener("data", handleData);
       if (!originalRawMode) {
         process.stdin.setRawMode(false);
       }
 
       if (kittySupported) {
         enableSupportedProtocol();
-        process.on('exit', disableAllProtocols);
-        process.on('SIGTERM', disableAllProtocols);
+        process.on("exit", disableAllProtocols);
+        process.on("SIGTERM", disableAllProtocols);
       }
 
       detectionComplete = true;
@@ -66,7 +66,7 @@ export async function detectAndEnableKittyProtocol(): Promise<void> {
       responseBuffer += data.toString();
 
       // Check for progressive enhancement response (CSI ? <flags> u)
-      if (responseBuffer.includes('\x1b[?') && responseBuffer.includes('u')) {
+      if (responseBuffer.includes("\x1b[?") && responseBuffer.includes("u")) {
         progressiveEnhancementReceived = true;
         // Give more time to get the full set of kitty responses if we have an
         // indication the terminal probably supports kitty and we just need to
@@ -76,7 +76,7 @@ export async function detectAndEnableKittyProtocol(): Promise<void> {
       }
 
       // Check for device attributes response (CSI ? <attrs> c)
-      if (responseBuffer.includes('\x1b[?') && responseBuffer.includes('c')) {
+      if (responseBuffer.includes("\x1b[?") && responseBuffer.includes("c")) {
         if (progressiveEnhancementReceived) {
           kittySupported = true;
         }
@@ -85,10 +85,10 @@ export async function detectAndEnableKittyProtocol(): Promise<void> {
       }
     };
 
-    process.stdin.on('data', handleData);
+    process.stdin.on("data", handleData);
 
     // Query progressive enhancement and device attributes
-    fs.writeSync(process.stdout.fd, '\x1b[?u\x1b[c');
+    fs.writeSync(process.stdout.fd, "\x1b[?u\x1b[c");
 
     // Timeout after 200ms
     // When a iterm2 terminal does not have focus this can take over 90s on a
@@ -98,9 +98,9 @@ export async function detectAndEnableKittyProtocol(): Promise<void> {
 }
 
 import {
-  enableKittyKeyboardProtocol,
   disableKittyKeyboardProtocol,
-} from '@airiscode/gemini-cli-core';
+  enableKittyKeyboardProtocol,
+} from "@airiscode/gemini-cli-core";
 
 export function isKittyProtocolEnabled(): boolean {
   return kittyEnabled;

@@ -6,16 +6,16 @@
  * Event kinds
  */
 export enum AdapterEventKind {
-  SPAWNED = 'spawned',
-  READY = 'ready',
-  EXECUTE_START = 'execute_start',
-  EXECUTE_END = 'execute_end',
-  SHELL_PROPOSED = 'shell_proposed',
-  SHELL_BLOCKED = 'shell_blocked',
-  SHELL_EXECUTED = 'shell_executed',
-  LOG = 'log',
-  ERROR = 'error',
-  TERMINATED = 'terminated',
+  SPAWNED = "spawned",
+  READY = "ready",
+  EXECUTE_START = "execute_start",
+  EXECUTE_END = "execute_end",
+  SHELL_PROPOSED = "shell_proposed",
+  SHELL_BLOCKED = "shell_blocked",
+  SHELL_EXECUTED = "shell_executed",
+  LOG = "log",
+  ERROR = "error",
+  TERMINATED = "terminated",
 }
 
 /**
@@ -105,7 +105,7 @@ export interface ShellExecutedEvent extends AdapterEvent {
 export interface LogEvent extends AdapterEvent {
   kind: AdapterEventKind.LOG;
   /** Log level */
-  level: 'debug' | 'info' | 'warn' | 'error';
+  level: "debug" | "info" | "warn" | "error";
   /** Log message */
   message: string;
 }

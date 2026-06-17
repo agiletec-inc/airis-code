@@ -4,28 +4,16 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import type React from 'react';
-import {
-  createContext,
-  useCallback,
-  useContext,
-  useState,
-  useMemo,
-  useEffect,
-} from 'react';
-
-import type {
-  SessionMetrics,
-  ModelMetrics,
-  ToolCallStats,
-} from '@airiscode/gemini-cli-core';
-import { uiTelemetryService, sessionId } from '@airiscode/gemini-cli-core';
+import type { ModelMetrics, SessionMetrics, ToolCallStats } from "@airiscode/gemini-cli-core";
+import { sessionId, uiTelemetryService } from "@airiscode/gemini-cli-core";
+import type React from "react";
+import { createContext, useCallback, useContext, useEffect, useMemo, useState } from "react";
 
 export enum ToolCallDecision {
-  ACCEPT = 'accept',
-  REJECT = 'reject',
-  MODIFY = 'modify',
-  AUTO_ACCEPT = 'auto_accept',
+  ACCEPT = "accept",
+  REJECT = "reject",
+  MODIFY = "modify",
+  AUTO_ACCEPT = "auto_accept",
 }
 
 function areModelMetricsEqual(a: ModelMetrics, b: ModelMetrics): boolean {
@@ -59,14 +47,10 @@ function areToolCallStatsEqual(a: ToolCallStats, b: ToolCallStats): boolean {
     return false;
   }
   if (
-    a.decisions[ToolCallDecision.ACCEPT] !==
-      b.decisions[ToolCallDecision.ACCEPT] ||
-    a.decisions[ToolCallDecision.REJECT] !==
-      b.decisions[ToolCallDecision.REJECT] ||
-    a.decisions[ToolCallDecision.MODIFY] !==
-      b.decisions[ToolCallDecision.MODIFY] ||
-    a.decisions[ToolCallDecision.AUTO_ACCEPT] !==
-      b.decisions[ToolCallDecision.AUTO_ACCEPT]
+    a.decisions[ToolCallDecision.ACCEPT] !== b.decisions[ToolCallDecision.ACCEPT] ||
+    a.decisions[ToolCallDecision.REJECT] !== b.decisions[ToolCallDecision.REJECT] ||
+    a.decisions[ToolCallDecision.MODIFY] !== b.decisions[ToolCallDecision.MODIFY] ||
+    a.decisions[ToolCallDecision.AUTO_ACCEPT] !== b.decisions[ToolCallDecision.AUTO_ACCEPT]
   ) {
     return false;
   }
@@ -138,7 +122,7 @@ function areMetricsEqual(a: SessionMetrics, b: SessionMetrics): boolean {
   return true;
 }
 
-export type { SessionMetrics, ModelMetrics };
+export type { ModelMetrics, SessionMetrics };
 
 export interface SessionStatsState {
   sessionId: string;
@@ -174,15 +158,11 @@ interface SessionStatsContextValue {
 
 // --- Context Definition ---
 
-const SessionStatsContext = createContext<SessionStatsContextValue | undefined>(
-  undefined,
-);
+const SessionStatsContext = createContext<SessionStatsContextValue | undefined>(undefined);
 
 // --- Provider Component ---
 
-export const SessionStatsProvider: React.FC<{ children: React.ReactNode }> = ({
-  children,
-}) => {
+export const SessionStatsProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [stats, setStats] = useState<SessionStatsState>({
     sessionId,
     sessionStartTime: new Date(),
@@ -214,7 +194,7 @@ export const SessionStatsProvider: React.FC<{ children: React.ReactNode }> = ({
       });
     };
 
-    uiTelemetryService.on('update', handleUpdate);
+    uiTelemetryService.on("update", handleUpdate);
     // Set initial state
     handleUpdate({
       metrics: uiTelemetryService.getMetrics(),
@@ -222,7 +202,7 @@ export const SessionStatsProvider: React.FC<{ children: React.ReactNode }> = ({
     });
 
     return () => {
-      uiTelemetryService.off('update', handleUpdate);
+      uiTelemetryService.off("update", handleUpdate);
     };
   }, []);
 
@@ -233,10 +213,7 @@ export const SessionStatsProvider: React.FC<{ children: React.ReactNode }> = ({
     }));
   }, []);
 
-  const getPromptCount = useCallback(
-    () => stats.promptCount,
-    [stats.promptCount],
-  );
+  const getPromptCount = useCallback(() => stats.promptCount, [stats.promptCount]);
 
   const value = useMemo(
     () => ({
@@ -247,11 +224,7 @@ export const SessionStatsProvider: React.FC<{ children: React.ReactNode }> = ({
     [stats, startNewPrompt, getPromptCount],
   );
 
-  return (
-    <SessionStatsContext.Provider value={value}>
-      {children}
-    </SessionStatsContext.Provider>
-  );
+  return <SessionStatsContext.Provider value={value}>{children}</SessionStatsContext.Provider>;
 };
 
 // --- Consumer Hook ---
@@ -259,9 +232,7 @@ export const SessionStatsProvider: React.FC<{ children: React.ReactNode }> = ({
 export const useSessionStats = () => {
   const context = useContext(SessionStatsContext);
   if (context === undefined) {
-    throw new Error(
-      'useSessionStats must be used within a SessionStatsProvider',
-    );
+    throw new Error("useSessionStats must be used within a SessionStatsProvider");
   }
   return context;
 };

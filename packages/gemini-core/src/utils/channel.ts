@@ -4,12 +4,12 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { getPackageJson } from './package.js';
+import { getPackageJson } from "./package.js";
 
 export enum ReleaseChannel {
-  NIGHTLY = 'nightly',
-  PREVIEW = 'preview',
-  STABLE = 'stable',
+  NIGHTLY = "nightly",
+  PREVIEW = "preview",
+  STABLE = "stable",
 }
 
 const cache = new Map<string, ReleaseChannel>();
@@ -28,12 +28,12 @@ export async function getReleaseChannel(cwd: string): Promise<ReleaseChannel> {
   }
 
   const packageJson = await getPackageJson(cwd);
-  const version = packageJson?.version ?? '';
+  const version = packageJson?.version ?? "";
 
   let channel: ReleaseChannel;
-  if (version.includes('nightly') || version === '') {
+  if (version.includes("nightly") || version === "") {
     channel = ReleaseChannel.NIGHTLY;
-  } else if (version.includes('preview')) {
+  } else if (version.includes("preview")) {
     channel = ReleaseChannel.PREVIEW;
   } else {
     channel = ReleaseChannel.STABLE;

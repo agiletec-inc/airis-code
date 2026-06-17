@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import type { ToolResult } from '../tools.js';
+import type { ToolResult } from "../tools.js";
 
 /**
  * Common interface for all web search providers.
@@ -107,9 +107,9 @@ export interface WebSearchConfig {
  * Base configuration for Tavily provider.
  */
 export interface TavilyProviderConfig {
-  type: 'tavily';
+  type: "tavily";
   apiKey?: string;
-  searchDepth?: 'basic' | 'advanced';
+  searchDepth?: "basic" | "advanced";
   maxResults?: number;
   includeAnswer?: boolean;
 }
@@ -118,11 +118,11 @@ export interface TavilyProviderConfig {
  * Base configuration for Google provider.
  */
 export interface GoogleProviderConfig {
-  type: 'google';
+  type: "google";
   apiKey?: string;
   searchEngineId?: string;
   maxResults?: number;
-  safeSearch?: 'off' | 'medium' | 'high';
+  safeSearch?: "off" | "medium" | "high";
   language?: string;
   country?: string;
 }
@@ -131,6 +131,4 @@ export interface GoogleProviderConfig {
  * Discriminated union type for web search provider configurations.
  * This ensures type safety when working with different provider configs.
  */
-export type WebSearchProviderConfig =
-  | TavilyProviderConfig
-  | GoogleProviderConfig;
+export type WebSearchProviderConfig = TavilyProviderConfig | GoogleProviderConfig;

@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import * as fs from 'node:fs';
+import * as fs from "node:fs";
 
 /**
  * Options for writeWithBackup function.
@@ -63,7 +63,7 @@ export function writeWithBackupSync(
   content: string,
   options: WriteWithBackupOptions = {},
 ): void {
-  const { backupSuffix = '.orig', encoding = 'utf-8' } = options;
+  const { backupSuffix = ".orig", encoding = "utf-8" } = options;
   const tempPath = `${targetPath}.tmp`;
   const backupPath = `${targetPath}${backupSuffix}`;
 
@@ -91,9 +91,7 @@ export function writeWithBackupSync(
         } catch (_e) {
           // Ignore cleanup error
         }
-        throw new Error(
-          `Cannot write to '${targetPath}' because it is a directory`,
-        );
+        throw new Error(`Cannot write to '${targetPath}' because it is a directory`);
       }
 
       try {
@@ -125,16 +123,12 @@ export function writeWithBackupSync(
           fs.renameSync(backupPath, targetPath);
         } catch (restoreError) {
           restoreFailedMessage =
-            restoreError instanceof Error
-              ? restoreError.message
-              : String(restoreError);
+            restoreError instanceof Error ? restoreError.message : String(restoreError);
         }
       }
 
       const writeFailureMessage =
-        renameError instanceof Error
-          ? renameError.message
-          : String(renameError);
+        renameError instanceof Error ? renameError.message : String(renameError);
 
       if (restoreFailedMessage) {
         throw new Error(

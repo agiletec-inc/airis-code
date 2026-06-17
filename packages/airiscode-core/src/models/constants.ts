@@ -4,11 +4,10 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { MAINLINE_CODER_MODEL } from '../config/models.js';
+import { MAINLINE_CODER_MODEL } from "../config/models.js";
 
-type AuthType = import('../core/contentGenerator.js').AuthType;
-type ContentGeneratorConfig =
-  import('../core/contentGenerator.js').ContentGeneratorConfig;
+type AuthType = import("../core/contentGenerator.js").AuthType;
+type ContentGeneratorConfig = import("../core/contentGenerator.js").ContentGeneratorConfig;
 
 /**
  * Field keys for model-scoped generation config.
@@ -17,17 +16,17 @@ type ContentGeneratorConfig =
  * usage is type-only and does not emit runtime imports.
  */
 export const MODEL_GENERATION_CONFIG_FIELDS = [
-  'samplingParams',
-  'timeout',
-  'maxRetries',
-  'retryErrorCodes',
-  'enableCacheControl',
-  'schemaCompliance',
-  'reasoning',
-  'contextWindowSize',
-  'customHeaders',
-  'extra_body',
-  'modalities',
+  "samplingParams",
+  "timeout",
+  "maxRetries",
+  "retryErrorCodes",
+  "enableCacheControl",
+  "schemaCompliance",
+  "reasoning",
+  "contextWindowSize",
+  "customHeaders",
+  "extra_body",
+  "modalities",
 ] as const satisfies ReadonlyArray<keyof ContentGeneratorConfig>;
 
 /**
@@ -35,10 +34,10 @@ export const MODEL_GENERATION_CONFIG_FIELDS = [
  * but not ModelGenerationConfig.
  */
 export const CREDENTIAL_FIELDS = [
-  'model',
-  'apiKey',
-  'apiKeyEnvKey',
-  'baseUrl',
+  "model",
+  "apiKey",
+  "apiKeyEnvKey",
+  "baseUrl",
 ] as const satisfies ReadonlyArray<keyof ContentGeneratorConfig>;
 
 /**
@@ -61,19 +60,19 @@ export interface AuthEnvMapping {
 
 export const AUTH_ENV_MAPPINGS = {
   openai: {
-    apiKey: ['OPENAI_API_KEY'],
-    baseUrl: ['OPENAI_BASE_URL'],
-    model: ['OPENAI_MODEL', 'AIRISCODE_MODEL'],
+    apiKey: ["OPENAI_API_KEY"],
+    baseUrl: ["OPENAI_BASE_URL"],
+    model: ["OPENAI_MODEL", "AIRISCODE_MODEL"],
   },
   ollama: {
     apiKey: [],
-    baseUrl: ['OLLAMA_HOST'],
-    model: ['OLLAMA_MODEL', 'AIRISCODE_MODEL'],
+    baseUrl: ["OLLAMA_HOST"],
+    model: ["OLLAMA_MODEL", "AIRISCODE_MODEL"],
   },
   anthropic: {
-    apiKey: ['ANTHROPIC_API_KEY'],
-    baseUrl: ['ANTHROPIC_BASE_URL'],
-    model: ['ANTHROPIC_MODEL'],
+    apiKey: ["ANTHROPIC_API_KEY"],
+    baseUrl: ["ANTHROPIC_BASE_URL"],
+    model: ["ANTHROPIC_MODEL"],
   },
 } as const satisfies Record<AuthType, AuthEnvMapping>;
 

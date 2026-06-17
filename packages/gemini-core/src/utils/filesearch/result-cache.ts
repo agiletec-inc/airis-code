@@ -24,9 +24,7 @@ export class ResultCache {
    * @returns An object containing the files to search and a boolean indicating
    *          if the result is an exact cache hit.
    */
-  async get(
-    query: string,
-  ): Promise<{ files: string[]; isExactMatch: boolean }> {
+  async get(query: string): Promise<{ files: string[]; isExactMatch: boolean }> {
     const isCacheHit = this.cache.has(query);
 
     if (isCacheHit) {
@@ -42,16 +40,14 @@ export class ResultCache {
     // from the results of the "foo" search.
     // This finds the most specific, already-cached query that is a prefix
     // of the current query.
-    let bestBaseQuery = '';
+    let bestBaseQuery = "";
     for (const key of this.cache?.keys?.() ?? []) {
       if (query.startsWith(key) && key.length > bestBaseQuery.length) {
         bestBaseQuery = key;
       }
     }
 
-    const filesToSearch = bestBaseQuery
-      ? this.cache.get(bestBaseQuery)!
-      : this.allFiles;
+    const filesToSearch = bestBaseQuery ? this.cache.get(bestBaseQuery)! : this.allFiles;
 
     return { files: filesToSearch, isExactMatch: false };
   }

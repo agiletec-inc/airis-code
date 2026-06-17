@@ -4,18 +4,16 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import type { Part, Content } from '@google/genai';
-import type { Config } from '../config/config.js';
-import { getFolderStructure } from './getFolderStructure.js';
+import type { Content, Part } from "@google/genai";
+import type { Config } from "../config/config.js";
+import { getFolderStructure } from "./getFolderStructure.js";
 
 /**
  * Generates a string describing the current workspace directories and their structures.
  * @param {Config} config - The runtime configuration and services.
  * @returns {Promise<string>} A promise that resolves to the directory context string.
  */
-export async function getDirectoryContextString(
-  config: Config,
-): Promise<string> {
+export async function getDirectoryContextString(config: Config): Promise<string> {
   const workspaceContext = config.getWorkspaceContext();
   const workspaceDirectories = workspaceContext.getDirectories();
 
@@ -27,13 +25,13 @@ export async function getDirectoryContextString(
     ),
   );
 
-  const folderStructure = folderStructures.join('\n');
+  const folderStructure = folderStructures.join("\n");
 
   let workingDirPreamble: string;
   if (workspaceDirectories.length === 1) {
     workingDirPreamble = `I'm currently working in the directory: ${workspaceDirectories[0]}`;
   } else {
-    const dirList = workspaceDirectories.map((dir) => `  - ${dir}`).join('\n');
+    const dirList = workspaceDirectories.map((dir) => `  - ${dir}`).join("\n");
     workingDirPreamble = `I'm currently working in the following directories:\n${dirList}`;
   }
 
@@ -52,10 +50,10 @@ ${folderStructure}`;
  */
 export async function getEnvironmentContext(config: Config): Promise<Part[]> {
   const today = new Date().toLocaleDateString(undefined, {
-    weekday: 'long',
-    year: 'numeric',
-    month: 'long',
-    day: 'numeric',
+    weekday: "long",
+    year: "numeric",
+    month: "long",
+    day: "numeric",
   });
   const platform = process.platform;
   const directoryContext = await getDirectoryContextString(config);
@@ -79,7 +77,7 @@ export async function getInitialChatHistory(
   extraHistory?: Content[],
 ): Promise<Content[]> {
   const envParts = await getEnvironmentContext(config);
-  const envContextString = envParts.map((part) => part.text || '').join('\n\n');
+  const envContextString = envParts.map((part) => part.text || "").join("\n\n");
 
   const allSetupText = `
 ${envContextString}
@@ -91,7 +89,7 @@ My setup is complete. I will provide my first command in the next turn.
 
   return [
     {
-      role: 'user',
+      role: "user",
       parts: [{ text: allSetupText }],
     },
     ...(extraHistory ?? []),

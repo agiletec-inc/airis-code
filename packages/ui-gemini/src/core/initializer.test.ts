@@ -4,21 +4,20 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { initializeApp } from './initializer.js';
 import {
-  IdeClient,
-  logIdeConnection,
-  logCliConfiguration,
   type Config,
-} from '@airiscode/gemini-cli-core';
-import { performInitialAuth } from './auth.js';
-import { validateTheme } from './theme.js';
-import { type LoadedSettings } from '../config/settings.js';
+  IdeClient,
+  logCliConfiguration,
+  logIdeConnection,
+} from "@airiscode/gemini-cli-core";
+import { beforeEach, describe, expect, it, vi } from "vitest";
+import { type LoadedSettings } from "../config/settings.js";
+import { performInitialAuth } from "./auth.js";
+import { initializeApp } from "./initializer.js";
+import { validateTheme } from "./theme.js";
 
-vi.mock('@airiscode/gemini-cli-core', async (importOriginal) => {
-  const actual =
-    await importOriginal<typeof import('@airiscode/gemini-cli-core')>();
+vi.mock("@airiscode/gemini-cli-core", async (importOriginal) => {
+  const actual = await importOriginal<typeof import("@airiscode/gemini-cli-core")>();
   return {
     ...actual,
     IdeClient: {
@@ -31,15 +30,15 @@ vi.mock('@airiscode/gemini-cli-core', async (importOriginal) => {
   };
 });
 
-vi.mock('./auth.js', () => ({
+vi.mock("./auth.js", () => ({
   performInitialAuth: vi.fn(),
 }));
 
-vi.mock('./theme.js', () => ({
+vi.mock("./theme.js", () => ({
   validateTheme: vi.fn(),
 }));
 
-describe('initializer', () => {
+describe("initializer", () => {
   let mockConfig: {
     getToolRegistry: ReturnType<typeof vi.fn>;
     getIdeMode: ReturnType<typeof vi.fn>;
@@ -61,7 +60,7 @@ describe('initializer', () => {
       merged: {
         security: {
           auth: {
-            selectedType: 'oauth',
+            selectedType: "oauth",
           },
         },
       },
@@ -69,18 +68,13 @@ describe('initializer', () => {
     mockIdeClient = {
       connect: vi.fn(),
     };
-    vi.mocked(IdeClient.getInstance).mockResolvedValue(
-      mockIdeClient as unknown as IdeClient,
-    );
+    vi.mocked(IdeClient.getInstance).mockResolvedValue(mockIdeClient as unknown as IdeClient);
     vi.mocked(performInitialAuth).mockResolvedValue(null);
     vi.mocked(validateTheme).mockReturnValue(null);
   });
 
-  it('should initialize correctly in non-IDE mode', async () => {
-    const result = await initializeApp(
-      mockConfig as unknown as Config,
-      mockSettings,
-    );
+  it("should initialize correctly in non-IDE mode", async () => {
+    const result = await initializeApp(mockConfig as unknown as Config, mockSettings);
 
     expect(result).toEqual({
       authError: null,
@@ -88,18 +82,15 @@ describe('initializer', () => {
       shouldOpenAuthDialog: false,
       geminiMdFileCount: 5,
     });
-    expect(performInitialAuth).toHaveBeenCalledWith(mockConfig, 'oauth');
+    expect(performInitialAuth).toHaveBeenCalledWith(mockConfig, "oauth");
     expect(validateTheme).toHaveBeenCalledWith(mockSettings);
     expect(logCliConfiguration).toHaveBeenCalled();
     expect(IdeClient.getInstance).not.toHaveBeenCalled();
   });
 
-  it('should initialize correctly in IDE mode', async () => {
+  it("should initialize correctly in IDE mode", async () => {
     mockConfig.getIdeMode.mockReturnValue(true);
-    const result = await initializeApp(
-      mockConfig as unknown as Config,
-      mockSettings,
-    );
+    const result = await initializeApp(mockConfig as unknown as Config, mockSettings);
 
     expect(result).toEqual({
       authError: null,
@@ -115,34 +106,25 @@ describe('initializer', () => {
     );
   });
 
-  it('should handle auth error', async () => {
-    vi.mocked(performInitialAuth).mockResolvedValue('Auth failed');
-    const result = await initializeApp(
-      mockConfig as unknown as Config,
-      mockSettings,
-    );
+  it("should handle auth error", async () => {
+    vi.mocked(performInitialAuth).mockResolvedValue("Auth failed");
+    const result = await initializeApp(mockConfig as unknown as Config, mockSettings);
 
-    expect(result.authError).toBe('Auth failed');
+    expect(result.authError).toBe("Auth failed");
     expect(result.shouldOpenAuthDialog).toBe(true);
   });
 
-  it('should handle undefined auth type', async () => {
+  it("should handle undefined auth type", async () => {
     mockSettings.merged.security!.auth!.selectedType = undefined;
-    const result = await initializeApp(
-      mockConfig as unknown as Config,
-      mockSettings,
-    );
+    const result = await initializeApp(mockConfig as unknown as Config, mockSettings);
 
     expect(result.shouldOpenAuthDialog).toBe(true);
   });
 
-  it('should handle theme error', async () => {
-    vi.mocked(validateTheme).mockReturnValue('Theme not found');
-    const result = await initializeApp(
-      mockConfig as unknown as Config,
-      mockSettings,
-    );
+  it("should handle theme error", async () => {
+    vi.mocked(validateTheme).mockReturnValue("Theme not found");
+    const result = await initializeApp(mockConfig as unknown as Config, mockSettings);
 
-    expect(result.themeError).toBe('Theme not found');
+    expect(result.themeError).toBe("Theme not found");
   });
 });

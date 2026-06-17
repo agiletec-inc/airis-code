@@ -15,7 +15,7 @@ export class HighWaterMarkTracker {
 
   constructor(growthThresholdPercent: number = 5) {
     if (growthThresholdPercent < 0) {
-      throw new Error('growthThresholdPercent must be non-negative.');
+      throw new Error("growthThresholdPercent must be non-negative.");
     }
     this.growthThresholdPercent = growthThresholdPercent;
   }
@@ -41,8 +41,7 @@ export class HighWaterMarkTracker {
     }
 
     // Check if current value exceeds threshold
-    const thresholdValue =
-      currentWaterMark * (1 + this.growthThresholdPercent / 100);
+    const thresholdValue = currentWaterMark * (1 + this.growthThresholdPercent / 100);
 
     if (currentValue > thresholdValue) {
       // Update high-water mark

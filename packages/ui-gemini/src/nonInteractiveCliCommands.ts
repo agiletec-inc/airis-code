@@ -4,21 +4,21 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import type { PartListUnion } from '@google/genai';
-import { parseSlashCommand } from './utils/commands.js';
 import {
+  type Config,
   FatalInputError,
   Logger,
   uiTelemetryService,
-  type Config,
-} from '@airiscode/gemini-cli-core';
-import { CommandService } from './services/CommandService.js';
-import { FileCommandLoader } from './services/FileCommandLoader.js';
-import { McpPromptLoader } from './services/McpPromptLoader.js';
-import type { CommandContext } from './ui/commands/types.js';
-import { createNonInteractiveUI } from './ui/noninteractive/nonInteractiveUi.js';
-import type { LoadedSettings } from './config/settings.js';
-import type { SessionStatsState } from './ui/contexts/SessionContext.js';
+} from "@airiscode/gemini-cli-core";
+import type { PartListUnion } from "@google/genai";
+import type { LoadedSettings } from "./config/settings.js";
+import { CommandService } from "./services/CommandService.js";
+import { FileCommandLoader } from "./services/FileCommandLoader.js";
+import { McpPromptLoader } from "./services/McpPromptLoader.js";
+import type { CommandContext } from "./ui/commands/types.js";
+import type { SessionStatsState } from "./ui/contexts/SessionContext.js";
+import { createNonInteractiveUI } from "./ui/noninteractive/nonInteractiveUi.js";
+import { parseSlashCommand } from "./utils/commands.js";
 
 /**
  * Processes a slash command in a non-interactive environment.
@@ -35,7 +35,7 @@ export const handleSlashCommand = async (
   settings: LoadedSettings,
 ): Promise<PartListUnion | undefined> => {
   const trimmed = rawQuery.trim();
-  if (!trimmed.startsWith('/')) {
+  if (!trimmed.startsWith("/")) {
     return;
   }
 
@@ -58,7 +58,7 @@ export const handleSlashCommand = async (
         promptCount: 1,
       };
 
-      const logger = new Logger(config?.getSessionId() || '', config?.storage);
+      const logger = new Logger(config?.getSessionId() || "", config?.storage);
 
       const context: CommandContext = {
         services: {
@@ -83,9 +83,9 @@ export const handleSlashCommand = async (
 
       if (result) {
         switch (result.type) {
-          case 'submit_prompt':
+          case "submit_prompt":
             return result.content;
-          case 'confirm_shell_commands':
+          case "confirm_shell_commands":
             // This result indicates a command attempted to confirm shell commands.
             // However note that currently, ShellTool is excluded in non-interactive
             // mode unless 'YOLO mode' is active, so confirmation actually won't
@@ -93,11 +93,11 @@ export const handleSlashCommand = async (
             // This ensures that if a command *does* request confirmation (e.g.
             // in the future with more granular permissions), it's handled appropriately.
             throw new FatalInputError(
-              'Exiting due to a confirmation prompt requested by the command.',
+              "Exiting due to a confirmation prompt requested by the command.",
             );
           default:
             throw new FatalInputError(
-              'Exiting due to command result that is not supported in non-interactive mode.',
+              "Exiting due to command result that is not supported in non-interactive mode.",
             );
         }
       }

@@ -3,7 +3,7 @@
  * Responsibility: On-demand server enabling and tool description loading
  */
 
-import { MCPGatewayClient, type ToolDescription } from '@airiscode/mcp-gateway-client';
+import { MCPGatewayClient, type ToolDescription } from "@airiscode/mcp-gateway-client";
 
 export interface LoaderConfig {
   client: MCPGatewayClient;
@@ -23,10 +23,7 @@ export class LazyMCPLoader {
   /**
    * Enable a lazy server and get its tool descriptions
    */
-  async enableServer(
-    serverName: string,
-    env?: Record<string, string>
-  ): Promise<ToolDescription[]> {
+  async enableServer(serverName: string, env?: Record<string, string>): Promise<ToolDescription[]> {
     if (this.enabledServers.has(serverName)) {
       // Already enabled, skip
       return [];

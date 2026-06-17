@@ -4,41 +4,39 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { renderHook } from '../../test-utils/render.js';
-import { vi, type Mock } from 'vitest';
-import { useFlickerDetector } from './useFlickerDetector.js';
-import { useConfig } from '../contexts/ConfigContext.js';
-import { recordFlickerFrame } from '@airiscode/gemini-cli-core';
-import { type Config } from '@airiscode/gemini-cli-core';
-import { type DOMElement, measureElement } from 'ink';
-import { useUIState } from '../contexts/UIStateContext.js';
-import { appEvents, AppEvent } from '../../utils/events.js';
+import { type Config, recordFlickerFrame } from "@airiscode/gemini-cli-core";
+import { type DOMElement, measureElement } from "ink";
+import { type Mock, vi } from "vitest";
+import { renderHook } from "../../test-utils/render.js";
+import { AppEvent, appEvents } from "../../utils/events.js";
+import { useConfig } from "../contexts/ConfigContext.js";
+import { useUIState } from "../contexts/UIStateContext.js";
+import { useFlickerDetector } from "./useFlickerDetector.js";
 
 // Mock dependencies
-vi.mock('../contexts/ConfigContext.js');
-vi.mock('../contexts/UIStateContext.js');
-vi.mock('@airiscode/gemini-cli-core', async (importOriginal) => {
-  const actual =
-    await importOriginal<typeof import('@airiscode/gemini-cli-core')>();
+vi.mock("../contexts/ConfigContext.js");
+vi.mock("../contexts/UIStateContext.js");
+vi.mock("@airiscode/gemini-cli-core", async (importOriginal) => {
+  const actual = await importOriginal<typeof import("@airiscode/gemini-cli-core")>();
   return {
     ...actual,
     recordFlickerFrame: vi.fn(),
-    GEMINI_DIR: '.gemini',
+    GEMINI_DIR: ".gemini",
   };
 });
-vi.mock('ink', async (importOriginal) => {
-  const original = await importOriginal<typeof import('ink')>();
+vi.mock("ink", async (importOriginal) => {
+  const original = await importOriginal<typeof import("ink")>();
   return {
     ...original,
     measureElement: vi.fn(),
   };
 });
-vi.mock('../../utils/events.js', () => ({
+vi.mock("../../utils/events.js", () => ({
   appEvents: {
     emit: vi.fn(),
   },
   AppEvent: {
-    Flicker: 'flicker',
+    Flicker: "flicker",
   },
 }));
 
@@ -48,7 +46,7 @@ const mockRecordFlickerFrame = recordFlickerFrame as Mock;
 const mockMeasureElement = measureElement as Mock;
 const mockAppEventsEmit = appEvents.emit as Mock;
 
-describe('useFlickerDetector', () => {
+describe("useFlickerDetector", () => {
   const mockConfig = {} as Config;
   let mockRef: React.RefObject<DOMElement | null>;
 
@@ -63,21 +61,21 @@ describe('useFlickerDetector', () => {
     vi.clearAllMocks();
   });
 
-  it('should not record a flicker when height is less than terminal height', () => {
+  it("should not record a flicker when height is less than terminal height", () => {
     mockMeasureElement.mockReturnValue({ width: 80, height: 20 });
     renderHook(() => useFlickerDetector(mockRef, 25));
     expect(mockRecordFlickerFrame).not.toHaveBeenCalled();
     expect(mockAppEventsEmit).not.toHaveBeenCalled();
   });
 
-  it('should not record a flicker when height is equal to terminal height', () => {
+  it("should not record a flicker when height is equal to terminal height", () => {
     mockMeasureElement.mockReturnValue({ width: 80, height: 25 });
     renderHook(() => useFlickerDetector(mockRef, 25));
     expect(mockRecordFlickerFrame).not.toHaveBeenCalled();
     expect(mockAppEventsEmit).not.toHaveBeenCalled();
   });
 
-  it('should record a flicker when height is greater than terminal height and height is constrained', () => {
+  it("should record a flicker when height is greater than terminal height and height is constrained", () => {
     mockMeasureElement.mockReturnValue({ width: 80, height: 30 });
     renderHook(() => useFlickerDetector(mockRef, 25));
     expect(mockRecordFlickerFrame).toHaveBeenCalledTimes(1);
@@ -86,7 +84,7 @@ describe('useFlickerDetector', () => {
     expect(mockAppEventsEmit).toHaveBeenCalledWith(AppEvent.Flicker);
   });
 
-  it('should NOT record a flicker when height is greater than terminal height but height is NOT constrained', () => {
+  it("should NOT record a flicker when height is greater than terminal height but height is NOT constrained", () => {
     // Override default UI state for this test
     mockUseUIState.mockReturnValue({ constrainHeight: false });
     mockMeasureElement.mockReturnValue({ width: 80, height: 30 });
@@ -95,7 +93,7 @@ describe('useFlickerDetector', () => {
     expect(mockAppEventsEmit).not.toHaveBeenCalled();
   });
 
-  it('should not check for flicker if the ref is not set', () => {
+  it("should not check for flicker if the ref is not set", () => {
     mockRef.current = null;
     mockMeasureElement.mockReturnValue({ width: 80, height: 30 });
     renderHook(() => useFlickerDetector(mockRef, 25));
@@ -104,7 +102,7 @@ describe('useFlickerDetector', () => {
     expect(mockAppEventsEmit).not.toHaveBeenCalled();
   });
 
-  it('should re-evaluate on re-render', () => {
+  it("should re-evaluate on re-render", () => {
     // Start with a valid height
     mockMeasureElement.mockReturnValue({ width: 80, height: 20 });
     const { rerender } = renderHook(() => useFlickerDetector(mockRef, 25));

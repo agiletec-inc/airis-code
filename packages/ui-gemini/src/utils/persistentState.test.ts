@@ -4,14 +4,14 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { describe, it, expect, vi, beforeEach } from 'vitest';
-import * as fs from 'node:fs';
-import * as path from 'node:path';
-import { Storage, debugLogger } from '@airiscode/gemini-cli-core';
-import { PersistentState } from './persistentState.js';
+import * as fs from "node:fs";
+import * as path from "node:path";
+import { debugLogger, Storage } from "@airiscode/gemini-cli-core";
+import { beforeEach, describe, expect, it, vi } from "vitest";
+import { PersistentState } from "./persistentState.js";
 
-vi.mock('node:fs');
-vi.mock('@airiscode/gemini-cli-core', () => ({
+vi.mock("node:fs");
+vi.mock("@airiscode/gemini-cli-core", () => ({
   Storage: {
     getGlobalGeminiDir: vi.fn(),
   },
@@ -20,10 +20,10 @@ vi.mock('@airiscode/gemini-cli-core', () => ({
   },
 }));
 
-describe('PersistentState', () => {
+describe("PersistentState", () => {
   let persistentState: PersistentState;
-  const mockDir = '/mock/dir';
-  const mockFilePath = path.join(mockDir, 'state.json');
+  const mockDir = "/mock/dir";
+  const mockFilePath = path.join(mockDir, "state.json");
 
   beforeEach(() => {
     vi.resetAllMocks();
@@ -31,25 +31,25 @@ describe('PersistentState', () => {
     persistentState = new PersistentState();
   });
 
-  it('should load state from file if it exists', () => {
+  it("should load state from file if it exists", () => {
     const mockData = { defaultBannerShownCount: { banner1: 1 } };
     vi.mocked(fs.existsSync).mockReturnValue(true);
     vi.mocked(fs.readFileSync).mockReturnValue(JSON.stringify(mockData));
 
-    const value = persistentState.get('defaultBannerShownCount');
+    const value = persistentState.get("defaultBannerShownCount");
     expect(value).toEqual(mockData.defaultBannerShownCount);
-    expect(fs.readFileSync).toHaveBeenCalledWith(mockFilePath, 'utf-8');
+    expect(fs.readFileSync).toHaveBeenCalledWith(mockFilePath, "utf-8");
   });
 
-  it('should return undefined if key does not exist', () => {
+  it("should return undefined if key does not exist", () => {
     vi.mocked(fs.existsSync).mockReturnValue(false);
-    const value = persistentState.get('defaultBannerShownCount');
+    const value = persistentState.get("defaultBannerShownCount");
     expect(value).toBeUndefined();
   });
 
-  it('should save state to file', () => {
+  it("should save state to file", () => {
     vi.mocked(fs.existsSync).mockReturnValue(false);
-    persistentState.set('defaultBannerShownCount', { banner1: 1 });
+    persistentState.set("defaultBannerShownCount", { banner1: 1 });
 
     expect(fs.mkdirSync).toHaveBeenCalledWith(path.normalize(mockDir), {
       recursive: true,
@@ -60,24 +60,24 @@ describe('PersistentState', () => {
     );
   });
 
-  it('should handle load errors and start fresh', () => {
+  it("should handle load errors and start fresh", () => {
     vi.mocked(fs.existsSync).mockReturnValue(true);
     vi.mocked(fs.readFileSync).mockImplementation(() => {
-      throw new Error('Read error');
+      throw new Error("Read error");
     });
 
-    const value = persistentState.get('defaultBannerShownCount');
+    const value = persistentState.get("defaultBannerShownCount");
     expect(value).toBeUndefined();
     expect(debugLogger.warn).toHaveBeenCalled();
   });
 
-  it('should handle save errors', () => {
+  it("should handle save errors", () => {
     vi.mocked(fs.existsSync).mockReturnValue(false);
     vi.mocked(fs.writeFileSync).mockImplementation(() => {
-      throw new Error('Write error');
+      throw new Error("Write error");
     });
 
-    persistentState.set('defaultBannerShownCount', { banner1: 1 });
+    persistentState.set("defaultBannerShownCount", { banner1: 1 });
     expect(debugLogger.warn).toHaveBeenCalled();
   });
 });

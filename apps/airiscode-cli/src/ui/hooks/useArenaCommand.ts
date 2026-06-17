@@ -4,9 +4,9 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { useCallback, useState } from 'react';
+import { useCallback, useState } from "react";
 
-export type ArenaDialogType = 'start' | 'select' | 'stop' | 'status' | null;
+export type ArenaDialogType = "start" | "select" | "stop" | "status" | null;
 
 interface UseArenaCommandReturn {
   activeArenaDialog: ArenaDialogType;
@@ -15,15 +15,11 @@ interface UseArenaCommandReturn {
 }
 
 export function useArenaCommand(): UseArenaCommandReturn {
-  const [activeArenaDialog, setActiveArenaDialog] =
-    useState<ArenaDialogType>(null);
+  const [activeArenaDialog, setActiveArenaDialog] = useState<ArenaDialogType>(null);
 
-  const openArenaDialog = useCallback(
-    (type: Exclude<ArenaDialogType, null>) => {
-      setActiveArenaDialog(type);
-    },
-    [],
-  );
+  const openArenaDialog = useCallback((type: Exclude<ArenaDialogType, null>) => {
+    setActiveArenaDialog(type);
+  }, []);
 
   const closeArenaDialog = useCallback(() => {
     setActiveArenaDialog(null);

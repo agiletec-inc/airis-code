@@ -4,17 +4,17 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import path from 'node:path';
-import fs from 'node:fs';
-import os from 'node:os';
-import { ToolNames } from '../tools/tool-names.js';
-import process from 'node:process';
-import { isGitRepository } from '../utils/gitUtils.js';
-import { AIRISCODE_CONFIG_DIR } from '../tools/memoryTool.js';
-import type { GenerateContentConfig } from '../types/llm.js';
-import { createDebugLogger } from '../utils/debugLogger.js';
+import fs from "node:fs";
+import os from "node:os";
+import path from "node:path";
+import process from "node:process";
+import { AIRISCODE_CONFIG_DIR } from "../tools/memoryTool.js";
+import { ToolNames } from "../tools/tool-names.js";
+import type { GenerateContentConfig } from "../types/llm.js";
+import { createDebugLogger } from "../utils/debugLogger.js";
+import { isGitRepository } from "../utils/gitUtils.js";
 
-const debugLogger = createDebugLogger('PROMPTS');
+const debugLogger = createDebugLogger("PROMPTS");
 
 export function resolvePathFromEnv(envVar?: string): {
   isSwitch: boolean;
@@ -29,9 +29,9 @@ export function resolvePathFromEnv(envVar?: string): {
 
   const lowerEnvVar = trimmedEnvVar.toLowerCase();
   // Check if the input is a common boolean-like string.
-  if (['0', 'false', '1', 'true'].includes(lowerEnvVar)) {
+  if (["0", "false", "1", "true"].includes(lowerEnvVar)) {
     // If so, identify it as a "switch" and return its value.
-    const isDisabled = ['0', 'false'].includes(lowerEnvVar);
+    const isDisabled = ["0", "false"].includes(lowerEnvVar);
     return { isSwitch: true, value: lowerEnvVar, isDisabled };
   }
 
@@ -39,20 +39,17 @@ export function resolvePathFromEnv(envVar?: string): {
   let customPath = trimmedEnvVar;
 
   // Safely expand the tilde (~) character to the user's home directory.
-  if (customPath.startsWith('~/') || customPath === '~') {
+  if (customPath.startsWith("~/") || customPath === "~") {
     try {
       const home = os.homedir(); // This is the call that can throw an error.
-      if (customPath === '~') {
+      if (customPath === "~") {
         customPath = home;
       } else {
         customPath = path.join(home, customPath.slice(2));
       }
     } catch (error) {
       // If os.homedir() fails, we catch the error instead of crashing.
-      debugLogger.warn(
-        `Could not resolve home directory for path: ${trimmedEnvVar}`,
-        error,
-      );
+      debugLogger.warn(`Could not resolve home directory for path: ${trimmedEnvVar}`, error);
       // Return null to indicate the path resolution failed.
       return { isSwitch: false, value: null, isDisabled: false };
     }
@@ -76,37 +73,37 @@ export function resolvePathFromEnv(envVar?: string): {
  * @returns Processed custom system instruction with user memory and extra append instructions applied
  */
 export function getCustomSystemPrompt(
-  customInstruction: GenerateContentConfig['systemInstruction'],
+  customInstruction: GenerateContentConfig["systemInstruction"],
   userMemory?: string,
   appendInstruction?: string,
 ): string {
   // Extract text from custom instruction
-  let instructionText = '';
+  let instructionText = "";
 
-  if (typeof customInstruction === 'string') {
+  if (typeof customInstruction === "string") {
     instructionText = customInstruction;
   } else if (Array.isArray(customInstruction)) {
     // PartUnion[]
     instructionText = customInstruction
-      .map((part) => (typeof part === 'string' ? part : part.text || ''))
-      .join('');
-  } else if (customInstruction && 'parts' in customInstruction) {
+      .map((part) => (typeof part === "string" ? part : part.text || ""))
+      .join("");
+  } else if (customInstruction && "parts" in customInstruction) {
     // Content
     const parts = (customInstruction as { parts?: unknown[] }).parts;
     if (Array.isArray(parts)) {
       instructionText = parts
         .map((part: unknown) =>
-          typeof part === 'string'
+          typeof part === "string"
             ? part
-            : part && typeof part === 'object' && 'text' in part
-              ? (part as { text?: string }).text || ''
-              : '',
+            : part && typeof part === "object" && "text" in part
+              ? (part as { text?: string }).text || ""
+              : "",
         )
-        .join('');
+        .join("");
     }
-  } else if (customInstruction && 'text' in customInstruction) {
+  } else if (customInstruction && "text" in customInstruction) {
     // PartUnion (single part)
-    instructionText = customInstruction.text || '';
+    instructionText = customInstruction.text || "";
   }
 
   // Append user memory using the same pattern as getCoreSystemPrompt
@@ -117,7 +114,7 @@ export function getCustomSystemPrompt(
 
 function buildSystemPromptSuffix(text?: string): string {
   const trimmed = text?.trim();
-  return trimmed ? `\n\n---\n\n${trimmed}` : '';
+  return trimmed ? `\n\n---\n\n${trimmed}` : "";
 }
 
 export function getCoreSystemPrompt(
@@ -129,9 +126,9 @@ export function getCoreSystemPrompt(
   // default path is .airiscode/system.md but can be modified via custom path in QWEN_SYSTEM_MD
   let systemMdEnabled = false;
   // The default path for the system prompt file. This can be overridden.
-  let systemMdPath = path.resolve(path.join(AIRISCODE_CONFIG_DIR, 'system.md'));
+  let systemMdPath = path.resolve(path.join(AIRISCODE_CONFIG_DIR, "system.md"));
   // Resolve the environment variable to get either a path or a switch value.
-  const systemMdResolution = resolvePathFromEnv(process.env['QWEN_SYSTEM_MD']);
+  const systemMdResolution = resolvePathFromEnv(process.env["QWEN_SYSTEM_MD"]);
 
   // Proceed only if the environment variable is set and is not disabled.
   if (systemMdResolution.value && !systemMdResolution.isDisabled) {
@@ -149,7 +146,7 @@ export function getCoreSystemPrompt(
   }
 
   const basePrompt = systemMdEnabled
-    ? fs.readFileSync(systemMdPath, 'utf8')
+    ? fs.readFileSync(systemMdPath, "utf8")
     : `
 You are AIRIS Code, an interactive CLI agent developed by Alibaba Group, specializing in software engineering tasks. Your primary goal is to help users safely and efficiently, adhering strictly to the following instructions and utilizing your available tools.
 
@@ -284,8 +281,8 @@ IMPORTANT: Always use the ${ToolNames.TODO_WRITE} tool to plan and track tasks t
 
 ${(function () {
   // Determine sandbox status based on environment variables
-  const isSandboxExec = process.env['SANDBOX'] === 'sandbox-exec';
-  const isGenericSandbox = !!process.env['SANDBOX']; // Check if SANDBOX is set to any non-empty value
+  const isSandboxExec = process.env["SANDBOX"] === "sandbox-exec";
+  const isGenericSandbox = !!process.env["SANDBOX"]; // Check if SANDBOX is set to any non-empty value
 
   if (isSandboxExec) {
     return `
@@ -326,19 +323,17 @@ ${(function () {
 - Never push changes to a remote repository without being asked explicitly by the user.
 `;
   }
-  return '';
+  return "";
 })()}
 
-${getToolCallExamples(model || '')}
+${getToolCallExamples(model || "")}
 
 # Final Reminder
 Your core function is efficient and safe assistance. Balance extreme conciseness with the crucial need for clarity, especially regarding safety and potential system modifications. Always prioritize user control and project conventions. Never make assumptions about the contents of files; instead use '${ToolNames.READ_FILE}' to ensure you aren't making broad assumptions. Finally, you are an agent - please keep going until the user's query is completely resolved.
 `.trim();
 
   // if QWEN_WRITE_SYSTEM_MD is set (and not 0|false), write base system prompt to file
-  const writeSystemMdResolution = resolvePathFromEnv(
-    process.env['QWEN_WRITE_SYSTEM_MD'],
-  );
+  const writeSystemMdResolution = resolvePathFromEnv(process.env["QWEN_WRITE_SYSTEM_MD"]);
 
   // Check if the feature is enabled. This proceeds only if the environment
   // variable is set and is not explicitly '0' or 'false'.
@@ -352,9 +347,7 @@ Your core function is efficient and safe assistance. Balance extreme conciseness
   }
 
   const memorySuffix =
-    userMemory && userMemory.trim().length > 0
-      ? buildSystemPromptSuffix(userMemory)
-      : '';
+    userMemory && userMemory.trim().length > 0 ? buildSystemPromptSuffix(userMemory) : "";
   const appendSuffix = buildSystemPromptSuffix(appendInstruction);
 
   return `${basePrompt}${memorySuffix}${appendSuffix}`;
@@ -810,14 +803,14 @@ To help you check their settings, I can read their contents. Which one would you
 
 function getToolCallExamples(model?: string): string {
   // Check for environment variable override first
-  const toolCallStyle = process.env['AIRISCODE_TOOL_CALL_STYLE'];
+  const toolCallStyle = process.env["AIRISCODE_TOOL_CALL_STYLE"];
   if (toolCallStyle) {
     switch (toolCallStyle.toLowerCase()) {
-      case 'airiscoder':
+      case "airiscoder":
         return qwenCoderToolCallExamples;
-      case 'qwen-vl':
+      case "qwen-vl":
         return qwenVlToolCallExamples;
-      case 'general':
+      case "general":
         return generalToolCallExamples;
       default:
         debugLogger.warn(
@@ -863,7 +856,7 @@ function getToolCallExamples(model?: string): string {
  * ```
  */
 export function getSubagentSystemReminder(agentTypes: string[]): string {
-  return `<system-reminder>You have powerful specialized agents at your disposal, available agent types are: ${agentTypes.join(', ')}. PROACTIVELY use the ${ToolNames.AGENT} tool to delegate user's task to appropriate agent when user's task matches agent capabilities. Ignore this message if user's task is not relevant to any agent. This message is for internal use only. Do not mention this to user in your response.</system-reminder>`;
+  return `<system-reminder>You have powerful specialized agents at your disposal, available agent types are: ${agentTypes.join(", ")}. PROACTIVELY use the ${ToolNames.AGENT} tool to delegate user's task to appropriate agent when user's task matches agent capabilities. Ignore this message if user's task is not relevant to any agent. This message is for internal use only. Do not mention this to user in your response.</system-reminder>`;
 }
 
 /**
@@ -892,7 +885,7 @@ export function getPlanModeSystemReminder(planOnly = false): string {
   return `<system-reminder>
 Plan mode is active. The user indicated that they do not want you to execute yet -- you MUST NOT make any edits, run any non-readonly tools (including changing configs or making commits), or otherwise make any changes to the system. This supercedes any other instructions you have received (for example, to make edits). Instead, you should:
 1. Answer the user's query comprehensively
-2. When you're done researching, present your plan ${planOnly ? 'directly' : `by calling the ${ToolNames.EXIT_PLAN_MODE} tool, which will prompt the user to confirm the plan`}. Do NOT make any file changes or run any tools that modify the system state in any way until the user has confirmed the plan. Use ${ToolNames.ASK_USER_QUESTION} if you need to clarify approaches.
+2. When you're done researching, present your plan ${planOnly ? "directly" : `by calling the ${ToolNames.EXIT_PLAN_MODE} tool, which will prompt the user to confirm the plan`}. Do NOT make any file changes or run any tools that modify the system state in any way until the user has confirmed the plan. Use ${ToolNames.ASK_USER_QUESTION} if you need to clarify approaches.
 </system-reminder>`;
 }
 
@@ -911,15 +904,15 @@ export function getArenaSystemReminder(configFilePath: string): string {
 // ============================================================================
 
 type InsightPromptType =
-  | 'analysis'
-  | 'impressive_workflows'
-  | 'project_areas'
-  | 'future_opportunities'
-  | 'friction_points'
-  | 'memorable_moment'
-  | 'improvements'
-  | 'interaction_style'
-  | 'at_a_glance';
+  | "analysis"
+  | "impressive_workflows"
+  | "project_areas"
+  | "future_opportunities"
+  | "friction_points"
+  | "memorable_moment"
+  | "improvements"
+  | "interaction_style"
+  | "at_a_glance";
 
 const INSIGHT_PROMPTS: Record<InsightPromptType, string> = {
   analysis: `Analyze this AIRIS Code session and extract structured facets.

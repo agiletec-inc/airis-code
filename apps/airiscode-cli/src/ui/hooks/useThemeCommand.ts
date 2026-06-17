@@ -4,43 +4,37 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { useState, useCallback } from 'react';
-import { themeManager } from '../themes/theme-manager.js';
-import type { LoadedSettings, SettingScope } from '../../config/settings.js'; // Import LoadedSettings, AppSettings, MergedSetting
-import { type HistoryItem, MessageType } from '../types.js';
-import process from 'node:process';
-import { t } from '../../i18n/index.js';
+import process from "node:process";
+import { useCallback, useState } from "react";
+import type { LoadedSettings, SettingScope } from "../../config/settings.js"; // Import LoadedSettings, AppSettings, MergedSetting
+import { t } from "../../i18n/index.js";
+import { themeManager } from "../themes/theme-manager.js";
+import { type HistoryItem, MessageType } from "../types.js";
 
 interface UseThemeCommandReturn {
   isThemeDialogOpen: boolean;
   openThemeDialog: () => void;
-  handleThemeSelect: (
-    themeName: string | undefined,
-    scope: SettingScope,
-  ) => void; // Added scope
+  handleThemeSelect: (themeName: string | undefined, scope: SettingScope) => void; // Added scope
   handleThemeHighlight: (themeName: string | undefined) => void;
 }
 
 export const useThemeCommand = (
   loadedSettings: LoadedSettings,
   setThemeError: (error: string | null) => void,
-  addItem: (item: Omit<HistoryItem, 'id'>, timestamp: number) => void,
+  addItem: (item: Omit<HistoryItem, "id">, timestamp: number) => void,
   initialThemeError: string | null,
 ): UseThemeCommandReturn => {
-  const [isThemeDialogOpen, setIsThemeDialogOpen] =
-    useState(!!initialThemeError);
-  const [themeBeforeDialogOpen, setThemeBeforeDialogOpen] = useState<
-    string | undefined
-  >(themeManager.getActiveTheme().name);
+  const [isThemeDialogOpen, setIsThemeDialogOpen] = useState(!!initialThemeError);
+  const [themeBeforeDialogOpen, setThemeBeforeDialogOpen] = useState<string | undefined>(
+    themeManager.getActiveTheme().name,
+  );
 
   const openThemeDialog = useCallback(() => {
-    if (process.env['NO_COLOR']) {
+    if (process.env["NO_COLOR"]) {
       addItem(
         {
           type: MessageType.INFO,
-          text: t(
-            'Theme configuration unavailable due to NO_COLOR env variable.',
-          ),
+          text: t("Theme configuration unavailable due to NO_COLOR env variable."),
         },
         Date.now(),
       );
@@ -59,7 +53,7 @@ export const useThemeCommand = (
         setIsThemeDialogOpen(true);
         setThemeError(
           t('Theme "{{themeName}}" not found.', {
-            themeName: themeName ?? '',
+            themeName: themeName ?? "",
           }),
         );
       } else {
@@ -98,13 +92,13 @@ export const useThemeCommand = (
         if (!isBuiltIn && !isCustom) {
           setThemeError(
             t('Theme "{{themeName}}" not found in selected scope.', {
-              themeName: themeName ?? '',
+              themeName: themeName ?? "",
             }),
           );
           setIsThemeDialogOpen(true);
           return;
         }
-        loadedSettings.setValue(scope, 'ui.theme', themeName); // Update the merged settings
+        loadedSettings.setValue(scope, "ui.theme", themeName); // Update the merged settings
         if (loadedSettings.merged.ui?.customThemes) {
           themeManager.loadCustomThemes(loadedSettings.merged.ui?.customThemes);
         }

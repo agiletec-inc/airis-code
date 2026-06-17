@@ -4,18 +4,18 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import type { Config } from '../config/config.js';
-import type { HookDefinition, HookConfig } from './types.js';
-import { HookEventName } from './types.js';
-import { debugLogger } from '../utils/debugLogger.js';
+import type { Config } from "../config/config.js";
+import { debugLogger } from "../utils/debugLogger.js";
+import type { HookConfig, HookDefinition } from "./types.js";
+import { HookEventName } from "./types.js";
 
 /**
  * Error thrown when attempting to use HookRegistry before initialization
  */
 export class HookRegistryNotInitializedError extends Error {
-  constructor(message = 'Hook registry not initialized') {
+  constructor(message = "Hook registry not initialized") {
     super(message);
-    this.name = 'HookRegistryNotInitializedError';
+    this.name = "HookRegistryNotInitializedError";
   }
 }
 
@@ -23,10 +23,10 @@ export class HookRegistryNotInitializedError extends Error {
  * Configuration source levels in precedence order (highest to lowest)
  */
 export enum ConfigSource {
-  Project = 'project',
-  User = 'user',
-  System = 'system',
-  Extensions = 'extensions',
+  Project = "project",
+  User = "user",
+  System = "system",
+  Extensions = "extensions",
 }
 
 /**
@@ -65,9 +65,7 @@ export class HookRegistry {
     this.processHooksFromConfig();
     this.initialized = true;
 
-    debugLogger.log(
-      `Hook registry initialized with ${this.entries.length} hook entries`,
-    );
+    debugLogger.log(`Hook registry initialized with ${this.entries.length} hook entries`);
   }
 
   /**
@@ -80,10 +78,7 @@ export class HookRegistry {
 
     return this.entries
       .filter((entry) => entry.eventName === eventName && entry.enabled)
-      .sort(
-        (a, b) =>
-          this.getSourcePriority(a.source) - this.getSourcePriority(b.source),
-      );
+      .sort((a, b) => this.getSourcePriority(a.source) - this.getSourcePriority(b.source));
   }
 
   /**
@@ -112,7 +107,7 @@ export class HookRegistry {
 
     if (updated.length > 0) {
       debugLogger.log(
-        `${enabled ? 'Enabled' : 'Disabled'} ${updated.length} hook(s) matching "${hookName}"`,
+        `${enabled ? "Enabled" : "Disabled"} ${updated.length} hook(s) matching "${hookName}"`,
       );
     } else {
       debugLogger.warn(`No hooks found matching "${hookName}"`);
@@ -123,7 +118,7 @@ export class HookRegistry {
    * Get hook name for display purposes
    */
   private getHookName(entry: HookRegistryEntry): string {
-    return entry.config.command || 'unknown-command';
+    return entry.config.command || "unknown-command";
   }
 
   /**
@@ -140,10 +135,7 @@ export class HookRegistry {
     const extensions = this.config.getExtensions() || [];
     for (const extension of extensions) {
       if (extension.isActive && extension.hooks) {
-        this.processHooksConfiguration(
-          extension.hooks,
-          ConfigSource.Extensions,
-        );
+        this.processHooksConfiguration(extension.hooks, ConfigSource.Extensions);
       }
     }
   }
@@ -184,11 +176,7 @@ export class HookRegistry {
     eventName: HookEventName,
     source: ConfigSource,
   ): void {
-    if (
-      !definition ||
-      typeof definition !== 'object' ||
-      !Array.isArray(definition.hooks)
-    ) {
+    if (!definition || typeof definition !== "object" || !Array.isArray(definition.hooks)) {
       debugLogger.warn(
         `Discarding invalid hook definition for ${eventName} from ${source}:`,
         definition,
@@ -199,7 +187,7 @@ export class HookRegistry {
     for (const hookConfig of definition.hooks) {
       if (
         hookConfig &&
-        typeof hookConfig === 'object' &&
+        typeof hookConfig === "object" &&
         this.validateHookConfig(hookConfig, eventName, source)
       ) {
         this.entries.push({
@@ -228,17 +216,13 @@ export class HookRegistry {
     eventName: HookEventName,
     source: ConfigSource,
   ): boolean {
-    if (!config.type || !['command', 'plugin'].includes(config.type)) {
-      debugLogger.warn(
-        `Invalid hook ${eventName} from ${source} type: ${config.type}`,
-      );
+    if (!config.type || !["command", "plugin"].includes(config.type)) {
+      debugLogger.warn(`Invalid hook ${eventName} from ${source} type: ${config.type}`);
       return false;
     }
 
-    if (config.type === 'command' && !config.command) {
-      debugLogger.warn(
-        `Command hook ${eventName} from ${source} missing command field`,
-      );
+    if (config.type === "command" && !config.command) {
+      debugLogger.warn(`Command hook ${eventName} from ${source} missing command field`);
       return false;
     }
 

@@ -4,42 +4,39 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import path from 'node:path';
-import * as fs from 'node:fs';
-import { Writable } from 'node:stream';
-import { ProxyAgent } from 'undici';
-
-import type { CommandContext } from '../../ui/commands/types.js';
+import * as fs from "node:fs";
+import path from "node:path";
+import { Writable } from "node:stream";
+import { debugLogger } from "@airiscode/gemini-cli-core";
+import { ProxyAgent } from "undici";
+import type { CommandContext } from "../../ui/commands/types.js";
+import { getUrlOpenCommand } from "../../ui/utils/commandUtils.js";
 import {
+  getGitHubRepoInfo,
   getGitRepoRoot,
   getLatestGitHubRelease,
   isGitHubRepository,
-  getGitHubRepoInfo,
-} from '../../utils/gitUtils.js';
-
-import type { SlashCommand, SlashCommandActionReturn } from './types.js';
-import { CommandKind } from './types.js';
-import { getUrlOpenCommand } from '../../ui/utils/commandUtils.js';
-import { debugLogger } from '@airiscode/gemini-cli-core';
+} from "../../utils/gitUtils.js";
+import type { SlashCommand, SlashCommandActionReturn } from "./types.js";
+import { CommandKind } from "./types.js";
 
 export const GITHUB_WORKFLOW_PATHS = [
-  'gemini-dispatch/gemini-dispatch.yml',
-  'gemini-assistant/gemini-invoke.yml',
-  'issue-triage/gemini-triage.yml',
-  'issue-triage/gemini-scheduled-triage.yml',
-  'pr-review/gemini-review.yml',
+  "gemini-dispatch/gemini-dispatch.yml",
+  "gemini-assistant/gemini-invoke.yml",
+  "issue-triage/gemini-triage.yml",
+  "issue-triage/gemini-scheduled-triage.yml",
+  "pr-review/gemini-review.yml",
 ];
 
 export const GITHUB_COMMANDS_PATHS = [
-  'gemini-assistant/gemini-invoke.toml',
-  'issue-triage/gemini-scheduled-triage.toml',
-  'issue-triage/gemini-triage.toml',
-  'pr-review/gemini-review.toml',
+  "gemini-assistant/gemini-invoke.toml",
+  "issue-triage/gemini-scheduled-triage.toml",
+  "issue-triage/gemini-triage.toml",
+  "pr-review/gemini-review.toml",
 ];
 
-const REPO_DOWNLOAD_URL =
-  'https://raw.githubusercontent.com/google-github-actions/run-gemini-cli';
-const SOURCE_DIR = 'examples/workflows';
+const REPO_DOWNLOAD_URL = "https://raw.githubusercontent.com/google-github-actions/run-gemini-cli";
+const SOURCE_DIR = "examples/workflows";
 // Generate OS-specific commands to open the GitHub pages needed for setup.
 function getOpenUrlsCommands(readmeUrl: string): string[] {
   // Determine the OS-specific command to open URLs, ex: 'open', 'xdg-open', etc
@@ -62,15 +59,15 @@ function getOpenUrlsCommands(readmeUrl: string): string[] {
 
 // Add Gemini CLI specific entries to .gitignore file
 export async function updateGitignore(gitRepoRoot: string): Promise<void> {
-  const gitignoreEntries = ['.gemini/', 'gha-creds-*.json'];
+  const gitignoreEntries = [".gemini/", "gha-creds-*.json"];
 
-  const gitignorePath = path.join(gitRepoRoot, '.gitignore');
+  const gitignorePath = path.join(gitRepoRoot, ".gitignore");
   try {
     // Check if .gitignore exists and read its content
-    let existingContent = '';
+    let existingContent = "";
     let fileExists = true;
     try {
-      existingContent = await fs.promises.readFile(gitignorePath, 'utf8');
+      existingContent = await fs.promises.readFile(gitignorePath, "utf8");
     } catch (_error) {
       // File doesn't exist
       fileExists = false;
@@ -78,24 +75,22 @@ export async function updateGitignore(gitRepoRoot: string): Promise<void> {
 
     if (!fileExists) {
       // Create new .gitignore file with the entries
-      const contentToWrite = gitignoreEntries.join('\n') + '\n';
+      const contentToWrite = gitignoreEntries.join("\n") + "\n";
       await fs.promises.writeFile(gitignorePath, contentToWrite);
     } else {
       // Check which entries are missing
       const missingEntries = gitignoreEntries.filter(
         (entry) =>
-          !existingContent
-            .split(/\r?\n/)
-            .some((line) => line.split('#')[0].trim() === entry),
+          !existingContent.split(/\r?\n/).some((line) => line.split("#")[0].trim() === entry),
       );
 
       if (missingEntries.length > 0) {
-        const contentToAdd = '\n' + missingEntries.join('\n') + '\n';
+        const contentToAdd = "\n" + missingEntries.join("\n") + "\n";
         await fs.promises.appendFile(gitignorePath, contentToAdd);
       }
     }
   } catch (error) {
-    debugLogger.debug('Failed to update .gitignore:', error);
+    debugLogger.debug("Failed to update .gitignore:", error);
     // Continue without failing the whole command
   }
 }
@@ -119,12 +114,9 @@ async function downloadFiles({
       (async () => {
         const endpoint = `${REPO_DOWNLOAD_URL}/refs/tags/${releaseTag}/${SOURCE_DIR}/${fileBasename}`;
         const response = await fetch(endpoint, {
-          method: 'GET',
+          method: "GET",
           dispatcher: proxy ? new ProxyAgent(proxy) : undefined,
-          signal: AbortSignal.any([
-            AbortSignal.timeout(30_000),
-            abortController.signal,
-          ]),
+          signal: AbortSignal.any([AbortSignal.timeout(30_000), abortController.signal]),
         } as RequestInit);
 
         if (!response.ok) {
@@ -139,14 +131,11 @@ async function downloadFiles({
           );
         }
 
-        const destination = path.resolve(
-          targetDir,
-          path.basename(fileBasename),
-        );
+        const destination = path.resolve(targetDir, path.basename(fileBasename));
 
         const fileStream = fs.createWriteStream(destination, {
           mode: 0o644, // -rw-r--r--, user(rw), group(r), other(r)
-          flags: 'w', // write and overwrite
+          flags: "w", // write and overwrite
           flush: true,
         });
 
@@ -194,22 +183,20 @@ async function downloadSetupFiles({
       }),
     );
   } catch (error) {
-    debugLogger.debug('Failed to download required setup files: ', error);
+    debugLogger.debug("Failed to download required setup files: ", error);
     throw error;
   }
 }
 
 export const setupGithubCommand: SlashCommand = {
-  name: 'setup-github',
-  description: 'Set up GitHub Actions',
+  name: "setup-github",
+  description: "Set up GitHub Actions",
   kind: CommandKind.BUILT_IN,
   autoExecute: true,
-  action: async (
-    context: CommandContext,
-  ): Promise<SlashCommandActionReturn> => {
+  action: async (context: CommandContext): Promise<SlashCommandActionReturn> => {
     if (!isGitHubRepository()) {
       throw new Error(
-        'Unable to determine the GitHub repository. /setup-github must be run from a git repository.',
+        "Unable to determine the GitHub repository. /setup-github must be run from a git repository.",
       );
     }
 
@@ -220,7 +207,7 @@ export const setupGithubCommand: SlashCommand = {
     } catch (_error) {
       debugLogger.debug(`Failed to get git repo root:`, _error);
       throw new Error(
-        'Unable to determine the GitHub repository. /setup-github must be run from a git repository.',
+        "Unable to determine the GitHub repository. /setup-github must be run from a git repository.",
       );
     }
 
@@ -230,11 +217,11 @@ export const setupGithubCommand: SlashCommand = {
     const readmeUrl = `https://github.com/google-github-actions/run-gemini-cli/blob/${releaseTag}/README.md#quick-start`;
 
     // Create workflows directory
-    const workflowsDir = path.join(gitRepoRoot, '.github', 'workflows');
+    const workflowsDir = path.join(gitRepoRoot, ".github", "workflows");
     await createDirectory(workflowsDir);
 
     // Create commands directory
-    const commandsDir = path.join(gitRepoRoot, '.github', 'commands');
+    const commandsDir = path.join(gitRepoRoot, ".github", "commands");
     await createDirectory(commandsDir);
 
     await downloadSetupFiles({
@@ -251,21 +238,20 @@ export const setupGithubCommand: SlashCommand = {
 
     // Print out a message
     const commands = [];
-    if (process.platform !== 'win32') {
-      commands.push('set -eEuo pipefail');
+    if (process.platform !== "win32") {
+      commands.push("set -eEuo pipefail");
     }
     commands.push(
       `echo "Successfully downloaded ${GITHUB_WORKFLOW_PATHS.length} workflows , ${GITHUB_COMMANDS_PATHS.length} commands and updated .gitignore. Follow the steps in ${readmeUrl} (skipping the /setup-github step) to complete setup."`,
     );
     commands.push(...getOpenUrlsCommands(readmeUrl));
 
-    const command = `(${commands.join(' && ')})`;
+    const command = `(${commands.join(" && ")})`;
     return {
-      type: 'tool',
-      toolName: 'run_shell_command',
+      type: "tool",
+      toolName: "run_shell_command",
       toolArgs: {
-        description:
-          'Setting up GitHub Actions to triage issues and review PRs with Gemini.',
+        description: "Setting up GitHub Actions to triage issues and review PRs with Gemini.",
         command,
       },
     };

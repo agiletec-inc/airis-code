@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { useState, useCallback } from 'react';
+import { useCallback, useState } from "react";
 
 export function useSettingsCommand() {
   const [isSettingsDialogOpen, setIsSettingsDialogOpen] = useState(false);

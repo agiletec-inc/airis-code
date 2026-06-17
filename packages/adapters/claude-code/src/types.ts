@@ -6,12 +6,12 @@
  * Claude Code message types
  */
 export type ClaudeCodeMessageType =
-  | 'task'
-  | 'response'
-  | 'tool_use'
-  | 'tool_result'
-  | 'error'
-  | 'status';
+  | "task"
+  | "response"
+  | "tool_use"
+  | "tool_result"
+  | "error"
+  | "status";
 
 /**
  * Claude Code message
@@ -46,7 +46,7 @@ export interface ClaudeCodeResponse {
  * Claude Code status
  */
 export interface ClaudeCodeStatus {
-  status: 'idle' | 'thinking' | 'working' | 'done' | 'error';
+  status: "idle" | "thinking" | "working" | "done" | "error";
   currentTask?: string;
   progress?: number;
 }

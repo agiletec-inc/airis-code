@@ -4,8 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import type { JsonStreamEvent, StreamStats } from './types.js';
-import type { SessionMetrics } from '../telemetry/uiTelemetry.js';
+import type { SessionMetrics } from "../telemetry/uiTelemetry.js";
+import type { JsonStreamEvent, StreamStats } from "./types.js";
 
 /**
  * Formatter for streaming JSON output.
@@ -18,7 +18,7 @@ export class StreamJsonFormatter {
    * @returns JSON string with trailing newline
    */
   formatEvent(event: JsonStreamEvent): string {
-    return JSON.stringify(event) + '\n';
+    return JSON.stringify(event) + "\n";
   }
 
   /**
@@ -36,10 +36,7 @@ export class StreamJsonFormatter {
    * @param durationMs - The session duration in milliseconds
    * @returns Simplified stats for streaming output
    */
-  convertToStreamStats(
-    metrics: SessionMetrics,
-    durationMs: number,
-  ): StreamStats {
+  convertToStreamStats(metrics: SessionMetrics, durationMs: number): StreamStats {
     let totalTokens = 0;
     let inputTokens = 0;
     let outputTokens = 0;

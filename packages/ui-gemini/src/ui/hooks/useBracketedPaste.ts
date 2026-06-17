@@ -4,11 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { useEffect } from 'react';
-import {
-  disableBracketedPaste,
-  enableBracketedPaste,
-} from '../utils/bracketedPaste.js';
+import { useEffect } from "react";
+import { disableBracketedPaste, enableBracketedPaste } from "../utils/bracketedPaste.js";
 
 /**
  * Enables and disables bracketed paste mode in the terminal.
@@ -24,15 +21,15 @@ export const useBracketedPaste = () => {
   useEffect(() => {
     enableBracketedPaste();
 
-    process.on('exit', cleanup);
-    process.on('SIGINT', cleanup);
-    process.on('SIGTERM', cleanup);
+    process.on("exit", cleanup);
+    process.on("SIGINT", cleanup);
+    process.on("SIGTERM", cleanup);
 
     return () => {
       cleanup();
-      process.removeListener('exit', cleanup);
-      process.removeListener('SIGINT', cleanup);
-      process.removeListener('SIGTERM', cleanup);
+      process.removeListener("exit", cleanup);
+      process.removeListener("SIGINT", cleanup);
+      process.removeListener("SIGTERM", cleanup);
     };
   }, []);
 };

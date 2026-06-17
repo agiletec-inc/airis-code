@@ -6,12 +6,12 @@
 
 import type {
   ContentGenerator,
-  GenerateContentResponse,
-  GenerateContentParameters,
-  CountTokensResponse,
   CountTokensParameters,
-  EmbedContentResponse,
+  CountTokensResponse,
   EmbedContentParameters,
+  EmbedContentResponse,
+  GenerateContentParameters,
+  GenerateContentResponse,
 } from "@airiscode/core-gemini";
 
 export interface OllamaOptions {
@@ -24,13 +24,13 @@ export class OllamaContentGenerator implements ContentGenerator {
 
   async generateContent(
     req: GenerateContentParameters,
-    userPromptId?: string
+    userPromptId?: string,
   ): Promise<GenerateContentResponse> {
     const url = `${this.opts.baseUrl ?? "http://127.0.0.1:11434"}/api/chat`;
 
     const messages = req.messages || [
       ...(req.systemInstruction ? [{ role: "system", content: req.systemInstruction }] : []),
-      { role: "user", content: req.prompt || "" }
+      { role: "user", content: req.prompt || "" },
     ];
 
     const r = await fetch(url, {
@@ -55,20 +55,20 @@ export class OllamaContentGenerator implements ContentGenerator {
 
   async generateContentStream(
     req: GenerateContentParameters,
-    userPromptId?: string
+    userPromptId?: string,
   ): Promise<AsyncGenerator<GenerateContentResponse>> {
     return this._generateContentStream(req, userPromptId);
   }
 
   private async *_generateContentStream(
     req: GenerateContentParameters,
-    userPromptId?: string
+    userPromptId?: string,
   ): AsyncGenerator<GenerateContentResponse> {
     const url = `${this.opts.baseUrl ?? "http://127.0.0.1:11434"}/api/chat`;
 
     const messages = req.messages || [
       ...(req.systemInstruction ? [{ role: "system", content: req.systemInstruction }] : []),
-      { role: "user", content: req.prompt || "" }
+      { role: "user", content: req.prompt || "" },
     ];
 
     const r = await fetch(url, {
@@ -115,7 +115,7 @@ export class OllamaContentGenerator implements ContentGenerator {
           if (json.done) {
             break;
           }
-        } catch (e) {
+        } catch {
           // Skip invalid JSON
         }
       }

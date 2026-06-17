@@ -4,20 +4,21 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import type { ExportSessionData } from '../types.js';
-const HTML_TEMPLATE = '<html><body>{{content}}</body></html>';
+import type { ExportSessionData } from "../types.js";
+
+const HTML_TEMPLATE = "<html><body>{{content}}</body></html>";
 
 /**
  * Escapes JSON for safe embedding in HTML.
  */
 function escapeJsonForHtml(json: string): string {
   return json
-    .replace(/<\/script/gi, '<\\/script')
-    .replace(/&/g, '\\u0026')
-    .replace(/</g, '\\u003c')
-    .replace(/>/g, '\\u003e')
-    .replace(/\u2028/g, '\\u2028')
-    .replace(/\u2029/g, '\\u2029');
+    .replace(/<\/script/gi, "<\\/script")
+    .replace(/&/g, "\\u0026")
+    .replace(/</g, "\\u003c")
+    .replace(/>/g, "\\u003e")
+    .replace(/\u2028/g, "\\u2028")
+    .replace(/\u2029/g, "\\u2029");
 }
 
 /**
@@ -47,28 +48,27 @@ export function injectDataIntoHtmlTemplate(
     return template;
   }
 
-  const openTagStart = template.lastIndexOf('<script', idIndex);
+  const openTagStart = template.lastIndexOf("<script", idIndex);
   if (openTagStart === -1) {
     return template;
   }
 
-  const openTagEnd = template.indexOf('>', idIndex);
+  const openTagEnd = template.indexOf(">", idIndex);
   if (openTagEnd === -1) {
     return template;
   }
 
-  const closeTagStart = template.indexOf('</script>', openTagEnd);
+  const closeTagStart = template.indexOf("</script>", openTagEnd);
   if (closeTagStart === -1) {
     return template;
   }
 
-  const lineStart = template.lastIndexOf('\n', openTagStart);
-  const lineIndent =
-    lineStart === -1 ? '' : template.slice(lineStart + 1, openTagStart);
+  const lineStart = template.lastIndexOf("\n", openTagStart);
+  const lineIndent = lineStart === -1 ? "" : template.slice(lineStart + 1, openTagStart);
   const indentedJson = escapedJsonData
-    .split('\n')
+    .split("\n")
     .map((line) => `${lineIndent}${line}`)
-    .join('\n');
+    .join("\n");
 
   const before = template.slice(0, openTagEnd + 1);
   const after = template.slice(closeTagStart);

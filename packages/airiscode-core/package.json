@@ -18,7 +18,7 @@
     "build": "tsc",
     "dev": "tsup --watch",
     "typecheck": "tsc --noEmit",
-    "lint": "eslint . --ext .ts,.tsx",
+    "lint": "biome check .",
     "format": "prettier --write .",
     "test": "vitest run"
   },

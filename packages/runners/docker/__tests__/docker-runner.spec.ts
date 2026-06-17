@@ -1,9 +1,9 @@
-import { describe, it, expect, beforeEach, vi } from 'vitest';
-import { DockerRunner } from '../src/docker-runner.js';
-import { DockerOperation } from '../src/types.js';
+import { beforeEach, describe, expect, it, vi } from "vitest";
+import { DockerRunner } from "../src/docker-runner.js";
+import { DockerOperation } from "../src/types.js";
 
 // Mock dockerode
-vi.mock('dockerode', () => ({
+vi.mock("dockerode", () => ({
   default: vi.fn(() => ({
     listContainers: vi.fn(),
     getContainer: vi.fn(),
@@ -18,43 +18,39 @@ vi.mock('dockerode', () => ({
 }));
 
 // Mock child_process
-vi.mock('child_process', () => ({
+vi.mock("child_process", () => ({
   spawn: vi.fn(),
 }));
 
-describe('@airiscode/runners-docker - DockerRunner', () => {
+describe("@airiscode/runners-docker - DockerRunner", () => {
   let runner: DockerRunner;
   let mockDocker: any;
 
   beforeEach(async () => {
-    const Docker = (await import('dockerode')).default;
+    const Docker = (await import("dockerode")).default;
     mockDocker = new Docker();
-    runner = new DockerRunner('/test/project');
+    runner = new DockerRunner("/test/project");
   });
 
-  describe('listContainers', () => {
-    it('should list running containers', async () => {
+  describe("listContainers", () => {
+    it("should list running containers", async () => {
       mockDocker.listContainers.mockResolvedValueOnce([
         {
-          Id: 'container1',
-          Names: ['/app-web'],
-          Image: 'nginx:latest',
-          State: 'running',
-          Status: 'Up 2 hours',
-          Ports: [
-            { PrivatePort: 80, PublicPort: 8080, Type: 'tcp' },
-          ],
+          Id: "container1",
+          Names: ["/app-web"],
+          Image: "nginx:latest",
+          State: "running",
+          Status: "Up 2 hours",
+          Ports: [{ PrivatePort: 80, PublicPort: 8080, Type: "tcp" }],
           Created: 1704067200,
         },
         {
-          Id: 'container2',
-          Names: ['/app-db'],
-          Image: 'postgres:15',
-          State: 'running',
-          Status: 'Up 2 hours',
-          Ports: [
-            { PrivatePort: 5432, Type: 'tcp' },
-          ],
+          Id: "container2",
+          Names: ["/app-db"],
+          Image: "postgres:15",
+          State: "running",
+          Status: "Up 2 hours",
+          Ports: [{ PrivatePort: 5432, Type: "tcp" }],
           Created: 1704067200,
         },
       ]);
@@ -64,21 +60,21 @@ describe('@airiscode/runners-docker - DockerRunner', () => {
       expect(result.ok).toBe(true);
       if (result.ok) {
         expect(result.value).toHaveLength(2);
-        expect(result.value[0].name).toBe('app-web');
-        expect(result.value[0].state).toBe('running');
+        expect(result.value[0].name).toBe("app-web");
+        expect(result.value[0].state).toBe("running");
         expect(result.value[0].ports).toHaveLength(1);
         expect(result.value[0].ports[0].publicPort).toBe(8080);
       }
     });
 
-    it('should list all containers including stopped', async () => {
+    it("should list all containers including stopped", async () => {
       mockDocker.listContainers.mockResolvedValueOnce([
         {
-          Id: 'container1',
-          Names: ['/app-web'],
-          Image: 'nginx:latest',
-          State: 'exited',
-          Status: 'Exited (0) 1 hour ago',
+          Id: "container1",
+          Names: ["/app-web"],
+          Image: "nginx:latest",
+          State: "exited",
+          Status: "Exited (0) 1 hour ago",
           Ports: [],
           Created: 1704067200,
         },
@@ -90,10 +86,8 @@ describe('@airiscode/runners-docker - DockerRunner', () => {
       expect(mockDocker.listContainers).toHaveBeenCalledWith({ all: true });
     });
 
-    it('should handle errors', async () => {
-      mockDocker.listContainers.mockRejectedValueOnce(
-        new Error('Docker daemon not running')
-      );
+    it("should handle errors", async () => {
+      mockDocker.listContainers.mockRejectedValueOnce(new Error("Docker daemon not running"));
 
       const result = await runner.listContainers();
 
@@ -104,20 +98,20 @@ describe('@airiscode/runners-docker - DockerRunner', () => {
     });
   });
 
-  describe('getContainerHealth', () => {
-    it('should get healthy container status', async () => {
+  describe("getContainerHealth", () => {
+    it("should get healthy container status", async () => {
       const mockContainer = {
         inspect: vi.fn().mockResolvedValue({
           State: {
             Health: {
-              Status: 'healthy',
+              Status: "healthy",
               FailingStreak: 0,
               Log: [
                 {
                   ExitCode: 0,
-                  Output: 'Health check passed',
-                  Start: '2024-01-01T00:00:00Z',
-                  End: '2024-01-01T00:00:01Z',
+                  Output: "Health check passed",
+                  Start: "2024-01-01T00:00:00Z",
+                  End: "2024-01-01T00:00:01Z",
                 },
               ],
             },
@@ -127,23 +121,23 @@ describe('@airiscode/runners-docker - DockerRunner', () => {
 
       mockDocker.getContainer.mockReturnValueOnce(mockContainer);
 
-      const result = await runner.getContainerHealth('container1');
+      const result = await runner.getContainerHealth("container1");
 
       expect(result.ok).toBe(true);
       if (result.ok) {
-        expect(result.value.status).toBe('healthy');
+        expect(result.value.status).toBe("healthy");
         expect(result.value.failingStreak).toBe(0);
         expect(result.value.lastCheck).toBeDefined();
         expect(result.value.lastCheck?.exitCode).toBe(0);
       }
     });
 
-    it('should handle unhealthy container', async () => {
+    it("should handle unhealthy container", async () => {
       const mockContainer = {
         inspect: vi.fn().mockResolvedValue({
           State: {
             Health: {
-              Status: 'unhealthy',
+              Status: "unhealthy",
               FailingStreak: 3,
               Log: [],
             },
@@ -153,16 +147,16 @@ describe('@airiscode/runners-docker - DockerRunner', () => {
 
       mockDocker.getContainer.mockReturnValueOnce(mockContainer);
 
-      const result = await runner.getContainerHealth('container1');
+      const result = await runner.getContainerHealth("container1");
 
       expect(result.ok).toBe(true);
       if (result.ok) {
-        expect(result.value.status).toBe('unhealthy');
+        expect(result.value.status).toBe("unhealthy");
         expect(result.value.failingStreak).toBe(3);
       }
     });
 
-    it('should handle container without health check', async () => {
+    it("should handle container without health check", async () => {
       const mockContainer = {
         inspect: vi.fn().mockResolvedValue({
           State: {},
@@ -171,17 +165,17 @@ describe('@airiscode/runners-docker - DockerRunner', () => {
 
       mockDocker.getContainer.mockReturnValueOnce(mockContainer);
 
-      const result = await runner.getContainerHealth('container1');
+      const result = await runner.getContainerHealth("container1");
 
       expect(result.ok).toBe(true);
       if (result.ok) {
-        expect(result.value.status).toBe('none');
+        expect(result.value.status).toBe("none");
       }
     });
   });
 
-  describe('getContainerStats', () => {
-    it('should get container stats', async () => {
+  describe("getContainerStats", () => {
+    it("should get container stats", async () => {
       const mockContainer = {
         stats: vi.fn().mockResolvedValue({
           cpu_stats: {
@@ -205,8 +199,8 @@ describe('@airiscode/runners-docker - DockerRunner', () => {
           },
           blkio_stats: {
             io_service_bytes_recursive: [
-              { op: 'read', value: 2000000 },
-              { op: 'write', value: 1000000 },
+              { op: "read", value: 2000000 },
+              { op: "write", value: 1000000 },
             ],
           },
           pids_stats: {
@@ -217,7 +211,7 @@ describe('@airiscode/runners-docker - DockerRunner', () => {
 
       mockDocker.getContainer.mockReturnValueOnce(mockContainer);
 
-      const result = await runner.getContainerStats('container1');
+      const result = await runner.getContainerStats("container1");
 
       expect(result.ok).toBe(true);
       if (result.ok) {
@@ -234,16 +228,16 @@ describe('@airiscode/runners-docker - DockerRunner', () => {
     });
   });
 
-  describe('getContainerLogs', () => {
-    it('should get container logs', async () => {
-      const mockLogs = 'Log line 1\nLog line 2\nLog line 3';
+  describe("getContainerLogs", () => {
+    it("should get container logs", async () => {
+      const mockLogs = "Log line 1\nLog line 2\nLog line 3";
       const mockContainer = {
         logs: vi.fn().mockResolvedValue(Buffer.from(mockLogs)),
       };
 
       mockDocker.getContainer.mockReturnValueOnce(mockContainer);
 
-      const result = await runner.getContainerLogs('container1');
+      const result = await runner.getContainerLogs("container1");
 
       expect(result.ok).toBe(true);
       if (result.ok) {
@@ -251,14 +245,14 @@ describe('@airiscode/runners-docker - DockerRunner', () => {
       }
     });
 
-    it('should get logs with options', async () => {
+    it("should get logs with options", async () => {
       const mockContainer = {
-        logs: vi.fn().mockResolvedValue(Buffer.from('logs')),
+        logs: vi.fn().mockResolvedValue(Buffer.from("logs")),
       };
 
       mockDocker.getContainer.mockReturnValueOnce(mockContainer);
 
-      await runner.getContainerLogs('container1', {
+      await runner.getContainerLogs("container1", {
         tail: 100,
         timestamps: true,
         follow: false,
@@ -275,18 +269,18 @@ describe('@airiscode/runners-docker - DockerRunner', () => {
     });
   });
 
-  describe('listImages', () => {
-    it('should list images', async () => {
+  describe("listImages", () => {
+    it("should list images", async () => {
       mockDocker.listImages.mockResolvedValueOnce([
         {
-          Id: 'image1',
-          RepoTags: ['nginx:latest', 'nginx:1.25'],
+          Id: "image1",
+          RepoTags: ["nginx:latest", "nginx:1.25"],
           Size: 142000000,
           Created: 1704067200,
         },
         {
-          Id: 'image2',
-          RepoTags: ['postgres:15'],
+          Id: "image2",
+          RepoTags: ["postgres:15"],
           Size: 379000000,
           Created: 1704067200,
         },
@@ -297,41 +291,39 @@ describe('@airiscode/runners-docker - DockerRunner', () => {
       expect(result.ok).toBe(true);
       if (result.ok) {
         expect(result.value).toHaveLength(2);
-        expect(result.value[0].tags).toContain('nginx:latest');
-        expect(result.value[1].tags).toContain('postgres:15');
+        expect(result.value[0].tags).toContain("nginx:latest");
+        expect(result.value[1].tags).toContain("postgres:15");
       }
     });
   });
 
-  describe('pullImage', () => {
-    it('should pull image', async () => {
+  describe("pullImage", () => {
+    it("should pull image", async () => {
       const mockStream = {};
       mockDocker.pull.mockImplementation(
         (name: string, callback: (err: null, stream: any) => void) => {
           callback(null, mockStream);
-        }
+        },
       );
 
       mockDocker.modem.followProgress.mockImplementation(
         (_stream: any, callback: (err: null) => void) => {
           callback(null);
-        }
+        },
       );
 
-      const result = await runner.pullImage('nginx:latest');
+      const result = await runner.pullImage("nginx:latest");
 
       expect(result.ok).toBe(true);
-      expect(mockDocker.pull).toHaveBeenCalledWith('nginx:latest', expect.any(Function));
+      expect(mockDocker.pull).toHaveBeenCalledWith("nginx:latest", expect.any(Function));
     });
 
-    it('should handle pull errors', async () => {
-      mockDocker.pull.mockImplementation(
-        (_name: string, callback: (err: Error) => void) => {
-          callback(new Error('Image not found'));
-        }
-      );
+    it("should handle pull errors", async () => {
+      mockDocker.pull.mockImplementation((_name: string, callback: (err: Error) => void) => {
+        callback(new Error("Image not found"));
+      });
 
-      const result = await runner.pullImage('invalid:tag');
+      const result = await runner.pullImage("invalid:tag");
 
       expect(result.ok).toBe(false);
       if (!result.ok) {
@@ -340,20 +332,20 @@ describe('@airiscode/runners-docker - DockerRunner', () => {
     });
   });
 
-  describe('listNetworks', () => {
-    it('should list networks', async () => {
+  describe("listNetworks", () => {
+    it("should list networks", async () => {
       mockDocker.listNetworks.mockResolvedValueOnce([
         {
-          Id: 'network1',
-          Name: 'bridge',
-          Driver: 'bridge',
-          Scope: 'local',
+          Id: "network1",
+          Name: "bridge",
+          Driver: "bridge",
+          Scope: "local",
         },
         {
-          Id: 'network2',
-          Name: 'app-network',
-          Driver: 'bridge',
-          Scope: 'local',
+          Id: "network2",
+          Name: "app-network",
+          Driver: "bridge",
+          Scope: "local",
         },
       ]);
 
@@ -362,27 +354,27 @@ describe('@airiscode/runners-docker - DockerRunner', () => {
       expect(result.ok).toBe(true);
       if (result.ok) {
         expect(result.value).toHaveLength(2);
-        expect(result.value[0].name).toBe('bridge');
-        expect(result.value[1].name).toBe('app-network');
+        expect(result.value[0].name).toBe("bridge");
+        expect(result.value[1].name).toBe("app-network");
       }
     });
   });
 
-  describe('listVolumes', () => {
-    it('should list volumes', async () => {
+  describe("listVolumes", () => {
+    it("should list volumes", async () => {
       mockDocker.listVolumes.mockResolvedValueOnce({
         Volumes: [
           {
-            Name: 'app-data',
-            Driver: 'local',
-            Mountpoint: '/var/lib/docker/volumes/app-data/_data',
-            CreatedAt: '2024-01-01T00:00:00Z',
+            Name: "app-data",
+            Driver: "local",
+            Mountpoint: "/var/lib/docker/volumes/app-data/_data",
+            CreatedAt: "2024-01-01T00:00:00Z",
           },
           {
-            Name: 'db-data',
-            Driver: 'local',
-            Mountpoint: '/var/lib/docker/volumes/db-data/_data',
-            CreatedAt: '2024-01-01T00:00:00Z',
+            Name: "db-data",
+            Driver: "local",
+            Mountpoint: "/var/lib/docker/volumes/db-data/_data",
+            CreatedAt: "2024-01-01T00:00:00Z",
           },
         ],
       });
@@ -392,12 +384,12 @@ describe('@airiscode/runners-docker - DockerRunner', () => {
       expect(result.ok).toBe(true);
       if (result.ok) {
         expect(result.value).toHaveLength(2);
-        expect(result.value[0].name).toBe('app-data');
-        expect(result.value[1].name).toBe('db-data');
+        expect(result.value[0].name).toBe("app-data");
+        expect(result.value[1].name).toBe("db-data");
       }
     });
 
-    it('should handle empty volume list', async () => {
+    it("should handle empty volume list", async () => {
       mockDocker.listVolumes.mockResolvedValueOnce({
         Volumes: null,
       });

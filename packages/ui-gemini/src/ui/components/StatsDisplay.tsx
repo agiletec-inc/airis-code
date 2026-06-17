@@ -4,27 +4,24 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import type React from 'react';
-import { Box, Text } from 'ink';
-import { ThemedGradient } from './ThemedGradient.js';
-import { theme } from '../semantic-colors.js';
-import { formatDuration } from '../utils/formatters.js';
-import type { ModelMetrics } from '../contexts/SessionContext.js';
-import { useSessionStats } from '../contexts/SessionContext.js';
+import { type RetrieveUserQuotaResponse, VALID_GEMINI_MODELS } from "@airiscode/gemini-cli-core";
+import { Box, Text } from "ink";
+import type React from "react";
+import type { ModelMetrics } from "../contexts/SessionContext.js";
+import { useSessionStats } from "../contexts/SessionContext.js";
+import { theme } from "../semantic-colors.js";
+import { computeSessionStats } from "../utils/computeStats.js";
 import {
+  CACHE_EFFICIENCY_HIGH,
+  CACHE_EFFICIENCY_MEDIUM,
   getStatusColor,
   TOOL_SUCCESS_RATE_HIGH,
   TOOL_SUCCESS_RATE_MEDIUM,
   USER_AGREEMENT_RATE_HIGH,
   USER_AGREEMENT_RATE_MEDIUM,
-  CACHE_EFFICIENCY_HIGH,
-  CACHE_EFFICIENCY_MEDIUM,
-} from '../utils/displayUtils.js';
-import { computeSessionStats } from '../utils/computeStats.js';
-import {
-  type RetrieveUserQuotaResponse,
-  VALID_GEMINI_MODELS,
-} from '@airiscode/gemini-cli-core';
+} from "../utils/displayUtils.js";
+import { formatDuration } from "../utils/formatters.js";
+import { ThemedGradient } from "./ThemedGradient.js";
 
 // A more flexible and powerful StatRow component
 interface StatRowProps {
@@ -78,7 +75,7 @@ const buildModelRows = (
   models: Record<string, ModelMetrics>,
   quotas?: RetrieveUserQuotaResponse,
 ) => {
-  const getBaseModelName = (name: string) => name.replace('-001', '');
+  const getBaseModelName = (name: string) => name.replace("-001", "");
   const usedModelNames = new Set(Object.keys(models).map(getBaseModelName));
 
   // 1. Models with active usage
@@ -104,19 +101,16 @@ const buildModelRows = (
   const quotaRows =
     quotas?.buckets
       ?.filter(
-        (b) =>
-          b.modelId &&
-          VALID_GEMINI_MODELS.has(b.modelId) &&
-          !usedModelNames.has(b.modelId),
+        (b) => b.modelId && VALID_GEMINI_MODELS.has(b.modelId) && !usedModelNames.has(b.modelId),
       )
       .map((bucket) => ({
         key: bucket.modelId!,
         modelName: bucket.modelId!,
-        requests: '-',
-        cachedTokens: '-',
-        uncachedTokens: '-',
-        totalInputTokens: '-',
-        outputTokens: '-',
+        requests: "-",
+        cachedTokens: "-",
+        uncachedTokens: "-",
+        totalInputTokens: "-",
+        outputTokens: "-",
         bucket,
         isActive: false,
       })) || [];
@@ -126,26 +120,26 @@ const buildModelRows = (
 
 const formatResetTime = (resetTime: string): string => {
   const diff = new Date(resetTime).getTime() - Date.now();
-  if (diff <= 0) return '';
+  if (diff <= 0) return "";
 
   const totalMinutes = Math.ceil(diff / (1000 * 60));
   const hours = Math.floor(totalMinutes / 60);
   const minutes = totalMinutes % 60;
 
-  const fmt = (val: number, unit: 'hour' | 'minute') =>
-    new Intl.NumberFormat('en', {
-      style: 'unit',
+  const fmt = (val: number, unit: "hour" | "minute") =>
+    new Intl.NumberFormat("en", {
+      style: "unit",
       unit,
-      unitDisplay: 'narrow',
+      unitDisplay: "narrow",
     }).format(val);
 
   if (hours > 0 && minutes > 0) {
-    return `(Resets in ${fmt(hours, 'hour')} ${fmt(minutes, 'minute')})`;
+    return `(Resets in ${fmt(hours, "hour")} ${fmt(minutes, "minute")})`;
   } else if (hours > 0) {
-    return `(Resets in ${fmt(hours, 'hour')})`;
+    return `(Resets in ${fmt(hours, "hour")})`;
   }
 
-  return `(Resets in ${fmt(minutes, 'minute')})`;
+  return `(Resets in ${fmt(minutes, "minute")})`;
 };
 
 const ModelUsageTable: React.FC<{
@@ -183,34 +177,19 @@ const ModelUsageTable: React.FC<{
             Model Usage
           </Text>
         </Box>
-        <Box
-          width={requestsWidth}
-          flexDirection="column"
-          alignItems="flex-end"
-          flexShrink={0}
-        >
+        <Box width={requestsWidth} flexDirection="column" alignItems="flex-end" flexShrink={0}>
           <Text bold color={theme.text.primary}>
             Reqs
           </Text>
         </Box>
         {!showQuotaColumn && (
           <>
-            <Box
-              width={uncachedWidth}
-              flexDirection="column"
-              alignItems="flex-end"
-              flexShrink={0}
-            >
+            <Box width={uncachedWidth} flexDirection="column" alignItems="flex-end" flexShrink={0}>
               <Text bold color={theme.text.primary}>
                 Input Tokens
               </Text>
             </Box>
-            <Box
-              width={cachedWidth}
-              flexDirection="column"
-              alignItems="flex-end"
-              flexShrink={0}
-            >
+            <Box width={cachedWidth} flexDirection="column" alignItems="flex-end" flexShrink={0}>
               <Text bold color={theme.text.primary}>
                 Cache Reads
               </Text>
@@ -228,11 +207,7 @@ const ModelUsageTable: React.FC<{
           </>
         )}
         {showQuotaColumn && (
-          <Box
-            width={usageLimitWidth}
-            flexDirection="column"
-            alignItems="flex-end"
-          >
+          <Box width={usageLimitWidth} flexDirection="column" alignItems="flex-end">
             <Text bold color={theme.text.primary}>
               Usage left
             </Text>
@@ -258,15 +233,8 @@ const ModelUsageTable: React.FC<{
               {row.modelName}
             </Text>
           </Box>
-          <Box
-            width={requestsWidth}
-            flexDirection="column"
-            alignItems="flex-end"
-            flexShrink={0}
-          >
-            <Text
-              color={row.isActive ? theme.text.primary : theme.text.secondary}
-            >
+          <Box width={requestsWidth} flexDirection="column" alignItems="flex-end" flexShrink={0}>
+            <Text color={row.isActive ? theme.text.primary : theme.text.secondary}>
               {row.requests}
             </Text>
           </Box>
@@ -278,20 +246,11 @@ const ModelUsageTable: React.FC<{
                 alignItems="flex-end"
                 flexShrink={0}
               >
-                <Text
-                  color={
-                    row.isActive ? theme.text.primary : theme.text.secondary
-                  }
-                >
+                <Text color={row.isActive ? theme.text.primary : theme.text.secondary}>
                   {row.uncachedTokens}
                 </Text>
               </Box>
-              <Box
-                width={cachedWidth}
-                flexDirection="column"
-                alignItems="flex-end"
-                flexShrink={0}
-              >
+              <Box width={cachedWidth} flexDirection="column" alignItems="flex-end" flexShrink={0}>
                 <Text color={theme.text.secondary}>{row.cachedTokens}</Text>
               </Box>
               <Box
@@ -300,29 +259,19 @@ const ModelUsageTable: React.FC<{
                 alignItems="flex-end"
                 flexShrink={0}
               >
-                <Text
-                  color={
-                    row.isActive ? theme.text.primary : theme.text.secondary
-                  }
-                >
+                <Text color={row.isActive ? theme.text.primary : theme.text.secondary}>
                   {row.outputTokens}
                 </Text>
               </Box>
             </>
           )}
-          <Box
-            width={usageLimitWidth}
-            flexDirection="column"
-            alignItems="flex-end"
-          >
-            {row.bucket &&
-              row.bucket.remainingFraction != null &&
-              row.bucket.resetTime && (
-                <Text color={theme.text.secondary} wrap="truncate-end">
-                  {(row.bucket.remainingFraction * 100).toFixed(1)}%{' '}
-                  {formatResetTime(row.bucket.resetTime)}
-                </Text>
-              )}
+          <Box width={usageLimitWidth} flexDirection="column" alignItems="flex-end">
+            {row.bucket && row.bucket.remainingFraction != null && row.bucket.resetTime && (
+              <Text color={theme.text.secondary} wrap="truncate-end">
+                {(row.bucket.remainingFraction * 100).toFixed(1)}%{" "}
+                {formatResetTime(row.bucket.resetTime)}
+              </Text>
+            )}
           </Box>
         </Box>
       ))}
@@ -330,12 +279,10 @@ const ModelUsageTable: React.FC<{
       {cacheEfficiency > 0 && !showQuotaColumn && (
         <Box flexDirection="column" marginTop={1}>
           <Text color={theme.text.primary}>
-            <Text color={theme.status.success}>Savings Highlight:</Text>{' '}
+            <Text color={theme.status.success}>Savings Highlight:</Text>{" "}
             {totalCachedTokens.toLocaleString()} (
-            <Text color={cacheEfficiencyColor}>
-              {cacheEfficiency.toFixed(1)}%
-            </Text>
-            ) of input tokens were served from the cache, reducing costs.
+            <Text color={cacheEfficiencyColor}>{cacheEfficiency.toFixed(1)}%</Text>) of input tokens
+            were served from the cache, reducing costs.
           </Text>
         </Box>
       )}
@@ -362,11 +309,7 @@ interface StatsDisplayProps {
   quotas?: RetrieveUserQuotaResponse;
 }
 
-export const StatsDisplay: React.FC<StatsDisplayProps> = ({
-  duration,
-  title,
-  quotas,
-}) => {
+export const StatsDisplay: React.FC<StatsDisplayProps> = ({ duration, title, quotas }) => {
   const { stats } = useSessionStats();
   const { metrics } = stats;
   const { models, tools, files } = metrics;
@@ -381,10 +324,7 @@ export const StatsDisplay: React.FC<StatsDisplayProps> = ({
     yellow: USER_AGREEMENT_RATE_MEDIUM,
   };
   const successColor = getStatusColor(computed.successRate, successThresholds);
-  const agreementColor = getStatusColor(
-    computed.agreementRate,
-    agreementThresholds,
-  );
+  const agreementColor = getStatusColor(computed.agreementRate, agreementThresholds);
 
   const renderTitle = () => {
     if (title) {
@@ -415,8 +355,7 @@ export const StatsDisplay: React.FC<StatsDisplayProps> = ({
         </StatRow>
         <StatRow title="Tool Calls:">
           <Text color={theme.text.primary}>
-            {tools.totalCalls} ({' '}
-            <Text color={theme.status.success}>✓ {tools.totalSuccess}</Text>{' '}
+            {tools.totalCalls} ( <Text color={theme.status.success}>✓ {tools.totalSuccess}</Text>{" "}
             <Text color={theme.status.error}>x {tools.totalFail}</Text> )
           </Text>
         </StatRow>
@@ -426,26 +365,19 @@ export const StatsDisplay: React.FC<StatsDisplayProps> = ({
         {computed.totalDecisions > 0 && (
           <StatRow title="User Agreement:">
             <Text color={agreementColor}>
-              {computed.agreementRate.toFixed(1)}%{' '}
-              <Text color={theme.text.secondary}>
-                ({computed.totalDecisions} reviewed)
-              </Text>
+              {computed.agreementRate.toFixed(1)}%{" "}
+              <Text color={theme.text.secondary}>({computed.totalDecisions} reviewed)</Text>
             </Text>
           </StatRow>
         )}
-        {files &&
-          (files.totalLinesAdded > 0 || files.totalLinesRemoved > 0) && (
-            <StatRow title="Code Changes:">
-              <Text color={theme.text.primary}>
-                <Text color={theme.status.success}>
-                  +{files.totalLinesAdded}
-                </Text>{' '}
-                <Text color={theme.status.error}>
-                  -{files.totalLinesRemoved}
-                </Text>
-              </Text>
-            </StatRow>
-          )}
+        {files && (files.totalLinesAdded > 0 || files.totalLinesRemoved > 0) && (
+          <StatRow title="Code Changes:">
+            <Text color={theme.text.primary}>
+              <Text color={theme.status.success}>+{files.totalLinesAdded}</Text>{" "}
+              <Text color={theme.status.error}>-{files.totalLinesRemoved}</Text>
+            </Text>
+          </StatRow>
+        )}
       </Section>
 
       <Section title="Performance">
@@ -453,24 +385,18 @@ export const StatsDisplay: React.FC<StatsDisplayProps> = ({
           <Text color={theme.text.primary}>{duration}</Text>
         </StatRow>
         <StatRow title="Agent Active:">
-          <Text color={theme.text.primary}>
-            {formatDuration(computed.agentActiveTime)}
-          </Text>
+          <Text color={theme.text.primary}>{formatDuration(computed.agentActiveTime)}</Text>
         </StatRow>
         <SubStatRow title="API Time:">
           <Text color={theme.text.primary}>
-            {formatDuration(computed.totalApiTime)}{' '}
-            <Text color={theme.text.secondary}>
-              ({computed.apiTimePercent.toFixed(1)}%)
-            </Text>
+            {formatDuration(computed.totalApiTime)}{" "}
+            <Text color={theme.text.secondary}>({computed.apiTimePercent.toFixed(1)}%)</Text>
           </Text>
         </SubStatRow>
         <SubStatRow title="Tool Time:">
           <Text color={theme.text.primary}>
-            {formatDuration(computed.totalToolTime)}{' '}
-            <Text color={theme.text.secondary}>
-              ({computed.toolTimePercent.toFixed(1)}%)
-            </Text>
+            {formatDuration(computed.totalToolTime)}{" "}
+            <Text color={theme.text.secondary}>({computed.toolTimePercent.toFixed(1)}%)</Text>
           </Text>
         </SubStatRow>
       </Section>

@@ -4,14 +4,14 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { Text } from 'ink';
-import { useEffect, useState } from 'react';
-import { FixedDeque } from 'mnemonist';
-import { theme } from '../semantic-colors.js';
-import { useUIState } from '../contexts/UIStateContext.js';
-import { debugState } from '../debug.js';
-import { appEvents, AppEvent } from '../../utils/events.js';
-import { debugLogger } from '@airiscode/gemini-cli-core';
+import { debugLogger } from "@airiscode/gemini-cli-core";
+import { Text } from "ink";
+import { FixedDeque } from "mnemonist";
+import { useEffect, useState } from "react";
+import { AppEvent, appEvents } from "../../utils/events.js";
+import { useUIState } from "../contexts/UIStateContext.js";
+import { debugState } from "../debug.js";
+import { theme } from "../semantic-colors.js";
 
 // Frames that render at least this far before or after an action are considered
 // idle frames.
@@ -31,10 +31,7 @@ export const profiler = {
   openedDebugConsole: false,
   lastActionTimestamp: 0,
 
-  possiblyIdleFrameTimestamps: new FixedDeque<number>(
-    Array,
-    FRAME_TIMESTAMP_CAPACITY,
-  ),
+  possiblyIdleFrameTimestamps: new FixedDeque<number>(Array, FRAME_TIMESTAMP_CAPACITY),
   actionTimestamps: new FixedDeque<number>(Array, ACTION_TIMESTAMP_CAPACITY),
 
   reportAction() {
@@ -86,16 +83,11 @@ export const profiler = {
       const start = frameTime - MIN_TIME_FROM_ACTION_TO_BE_IDLE;
       const end = frameTime + MIN_TIME_FROM_ACTION_TO_BE_IDLE;
 
-      while (
-        this.actionTimestamps.size > 0 &&
-        this.actionTimestamps.peekFirst()! < start
-      ) {
+      while (this.actionTimestamps.size > 0 && this.actionTimestamps.peekFirst()! < start) {
         this.actionTimestamps.shift();
       }
 
-      const hasAction =
-        this.actionTimestamps.size > 0 &&
-        this.actionTimestamps.peekFirst()! <= end;
+      const hasAction = this.actionTimestamps.size > 0 && this.actionTimestamps.peekFirst()! <= end;
 
       if (!hasAction) {
         if (frameTime >= oneSecondIntervalFromJudgementCutoff) {
@@ -132,7 +124,7 @@ export const profiler = {
       if (!this.hasLoggedFirstFlicker) {
         this.hasLoggedFirstFlicker = true;
         debugLogger.error(
-          'A flicker frame was detected. This will cause UI instability. Type `/profile` for more info.',
+          "A flicker frame was detected. This will cause UI instability. Type `/profile` for more info.",
         );
       }
     };
@@ -157,12 +149,12 @@ export const DebugProfiler = () => {
       profiler.reportAction();
     };
 
-    stdin.on('data', handler);
-    stdout.on('resize', handler);
+    stdin.on("data", handler);
+    stdout.on("resize", handler);
 
     return () => {
-      stdin.off('data', handler);
-      stdout.off('resize', handler);
+      stdin.off("data", handler);
+      stdout.off("resize", handler);
       profiler.profilersActive--;
     };
   }, []);
@@ -174,10 +166,7 @@ export const DebugProfiler = () => {
     return () => clearInterval(updateInterval);
   }, []);
 
-  useEffect(
-    () => profiler.registerFlickerHandler(constrainHeight),
-    [constrainHeight],
-  );
+  useEffect(() => profiler.registerFlickerHandler(constrainHeight), [constrainHeight]);
 
   // Effect for updating stats
   useEffect(() => {
@@ -199,11 +188,9 @@ export const DebugProfiler = () => {
 
   return (
     <Text color={theme.status.warning} key={forceRefresh}>
-      Renders: {profiler.numFrames} (total),{' '}
-      <Text color={theme.status.error}>{profiler.totalIdleFrames} (idle)</Text>,{' '}
-      <Text color={theme.status.error}>
-        {profiler.totalFlickerFrames} (flicker)
-      </Text>
+      Renders: {profiler.numFrames} (total),{" "}
+      <Text color={theme.status.error}>{profiler.totalIdleFrames} (idle)</Text>,{" "}
+      <Text color={theme.status.error}>{profiler.totalFlickerFrames} (flicker)</Text>
     </Text>
   );
 };

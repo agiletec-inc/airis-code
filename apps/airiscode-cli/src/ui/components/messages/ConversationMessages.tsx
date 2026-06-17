@@ -4,15 +4,12 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import type React from 'react';
-import { Box, Text } from 'ink';
-import stringWidth from 'string-width';
-import { MarkdownDisplay } from '../../utils/MarkdownDisplay.js';
-import { theme } from '../../semantic-colors.js';
-import {
-  SCREEN_READER_MODEL_PREFIX,
-  SCREEN_READER_USER_PREFIX,
-} from '../../textConstants.js';
+import { Box, Text } from "ink";
+import type React from "react";
+import stringWidth from "string-width";
+import { theme } from "../../semantic-colors.js";
+import { SCREEN_READER_MODEL_PREFIX, SCREEN_READER_USER_PREFIX } from "../../textConstants.js";
+import { MarkdownDisplay } from "../../utils/MarkdownDisplay.js";
 
 interface UserMessageProps {
   text: string;
@@ -57,7 +54,7 @@ interface PrefixedTextMessageProps {
   textColor: string;
   ariaLabel?: string;
   marginTop?: number;
-  alignSelf?: 'auto' | 'flex-start' | 'center' | 'flex-end';
+  alignSelf?: "auto" | "flex-start" | "center" | "flex-end";
 }
 
 interface PrefixedMarkdownMessageProps {
@@ -97,12 +94,7 @@ const PrefixedTextMessage: React.FC<PrefixedTextMessageProps> = ({
   const prefixWidth = getPrefixWidth(prefix);
 
   return (
-    <Box
-      flexDirection="row"
-      paddingY={0}
-      marginTop={marginTop}
-      alignSelf={alignSelf}
-    >
+    <Box flexDirection="row" paddingY={0} marginTop={marginTop} alignSelf={alignSelf}>
       <Box width={prefixWidth}>
         <Text color={prefixColor} aria-label={ariaLabel}>
           {prefix}
@@ -149,9 +141,7 @@ const PrefixedMarkdownMessage: React.FC<PrefixedMarkdownMessageProps> = ({
   );
 };
 
-const ContinuationMarkdownMessage: React.FC<
-  ContinuationMarkdownMessageProps
-> = ({
+const ContinuationMarkdownMessage: React.FC<ContinuationMarkdownMessageProps> = ({
   text,
   isPending,
   availableTerminalHeight,
@@ -186,7 +176,7 @@ export const UserMessage: React.FC<UserMessageProps> = ({ text }) => (
 );
 
 export const UserShellMessage: React.FC<UserShellMessageProps> = ({ text }) => {
-  const commandToDisplay = text.startsWith('!') ? text.substring(1) : text;
+  const commandToDisplay = text.startsWith("!") ? text.substring(1) : text;
 
   return (
     <PrefixedTextMessage
@@ -215,9 +205,12 @@ export const AssistantMessage: React.FC<AssistantMessageProps> = ({
   />
 );
 
-export const AssistantMessageContent: React.FC<
-  AssistantMessageContentProps
-> = ({ text, isPending, availableTerminalHeight, contentWidth }) => (
+export const AssistantMessageContent: React.FC<AssistantMessageContentProps> = ({
+  text,
+  isPending,
+  availableTerminalHeight,
+  contentWidth,
+}) => (
   <ContinuationMarkdownMessage
     text={text}
     isPending={isPending}

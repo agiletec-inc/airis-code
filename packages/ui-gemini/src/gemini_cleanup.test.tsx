@@ -4,22 +4,20 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { main } from './gemini.js';
-import { debugLogger } from '@airiscode/gemini-cli-core';
-import { type Config } from '@airiscode/gemini-cli-core';
+import { type Config, debugLogger } from "@airiscode/gemini-cli-core";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { main } from "./gemini.js";
 
 // Custom error to identify mock process.exit calls
 class MockProcessExitError extends Error {
   constructor(readonly code?: string | number | null | undefined) {
-    super('PROCESS_EXIT_MOCKED');
-    this.name = 'MockProcessExitError';
+    super("PROCESS_EXIT_MOCKED");
+    this.name = "MockProcessExitError";
   }
 }
 
-vi.mock('@airiscode/gemini-cli-core', async (importOriginal) => {
-  const actual =
-    await importOriginal<typeof import('@airiscode/gemini-cli-core')>();
+vi.mock("@airiscode/gemini-cli-core", async (importOriginal) => {
+  const actual = await importOriginal<typeof import("@airiscode/gemini-cli-core")>();
   return {
     ...actual,
     writeToStdout: vi.fn(),
@@ -41,8 +39,8 @@ vi.mock('@airiscode/gemini-cli-core', async (importOriginal) => {
   };
 });
 
-vi.mock('ink', async (importOriginal) => {
-  const actual = await importOriginal<typeof import('ink')>();
+vi.mock("ink", async (importOriginal) => {
+  const actual = await importOriginal<typeof import("ink")>();
   return {
     ...actual,
     render: vi.fn(() => ({
@@ -54,71 +52,71 @@ vi.mock('ink', async (importOriginal) => {
   };
 });
 
-vi.mock('./config/settings.js', async (importOriginal) => {
-  const actual = await importOriginal<typeof import('./config/settings.js')>();
+vi.mock("./config/settings.js", async (importOriginal) => {
+  const actual = await importOriginal<typeof import("./config/settings.js")>();
   return {
     ...actual,
     loadSettings: vi.fn().mockReturnValue({
       merged: { advanced: {}, security: { auth: {} }, ui: {} },
       setValue: vi.fn(),
-      forScope: () => ({ settings: {}, originalSettings: {}, path: '' }),
+      forScope: () => ({ settings: {}, originalSettings: {}, path: "" }),
       errors: [],
     }),
   };
 });
 
-vi.mock('./config/config.js', () => ({
+vi.mock("./config/config.js", () => ({
   loadCliConfig: vi.fn().mockResolvedValue({
     getSandbox: vi.fn(() => false),
-    getQuestion: vi.fn(() => ''),
+    getQuestion: vi.fn(() => ""),
     isInteractive: () => false,
   } as unknown as Config),
   parseArguments: vi.fn().mockResolvedValue({}),
   isDebugMode: vi.fn(() => false),
 }));
 
-vi.mock('read-package-up', () => ({
+vi.mock("read-package-up", () => ({
   readPackageUp: vi.fn().mockResolvedValue({
-    packageJson: { name: 'test-pkg', version: 'test-version' },
-    path: '/fake/path/package.json',
+    packageJson: { name: "test-pkg", version: "test-version" },
+    path: "/fake/path/package.json",
   }),
 }));
 
-vi.mock('update-notifier', () => ({
+vi.mock("update-notifier", () => ({
   default: vi.fn(() => ({ notify: vi.fn() })),
 }));
 
-vi.mock('./utils/events.js', async (importOriginal) => {
-  const actual = await importOriginal<typeof import('./utils/events.js')>();
+vi.mock("./utils/events.js", async (importOriginal) => {
+  const actual = await importOriginal<typeof import("./utils/events.js")>();
   return { ...actual, appEvents: { emit: vi.fn() } };
 });
 
-vi.mock('./utils/sandbox.js', () => ({
-  sandbox_command: vi.fn(() => ''),
+vi.mock("./utils/sandbox.js", () => ({
+  sandbox_command: vi.fn(() => ""),
   start_sandbox: vi.fn(() => Promise.resolve()),
 }));
 
-vi.mock('./utils/relaunch.js', () => ({
+vi.mock("./utils/relaunch.js", () => ({
   relaunchAppInChildProcess: vi.fn(),
   relaunchOnExitCode: vi.fn(),
 }));
 
-vi.mock('./config/sandboxConfig.js', () => ({
+vi.mock("./config/sandboxConfig.js", () => ({
   loadSandboxConfig: vi.fn(),
 }));
 
-vi.mock('./ui/utils/mouse.js', () => ({
+vi.mock("./ui/utils/mouse.js", () => ({
   enableMouseEvents: vi.fn(),
   disableMouseEvents: vi.fn(),
   parseMouseEvent: vi.fn(),
   isIncompleteMouseSequence: vi.fn(),
 }));
 
-vi.mock('./validateNonInterActiveAuth.js', () => ({
+vi.mock("./validateNonInterActiveAuth.js", () => ({
   validateNonInteractiveAuth: vi.fn().mockResolvedValue({}),
 }));
 
-vi.mock('./nonInteractiveCli.js', () => ({
+vi.mock("./nonInteractiveCli.js", () => ({
   runNonInteractive: vi.fn().mockResolvedValue(undefined),
 }));
 
@@ -127,52 +125,45 @@ const { cleanupMockState } = vi.hoisted(() => ({
 }));
 
 // Mock sessionCleanup.js at the top level
-vi.mock('./utils/sessionCleanup.js', async (importOriginal) => {
-  const actual =
-    await importOriginal<typeof import('./utils/sessionCleanup.js')>();
+vi.mock("./utils/sessionCleanup.js", async (importOriginal) => {
+  const actual = await importOriginal<typeof import("./utils/sessionCleanup.js")>();
   return {
     ...actual,
     cleanupExpiredSessions: async () => {
       cleanupMockState.called = true;
       if (cleanupMockState.shouldThrow) {
-        throw new Error('Cleanup failed');
+        throw new Error("Cleanup failed");
       }
     },
   };
 });
 
-describe('gemini.tsx main function cleanup', () => {
+describe("gemini.tsx main function cleanup", () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    process.env['GEMINI_CLI_NO_RELAUNCH'] = 'true';
+    process.env["GEMINI_CLI_NO_RELAUNCH"] = "true";
   });
 
   afterEach(() => {
-    delete process.env['GEMINI_CLI_NO_RELAUNCH'];
+    delete process.env["GEMINI_CLI_NO_RELAUNCH"];
     vi.restoreAllMocks();
   });
 
-  it('should log error when cleanupExpiredSessions fails', async () => {
-    const { loadCliConfig, parseArguments } = await import(
-      './config/config.js'
-    );
-    const { loadSettings } = await import('./config/settings.js');
+  it("should log error when cleanupExpiredSessions fails", async () => {
+    const { loadCliConfig, parseArguments } = await import("./config/config.js");
+    const { loadSettings } = await import("./config/settings.js");
     cleanupMockState.shouldThrow = true;
     cleanupMockState.called = false;
 
-    const debugLoggerErrorSpy = vi
-      .spyOn(debugLogger, 'error')
-      .mockImplementation(() => {});
-    const processExitSpy = vi
-      .spyOn(process, 'exit')
-      .mockImplementation((code) => {
-        throw new MockProcessExitError(code);
-      });
+    const debugLoggerErrorSpy = vi.spyOn(debugLogger, "error").mockImplementation(() => {});
+    const processExitSpy = vi.spyOn(process, "exit").mockImplementation((code) => {
+      throw new MockProcessExitError(code);
+    });
 
     vi.mocked(loadSettings).mockReturnValue({
       merged: { advanced: {}, security: { auth: {} }, ui: {} },
       setValue: vi.fn(),
-      forScope: () => ({ settings: {}, originalSettings: {}, path: '' }),
+      forScope: () => ({ settings: {}, originalSettings: {}, path: "" }),
       errors: [],
     } as any); // eslint-disable-line @typescript-eslint/no-explicit-any
 
@@ -181,7 +172,7 @@ describe('gemini.tsx main function cleanup', () => {
     } as any); // eslint-disable-line @typescript-eslint/no-explicit-any
     vi.mocked(loadCliConfig).mockResolvedValue({
       isInteractive: vi.fn(() => false),
-      getQuestion: vi.fn(() => 'test'),
+      getQuestion: vi.fn(() => "test"),
       getSandbox: vi.fn(() => false),
       getDebugMode: vi.fn(() => false),
       getPolicyEngine: vi.fn(),
@@ -195,20 +186,20 @@ describe('gemini.tsx main function cleanup', () => {
       getExperimentalZedIntegration: vi.fn(() => false),
       getScreenReader: vi.fn(() => false),
       getGeminiMdFileCount: vi.fn(() => 0),
-      getProjectRoot: vi.fn(() => '/'),
+      getProjectRoot: vi.fn(() => "/"),
       getListExtensions: vi.fn(() => false),
       getListSessions: vi.fn(() => false),
       getDeleteSession: vi.fn(() => undefined),
       getToolRegistry: vi.fn(),
       getExtensions: vi.fn(() => []),
-      getModel: vi.fn(() => 'gemini-pro'),
-      getEmbeddingModel: vi.fn(() => 'embedding-001'),
-      getApprovalMode: vi.fn(() => 'default'),
+      getModel: vi.fn(() => "gemini-pro"),
+      getEmbeddingModel: vi.fn(() => "embedding-001"),
+      getApprovalMode: vi.fn(() => "default"),
       getCoreTools: vi.fn(() => []),
       getTelemetryEnabled: vi.fn(() => false),
       getTelemetryLogPromptsEnabled: vi.fn(() => false),
       getFileFilteringRespectGitIgnore: vi.fn(() => true),
-      getOutputFormat: vi.fn(() => 'text'),
+      getOutputFormat: vi.fn(() => "text"),
       getUsageStatisticsEnabled: vi.fn(() => false),
     } as any); // eslint-disable-line @typescript-eslint/no-explicit-any
 
@@ -220,8 +211,8 @@ describe('gemini.tsx main function cleanup', () => {
 
     expect(cleanupMockState.called).toBe(true);
     expect(debugLoggerErrorSpy).toHaveBeenCalledWith(
-      'Failed to cleanup expired sessions:',
-      expect.objectContaining({ message: 'Cleanup failed' }),
+      "Failed to cleanup expired sessions:",
+      expect.objectContaining({ message: "Cleanup failed" }),
     );
     expect(processExitSpy).toHaveBeenCalledWith(0); // Should not exit on cleanup failure
     processExitSpy.mockRestore();

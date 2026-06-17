@@ -4,24 +4,24 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { render } from '../../test-utils/render.js';
-import { describe, it, expect, vi, beforeEach, type Mock } from 'vitest';
-import { CloudFreePrivacyNotice } from './CloudFreePrivacyNotice.js';
-import { usePrivacySettings } from '../hooks/usePrivacySettings.js';
-import { useKeypress } from '../hooks/useKeypress.js';
-import type { Config } from '@airiscode/gemini-cli-core';
-import { RadioButtonSelect } from '../components/shared/RadioButtonSelect.js';
+import type { Config } from "@airiscode/gemini-cli-core";
+import { beforeEach, describe, expect, it, type Mock, vi } from "vitest";
+import { render } from "../../test-utils/render.js";
+import { RadioButtonSelect } from "../components/shared/RadioButtonSelect.js";
+import { useKeypress } from "../hooks/useKeypress.js";
+import { usePrivacySettings } from "../hooks/usePrivacySettings.js";
+import { CloudFreePrivacyNotice } from "./CloudFreePrivacyNotice.js";
 
 // Mocks
-vi.mock('../hooks/usePrivacySettings.js', () => ({
+vi.mock("../hooks/usePrivacySettings.js", () => ({
   usePrivacySettings: vi.fn(),
 }));
 
-vi.mock('../components/shared/RadioButtonSelect.js', () => ({
+vi.mock("../components/shared/RadioButtonSelect.js", () => ({
   RadioButtonSelect: vi.fn(),
 }));
 
-vi.mock('../hooks/useKeypress.js', () => ({
+vi.mock("../hooks/useKeypress.js", () => ({
   useKeypress: vi.fn(),
 }));
 
@@ -29,7 +29,7 @@ const mockedUsePrivacySettings = usePrivacySettings as Mock;
 const mockedUseKeypress = useKeypress as Mock;
 const mockedRadioButtonSelect = RadioButtonSelect as Mock;
 
-describe('CloudFreePrivacyNotice', () => {
+describe("CloudFreePrivacyNotice", () => {
   const mockConfig = {} as Config;
   const onExit = vi.fn();
   const updateDataCollectionOptIn = vi.fn();
@@ -56,79 +56,74 @@ describe('CloudFreePrivacyNotice', () => {
 
   it.each([
     {
-      stateName: 'loading state',
+      stateName: "loading state",
       mockState: { isLoading: true },
-      expectedText: 'Loading...',
+      expectedText: "Loading...",
     },
     {
-      stateName: 'error state',
-      mockState: { error: 'Something went wrong' },
-      expectedText: 'Error loading Opt-in settings',
+      stateName: "error state",
+      mockState: { error: "Something went wrong" },
+      expectedText: "Error loading Opt-in settings",
     },
     {
-      stateName: 'non-free tier state',
+      stateName: "non-free tier state",
       mockState: { isFreeTier: false },
-      expectedText: 'Gemini Code Assist Privacy Notice',
+      expectedText: "Gemini Code Assist Privacy Notice",
     },
     {
-      stateName: 'free tier state',
+      stateName: "free tier state",
       mockState: { isFreeTier: true },
-      expectedText: 'Gemini Code Assist for Individuals Privacy Notice',
+      expectedText: "Gemini Code Assist for Individuals Privacy Notice",
     },
-  ])('renders correctly in $stateName', ({ mockState, expectedText }) => {
+  ])("renders correctly in $stateName", ({ mockState, expectedText }) => {
     mockedUsePrivacySettings.mockReturnValue({
       privacyState: { ...defaultState, ...mockState },
       updateDataCollectionOptIn,
     });
 
-    const { lastFrame } = render(
-      <CloudFreePrivacyNotice config={mockConfig} onExit={onExit} />,
-    );
+    const { lastFrame } = render(<CloudFreePrivacyNotice config={mockConfig} onExit={onExit} />);
 
     expect(lastFrame()).toContain(expectedText);
   });
 
   it.each([
     {
-      stateName: 'error state',
-      mockState: { error: 'Something went wrong' },
+      stateName: "error state",
+      mockState: { error: "Something went wrong" },
       shouldExit: true,
     },
     {
-      stateName: 'non-free tier state',
+      stateName: "non-free tier state",
       mockState: { isFreeTier: false },
       shouldExit: true,
     },
     {
-      stateName: 'free tier state (no selection)',
+      stateName: "free tier state (no selection)",
       mockState: { isFreeTier: true },
       shouldExit: false,
     },
-  ])(
-    'exits on Escape in $stateName: $shouldExit',
-    ({ mockState, shouldExit }) => {
-      mockedUsePrivacySettings.mockReturnValue({
-        privacyState: { ...defaultState, ...mockState },
-        updateDataCollectionOptIn,
-      });
+  ])("exits on Escape in $stateName: $shouldExit", ({ mockState, shouldExit }) => {
+    mockedUsePrivacySettings.mockReturnValue({
+      privacyState: { ...defaultState, ...mockState },
+      updateDataCollectionOptIn,
+    });
 
-      render(<CloudFreePrivacyNotice config={mockConfig} onExit={onExit} />);
+    render(<CloudFreePrivacyNotice config={mockConfig} onExit={onExit} />);
 
-      const keypressHandler = mockedUseKeypress.mock.calls[0][0];
-      keypressHandler({ name: 'escape' });
+    const keypressHandler = mockedUseKeypress.mock.calls[0][0];
+    keypressHandler({ name: "escape" });
 
-      if (shouldExit) {
-        expect(onExit).toHaveBeenCalled();
-      } else {
-        expect(onExit).not.toHaveBeenCalled();
-      }
-    },
-  );
+    if (shouldExit) {
+      expect(onExit).toHaveBeenCalled();
+    } else {
+      expect(onExit).not.toHaveBeenCalled();
+    }
+  });
 
-  describe('RadioButtonSelect interaction', () => {
+  describe("RadioButtonSelect interaction", () => {
     it.each([
-      { selection: true, label: 'Yes' },
-      { selection: false, label: 'No' },
+      { selection: true, label: "Yes" },
+      { selection: false, label: "No" },
     ])('calls correct functions on selecting "$label"', ({ selection }) => {
       render(<CloudFreePrivacyNotice config={mockConfig} onExit={onExit} />);
 

@@ -4,15 +4,15 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { type FunctionCall } from '@google/genai';
+import { type FunctionCall } from "@google/genai";
 
 export enum MessageBusType {
-  TOOL_CONFIRMATION_REQUEST = 'tool-confirmation-request',
-  TOOL_CONFIRMATION_RESPONSE = 'tool-confirmation-response',
-  TOOL_POLICY_REJECTION = 'tool-policy-rejection',
-  TOOL_EXECUTION_SUCCESS = 'tool-execution-success',
-  TOOL_EXECUTION_FAILURE = 'tool-execution-failure',
-  UPDATE_POLICY = 'update-policy',
+  TOOL_CONFIRMATION_REQUEST = "tool-confirmation-request",
+  TOOL_CONFIRMATION_RESPONSE = "tool-confirmation-response",
+  TOOL_POLICY_REJECTION = "tool-policy-rejection",
+  TOOL_EXECUTION_SUCCESS = "tool-execution-success",
+  TOOL_EXECUTION_FAILURE = "tool-execution-failure",
+  UPDATE_POLICY = "update-policy",
 }
 
 export interface ToolConfirmationRequest {

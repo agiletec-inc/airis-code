@@ -3,14 +3,14 @@
  * Responsibility: HTTP/SSE communication with Gateway API
  */
 
-import { request } from 'undici';
+import { request } from "undici";
 import type {
-  GatewayConfig,
-  GatewayStatus,
   EnableServerRequest,
   EnableServerResponse,
+  GatewayConfig,
+  GatewayStatus,
   ToolDescription,
-} from './types.js';
+} from "./types.js";
 
 export class MCPGatewayClient {
   private baseURL: string;
@@ -28,7 +28,7 @@ export class MCPGatewayClient {
    */
   async getStatus(): Promise<GatewayStatus> {
     const response = await request(`${this.baseURL}/api/v1/status`, {
-      method: 'GET',
+      method: "GET",
       headers: this.getHeaders(),
       headersTimeout: this.timeout,
     });
@@ -37,7 +37,7 @@ export class MCPGatewayClient {
       throw new Error(`Gateway status failed: ${response.statusCode}`);
     }
 
-    return await response.body.json() as GatewayStatus;
+    return (await response.body.json()) as GatewayStatus;
   }
 
   /**
@@ -46,47 +46,40 @@ export class MCPGatewayClient {
   async getAlwaysOnTools(): Promise<ToolDescription[]> {
     const status = await this.getStatus();
     return status.servers
-      .filter(s => status.alwaysOn.includes(s.name) && s.enabled)
-      .flatMap(s => s.tools);
+      .filter((s) => status.alwaysOn.includes(s.name) && s.enabled)
+      .flatMap((s) => s.tools);
   }
 
   /**
    * Enable a lazy server on-demand
    */
-  async enableServer(
-    req: EnableServerRequest
-  ): Promise<EnableServerResponse> {
+  async enableServer(req: EnableServerRequest): Promise<EnableServerResponse> {
     const response = await request(`${this.baseURL}/api/v1/servers/enable`, {
-      method: 'POST',
+      method: "POST",
       headers: {
         ...this.getHeaders(),
-        'Content-Type': 'application/json',
+        "Content-Type": "application/json",
       },
       body: JSON.stringify(req),
       headersTimeout: this.timeout,
     });
 
     if (response.statusCode !== 200) {
-      throw new Error(
-        `Enable server ${req.serverName} failed: ${response.statusCode}`
-      );
+      throw new Error(`Enable server ${req.serverName} failed: ${response.statusCode}`);
     }
 
-    return await response.body.json() as EnableServerResponse;
+    return (await response.body.json()) as EnableServerResponse;
   }
 
   /**
    * Disable a lazy server
    */
   async disableServer(serverName: string): Promise<void> {
-    const response = await request(
-      `${this.baseURL}/api/v1/servers/${serverName}/disable`,
-      {
-        method: 'POST',
-        headers: this.getHeaders(),
-        headersTimeout: this.timeout,
-      }
-    );
+    const response = await request(`${this.baseURL}/api/v1/servers/${serverName}/disable`, {
+      method: "POST",
+      headers: this.getHeaders(),
+      headersTimeout: this.timeout,
+    });
 
     if (response.statusCode !== 200) {
       throw new Error(`Disable server ${serverName} failed: ${response.statusCode}`);
@@ -99,13 +92,13 @@ export class MCPGatewayClient {
   async invokeTool(
     serverName: string,
     toolName: string,
-    args: Record<string, unknown>
+    args: Record<string, unknown>,
   ): Promise<unknown> {
     const response = await request(`${this.baseURL}/api/v1/mcp/invoke`, {
-      method: 'POST',
+      method: "POST",
       headers: {
         ...this.getHeaders(),
-        'Content-Type': 'application/json',
+        "Content-Type": "application/json",
       },
       body: JSON.stringify({
         server: serverName,
@@ -116,9 +109,7 @@ export class MCPGatewayClient {
     });
 
     if (response.statusCode !== 200) {
-      throw new Error(
-        `Tool invocation ${serverName}:${toolName} failed: ${response.statusCode}`
-      );
+      throw new Error(`Tool invocation ${serverName}:${toolName} failed: ${response.statusCode}`);
     }
 
     return await response.body.json();
@@ -126,11 +117,11 @@ export class MCPGatewayClient {
 
   private getHeaders(): Record<string, string> {
     const headers: Record<string, string> = {
-      'User-Agent': 'AIRIS-Code/0.1.0',
+      "User-Agent": "AIRIS-Code/0.1.0",
     };
 
     if (this.apiKey) {
-      headers['Authorization'] = `Bearer ${this.apiKey}`;
+      headers["Authorization"] = `Bearer ${this.apiKey}`;
     }
 
     return headers;

@@ -4,28 +4,28 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { describe, it, expect } from 'vitest';
-import { checkExhaustive, assumeExhaustive } from './checks.js';
+import { describe, expect, it } from "vitest";
+import { assumeExhaustive, checkExhaustive } from "./checks.js";
 
-describe('checks', () => {
-  describe('checkExhaustive', () => {
-    it('should throw an error with default message', () => {
+describe("checks", () => {
+  describe("checkExhaustive", () => {
+    it("should throw an error with default message", () => {
       expect(() => {
-        checkExhaustive('unexpected' as never);
-      }).toThrow('unexpected value unexpected!');
+        checkExhaustive("unexpected" as never);
+      }).toThrow("unexpected value unexpected!");
     });
 
-    it('should throw an error with custom message', () => {
+    it("should throw an error with custom message", () => {
       expect(() => {
-        checkExhaustive('unexpected' as never, 'custom message');
-      }).toThrow('custom message');
+        checkExhaustive("unexpected" as never, "custom message");
+      }).toThrow("custom message");
     });
   });
 
-  describe('assumeExhaustive', () => {
-    it('should do nothing', () => {
+  describe("assumeExhaustive", () => {
+    it("should do nothing", () => {
       expect(() => {
-        assumeExhaustive('unexpected' as never);
+        assumeExhaustive("unexpected" as never);
       }).not.toThrow();
     });
   });

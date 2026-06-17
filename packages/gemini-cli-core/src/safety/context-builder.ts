@@ -4,8 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import type { SafetyCheckInput, ConversationTurn } from './protocol.js';
-import type { Config } from '../config/config.js';
+import type { Config } from "../config/config.js";
+import type { ConversationTurn, SafetyCheckInput } from "./protocol.js";
 
 /**
  * Builds context objects for safety checkers, ensuring sensitive data is filtered.
@@ -19,13 +19,11 @@ export class ContextBuilder {
   /**
    * Builds the full context object with all available data.
    */
-  buildFullContext(): SafetyCheckInput['context'] {
+  buildFullContext(): SafetyCheckInput["context"] {
     return {
       environment: {
         cwd: process.cwd(),
-        workspaces: this.config
-          .getWorkspaceContext()
-          .getDirectories() as string[],
+        workspaces: this.config.getWorkspaceContext().getDirectories() as string[],
       },
       history: {
         turns: this.conversationHistory,
@@ -37,10 +35,10 @@ export class ContextBuilder {
    * Builds a minimal context with only the specified keys.
    */
   buildMinimalContext(
-    requiredKeys: Array<keyof SafetyCheckInput['context']>,
-  ): SafetyCheckInput['context'] {
+    requiredKeys: Array<keyof SafetyCheckInput["context"]>,
+  ): SafetyCheckInput["context"] {
     const fullContext = this.buildFullContext();
-    const minimalContext: Partial<SafetyCheckInput['context']> = {};
+    const minimalContext: Partial<SafetyCheckInput["context"]> = {};
 
     for (const key of requiredKeys) {
       if (key in fullContext) {
@@ -49,6 +47,6 @@ export class ContextBuilder {
       }
     }
 
-    return minimalContext as SafetyCheckInput['context'];
+    return minimalContext as SafetyCheckInput["context"];
   }
 }

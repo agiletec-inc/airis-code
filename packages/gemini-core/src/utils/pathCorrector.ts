@@ -4,9 +4,9 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import * as fs from 'node:fs';
-import * as path from 'node:path';
-import type { Config } from '../config/config.js';
+import * as fs from "node:fs";
+import * as path from "node:path";
+import type { Config } from "../config/config.js";
 
 type SuccessfulPathCorrection = {
   success: true;
@@ -26,13 +26,8 @@ type FailedPathCorrection = {
  * @param config The application configuration.
  * @returns A `PathCorrectionResult` object with either a `correctedPath` or an `error`.
  */
-export type PathCorrectionResult =
-  | SuccessfulPathCorrection
-  | FailedPathCorrection;
-export function correctPath(
-  filePath: string,
-  config: Config,
-): PathCorrectionResult {
+export type PathCorrectionResult = SuccessfulPathCorrection | FailedPathCorrection;
+export function correctPath(filePath: string, config: Config): PathCorrectionResult {
   // Check for direct path relative to the primary target directory.
   const directPath = path.join(config.getTargetDir(), filePath);
   if (fs.existsSync(directPath)) {
@@ -55,7 +50,7 @@ export function correctPath(
   if (foundFiles.length > 1) {
     return {
       success: false,
-      error: `The file path '${filePath}' is ambiguous and matches multiple files. Please provide a more specific path. Matches: ${foundFiles.join(', ')}`,
+      error: `The file path '${filePath}' is ambiguous and matches multiple files. Please provide a more specific path. Matches: ${foundFiles.join(", ")}`,
     };
   }
 

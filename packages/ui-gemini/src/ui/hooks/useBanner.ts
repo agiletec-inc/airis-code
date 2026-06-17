@@ -4,10 +4,10 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { useState, useEffect, useRef } from 'react';
-import { persistentState } from '../../utils/persistentState.js';
-import type { Config } from '@airiscode/gemini-cli-core';
-import crypto from 'node:crypto';
+import crypto from "node:crypto";
+import type { Config } from "@airiscode/gemini-cli-core";
+import { useEffect, useRef, useState } from "react";
+import { persistentState } from "../../utils/persistentState.js";
 
 const DEFAULT_MAX_BANNER_SHOWN_COUNT = 5;
 
@@ -19,9 +19,7 @@ interface BannerData {
 export function useBanner(bannerData: BannerData, config: Config) {
   const { defaultText, warningText } = bannerData;
 
-  const [previewEnabled, setPreviewEnabled] = useState(
-    config.getPreviewFeatures(),
-  );
+  const [previewEnabled, setPreviewEnabled] = useState(config.getPreviewFeatures());
 
   useEffect(() => {
     const isEnabled = config.getPreviewFeatures();
@@ -30,24 +28,17 @@ export function useBanner(bannerData: BannerData, config: Config) {
     }
   }, [config, previewEnabled]);
 
-  const [bannerCounts] = useState(
-    () => persistentState.get('defaultBannerShownCount') || {},
-  );
+  const [bannerCounts] = useState(() => persistentState.get("defaultBannerShownCount") || {});
 
-  const hashedText = crypto
-    .createHash('sha256')
-    .update(defaultText)
-    .digest('hex');
+  const hashedText = crypto.createHash("sha256").update(defaultText).digest("hex");
 
   const currentBannerCount = bannerCounts[hashedText] || 0;
 
   const showDefaultBanner =
-    warningText === '' &&
-    !previewEnabled &&
-    currentBannerCount < DEFAULT_MAX_BANNER_SHOWN_COUNT;
+    warningText === "" && !previewEnabled && currentBannerCount < DEFAULT_MAX_BANNER_SHOWN_COUNT;
 
   const rawBannerText = showDefaultBanner ? defaultText : warningText;
-  const bannerText = rawBannerText.replace(/\\n/g, '\n');
+  const bannerText = rawBannerText.replace(/\\n/g, "\n");
 
   const lastIncrementedKey = useRef<string | null>(null);
 
@@ -56,10 +47,10 @@ export function useBanner(bannerData: BannerData, config: Config) {
       if (lastIncrementedKey.current !== defaultText) {
         lastIncrementedKey.current = defaultText;
 
-        const allCounts = persistentState.get('defaultBannerShownCount') || {};
+        const allCounts = persistentState.get("defaultBannerShownCount") || {};
         const current = allCounts[hashedText] || 0;
 
-        persistentState.set('defaultBannerShownCount', {
+        persistentState.set("defaultBannerShownCount", {
           ...allCounts,
           [hashedText]: current + 1,
         });

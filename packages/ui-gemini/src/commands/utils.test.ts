@@ -4,15 +4,15 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { exitCli } from './utils.js';
-import { runExitCleanup } from '../utils/cleanup.js';
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { runExitCleanup } from "../utils/cleanup.js";
+import { exitCli } from "./utils.js";
 
-vi.mock('../utils/cleanup.js', () => ({
+vi.mock("../utils/cleanup.js", () => ({
   runExitCleanup: vi.fn(),
 }));
 
-describe('utils', () => {
+describe("utils", () => {
   const originalProcessExit = process.exit;
 
   beforeEach(() => {
@@ -25,14 +25,14 @@ describe('utils', () => {
     vi.clearAllMocks();
   });
 
-  describe('exitCli', () => {
-    it('should call runExitCleanup and process.exit with default exit code 0', async () => {
+  describe("exitCli", () => {
+    it("should call runExitCleanup and process.exit with default exit code 0", async () => {
       await exitCli();
       expect(runExitCleanup).toHaveBeenCalled();
       expect(process.exit).toHaveBeenCalledWith(0);
     });
 
-    it('should call runExitCleanup and process.exit with specified exit code', async () => {
+    it("should call runExitCleanup and process.exit with specified exit code", async () => {
       await exitCli(1);
       expect(runExitCleanup).toHaveBeenCalled();
       expect(process.exit).toHaveBeenCalledWith(1);

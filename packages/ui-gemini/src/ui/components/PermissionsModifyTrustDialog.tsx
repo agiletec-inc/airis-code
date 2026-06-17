@@ -4,17 +4,17 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { Box, Text } from 'ink';
-import type React from 'react';
-import * as process from 'node:process';
-import * as path from 'node:path';
-import { TrustLevel } from '../../config/trustedFolders.js';
-import { useKeypress } from '../hooks/useKeypress.js';
-import { usePermissionsModifyTrust } from '../hooks/usePermissionsModifyTrust.js';
-import { theme } from '../semantic-colors.js';
-import { RadioButtonSelect } from './shared/RadioButtonSelect.js';
-import { relaunchApp } from '../../utils/processUtils.js';
-import { type UseHistoryManagerReturn } from '../hooks/useHistoryManager.js';
+import * as path from "node:path";
+import * as process from "node:process";
+import { Box, Text } from "ink";
+import type React from "react";
+import { TrustLevel } from "../../config/trustedFolders.js";
+import { relaunchApp } from "../../utils/processUtils.js";
+import { type UseHistoryManagerReturn } from "../hooks/useHistoryManager.js";
+import { useKeypress } from "../hooks/useKeypress.js";
+import { usePermissionsModifyTrust } from "../hooks/usePermissionsModifyTrust.js";
+import { theme } from "../semantic-colors.js";
+import { RadioButtonSelect } from "./shared/RadioButtonSelect.js";
 
 export interface PermissionsDialogProps {
   targetDirectory?: string;
@@ -22,7 +22,7 @@ export interface PermissionsDialogProps {
 
 interface PermissionsModifyTrustDialogProps extends PermissionsDialogProps {
   onExit: () => void;
-  addItem: UseHistoryManagerReturn['addItem'];
+  addItem: UseHistoryManagerReturn["addItem"];
 }
 
 export function PermissionsModifyTrustDialog({
@@ -64,10 +64,10 @@ export function PermissionsModifyTrustDialog({
 
   useKeypress(
     (key) => {
-      if (key.name === 'escape') {
+      if (key.name === "escape") {
         onExit();
       }
-      if (needsRestart && key.name === 'r') {
+      if (needsRestart && key.name === "r") {
         const success = commitTrustLevelChange();
         if (success) {
           // eslint-disable-next-line @typescript-eslint/no-floating-promises
@@ -80,9 +80,7 @@ export function PermissionsModifyTrustDialog({
     { isActive: true },
   );
 
-  const index = TRUST_LEVEL_ITEMS.findIndex(
-    (item) => item.value === currentTrustLevel,
-  );
+  const index = TRUST_LEVEL_ITEMS.findIndex((item) => item.value === currentTrustLevel);
   const initialIndex = index === -1 ? 0 : index;
 
   return (
@@ -94,25 +92,23 @@ export function PermissionsModifyTrustDialog({
         padding={1}
       >
         <Box flexDirection="column" paddingBottom={1}>
-          <Text bold>{'> '}Modify Trust Level</Text>
+          <Text bold>{"> "}Modify Trust Level</Text>
           <Box marginTop={1} />
           <Text>Folder: {cwd}</Text>
           <Text>
-            Current Level: <Text bold>{currentTrustLevel || 'Not Set'}</Text>
+            Current Level: <Text bold>{currentTrustLevel || "Not Set"}</Text>
           </Text>
           {isInheritedTrustFromParent && (
             <Text color={theme.text.secondary}>
-              Note: This folder behaves as a trusted folder because one of the
-              parent folders is trusted. It will remain trusted even if you set
-              a different trust level here. To change this, you need to modify
-              the trust setting in the parent folder.
+              Note: This folder behaves as a trusted folder because one of the parent folders is
+              trusted. It will remain trusted even if you set a different trust level here. To
+              change this, you need to modify the trust setting in the parent folder.
             </Text>
           )}
           {isInheritedTrustFromIde && (
             <Text color={theme.text.secondary}>
-              Note: This folder behaves as a trusted folder because the
-              connected IDE workspace is trusted. It will remain trusted even if
-              you set a different trust level here.
+              Note: This folder behaves as a trusted folder because the connected IDE workspace is
+              trusted. It will remain trusted even if you set a different trust level here.
             </Text>
           )}
         </Box>
@@ -124,16 +120,14 @@ export function PermissionsModifyTrustDialog({
           initialIndex={initialIndex}
         />
         <Box marginTop={1}>
-          <Text color={theme.text.secondary}>
-            (Use Enter to select, Esc to close)
-          </Text>
+          <Text color={theme.text.secondary}>(Use Enter to select, Esc to close)</Text>
         </Box>
       </Box>
       {needsRestart && (
         <Box marginLeft={1} marginTop={1}>
           <Text color={theme.status.warning}>
-            To apply the trust changes, Gemini CLI must be restarted. Press
-            &apos;r&apos; to restart CLI now.
+            To apply the trust changes, Gemini CLI must be restarted. Press &apos;r&apos; to restart
+            CLI now.
           </Text>
         </Box>
       )}

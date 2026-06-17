@@ -4,24 +4,15 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { EventEmitter } from 'node:events';
-import {
-  EVENT_API_ERROR,
-  EVENT_API_RESPONSE,
-  EVENT_TOOL_CALL,
-} from './types.js';
-
-import { ToolCallDecision } from './tool-call-decision.js';
-import type {
-  ApiErrorEvent,
-  ApiResponseEvent,
-  ToolCallEvent,
-} from './types.js';
+import { EventEmitter } from "node:events";
+import { ToolCallDecision } from "./tool-call-decision.js";
+import type { ApiErrorEvent, ApiResponseEvent, ToolCallEvent } from "./types.js";
+import { EVENT_API_ERROR, EVENT_API_RESPONSE, EVENT_TOOL_CALL } from "./types.js";
 
 export type UiEvent =
-  | (ApiResponseEvent & { 'event.name': typeof EVENT_API_RESPONSE })
-  | (ApiErrorEvent & { 'event.name': typeof EVENT_API_ERROR })
-  | (ToolCallEvent & { 'event.name': typeof EVENT_TOOL_CALL });
+  | (ApiResponseEvent & { "event.name": typeof EVENT_API_RESPONSE })
+  | (ApiErrorEvent & { "event.name": typeof EVENT_API_ERROR })
+  | (ToolCallEvent & { "event.name": typeof EVENT_TOOL_CALL });
 
 export interface ToolCallStats {
   count: number;
@@ -115,7 +106,7 @@ export class UiTelemetryService extends EventEmitter {
   #lastPromptTokenCount = 0;
 
   addEvent(event: UiEvent) {
-    switch (event['event.name']) {
+    switch (event["event.name"]) {
       case EVENT_API_RESPONSE:
         this.processApiResponse(event);
         break;
@@ -130,7 +121,7 @@ export class UiTelemetryService extends EventEmitter {
         return;
     }
 
-    this.emit('update', {
+    this.emit("update", {
       metrics: this.#metrics,
       lastPromptTokenCount: this.#lastPromptTokenCount,
     });
@@ -146,7 +137,7 @@ export class UiTelemetryService extends EventEmitter {
 
   setLastPromptTokenCount(lastPromptTokenCount: number): void {
     this.#lastPromptTokenCount = lastPromptTokenCount;
-    this.emit('update', {
+    this.emit("update", {
       metrics: this.#metrics,
       lastPromptTokenCount: this.#lastPromptTokenCount,
     });
@@ -222,11 +213,11 @@ export class UiTelemetryService extends EventEmitter {
 
     // Aggregate line count data from metadata
     if (event.metadata) {
-      if (event.metadata['model_added_lines'] !== undefined) {
-        files.totalLinesAdded += event.metadata['model_added_lines'];
+      if (event.metadata["model_added_lines"] !== undefined) {
+        files.totalLinesAdded += event.metadata["model_added_lines"];
       }
-      if (event.metadata['model_removed_lines'] !== undefined) {
-        files.totalLinesRemoved += event.metadata['model_removed_lines'];
+      if (event.metadata["model_removed_lines"] !== undefined) {
+        files.totalLinesRemoved += event.metadata["model_removed_lines"];
       }
     }
   }

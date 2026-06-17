@@ -4,14 +4,14 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import type { InputConfig } from './types.js';
+import type { InputConfig } from "./types.js";
 
 /**
  * Defines the structure for a JSON Schema object, used for tool function
  * declarations.
  */
 interface JsonSchemaObject {
-  type: 'object';
+  type: "object";
   properties: Record<string, JsonSchemaProperty>;
   required?: string[];
 }
@@ -20,9 +20,9 @@ interface JsonSchemaObject {
  * Defines the structure for a property within a {@link JsonSchemaObject}.
  */
 interface JsonSchemaProperty {
-  type: 'string' | 'number' | 'integer' | 'boolean' | 'array';
+  type: "string" | "number" | "integer" | "boolean" | "array";
   description: string;
-  items?: { type: 'string' | 'number' };
+  items?: { type: "string" | "number" };
 }
 
 /**
@@ -37,9 +37,7 @@ interface JsonSchemaProperty {
  * @throws An `Error` if an unsupported input type is encountered, ensuring
  * configuration errors are caught early.
  */
-export function convertInputConfigToJsonSchema(
-  inputConfig: InputConfig,
-): JsonSchemaObject {
+export function convertInputConfigToJsonSchema(inputConfig: InputConfig): JsonSchemaObject {
   const properties: Record<string, JsonSchemaProperty> = {};
   const required: string[] = [];
 
@@ -49,28 +47,28 @@ export function convertInputConfigToJsonSchema(
     };
 
     switch (definition.type) {
-      case 'string':
-      case 'number':
-      case 'integer':
-      case 'boolean':
+      case "string":
+      case "number":
+      case "integer":
+      case "boolean":
         schemaProperty.type = definition.type;
         break;
 
-      case 'string[]':
-        schemaProperty.type = 'array';
-        schemaProperty.items = { type: 'string' };
+      case "string[]":
+        schemaProperty.type = "array";
+        schemaProperty.items = { type: "string" };
         break;
 
-      case 'number[]':
-        schemaProperty.type = 'array';
-        schemaProperty.items = { type: 'number' };
+      case "number[]":
+        schemaProperty.type = "array";
+        schemaProperty.items = { type: "number" };
         break;
 
       default: {
         const exhaustiveCheck: never = definition.type;
         throw new Error(
           `Unsupported input type '${exhaustiveCheck}' for parameter '${name}'. ` +
-            'Supported types: string, number, integer, boolean, string[], number[]',
+            "Supported types: string, number, integer, boolean, string[], number[]",
         );
       }
     }
@@ -83,7 +81,7 @@ export function convertInputConfigToJsonSchema(
   }
 
   return {
-    type: 'object',
+    type: "object",
     properties,
     required: required.length > 0 ? required : undefined,
   };

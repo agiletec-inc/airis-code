@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import type { StructuredError } from '../core/turn.js';
+import type { StructuredError } from "../core/turn.js";
 
 export interface ApiError {
   error: {
@@ -17,19 +17,19 @@ export interface ApiError {
 
 export function isApiError(error: unknown): error is ApiError {
   return (
-    typeof error === 'object' &&
+    typeof error === "object" &&
     error !== null &&
-    'error' in error &&
-    typeof (error as ApiError).error === 'object' &&
-    'message' in (error as ApiError).error
+    "error" in error &&
+    typeof (error as ApiError).error === "object" &&
+    "message" in (error as ApiError).error
   );
 }
 
 export function isStructuredError(error: unknown): error is StructuredError {
   return (
-    typeof error === 'object' &&
+    typeof error === "object" &&
     error !== null &&
-    'message' in error &&
-    typeof (error as StructuredError).message === 'string'
+    "message" in error &&
+    typeof (error as StructuredError).message === "string"
   );
 }

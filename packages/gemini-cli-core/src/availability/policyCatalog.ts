@@ -4,21 +4,21 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+import type { UserTierId } from "../code_assist/types.js";
+import {
+  DEFAULT_GEMINI_FLASH_MODEL,
+  DEFAULT_GEMINI_MODEL,
+  PREVIEW_GEMINI_MODEL,
+} from "../config/models.js";
 import type {
   ModelPolicy,
   ModelPolicyActionMap,
   ModelPolicyChain,
   ModelPolicyStateMap,
-} from './modelPolicy.js';
-import {
-  DEFAULT_GEMINI_FLASH_MODEL,
-  DEFAULT_GEMINI_MODEL,
-  PREVIEW_GEMINI_MODEL,
-} from '../config/models.js';
-import type { UserTierId } from '../code_assist/types.js';
+} from "./modelPolicy.js";
 
 // actions and stateTransitions are optional when defining ModelPolicy
-type PolicyConfig = Omit<ModelPolicy, 'actions' | 'stateTransitions'> & {
+type PolicyConfig = Omit<ModelPolicy, "actions" | "stateTransitions"> & {
   actions?: ModelPolicyActionMap;
   stateTransitions?: ModelPolicyStateMap;
 };
@@ -29,17 +29,17 @@ export interface ModelPolicyOptions {
 }
 
 const DEFAULT_ACTIONS: ModelPolicyActionMap = {
-  terminal: 'prompt',
-  transient: 'prompt',
-  not_found: 'prompt',
-  unknown: 'prompt',
+  terminal: "prompt",
+  transient: "prompt",
+  not_found: "prompt",
+  unknown: "prompt",
 };
 
 const DEFAULT_STATE: ModelPolicyStateMap = {
-  terminal: 'terminal',
-  transient: 'terminal',
-  not_found: 'terminal',
-  unknown: 'terminal',
+  terminal: "terminal",
+  transient: "terminal",
+  not_found: "terminal",
+  unknown: "terminal",
 };
 
 const DEFAULT_CHAIN: ModelPolicyChain = [
@@ -50,8 +50,8 @@ const DEFAULT_CHAIN: ModelPolicyChain = [
 const PREVIEW_CHAIN: ModelPolicyChain = [
   definePolicy({
     model: PREVIEW_GEMINI_MODEL,
-    stateTransitions: { transient: 'sticky_retry' },
-    actions: { transient: 'silent' },
+    stateTransitions: { transient: "sticky_retry" },
+    actions: { transient: "silent" },
   }),
   definePolicy({ model: DEFAULT_GEMINI_MODEL }),
   definePolicy({ model: DEFAULT_GEMINI_FLASH_MODEL, isLastResort: true }),
@@ -60,9 +60,7 @@ const PREVIEW_CHAIN: ModelPolicyChain = [
 /**
  * Returns the default ordered model policy chain for the user.
  */
-export function getModelPolicyChain(
-  options: ModelPolicyOptions,
-): ModelPolicyChain {
+export function getModelPolicyChain(options: ModelPolicyOptions): ModelPolicyChain {
   if (options.previewEnabled) {
     return cloneChain(PREVIEW_CHAIN);
   }
@@ -82,14 +80,14 @@ export function createDefaultPolicy(
 
 export function validateModelPolicyChain(chain: ModelPolicyChain): void {
   if (chain.length === 0) {
-    throw new Error('Model policy chain must include at least one model.');
+    throw new Error("Model policy chain must include at least one model.");
   }
   const lastResortCount = chain.filter((policy) => policy.isLastResort).length;
   if (lastResortCount === 0) {
-    throw new Error('Model policy chain must include an `isLastResort` model.');
+    throw new Error("Model policy chain must include an `isLastResort` model.");
   }
   if (lastResortCount > 1) {
-    throw new Error('Model policy chain must only have one `isLastResort`.');
+    throw new Error("Model policy chain must only have one `isLastResort`.");
   }
 }
 

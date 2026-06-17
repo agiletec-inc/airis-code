@@ -2,7 +2,7 @@
  * Default policy profiles
  */
 
-import { PolicyProfile, ApprovalsLevel, TrustLevel } from './types.js';
+import { ApprovalsLevel, PolicyProfile, TrustLevel } from "./types.js";
 
 /**
  * Default policy profile (recommended for most use cases)

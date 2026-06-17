@@ -4,55 +4,52 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import * as fs from 'node:fs/promises';
-import * as path from 'node:path';
-import { GitWorktreeService } from '../../services/gitWorktreeService.js';
-import { Storage } from '../../config/storage.js';
-import type { Config } from '../../config/config.js';
-import { getCoreSystemPrompt } from '../../core/prompts.js';
-import { createDebugLogger } from '../../utils/debugLogger.js';
-import { isNodeError } from '../../utils/errors.js';
-import { atomicWriteJSON } from '../../utils/atomicFileWrite.js';
-import type { AnsiOutput } from '../../utils/terminalSerializer.js';
-import { ArenaEventEmitter, ArenaEventType } from './arena-events.js';
-import type { AgentSpawnConfig, Backend, DisplayMode } from '../index.js';
-import { detectBackend, DISPLAY_MODE } from '../index.js';
-import type { InProcessBackend } from '../backends/InProcessBackend.js';
+import * as fs from "node:fs/promises";
+import * as path from "node:path";
+import type { Config } from "../../config/config.js";
+import { Storage } from "../../config/storage.js";
+import { getCoreSystemPrompt } from "../../core/prompts.js";
+import { GitWorktreeService } from "../../services/gitWorktreeService.js";
+import type { ArenaSessionEndedStatus } from "../../telemetry/index.js";
 import {
-  AgentEventType,
-  type AgentStatusChangeEvent,
-} from '../runtime/agent-events.js';
+  logArenaAgentCompleted,
+  logArenaSessionEnded,
+  logArenaSessionStarted,
+  makeArenaAgentCompletedEvent,
+  makeArenaSessionEndedEvent,
+  makeArenaSessionStartedEvent,
+} from "../../telemetry/index.js";
+import { atomicWriteJSON } from "../../utils/atomicFileWrite.js";
+import { createDebugLogger } from "../../utils/debugLogger.js";
+import { isNodeError } from "../../utils/errors.js";
+import type { AnsiOutput } from "../../utils/terminalSerializer.js";
+import type { InProcessBackend } from "../backends/InProcessBackend.js";
+import type { AgentSpawnConfig, Backend, DisplayMode } from "../index.js";
+import { DISPLAY_MODE, detectBackend } from "../index.js";
+import { AgentEventType, type AgentStatusChangeEvent } from "../runtime/agent-events.js";
 import {
+  AgentStatus,
+  isSettledStatus,
+  isSuccessStatus,
+  isTerminalStatus,
+} from "../runtime/agent-types.js";
+import { ArenaEventEmitter, ArenaEventType } from "./arena-events.js";
+import {
+  ARENA_MAX_AGENTS,
+  type ArenaAgentResult,
+  type ArenaAgentState,
+  type ArenaCallbacks,
   type ArenaConfig,
   type ArenaConfigFile,
   type ArenaControlSignal,
-  type ArenaStartOptions,
-  type ArenaAgentResult,
   type ArenaSessionResult,
-  type ArenaAgentState,
-  type ArenaCallbacks,
-  type ArenaStatusFile,
   ArenaSessionStatus,
-  ARENA_MAX_AGENTS,
+  type ArenaStartOptions,
+  type ArenaStatusFile,
   safeAgentId,
-} from './types.js';
-import {
-  AgentStatus,
-  isTerminalStatus,
-  isSettledStatus,
-  isSuccessStatus,
-} from '../runtime/agent-types.js';
-import {
-  logArenaSessionStarted,
-  logArenaAgentCompleted,
-  logArenaSessionEnded,
-  makeArenaSessionStartedEvent,
-  makeArenaAgentCompletedEvent,
-  makeArenaSessionEndedEvent,
-} from '../../telemetry/index.js';
-import type { ArenaSessionEndedStatus } from '../../telemetry/index.js';
+} from "./types.js";
 
-const debugLogger = createDebugLogger('ARENA');
+const debugLogger = createDebugLogger("ARENA");
 
 const ARENA_POLL_INTERVAL_MS = 500;
 
@@ -100,12 +97,8 @@ export class ArenaManager {
     const arenaSettings = config.getAgentsSettings().arena;
     // Use the user-configured base dir, or default to ~/.airiscode/arena.
     this.arenaBaseDir =
-      arenaSettings?.worktreeBaseDir ??
-      path.join(Storage.getGlobalQwenDir(), 'arena');
-    this.worktreeService = new GitWorktreeService(
-      config.getWorkingDir(),
-      this.arenaBaseDir,
-    );
+      arenaSettings?.worktreeBaseDir ?? path.join(Storage.getGlobalQwenDir(), "arena");
+    this.worktreeService = new GitWorktreeService(config.getWorkingDir(), this.arenaBaseDir);
     this.terminalCols = process.stdout.columns || 120;
     this.terminalRows = process.stdout.rows || 40;
   }
@@ -227,10 +220,7 @@ export class ArenaManager {
   /**
    * Get the screen snapshot for a specific agent.
    */
-  getAgentSnapshot(
-    agentId: string,
-    scrollOffset: number = 0,
-  ): AnsiOutput | null {
+  getAgentSnapshot(agentId: string, scrollOffset: number = 0): AnsiOutput | null {
     return this.backend?.getAgentSnapshot(agentId, scrollOffset) ?? null;
   }
 
@@ -290,8 +280,7 @@ export class ArenaManager {
       sessionId: this.sessionId,
       task: options.task,
       models: options.models,
-      maxRoundsPerAgent:
-        options.maxRoundsPerAgent ?? arenaSettings?.maxRoundsPerAgent,
+      maxRoundsPerAgent: options.maxRoundsPerAgent ?? arenaSettings?.maxRoundsPerAgent,
       timeoutSeconds: options.timeoutSeconds ?? arenaSettings?.timeoutSeconds,
       approvalMode: options.approvalMode,
       sourceRepoPath,
@@ -300,9 +289,7 @@ export class ArenaManager {
 
     debugLogger.info(`Starting Arena session: ${this.sessionId}`);
     debugLogger.info(`Task: ${options.task}`);
-    debugLogger.info(
-      `Models: ${options.models.map((m) => m.modelId).join(', ')}`,
-    );
+    debugLogger.info(`Models: ${options.models.map((m) => m.modelId).join(", ")}`);
 
     // Fail fast on missing git or non-repo directory before any UI output
     // so the user gets a clean, single error message without the
@@ -313,9 +300,7 @@ export class ArenaManager {
     }
     const isRepo = await this.worktreeService.isGitRepository();
     if (!isRepo) {
-      throw new Error(
-        'Failed to start arena: current directory is not a git repository.',
-      );
+      throw new Error("Failed to start arena: current directory is not a git repository.");
     }
 
     // Emit session start event
@@ -341,16 +326,14 @@ export class ArenaManager {
       // Priority: explicit option > agents.displayMode setting > auto-detect
       const displayMode =
         options.displayMode ??
-        (this.config.getAgentsSettings().displayMode as
-          | DisplayMode
-          | undefined);
+        (this.config.getAgentsSettings().displayMode as DisplayMode | undefined);
       await this.initializeBackend(displayMode);
 
       // If cancelled during backend init, bail out early
       if (this.masterAbortController?.signal.aborted) {
         this.sessionStatus = ArenaSessionStatus.CANCELLED;
         const result = await this.collectResults();
-        this.emitSessionEnded('cancelled');
+        this.emitSessionEnded("cancelled");
         return result;
       }
 
@@ -362,21 +345,18 @@ export class ArenaManager {
       if (this.masterAbortController?.signal.aborted) {
         this.sessionStatus = ArenaSessionStatus.CANCELLED;
         const result = await this.collectResults();
-        this.emitSessionEnded('cancelled');
+        this.emitSessionEnded("cancelled");
         return result;
       }
 
       // Emit worktree info for each agent
       const worktreeInfo = Array.from(this.agents.values())
-        .map(
-          (agent, i) =>
-            `  ${i + 1}. ${agent.model.modelId} → ${agent.worktree.path}`,
-        )
-        .join('\n');
+        .map((agent, i) => `  ${i + 1}. ${agent.model.modelId} → ${agent.worktree.path}`)
+        .join("\n");
       this.emitProgress(`Environment ready. Agent worktrees:\n${worktreeInfo}`);
 
       // Start all agents in parallel via PTY
-      this.emitProgress('Launching agents…');
+      this.emitProgress("Launching agents…");
       this.sessionStatus = ArenaSessionStatus.RUNNING;
       await this.runAgents();
 
@@ -408,8 +388,7 @@ export class ArenaManager {
     } catch (error) {
       this.sessionStatus = ArenaSessionStatus.FAILED;
 
-      const errorMessage =
-        error instanceof Error ? error.message : String(error);
+      const errorMessage = error instanceof Error ? error.message : String(error);
 
       // Emit session error event
       this.eventEmitter.emit(ArenaEventType.SESSION_ERROR, {
@@ -419,11 +398,9 @@ export class ArenaManager {
       });
 
       // Log arena session failed telemetry
-      this.emitSessionEnded('failed');
+      this.emitSessionEnded("failed");
 
-      this.callbacks.onArenaError?.(
-        error instanceof Error ? error : new Error(errorMessage),
-      );
+      this.callbacks.onArenaError?.(error instanceof Error ? error : new Error(errorMessage));
 
       throw error;
     }
@@ -491,9 +468,7 @@ export class ArenaManager {
     // Use 'cancelled' if the session was explicitly stopped, 'discarded' if
     // the user simply left without picking a winner.
     this.emitSessionEnded(
-      this.sessionStatus === ArenaSessionStatus.CANCELLED
-        ? 'cancelled'
-        : 'discarded',
+      this.sessionStatus === ArenaSessionStatus.CANCELLED ? "cancelled" : "discarded",
     );
 
     // Stop polling in case cleanup is called without cancel
@@ -528,15 +503,11 @@ export class ArenaManager {
       return;
     }
 
-    debugLogger.info(
-      `Cleaning up Arena runtime (preserving artifacts): ${this.sessionId}`,
-    );
+    debugLogger.info(`Cleaning up Arena runtime (preserving artifacts): ${this.sessionId}`);
 
     // If no session-ended event was emitted yet, emit before tearing down.
     this.emitSessionEnded(
-      this.sessionStatus === ArenaSessionStatus.CANCELLED
-        ? 'cancelled'
-        : 'discarded',
+      this.sessionStatus === ArenaSessionStatus.CANCELLED ? "cancelled" : "discarded",
     );
 
     this.stopPolling();
@@ -560,9 +531,7 @@ export class ArenaManager {
   /**
    * Apply the result from a specific agent to the main working directory.
    */
-  async applyAgentResult(
-    agentId: string,
-  ): Promise<{ success: boolean; error?: string }> {
+  async applyAgentResult(agentId: string): Promise<{ success: boolean; error?: string }> {
     const agent = this.agents.get(agentId);
     if (!agent) {
       return { success: false, error: `Agent ${agentId} not found` };
@@ -575,12 +544,10 @@ export class ArenaManager {
       };
     }
 
-    const applyResult = await this.worktreeService.applyWorktreeChanges(
-      agent.worktree.path,
-    );
+    const applyResult = await this.worktreeService.applyWorktreeChanges(agent.worktree.path);
 
     if (applyResult.success) {
-      this.emitSessionEnded('selected', agent.model.modelId);
+      this.emitSessionEnded("selected", agent.model.modelId);
     }
 
     return applyResult;
@@ -609,10 +576,7 @@ export class ArenaManager {
    *  - applyAgentResult() on success → 'selected' (with winner)
    *  - cleanup() / cleanupRuntime() → 'discarded' (user left without picking)
    */
-  private emitSessionEnded(
-    status: ArenaSessionEndedStatus,
-    winnerModelId?: string,
-  ): void {
+  private emitSessionEnded(status: ArenaSessionEndedStatus, winnerModelId?: string): void {
     if (this.sessionEndedLogged) return;
     this.sessionEndedLogged = true;
 
@@ -620,19 +584,14 @@ export class ArenaManager {
     logArenaSessionEnded(
       this.config,
       makeArenaSessionEndedEvent({
-        arena_session_id: this.sessionId ?? '',
+        arena_session_id: this.sessionId ?? "",
         status,
         duration_ms: this.startedAt ? Date.now() - this.startedAt : 0,
         display_backend: this.backend?.type,
         agent_count: agents.length,
-        completed_agents: agents.filter(
-          (a) => a.status === AgentStatus.COMPLETED,
-        ).length,
-        failed_agents: agents.filter((a) => a.status === AgentStatus.FAILED)
-          .length,
-        cancelled_agents: agents.filter(
-          (a) => a.status === AgentStatus.CANCELLED,
-        ).length,
+        completed_agents: agents.filter((a) => a.status === AgentStatus.COMPLETED).length,
+        failed_agents: agents.filter((a) => a.status === AgentStatus.FAILED).length,
+        cancelled_agents: agents.filter((a) => a.status === AgentStatus.CANCELLED).length,
         winner_model_id: winnerModelId,
       }),
     );
@@ -644,10 +603,7 @@ export class ArenaManager {
    * Emit a progress message via SESSION_UPDATE so the UI can display
    * setup status.
    */
-  private emitProgress(
-    message: string,
-    type: 'info' | 'warning' | 'success' = 'info',
-  ): void {
+  private emitProgress(message: string, type: "info" | "warning" | "success" = "info"): void {
     if (!this.sessionId) return;
     this.eventEmitter.emit(ArenaEventType.SESSION_UPDATE, {
       sessionId: this.sessionId,
@@ -661,7 +617,7 @@ export class ArenaManager {
 
   private validateStartOptions(options: ArenaStartOptions): void {
     if (!options.models || options.models.length < 2) {
-      throw new Error('Arena requires at least 2 models to compare');
+      throw new Error("Arena requires at least 2 models to compare");
     }
 
     if (options.models.length > ARENA_MAX_AGENTS) {
@@ -669,14 +625,14 @@ export class ArenaManager {
     }
 
     if (!options.task || options.task.trim().length === 0) {
-      throw new Error('Arena requires a task/prompt');
+      throw new Error("Arena requires a task/prompt");
     }
 
     // Check for duplicate model IDs
     const modelIds = options.models.map((m) => m.modelId);
     const uniqueIds = new Set(modelIds);
     if (uniqueIds.size !== modelIds.length) {
-      throw new Error('Arena models must have unique identifiers');
+      throw new Error("Arena models must have unique identifiers");
     }
 
     // Check for collisions after filesystem-safe normalization.
@@ -686,12 +642,10 @@ export class ArenaManager {
     const safeIds = modelIds.map((id) => safeAgentId(id));
     const uniqueSafeIds = new Set(safeIds);
     if (uniqueSafeIds.size !== safeIds.length) {
-      const collisions = modelIds.filter(
-        (id, i) => safeIds.indexOf(safeIds[i]!) !== i,
-      );
+      const collisions = modelIds.filter((id, i) => safeIds.indexOf(safeIds[i]!) !== i);
       throw new Error(
-        `Arena model IDs collide after path normalization: ${collisions.join(', ')}. ` +
-          'Choose model IDs that remain unique when special characters (/ \\ : etc.) are replaced.',
+        `Arena model IDs collide after path normalization: ${collisions.join(", ")}. ` +
+          "Choose model IDs that remain unique when special characters (/ \\ : etc.) are replaced.",
       );
     }
   }
@@ -709,7 +663,7 @@ export class ArenaManager {
     if (warning && this.sessionId) {
       this.eventEmitter.emit(ArenaEventType.SESSION_UPDATE, {
         sessionId: this.sessionId,
-        type: 'warning',
+        type: "warning",
         message: warning,
         timestamp: Date.now(),
       });
@@ -720,7 +674,7 @@ export class ArenaManager {
     if (attachHint && this.sessionId) {
       this.eventEmitter.emit(ArenaEventType.SESSION_UPDATE, {
         sessionId: this.sessionId,
-        type: 'info',
+        type: "info",
         message: `To view agent panes, run: ${attachHint}`,
         timestamp: Date.now(),
       });
@@ -735,7 +689,7 @@ export class ArenaManager {
    * appends a numeric suffix (-2, -3, …) until an unused name is found.
    */
   private async deriveWorktreeDirName(sessionId: string): Promise<string> {
-    const shortId = sessionId.replaceAll('-', '').slice(0, 8);
+    const shortId = sessionId.replaceAll("-", "").slice(0, 8);
     let candidate = shortId;
     let suffix = 2;
 
@@ -753,10 +707,10 @@ export class ArenaManager {
 
   private async setupWorktrees(): Promise<void> {
     if (!this.arenaConfig) {
-      throw new Error('Arena config not initialized');
+      throw new Error("Arena config not initialized");
     }
 
-    debugLogger.info('Setting up worktrees for Arena agents');
+    debugLogger.info("Setting up worktrees for Arena agents");
 
     const worktreeNames = this.arenaConfig.models.map((m) => m.modelId);
 
@@ -768,9 +722,7 @@ export class ArenaManager {
     });
 
     if (!result.success) {
-      const errorMessages = result.errors
-        .map((e) => `${e.name}: ${e.error}`)
-        .join('; ');
+      const errorMessages = result.errors.map((e) => `${e.name}: ${e.error}`).join("; ");
       throw new Error(`Failed to set up worktrees: ${errorMessages}`);
     }
 
@@ -781,9 +733,7 @@ export class ArenaManager {
       const worktree = result.worktreesByName[worktreeName];
 
       if (!worktree) {
-        throw new Error(
-          `No worktree created for model ${model.modelId} (name: ${worktreeName})`,
-        );
+        throw new Error(`No worktree created for model ${model.modelId} (name: ${worktreeName})`);
       }
 
       const agentId = model.modelId;
@@ -806,7 +756,7 @@ export class ArenaManager {
           failedToolCalls: 0,
         },
         startedAt: 0,
-        accumulatedText: '',
+        accumulatedText: "",
       };
 
       this.agents.set(agentId, agentState);
@@ -819,10 +769,10 @@ export class ArenaManager {
 
   private async runAgents(): Promise<void> {
     if (!this.arenaConfig) {
-      throw new Error('Arena config not initialized');
+      throw new Error("Arena config not initialized");
     }
 
-    debugLogger.info('Starting Arena agents sequentially via backend');
+    debugLogger.info("Starting Arena agents sequentially via backend");
 
     const backend = this.requireBackend();
 
@@ -839,7 +789,7 @@ export class ArenaManager {
       await this.spawnAgentPty(agent);
     }
 
-    this.emitProgress('All agents are now live and working on the task.');
+    this.emitProgress("All agents are now live and working on the task.");
 
     // For in-process mode, set up event bridges instead of file-based polling.
     // For PTY mode, start polling agent status files.
@@ -865,7 +815,7 @@ export class ArenaManager {
     }
 
     if (!allSettled) {
-      debugLogger.info('Arena session timed out, stopping remaining agents');
+      debugLogger.info("Arena session timed out, stopping remaining agents");
       this.sessionStatus = ArenaSessionStatus.CANCELLED;
 
       // Terminate remaining active agents
@@ -879,7 +829,7 @@ export class ArenaManager {
       }
     }
 
-    debugLogger.info('All Arena agents settled or timed out');
+    debugLogger.info("All Arena agents settled or timed out");
   }
 
   private async spawnAgentPty(agent: ArenaAgentState): Promise<void> {
@@ -913,8 +863,7 @@ export class ArenaManager {
     try {
       await backend.spawnAgent(spawnConfig);
     } catch (error) {
-      const errorMessage =
-        error instanceof Error ? error.message : String(error);
+      const errorMessage = error instanceof Error ? error.message : String(error);
       agent.error = errorMessage;
       this.updateAgentStatus(agentId, AgentStatus.FAILED);
 
@@ -931,23 +880,19 @@ export class ArenaManager {
 
   private requireBackend(): Backend {
     if (!this.backend) {
-      throw new Error('Arena backend not initialized.');
+      throw new Error("Arena backend not initialized.");
     }
     return this.backend;
   }
 
   private requireConfig(): ArenaConfig {
     if (!this.arenaConfig) {
-      throw new Error('Arena config not initialized');
+      throw new Error("Arena config not initialized");
     }
     return this.arenaConfig;
   }
 
-  private handleAgentExit(
-    agentId: string,
-    exitCode: number | null,
-    _signal: number | null,
-  ): void {
+  private handleAgentExit(agentId: string, exitCode: number | null, _signal: number | null): void {
     const agent = this.agents.get(agentId);
     if (!agent) {
       return;
@@ -960,11 +905,7 @@ export class ArenaManager {
 
     agent.stats.durationMs = Date.now() - agent.startedAt;
 
-    if (
-      exitCode !== 0 &&
-      exitCode !== null &&
-      !agent.abortController.signal.aborted
-    ) {
+    if (exitCode !== 0 && exitCode !== null && !agent.abortController.signal.aborted) {
       agent.error = `Process exited with code ${exitCode}`;
       this.eventEmitter.emit(ArenaEventType.AGENT_ERROR, {
         sessionId: this.requireConfig().sessionId,
@@ -976,9 +917,7 @@ export class ArenaManager {
 
     this.updateAgentStatus(
       agentId,
-      agent.abortController.signal.aborted
-        ? AgentStatus.CANCELLED
-        : AgentStatus.FAILED,
+      agent.abortController.signal.aborted ? AgentStatus.CANCELLED : AgentStatus.FAILED,
     );
     debugLogger.info(`Agent exited: ${agentId} (exit code: ${exitCode})`);
   }
@@ -1000,40 +939,40 @@ export class ArenaManager {
     const args: string[] = [];
 
     // Set the model and auth type
-    args.push('--model', model.modelId);
-    args.push('--auth-type', model.authType);
+    args.push("--model", model.modelId);
+    args.push("--auth-type", model.authType);
 
     // Pass the task via --prompt-interactive (-i) so the CLI enters
     // interactive mode AND immediately starts working on the task.
     // (--prompt runs non-interactively and would exit after completion.)
     if (this.arenaConfig?.task) {
-      args.push('--prompt-interactive', this.arenaConfig.task);
+      args.push("--prompt-interactive", this.arenaConfig.task);
     }
 
     // Set approval mode if specified
     if (this.arenaConfig?.approvalMode) {
-      args.push('--approval-mode', this.arenaConfig.approvalMode);
+      args.push("--approval-mode", this.arenaConfig.approvalMode);
     }
 
     // Pass the agent's session ID so the child CLI uses it for telemetry
     // correlation instead of generating a random UUID.
-    args.push('--session-id', agent.agentSessionId);
+    args.push("--session-id", agent.agentSessionId);
 
     // Construct env vars for the agent
     const arenaSessionDir = this.getArenaSessionDir();
     const env: Record<string, string> = {
-      QWEN_CODE: '1',
+      QWEN_CODE: "1",
       ARENA_AGENT_ID: agentId,
-      ARENA_SESSION_ID: this.arenaConfig?.sessionId ?? '',
+      ARENA_SESSION_ID: this.arenaConfig?.sessionId ?? "",
       ARENA_SESSION_DIR: arenaSessionDir,
     };
 
     // If the model has auth overrides, pass them via env
     if (model.apiKey) {
-      env['QWEN_API_KEY'] = model.apiKey;
+      env["QWEN_API_KEY"] = model.apiKey;
     }
     if (model.baseUrl) {
-      env['QWEN_BASE_URL'] = model.baseUrl;
+      env["QWEN_BASE_URL"] = model.baseUrl;
     }
 
     const spawnConfig: AgentSpawnConfig = {
@@ -1049,10 +988,7 @@ export class ArenaManager {
         initialTask: this.arenaConfig?.task,
         runtimeConfig: {
           promptConfig: {
-            systemPrompt: getCoreSystemPrompt(
-              this.config.getUserMemory(),
-              model.modelId,
-            ),
+            systemPrompt: getCoreSystemPrompt(this.config.getUserMemory(), model.modelId),
           },
           modelConfig: { model: model.modelId },
           runConfig: {
@@ -1074,11 +1010,9 @@ export class ArenaManager {
     debugLogger.info(
       `[buildAgentSpawnConfig] agentId=${agentId}, command=${spawnConfig.command}, cliEntry=${process.argv[1]}, resolvedEntry=${path.resolve(process.argv[1]!)}`,
     );
+    debugLogger.info(`[buildAgentSpawnConfig] args=${JSON.stringify(spawnConfig.args)}`);
     debugLogger.info(
-      `[buildAgentSpawnConfig] args=${JSON.stringify(spawnConfig.args)}`,
-    );
-    debugLogger.info(
-      `[buildAgentSpawnConfig] cwd=${spawnConfig.cwd}, env keys=${Object.keys(env).join(',')}`,
+      `[buildAgentSpawnConfig] cwd=${spawnConfig.cwd}, env keys=${Object.keys(env).join(",")}`,
     );
 
     return spawnConfig;
@@ -1087,17 +1021,11 @@ export class ArenaManager {
   // ─── Private: Status & Results ─────────────────────────────────
 
   /** Decide whether a status transition is valid. Returns the new status or null. */
-  private resolveTransition(
-    current: AgentStatus,
-    incoming: AgentStatus,
-  ): AgentStatus | null {
+  private resolveTransition(current: AgentStatus, incoming: AgentStatus): AgentStatus | null {
     if (current === incoming) return null;
     if (isTerminalStatus(current)) {
       // Allow revival: COMPLETED → RUNNING (agent received new input)
-      if (
-        current === AgentStatus.COMPLETED &&
-        incoming === AgentStatus.RUNNING
-      ) {
+      if (current === AgentStatus.COMPLETED && incoming === AgentStatus.RUNNING) {
         return incoming;
       }
       return null;
@@ -1135,31 +1063,22 @@ export class ArenaManager {
       newStatus === AgentStatus.IDLE
     ) {
       if (options?.roundCancelledByUser) {
-        this.emitProgress(`Agent ${label} is cancelled by user.`, 'warning');
+        this.emitProgress(`Agent ${label} is cancelled by user.`, "warning");
       } else {
-        this.emitProgress(`Agent ${label} finished initial task.`, 'success');
+        this.emitProgress(`Agent ${label} finished initial task.`, "success");
       }
     }
 
     // Emit progress messages for follow-up transitions (only after
     // the initial task — the session is IDLE once all agents first settle).
     if (this.sessionStatus === ArenaSessionStatus.IDLE) {
-      if (
-        previousStatus === AgentStatus.IDLE &&
-        newStatus === AgentStatus.RUNNING
-      ) {
+      if (previousStatus === AgentStatus.IDLE && newStatus === AgentStatus.RUNNING) {
         this.emitProgress(`Agent ${label} is working on a follow-up task…`);
-      } else if (
-        previousStatus === AgentStatus.RUNNING &&
-        newStatus === AgentStatus.IDLE
-      ) {
+      } else if (previousStatus === AgentStatus.RUNNING && newStatus === AgentStatus.IDLE) {
         if (options?.roundCancelledByUser) {
-          this.emitProgress(`Agent ${label} is cancelled by user.`, 'warning');
+          this.emitProgress(`Agent ${label} is cancelled by user.`, "warning");
         } else {
-          this.emitProgress(
-            `Agent ${label} finished follow-up task.`,
-            'success',
-          );
+          this.emitProgress(`Agent ${label} finished follow-up task.`, "success");
         }
       }
     }
@@ -1178,14 +1097,14 @@ export class ArenaManager {
       // Log arena agent completed telemetry
       const agentTelemetryStatus =
         newStatus === AgentStatus.COMPLETED
-          ? ('completed' as const)
+          ? ("completed" as const)
           : newStatus === AgentStatus.FAILED
-            ? ('failed' as const)
-            : ('cancelled' as const);
+            ? ("failed" as const)
+            : ("cancelled" as const);
       logArenaAgentCompleted(
         this.config,
         makeArenaAgentCompletedEvent({
-          arena_session_id: this.sessionId ?? '',
+          arena_session_id: this.sessionId ?? "",
           agent_session_id: agent.agentSessionId,
           agent_model_id: agent.model.modelId,
           status: agentTelemetryStatus,
@@ -1232,12 +1151,9 @@ export class ArenaManager {
    */
   getArenaSessionDir(): string {
     if (!this.arenaConfig) {
-      throw new Error('Arena config not initialized');
+      throw new Error("Arena config not initialized");
     }
-    return GitWorktreeService.getSessionDir(
-      this.worktreeDirName!,
-      this.arenaBaseDir,
-    );
+    return GitWorktreeService.getSessionDir(this.worktreeDirName!, this.arenaBaseDir);
   }
 
   // ─── Private: Polling & Control Signals ──────────────────────
@@ -1291,7 +1207,7 @@ export class ArenaManager {
 
     this.pollingInterval = setInterval(() => {
       this.pollAgentStatuses().catch((error) => {
-        debugLogger.error('Error polling agent statuses:', error);
+        debugLogger.error("Error polling agent statuses:", error);
       });
     }, ARENA_POLL_INTERVAL_MS);
   }
@@ -1322,8 +1238,7 @@ export class ArenaManager {
       // AgentInteractive emits canonical AgentStatus values — no mapping needed.
 
       const syncStats = () => {
-        const { totalToolCalls, totalDurationMs, ...rest } =
-          interactive.getStats();
+        const { totalToolCalls, totalDurationMs, ...rest } = interactive.getStats();
         Object.assign(agent.stats, rest, {
           toolCalls: totalToolCalls,
           durationMs: totalDurationMs,
@@ -1332,15 +1247,11 @@ export class ArenaManager {
 
       agent.syncStats = syncStats;
 
-      const applyStatus = (
-        incoming: AgentStatus,
-        options?: { roundCancelledByUser?: boolean },
-      ) => {
+      const applyStatus = (incoming: AgentStatus, options?: { roundCancelledByUser?: boolean }) => {
         const resolved = this.resolveTransition(agent.status, incoming);
         if (!resolved) return;
         if (resolved === AgentStatus.FAILED) {
-          agent.error =
-            interactive.getLastRoundError() || interactive.getError();
+          agent.error = interactive.getLastRoundError() || interactive.getError();
         }
         if (isSettledStatus(resolved)) {
           agent.stats.durationMs = Date.now() - agent.startedAt;
@@ -1358,14 +1269,14 @@ export class ArenaManager {
         // Write status files so external consumers get a consistent
         // file-based view regardless of backend mode.
         this.flushInProcessStatusFiles().catch((err) =>
-          debugLogger.error('Failed to flush in-process status files:', err),
+          debugLogger.error("Failed to flush in-process status files:", err),
         );
       };
 
       const onUsageMetadata = () => {
         syncStats();
         this.flushInProcessStatusFiles().catch((err) =>
-          debugLogger.error('Failed to flush in-process status files:', err),
+          debugLogger.error("Failed to flush in-process status files:", err),
         );
       };
 
@@ -1389,7 +1300,7 @@ export class ArenaManager {
     // Flush status files once after reconciliation so that agents which
     // already settled before the bridge was attached still get written to disk.
     this.flushInProcessStatusFiles().catch((err) =>
-      debugLogger.error('Failed to flush in-process status files:', err),
+      debugLogger.error("Failed to flush in-process status files:", err),
     );
   }
 
@@ -1410,24 +1321,18 @@ export class ArenaManager {
    */
   private async pollAgentStatuses(): Promise<void> {
     const sessionDir = this.getArenaSessionDir();
-    const agentsDir = path.join(sessionDir, 'agents');
+    const agentsDir = path.join(sessionDir, "agents");
     const consolidatedAgents: Record<string, ArenaStatusFile> = {};
 
     for (const agent of this.agents.values()) {
       // Only poll agents that are actively working
-      if (
-        isSettledStatus(agent.status) ||
-        agent.status === AgentStatus.INITIALIZING
-      ) {
+      if (isSettledStatus(agent.status) || agent.status === AgentStatus.INITIALIZING) {
         continue;
       }
 
       try {
-        const statusPath = path.join(
-          agentsDir,
-          `${safeAgentId(agent.agentId)}.json`,
-        );
-        const content = await fs.readFile(statusPath, 'utf-8');
+        const statusPath = path.join(agentsDir, `${safeAgentId(agent.agentId)}.json`);
+        const content = await fs.readFile(statusPath, "utf-8");
         const statusFile = JSON.parse(content) as ArenaStatusFile;
 
         // Collect for consolidated file
@@ -1440,10 +1345,7 @@ export class ArenaManager {
         };
 
         // Detect state transitions from the sideband status file
-        const resolved = this.resolveTransition(
-          agent.status,
-          statusFile.status,
-        );
+        const resolved = this.resolveTransition(agent.status, statusFile.status);
         if (resolved) {
           if (resolved === AgentStatus.FAILED && statusFile.error) {
             agent.error = statusFile.error;
@@ -1454,13 +1356,10 @@ export class ArenaManager {
         this.callbacks.onAgentStatsUpdate?.(agent.agentId, statusFile.stats);
       } catch (error: unknown) {
         // File may not exist yet (agent hasn't written first status)
-        if (isNodeError(error) && error.code === 'ENOENT') {
+        if (isNodeError(error) && error.code === "ENOENT") {
           continue;
         }
-        debugLogger.error(
-          `Error reading status for agent ${agent.agentId}:`,
-          error,
-        );
+        debugLogger.error(`Error reading status for agent ${agent.agentId}:`, error);
       }
     }
 
@@ -1475,17 +1374,15 @@ export class ArenaManager {
    * Reads the existing config, adds/updates `updatedAt` and `agents`,
    * then writes back atomically (temp file → rename).
    */
-  private async writeConsolidatedStatus(
-    agents: Record<string, ArenaStatusFile>,
-  ): Promise<void> {
+  private async writeConsolidatedStatus(agents: Record<string, ArenaStatusFile>): Promise<void> {
     const sessionDir = this.getArenaSessionDir();
-    const configPath = path.join(sessionDir, 'config.json');
+    const configPath = path.join(sessionDir, "config.json");
 
     try {
       // Read existing config.json written by GitWorktreeService
       let config: ArenaConfigFile;
       try {
-        const content = await fs.readFile(configPath, 'utf-8');
+        const content = await fs.readFile(configPath, "utf-8");
         config = JSON.parse(content) as ArenaConfigFile;
       } catch {
         // If config.json doesn't exist yet, create a minimal one
@@ -1493,9 +1390,7 @@ export class ArenaManager {
         config = {
           arenaSessionId: arenaConfig.sessionId,
           sourceRepoPath: arenaConfig.sourceRepoPath,
-          worktreeNames: arenaConfig.models.map(
-            (m) => m.displayName || m.modelId,
-          ),
+          worktreeNames: arenaConfig.models.map((m) => m.displayName || m.modelId),
           createdAt: this.startedAt!,
         };
       }
@@ -1506,10 +1401,7 @@ export class ArenaManager {
 
       await atomicWriteJSON(configPath, config);
     } catch (error) {
-      debugLogger.error(
-        'Failed to write consolidated status to config.json:',
-        error,
-      );
+      debugLogger.error("Failed to write consolidated status to config.json:", error);
     }
   }
 
@@ -1540,17 +1432,14 @@ export class ArenaManager {
    */
   private async flushInProcessStatusFiles(): Promise<void> {
     const sessionDir = this.getArenaSessionDir();
-    const agentsDir = path.join(sessionDir, 'agents');
+    const agentsDir = path.join(sessionDir, "agents");
     await fs.mkdir(agentsDir, { recursive: true });
 
     const consolidatedAgents: Record<string, ArenaStatusFile> = {};
 
     for (const agent of this.agents.values()) {
       const statusFile = this.buildStatusFile(agent);
-      const filePath = path.join(
-        agentsDir,
-        `${safeAgentId(agent.agentId)}.json`,
-      );
+      const filePath = path.join(agentsDir, `${safeAgentId(agent.agentId)}.json`);
       await atomicWriteJSON(filePath, statusFile);
       consolidatedAgents[agent.agentId] = statusFile;
     }
@@ -1566,14 +1455,12 @@ export class ArenaManager {
    */
   async sendControlSignal(
     agentId: string,
-    type: ArenaControlSignal['type'],
+    type: ArenaControlSignal["type"],
     reason: string,
   ): Promise<void> {
     const agent = this.agents.get(agentId);
     if (!agent) {
-      debugLogger.error(
-        `Cannot send control signal: agent ${agentId} not found`,
-      );
+      debugLogger.error(`Cannot send control signal: agent ${agentId} not found`);
       return;
     }
 
@@ -1584,30 +1471,21 @@ export class ArenaManager {
     };
 
     const sessionDir = this.getArenaSessionDir();
-    const controlDir = path.join(sessionDir, 'control');
+    const controlDir = path.join(sessionDir, "control");
     const controlPath = path.join(controlDir, `${safeAgentId(agentId)}.json`);
 
     try {
       await fs.mkdir(controlDir, { recursive: true });
-      await fs.writeFile(
-        controlPath,
-        JSON.stringify(controlSignal, null, 2),
-        'utf-8',
-      );
-      debugLogger.info(
-        `Sent ${type} control signal to agent ${agentId}: ${reason}`,
-      );
+      await fs.writeFile(controlPath, JSON.stringify(controlSignal, null, 2), "utf-8");
+      debugLogger.info(`Sent ${type} control signal to agent ${agentId}: ${reason}`);
     } catch (error) {
-      debugLogger.error(
-        `Failed to send control signal to agent ${agentId}:`,
-        error,
-      );
+      debugLogger.error(`Failed to send control signal to agent ${agentId}:`, error);
     }
   }
 
   private async collectResults(): Promise<ArenaSessionResult> {
     if (!this.arenaConfig) {
-      throw new Error('Arena config not initialized');
+      throw new Error("Arena config not initialized");
     }
 
     const agents: ArenaAgentResult[] = [];
@@ -1618,14 +1496,9 @@ export class ArenaManager {
       // Get diff for agents that finished their task (IDLE or COMPLETED)
       if (isSuccessStatus(agent.status)) {
         try {
-          result.diff = await this.worktreeService.getWorktreeDiff(
-            agent.worktree.path,
-          );
+          result.diff = await this.worktreeService.getWorktreeDiff(agent.worktree.path);
         } catch (error) {
-          debugLogger.error(
-            `Failed to get diff for agent ${agent.agentId}:`,
-            error,
-          );
+          debugLogger.error(`Failed to get diff for agent ${agent.agentId}:`, error);
         }
       }
 

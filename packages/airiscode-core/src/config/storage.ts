@@ -4,21 +4,21 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import * as path from 'node:path';
-import * as os from 'node:os';
-import * as fs from 'node:fs';
-import { AsyncLocalStorage } from 'node:async_hooks';
-import { getProjectHash, sanitizeCwd } from '../utils/paths.js';
+import { AsyncLocalStorage } from "node:async_hooks";
+import * as fs from "node:fs";
+import * as os from "node:os";
+import * as path from "node:path";
+import { getProjectHash, sanitizeCwd } from "../utils/paths.js";
 
-export const AIRISCODE_DIR = '.airiscode';
-export const SKILL_PROVIDER_CONFIG_DIRS = ['.airiscode', '.agents'];
-const TMP_DIR_NAME = 'tmp';
-const BIN_DIR_NAME = 'bin';
-const PROJECT_DIR_NAME = 'projects';
-const IDE_DIR_NAME = 'ide';
-const PLANS_DIR_NAME = 'plans';
-const DEBUG_DIR_NAME = 'debug';
-const ARENA_DIR_NAME = 'arena';
+export const AIRISCODE_DIR = ".airiscode";
+export const SKILL_PROVIDER_CONFIG_DIRS = [".airiscode", ".agents"];
+const TMP_DIR_NAME = "tmp";
+const BIN_DIR_NAME = "bin";
+const PROJECT_DIR_NAME = "projects";
+const IDE_DIR_NAME = "ide";
+const PLANS_DIR_NAME = "plans";
+const DEBUG_DIR_NAME = "debug";
+const ARENA_DIR_NAME = "arena";
 
 export class Storage {
   private readonly targetDir: string;
@@ -28,9 +28,7 @@ export class Storage {
    * When null, falls back to getGlobalQwenDir().
    */
   private static runtimeBaseDir: string | null = null;
-  private static readonly runtimeBaseDirContext = new AsyncLocalStorage<
-    string | null
-  >();
+  private static readonly runtimeBaseDirContext = new AsyncLocalStorage<string | null>();
 
   constructor(targetDir: string) {
     this.targetDir = targetDir;
@@ -45,13 +43,9 @@ export class Storage {
     }
 
     let resolved = dir;
-    if (
-      resolved === '~' ||
-      resolved.startsWith('~/') ||
-      resolved.startsWith('~\\')
-    ) {
+    if (resolved === "~" || resolved.startsWith("~/") || resolved.startsWith("~\\")) {
       const relativeSegments =
-        resolved === '~'
+        resolved === "~"
           ? []
           : resolved
               .slice(2)
@@ -99,11 +93,9 @@ export class Storage {
    * @returns Absolute path to the runtime output base directory
    */
   static getRuntimeBaseDir(): string {
-    const envDir = process.env['QWEN_RUNTIME_DIR'];
+    const envDir = process.env["QWEN_RUNTIME_DIR"];
     if (envDir) {
-      return (
-        Storage.resolveRuntimeBaseDir(envDir) ?? Storage.getGlobalQwenDir()
-      );
+      return Storage.resolveRuntimeBaseDir(envDir) ?? Storage.getGlobalQwenDir();
     }
 
     const contextualDir = Storage.runtimeBaseDirContext.getStore();
@@ -119,34 +111,34 @@ export class Storage {
   static getGlobalQwenDir(): string {
     const homeDir = os.homedir();
     if (!homeDir) {
-      return path.join(os.tmpdir(), '.airiscode');
+      return path.join(os.tmpdir(), ".airiscode");
     }
     return path.join(homeDir, AIRISCODE_DIR);
   }
 
   static getMcpOAuthTokensPath(): string {
-    return path.join(Storage.getGlobalQwenDir(), 'mcp-oauth-tokens.json');
+    return path.join(Storage.getGlobalQwenDir(), "mcp-oauth-tokens.json");
   }
 
   static getGlobalSettingsPath(): string {
-    return path.join(Storage.getGlobalQwenDir(), 'settings.json');
+    return path.join(Storage.getGlobalQwenDir(), "settings.json");
   }
 
   static getInstallationIdPath(): string {
-    return path.join(Storage.getGlobalQwenDir(), 'installation_id');
+    return path.join(Storage.getGlobalQwenDir(), "installation_id");
   }
 
   /** @deprecated Google accounts no longer used */
   static getGoogleAccountsPath(): string {
-    return path.join(Storage.getGlobalQwenDir(), 'google_accounts.json');
+    return path.join(Storage.getGlobalQwenDir(), "google_accounts.json");
   }
 
   static getUserCommandsDir(): string {
-    return path.join(Storage.getGlobalQwenDir(), 'commands');
+    return path.join(Storage.getGlobalQwenDir(), "commands");
   }
 
   static getGlobalMemoryFilePath(): string {
-    return path.join(Storage.getGlobalQwenDir(), 'memory.md');
+    return path.join(Storage.getGlobalQwenDir(), "memory.md");
   }
 
   static getGlobalTempDir(): string {
@@ -187,10 +179,7 @@ export class Storage {
 
   getProjectDir(): string {
     const projectId = sanitizeCwd(this.getProjectRoot());
-    const projectsDir = path.join(
-      Storage.getRuntimeBaseDir(),
-      PROJECT_DIR_NAME,
-    );
+    const projectsDir = path.join(Storage.getRuntimeBaseDir(), PROJECT_DIR_NAME);
     return path.join(projectsDir, projectId);
   }
 
@@ -207,7 +196,7 @@ export class Storage {
 
   /** @deprecated OAuth creds no longer used */
   static getOAuthCredsPath(): string {
-    return path.join(Storage.getGlobalQwenDir(), 'oauth_creds.json');
+    return path.join(Storage.getGlobalQwenDir(), "oauth_creds.json");
   }
 
   getProjectRoot(): string {
@@ -216,36 +205,34 @@ export class Storage {
 
   getHistoryDir(): string {
     const hash = getProjectHash(this.getProjectRoot());
-    const historyDir = path.join(Storage.getRuntimeBaseDir(), 'history');
+    const historyDir = path.join(Storage.getRuntimeBaseDir(), "history");
     const targetDir = path.join(historyDir, hash);
     return targetDir;
   }
 
   getWorkspaceSettingsPath(): string {
-    return path.join(this.getQwenDir(), 'settings.json');
+    return path.join(this.getQwenDir(), "settings.json");
   }
 
   getProjectCommandsDir(): string {
-    return path.join(this.getQwenDir(), 'commands');
+    return path.join(this.getQwenDir(), "commands");
   }
 
   getProjectTempCheckpointsDir(): string {
-    return path.join(this.getProjectTempDir(), 'checkpoints');
+    return path.join(this.getProjectTempDir(), "checkpoints");
   }
 
   getExtensionsDir(): string {
-    return path.join(this.getQwenDir(), 'extensions');
+    return path.join(this.getQwenDir(), "extensions");
   }
 
   getExtensionsConfigPath(): string {
-    return path.join(this.getExtensionsDir(), 'qwen-extension.json');
+    return path.join(this.getExtensionsDir(), "qwen-extension.json");
   }
 
   getUserSkillsDirs(): string[] {
     const homeDir = os.homedir() || os.tmpdir();
-    return SKILL_PROVIDER_CONFIG_DIRS.map((dir) =>
-      path.join(homeDir, dir, 'skills'),
-    );
+    return SKILL_PROVIDER_CONFIG_DIRS.map((dir) => path.join(homeDir, dir, "skills"));
   }
 
   /**
@@ -254,10 +241,10 @@ export class Storage {
    * project-level extensions which live in <project>/.airiscode/extensions/.
    */
   static getUserExtensionsDir(): string {
-    return path.join(Storage.getGlobalQwenDir(), 'extensions');
+    return path.join(Storage.getGlobalQwenDir(), "extensions");
   }
 
   getHistoryFilePath(): string {
-    return path.join(this.getProjectTempDir(), 'shell_history');
+    return path.join(this.getProjectTempDir(), "shell_history");
   }
 }

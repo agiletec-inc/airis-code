@@ -2,7 +2,7 @@
  * Tool registry types
  */
 
-import type { McpToolSpec } from '@airiscode/mcp-client';
+import type { McpToolSpec } from "@airiscode/mcp-client";
 
 /**
  * Registry configuration
@@ -13,7 +13,7 @@ export interface RegistryConfig {
   /** Preload popular tools */
   preloadTools?: string[];
   /** Tool selection strategy */
-  selectionStrategy?: 'first-match' | 'best-match' | 'all';
+  selectionStrategy?: "first-match" | "best-match" | "all";
 }
 
 /**

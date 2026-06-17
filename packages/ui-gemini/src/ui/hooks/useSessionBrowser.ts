@@ -4,25 +4,21 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { useState, useCallback } from 'react';
-import type { HistoryItemWithoutId } from '../types.js';
-import * as fs from 'node:fs/promises';
-import path from 'node:path';
-import type {
-  Config,
-  ConversationRecord,
-  ResumedSessionData,
-} from '@airiscode/gemini-cli-core';
-import type { Part } from '@google/genai';
-import { partListUnionToString } from '@airiscode/gemini-cli-core';
-import type { SessionInfo } from '../../utils/sessionUtils.js';
-import { MessageType, ToolCallStatus } from '../types.js';
+import * as fs from "node:fs/promises";
+import path from "node:path";
+import type { Config, ConversationRecord, ResumedSessionData } from "@airiscode/gemini-cli-core";
+import { partListUnionToString } from "@airiscode/gemini-cli-core";
+import type { Part } from "@google/genai";
+import { useCallback, useState } from "react";
+import type { SessionInfo } from "../../utils/sessionUtils.js";
+import type { HistoryItemWithoutId } from "../types.js";
+import { MessageType, ToolCallStatus } from "../types.js";
 
 export const useSessionBrowser = (
   config: Config,
   onLoadHistory: (
     uiHistory: HistoryItemWithoutId[],
-    clientHistory: Array<{ role: 'user' | 'model'; parts: Part[] }>,
+    clientHistory: Array<{ role: "user" | "model"; parts: Part[] }>,
     resumedSessionData: ResumedSessionData,
   ) => void,
 ) => {
@@ -45,10 +41,7 @@ export const useSessionBrowser = (
     handleResumeSession: useCallback(
       async (session: SessionInfo) => {
         try {
-          const chatsDir = path.join(
-            config.storage.getProjectTempDir(),
-            'chats',
-          );
+          const chatsDir = path.join(config.storage.getProjectTempDir(), "chats");
 
           const fileName = session.fileName;
 
@@ -56,7 +49,7 @@ export const useSessionBrowser = (
 
           // Load up the conversation.
           const conversation: ConversationRecord = JSON.parse(
-            await fs.readFile(originalFilePath, 'utf8'),
+            await fs.readFile(originalFilePath, "utf8"),
           );
 
           // Use the old session's ID to continue it.
@@ -70,16 +63,10 @@ export const useSessionBrowser = (
 
           // We've loaded it; tell the UI about it.
           setIsSessionBrowserOpen(false);
-          const historyData = convertSessionToHistoryFormats(
-            conversation.messages,
-          );
-          onLoadHistory(
-            historyData.uiHistory,
-            historyData.clientHistory,
-            resumedSessionData,
-          );
+          const historyData = convertSessionToHistoryFormats(conversation.messages);
+          onLoadHistory(historyData.uiHistory, historyData.clientHistory, resumedSessionData);
         } catch (error) {
-          console.error('Error resuming session:', error);
+          console.error("Error resuming session:", error);
           setIsSessionBrowserOpen(false);
         }
       },
@@ -96,14 +83,12 @@ export const useSessionBrowser = (
         // The ChatRecordingService.deleteSession API expects this file basename
         // (without the ".json" extension), not the full session UUID.
         try {
-          const chatRecordingService = config
-            .getGeminiClient()
-            ?.getChatRecordingService();
+          const chatRecordingService = config.getGeminiClient()?.getChatRecordingService();
           if (chatRecordingService) {
             chatRecordingService.deleteSession(session.file);
           }
         } catch (error) {
-          console.error('Error deleting session:', error);
+          console.error("Error deleting session:", error);
           throw error;
         }
       },
@@ -115,11 +100,9 @@ export const useSessionBrowser = (
 /**
  * Converts session/conversation data into UI history and Gemini client history formats.
  */
-export function convertSessionToHistoryFormats(
-  messages: ConversationRecord['messages'],
-): {
+export function convertSessionToHistoryFormats(messages: ConversationRecord["messages"]): {
   uiHistory: HistoryItemWithoutId[];
-  clientHistory: Array<{ role: 'user' | 'model'; parts: Part[] }>;
+  clientHistory: Array<{ role: "user" | "model"; parts: Part[] }>;
 } {
   const uiHistory: HistoryItemWithoutId[] = [];
 
@@ -129,16 +112,16 @@ export function convertSessionToHistoryFormats(
     if (msg.content && contentString.trim()) {
       let messageType: MessageType;
       switch (msg.type) {
-        case 'user':
+        case "user":
           messageType = MessageType.USER;
           break;
-        case 'info':
+        case "info":
           messageType = MessageType.INFO;
           break;
-        case 'error':
+        case "error":
           messageType = MessageType.ERROR;
           break;
-        case 'warning':
+        case "warning":
           messageType = MessageType.WARNING;
           break;
         default:
@@ -153,23 +136,15 @@ export function convertSessionToHistoryFormats(
     }
 
     // Add tool calls if present
-    if (
-      msg.type !== 'user' &&
-      'toolCalls' in msg &&
-      msg.toolCalls &&
-      msg.toolCalls.length > 0
-    ) {
+    if (msg.type !== "user" && "toolCalls" in msg && msg.toolCalls && msg.toolCalls.length > 0) {
       uiHistory.push({
-        type: 'tool_group',
+        type: "tool_group",
         tools: msg.toolCalls.map((tool) => ({
           callId: tool.id,
           name: tool.displayName || tool.name,
-          description: tool.description || '',
+          description: tool.description || "",
           renderOutputAsMarkdown: tool.renderOutputAsMarkdown ?? true,
-          status:
-            tool.status === 'success'
-              ? ToolCallStatus.Success
-              : ToolCallStatus.Error,
+          status: tool.status === "success" ? ToolCallStatus.Success : ToolCallStatus.Error,
           resultDisplay: tool.resultDisplay,
           confirmationDetails: undefined,
         })),
@@ -178,30 +153,27 @@ export function convertSessionToHistoryFormats(
   }
 
   // Convert to Gemini client history format
-  const clientHistory: Array<{ role: 'user' | 'model'; parts: Part[] }> = [];
+  const clientHistory: Array<{ role: "user" | "model"; parts: Part[] }> = [];
 
   for (const msg of messages) {
     // Skip system/error messages and user slash commands
-    if (msg.type === 'info' || msg.type === 'error' || msg.type === 'warning') {
+    if (msg.type === "info" || msg.type === "error" || msg.type === "warning") {
       continue;
     }
 
-    if (msg.type === 'user') {
+    if (msg.type === "user") {
       // Skip user slash commands
       const contentString = partListUnionToString(msg.content);
-      if (
-        contentString.trim().startsWith('/') ||
-        contentString.trim().startsWith('?')
-      ) {
+      if (contentString.trim().startsWith("/") || contentString.trim().startsWith("?")) {
         continue;
       }
 
       // Add regular user message
       clientHistory.push({
-        role: 'user',
+        role: "user",
         parts: [{ text: contentString }],
       });
-    } else if (msg.type === 'gemini') {
+    } else if (msg.type === "gemini") {
       // Handle Gemini messages with potential tool calls
       const hasToolCalls = msg.toolCalls && msg.toolCalls.length > 0;
 
@@ -227,7 +199,7 @@ export function convertSessionToHistoryFormats(
         }
 
         clientHistory.push({
-          role: 'model',
+          role: "model",
           parts: modelParts,
         });
 
@@ -238,7 +210,7 @@ export function convertSessionToHistoryFormats(
             // Convert PartListUnion result to function response format
             let responseData: Part;
 
-            if (typeof toolCall.result === 'string') {
+            if (typeof toolCall.result === "string") {
               responseData = {
                 functionResponse: {
                   id: toolCall.id,
@@ -265,7 +237,7 @@ export function convertSessionToHistoryFormats(
         // Only add user message if we have function responses
         if (functionResponseParts.length > 0) {
           clientHistory.push({
-            role: 'user',
+            role: "user",
             parts: functionResponseParts,
           });
         }
@@ -274,7 +246,7 @@ export function convertSessionToHistoryFormats(
         const contentString = partListUnionToString(msg.content);
         if (msg.content && contentString.trim()) {
           clientHistory.push({
-            role: 'model',
+            role: "model",
             parts: [{ text: contentString }],
           });
         }

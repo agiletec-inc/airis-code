@@ -4,9 +4,9 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import * as fs from 'node:fs';
-import * as path from 'node:path';
-import ignore from 'ignore';
+import * as fs from "node:fs";
+import * as path from "node:path";
+import ignore from "ignore";
 
 export interface GeminiIgnoreFilter {
   isIgnored(filePath: string): boolean;
@@ -24,19 +24,19 @@ export class GeminiIgnoreParser implements GeminiIgnoreFilter {
   }
 
   private loadPatterns(): void {
-    const patternsFilePath = path.join(this.projectRoot, '.geminiignore');
+    const patternsFilePath = path.join(this.projectRoot, ".geminiignore");
     let content: string;
     try {
-      content = fs.readFileSync(patternsFilePath, 'utf-8');
+      content = fs.readFileSync(patternsFilePath, "utf-8");
     } catch (_error) {
       // ignore file not found
       return;
     }
 
-    this.patterns = (content ?? '')
-      .split('\n')
+    this.patterns = (content ?? "")
+      .split("\n")
       .map((p) => p.trim())
-      .filter((p) => p !== '' && !p.startsWith('#'));
+      .filter((p) => p !== "" && !p.startsWith("#"));
 
     this.ig.add(this.patterns);
   }
@@ -46,29 +46,25 @@ export class GeminiIgnoreParser implements GeminiIgnoreFilter {
       return false;
     }
 
-    if (!filePath || typeof filePath !== 'string') {
+    if (!filePath || typeof filePath !== "string") {
       return false;
     }
 
-    if (
-      filePath.startsWith('\\') ||
-      filePath === '/' ||
-      filePath.includes('\0')
-    ) {
+    if (filePath.startsWith("\\") || filePath === "/" || filePath.includes("\0")) {
       return false;
     }
 
     const resolved = path.resolve(this.projectRoot, filePath);
     const relativePath = path.relative(this.projectRoot, resolved);
 
-    if (relativePath === '' || relativePath.startsWith('..')) {
+    if (relativePath === "" || relativePath.startsWith("..")) {
       return false;
     }
 
     // Even in windows, Ignore expects forward slashes.
-    const normalizedPath = relativePath.replace(/\\/g, '/');
+    const normalizedPath = relativePath.replace(/\\/g, "/");
 
-    if (normalizedPath.startsWith('/') || normalizedPath === '') {
+    if (normalizedPath.startsWith("/") || normalizedPath === "") {
       return false;
     }
 

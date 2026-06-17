@@ -4,37 +4,31 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { createContext, useContext } from 'react';
+import type { ApprovalMode, AuthType, IdeContext, IdeInfo } from "@airiscode/core";
+import type { DOMElement } from "ink";
+import { createContext, useContext } from "react";
+import type { QwenAuthState } from "../auth/useAuth.js";
+import type { CommandContext, SlashCommand } from "../commands/types.js";
+import type { TextBuffer } from "../components/shared/text-buffer.js";
+import type { SessionStatsState } from "../contexts/SessionContext.js";
+import { type ArenaDialogType } from "../hooks/useArenaCommand.js";
+import { type CodingPlanUpdateRequest } from "../hooks/useCodingPlanUpdates.js";
+import { type UseHistoryManagerReturn } from "../hooks/useHistoryManager.js";
+import { type RestartReason } from "../hooks/useIdeTrustListener.js";
+import type { ExtensionUpdateState } from "../state/extensions.js";
 import type {
+  ConfirmationRequest,
   HistoryItem,
   HistoryItemBtw,
-  ThoughtSummary,
-  ShellConfirmationRequest,
-  ConfirmationRequest,
-  LoopDetectionConfirmationRequest,
   HistoryItemWithoutId,
-  StreamingState,
-  SettingInputRequest,
+  LoopDetectionConfirmationRequest,
   PluginChoiceRequest,
-} from '../types.js';
-import type { QwenAuthState } from '../auth/useAuth.js';
-import type { CommandContext, SlashCommand } from '../commands/types.js';
-import type { TextBuffer } from '../components/shared/text-buffer.js';
-import type {
-  AuthType,
-  IdeContext,
-  ApprovalMode,
-  IdeInfo,
-} from '@airiscode/core';
-import type { DOMElement } from 'ink';
-import type { SessionStatsState } from '../contexts/SessionContext.js';
-import type { ExtensionUpdateState } from '../state/extensions.js';
-import type { UpdateObject } from '../utils/updateCheck.js';
-
-import { type UseHistoryManagerReturn } from '../hooks/useHistoryManager.js';
-import { type RestartReason } from '../hooks/useIdeTrustListener.js';
-import { type CodingPlanUpdateRequest } from '../hooks/useCodingPlanUpdates.js';
-import { type ArenaDialogType } from '../hooks/useArenaCommand.js';
+  SettingInputRequest,
+  ShellConfirmationRequest,
+  StreamingState,
+  ThoughtSummary,
+} from "../types.js";
+import type { UpdateObject } from "../utils/updateCheck.js";
 
 export interface UIState {
   history: HistoryItem[];
@@ -129,7 +123,7 @@ export interface UIState {
     hasHistory: boolean;
     lastPrompt?: string;
   } | null;
-  welcomeBackChoice: 'continue' | 'restart' | null;
+  welcomeBackChoice: "continue" | "restart" | null;
   // Subagent dialogs
   isSubagentCreateDialogOpen: boolean;
   isAgentsManagerDialogOpen: boolean;
@@ -154,7 +148,7 @@ export const UIStateContext = createContext<UIState | null>(null);
 export const useUIState = () => {
   const context = useContext(UIStateContext);
   if (!context) {
-    throw new Error('useUIState must be used within a UIStateProvider');
+    throw new Error("useUIState must be used within a UIStateProvider");
   }
   return context;
 };

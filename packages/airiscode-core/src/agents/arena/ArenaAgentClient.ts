@@ -4,24 +4,20 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import * as fs from 'node:fs/promises';
-import * as path from 'node:path';
-import { createDebugLogger } from '../../utils/debugLogger.js';
-import { isNodeError } from '../../utils/errors.js';
-import { atomicWriteJSON } from '../../utils/atomicFileWrite.js';
-import { uiTelemetryService } from '../../telemetry/uiTelemetry.js';
-import type {
-  ArenaAgentStats,
-  ArenaControlSignal,
-  ArenaStatusFile,
-} from './types.js';
-import { safeAgentId } from './types.js';
-import { AgentStatus } from '../runtime/agent-types.js';
+import * as fs from "node:fs/promises";
+import * as path from "node:path";
+import { uiTelemetryService } from "../../telemetry/uiTelemetry.js";
+import { atomicWriteJSON } from "../../utils/atomicFileWrite.js";
+import { createDebugLogger } from "../../utils/debugLogger.js";
+import { isNodeError } from "../../utils/errors.js";
+import { AgentStatus } from "../runtime/agent-types.js";
+import type { ArenaAgentStats, ArenaControlSignal, ArenaStatusFile } from "./types.js";
+import { safeAgentId } from "./types.js";
 
-const debugLogger = createDebugLogger('ARENA_AGENT_CLIENT');
+const debugLogger = createDebugLogger("ARENA_AGENT_CLIENT");
 
-const AGENTS_SUBDIR = 'agents';
-const CONTROL_SUBDIR = 'control';
+const AGENTS_SUBDIR = "agents";
+const CONTROL_SUBDIR = "control";
 
 /**
  * ArenaAgentClient is used by child agent processes to communicate
@@ -50,9 +46,9 @@ export class ArenaAgentClient {
    * and ARENA_SESSION_DIR env vars are present, null otherwise.
    */
   static create(): ArenaAgentClient | null {
-    const agentId = process.env['ARENA_AGENT_ID'];
-    const sessionId = process.env['ARENA_SESSION_ID'];
-    const sessionDir = process.env['ARENA_SESSION_DIR'];
+    const agentId = process.env["ARENA_AGENT_ID"];
+    const sessionId = process.env["ARENA_SESSION_ID"];
+    const sessionDir = process.env["ARENA_SESSION_DIR"];
 
     if (!agentId || !sessionId || !sessionDir) {
       return null;
@@ -81,9 +77,7 @@ export class ArenaAgentClient {
     await fs.mkdir(this.agentsDir, { recursive: true });
     await fs.mkdir(this.controlDir, { recursive: true });
     this.initialized = true;
-    debugLogger.info(
-      `ArenaAgentClient initialized for agent ${this.agentId} at ${this.agentsDir}`,
-    );
+    debugLogger.info(`ArenaAgentClient initialized for agent ${this.agentId} at ${this.agentsDir}`);
   }
 
   /**
@@ -120,21 +114,21 @@ export class ArenaAgentClient {
     await this.ensureInitialized();
 
     try {
-      const content = await fs.readFile(this.controlFilePath, 'utf-8');
+      const content = await fs.readFile(this.controlFilePath, "utf-8");
       // Parse before deleting so a corrupted file isn't silently consumed
       const signal = JSON.parse(content) as ArenaControlSignal;
       await fs.unlink(this.controlFilePath);
       return signal;
     } catch (error: unknown) {
       // File doesn't exist = no signal pending
-      if (isNodeError(error) && error.code === 'ENOENT') {
+      if (isNodeError(error) && error.code === "ENOENT") {
         return null;
       }
       // Re-throw permission errors so they surface immediately
-      if (isNodeError(error) && error.code === 'EACCES') {
+      if (isNodeError(error) && error.code === "EACCES") {
         throw error;
       }
-      debugLogger.error('Error reading control signal:', error);
+      debugLogger.error("Error reading control signal:", error);
       return null;
     }
   }

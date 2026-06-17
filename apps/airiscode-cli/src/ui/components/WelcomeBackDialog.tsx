@@ -4,46 +4,39 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { Box, Text } from 'ink';
-import { Colors } from '../colors.js';
-import { type ProjectSummaryInfo } from '@airiscode/core';
-import {
-  RadioButtonSelect,
-  type RadioSelectItem,
-} from './shared/RadioButtonSelect.js';
-import { useKeypress } from '../hooks/useKeypress.js';
-import { t } from '../../i18n/index.js';
+import { type ProjectSummaryInfo } from "@airiscode/core";
+import { Box, Text } from "ink";
+import { t } from "../../i18n/index.js";
+import { Colors } from "../colors.js";
+import { useKeypress } from "../hooks/useKeypress.js";
+import { RadioButtonSelect, type RadioSelectItem } from "./shared/RadioButtonSelect.js";
 
 interface WelcomeBackDialogProps {
   welcomeBackInfo: ProjectSummaryInfo;
-  onSelect: (choice: 'restart' | 'continue') => void;
+  onSelect: (choice: "restart" | "continue") => void;
   onClose: () => void;
 }
 
-export function WelcomeBackDialog({
-  welcomeBackInfo,
-  onSelect,
-  onClose,
-}: WelcomeBackDialogProps) {
+export function WelcomeBackDialog({ welcomeBackInfo, onSelect, onClose }: WelcomeBackDialogProps) {
   useKeypress(
     (key) => {
-      if (key.name === 'escape') {
+      if (key.name === "escape") {
         onClose();
       }
     },
     { isActive: true },
   );
 
-  const options: Array<RadioSelectItem<'restart' | 'continue'>> = [
+  const options: Array<RadioSelectItem<"restart" | "continue">> = [
     {
-      key: 'restart',
-      label: t('Start new chat session'),
-      value: 'restart',
+      key: "restart",
+      label: t("Start new chat session"),
+      value: "restart",
     },
     {
-      key: 'continue',
-      label: t('Continue previous conversation'),
-      value: 'continue',
+      key: "continue",
+      label: t("Continue previous conversation"),
+      value: "continue",
     },
   ];
 
@@ -68,8 +61,8 @@ export function WelcomeBackDialog({
     >
       <Box flexDirection="column" marginBottom={1}>
         <Text color={Colors.AccentBlue} bold>
-          {t('👋 Welcome back! (Last updated: {{timeAgo}})', {
-            timeAgo: timeAgo || '',
+          {t("👋 Welcome back! (Last updated: {{timeAgo}})", {
+            timeAgo: timeAgo || "",
           })}
         </Text>
       </Box>
@@ -78,7 +71,7 @@ export function WelcomeBackDialog({
       {goalContent && (
         <Box flexDirection="column" marginBottom={1}>
           <Text color={Colors.Foreground} bold>
-            {t('🎯 Overall Goal:')}
+            {t("🎯 Overall Goal:")}
           </Text>
           <Box marginTop={1} paddingLeft={2}>
             <Text color={Colors.Gray}>{goalContent}</Text>
@@ -90,16 +83,16 @@ export function WelcomeBackDialog({
       {totalTasks > 0 && (
         <Box flexDirection="column" marginBottom={1}>
           <Text color={Colors.Foreground} bold>
-            📋 {t('Current Plan:')}
+            📋 {t("Current Plan:")}
           </Text>
           <Box marginTop={1} paddingLeft={2}>
             <Text color={Colors.Gray}>
-              {t('Progress: {{done}}/{{total}} tasks completed', {
+              {t("Progress: {{done}}/{{total}} tasks completed", {
                 done: String(doneCount),
                 total: String(totalTasks),
               })}
               {inProgressCount > 0 &&
-                t(', {{inProgress}} in progress', {
+                t(", {{inProgress}} in progress", {
                   inProgress: String(inProgressCount),
                 })}
             </Text>
@@ -108,7 +101,7 @@ export function WelcomeBackDialog({
           {pendingTasks.length > 0 && (
             <Box flexDirection="column" marginTop={1} paddingLeft={2}>
               <Text color={Colors.Foreground} bold>
-                {t('Pending Tasks:')}
+                {t("Pending Tasks:")}
               </Text>
               {pendingTasks.map((task: string, index: number) => (
                 <Text key={index} color={Colors.Gray}>
@@ -122,8 +115,8 @@ export function WelcomeBackDialog({
 
       {/* Action Selection */}
       <Box flexDirection="column" marginTop={1}>
-        <Text bold>{t('What would you like to do?')}</Text>
-        <Text>{t('Choose how to proceed with your session:')}</Text>
+        <Text bold>{t("What would you like to do?")}</Text>
+        <Text>{t("Choose how to proceed with your session:")}</Text>
       </Box>
 
       <Box marginTop={1}>

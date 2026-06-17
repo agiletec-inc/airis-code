@@ -4,12 +4,12 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import type React from 'react';
-import { Box, Text } from 'ink';
-import { theme } from '../semantic-colors.js';
-import { type IdeContext, type MCPServerConfig } from '@airiscode/gemini-cli-core';
-import { useTerminalSize } from '../hooks/useTerminalSize.js';
-import { isNarrowWidth } from '../utils/isNarrowWidth.js';
+import { type IdeContext, type MCPServerConfig } from "@airiscode/gemini-cli-core";
+import { Box, Text } from "ink";
+import type React from "react";
+import { useTerminalSize } from "../hooks/useTerminalSize.js";
+import { theme } from "../semantic-colors.js";
+import { isNarrowWidth } from "../utils/isNarrowWidth.js";
 
 interface ContextSummaryDisplayProps {
   geminiMdFileCount: number;
@@ -43,44 +43,38 @@ export const ContextSummaryDisplay: React.FC<ContextSummaryDisplayProps> = ({
 
   const openFilesText = (() => {
     if (openFileCount === 0) {
-      return '';
+      return "";
     }
-    return `${openFileCount} open file${
-      openFileCount > 1 ? 's' : ''
-    } (ctrl+g to view)`;
+    return `${openFileCount} open file${openFileCount > 1 ? "s" : ""} (ctrl+g to view)`;
   })();
 
   const geminiMdText = (() => {
     if (geminiMdFileCount === 0) {
-      return '';
+      return "";
     }
     const allNamesTheSame = new Set(contextFileNames).size < 2;
-    const name = allNamesTheSame ? contextFileNames[0] : 'context';
-    return `${geminiMdFileCount} ${name} file${
-      geminiMdFileCount > 1 ? 's' : ''
-    }`;
+    const name = allNamesTheSame ? contextFileNames[0] : "context";
+    return `${geminiMdFileCount} ${name} file${geminiMdFileCount > 1 ? "s" : ""}`;
   })();
 
   const mcpText = (() => {
     if (mcpServerCount === 0 && blockedMcpServerCount === 0) {
-      return '';
+      return "";
     }
 
     const parts = [];
     if (mcpServerCount > 0) {
-      parts.push(
-        `${mcpServerCount} MCP server${mcpServerCount > 1 ? 's' : ''}`,
-      );
+      parts.push(`${mcpServerCount} MCP server${mcpServerCount > 1 ? "s" : ""}`);
     }
 
     if (blockedMcpServerCount > 0) {
       let blockedText = `${blockedMcpServerCount} Blocked`;
       if (mcpServerCount === 0) {
-        blockedText += ` MCP server${blockedMcpServerCount > 1 ? 's' : ''}`;
+        blockedText += ` MCP server${blockedMcpServerCount > 1 ? "s" : ""}`;
       }
       parts.push(blockedText);
     }
-    return parts.join(', ');
+    return parts.join(", ");
   })();
 
   const summaryParts = [openFilesText, geminiMdText, mcpText].filter(Boolean);
@@ -91,7 +85,7 @@ export const ContextSummaryDisplay: React.FC<ContextSummaryDisplayProps> = ({
         <Text color={theme.text.secondary}>Using:</Text>
         {summaryParts.map((part, index) => (
           <Text key={index} color={theme.text.secondary}>
-            {'  '}- {part}
+            {"  "}- {part}
           </Text>
         ))}
       </Box>
@@ -100,9 +94,7 @@ export const ContextSummaryDisplay: React.FC<ContextSummaryDisplayProps> = ({
 
   return (
     <Box paddingX={1}>
-      <Text color={theme.text.secondary}>
-        Using: {summaryParts.join(' | ')}
-      </Text>
+      <Text color={theme.text.secondary}>Using: {summaryParts.join(" | ")}</Text>
     </Box>
   );
 };

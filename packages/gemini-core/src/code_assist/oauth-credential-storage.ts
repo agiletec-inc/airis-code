@@ -4,23 +4,21 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { type Credentials } from 'google-auth-library';
-import { HybridTokenStorage } from '../mcp/token-storage/hybrid-token-storage.js';
-import { OAUTH_FILE } from '../config/storage.js';
-import type { OAuthCredentials } from '../mcp/token-storage/types.js';
-import * as path from 'node:path';
-import * as os from 'node:os';
-import { promises as fs } from 'node:fs';
-import { GEMINI_DIR } from '../utils/paths.js';
-import { coreEvents } from '../utils/events.js';
+import { promises as fs } from "node:fs";
+import * as os from "node:os";
+import * as path from "node:path";
+import { type Credentials } from "google-auth-library";
+import { OAUTH_FILE } from "../config/storage.js";
+import { HybridTokenStorage } from "../mcp/token-storage/hybrid-token-storage.js";
+import type { OAuthCredentials } from "../mcp/token-storage/types.js";
+import { coreEvents } from "../utils/events.js";
+import { GEMINI_DIR } from "../utils/paths.js";
 
-const KEYCHAIN_SERVICE_NAME = 'gemini-cli-oauth';
-const MAIN_ACCOUNT_KEY = 'main-account';
+const KEYCHAIN_SERVICE_NAME = "gemini-cli-oauth";
+const MAIN_ACCOUNT_KEY = "main-account";
 
 export class OAuthCredentialStorage {
-  private static storage: HybridTokenStorage = new HybridTokenStorage(
-    KEYCHAIN_SERVICE_NAME,
-  );
+  private static storage: HybridTokenStorage = new HybridTokenStorage(KEYCHAIN_SERVICE_NAME);
 
   /**
    * Load cached OAuth credentials
@@ -30,8 +28,7 @@ export class OAuthCredentialStorage {
       const credentials = await this.storage.getCredentials(MAIN_ACCOUNT_KEY);
 
       if (credentials?.token) {
-        const { accessToken, refreshToken, expiresAt, tokenType, scope } =
-          credentials.token;
+        const { accessToken, refreshToken, expiresAt, tokenType, scope } = credentials.token;
         // Convert from OAuthCredentials format to Google Credentials format
         const googleCreds: Credentials = {
           access_token: accessToken,
@@ -50,12 +47,8 @@ export class OAuthCredentialStorage {
       // Fallback: Try to migrate from old file-based storage
       return await this.migrateFromFileStorage();
     } catch (error: unknown) {
-      coreEvents.emitFeedback(
-        'error',
-        'Failed to load OAuth credentials',
-        error,
-      );
-      throw new Error('Failed to load OAuth credentials', { cause: error });
+      coreEvents.emitFeedback("error", "Failed to load OAuth credentials", error);
+      throw new Error("Failed to load OAuth credentials", { cause: error });
     }
   }
 
@@ -64,7 +57,7 @@ export class OAuthCredentialStorage {
    */
   static async saveCredentials(credentials: Credentials): Promise<void> {
     if (!credentials.access_token) {
-      throw new Error('Attempted to save credentials without an access token.');
+      throw new Error("Attempted to save credentials without an access token.");
     }
 
     // Convert Google Credentials to OAuthCredentials format
@@ -73,7 +66,7 @@ export class OAuthCredentialStorage {
       token: {
         accessToken: credentials.access_token,
         refreshToken: credentials.refresh_token || undefined,
-        tokenType: credentials.token_type || 'Bearer',
+        tokenType: credentials.token_type || "Bearer",
         scope: credentials.scope || undefined,
         expiresAt: credentials.expiry_date || undefined,
       },
@@ -94,12 +87,8 @@ export class OAuthCredentialStorage {
       const oldFilePath = path.join(os.homedir(), GEMINI_DIR, OAUTH_FILE);
       await fs.rm(oldFilePath, { force: true }).catch(() => {});
     } catch (error: unknown) {
-      coreEvents.emitFeedback(
-        'error',
-        'Failed to clear OAuth credentials',
-        error,
-      );
-      throw new Error('Failed to clear OAuth credentials', { cause: error });
+      coreEvents.emitFeedback("error", "Failed to clear OAuth credentials", error);
+      throw new Error("Failed to clear OAuth credentials", { cause: error });
     }
   }
 
@@ -111,13 +100,13 @@ export class OAuthCredentialStorage {
 
     let credsJson: string;
     try {
-      credsJson = await fs.readFile(oldFilePath, 'utf-8');
+      credsJson = await fs.readFile(oldFilePath, "utf-8");
     } catch (error: unknown) {
       if (
-        typeof error === 'object' &&
+        typeof error === "object" &&
         error !== null &&
-        'code' in error &&
-        error.code === 'ENOENT'
+        "code" in error &&
+        error.code === "ENOENT"
       ) {
         // File doesn't exist, so no migration.
         return null;

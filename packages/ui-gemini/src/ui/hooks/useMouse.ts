@@ -4,9 +4,9 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { useEffect } from 'react';
-import type { MouseHandler, MouseEvent } from '../contexts/MouseContext.js';
-import { useMouseContext } from '../contexts/MouseContext.js';
+import { useEffect } from "react";
+import type { MouseEvent, MouseHandler } from "../contexts/MouseContext.js";
+import { useMouseContext } from "../contexts/MouseContext.js";
 
 export type { MouseEvent };
 
@@ -17,10 +17,7 @@ export type { MouseEvent };
  * @param options - Options to control the hook's behavior.
  * @param options.isActive - Whether the hook should be actively listening for input.
  */
-export function useMouse(
-  onMouseEvent: MouseHandler,
-  { isActive }: { isActive: boolean },
-) {
+export function useMouse(onMouseEvent: MouseHandler, { isActive }: { isActive: boolean }) {
   const { subscribe, unsubscribe } = useMouseContext();
 
   useEffect(() => {

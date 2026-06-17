@@ -2,23 +2,23 @@
  * MCP client implementation
  */
 
-import type {
-  McpClientConfig,
-  McpToolMeta,
-  McpToolSpec,
-  McpToolInvocation,
-  McpToolResult,
-  McpListToolsResponse,
-  McpListServersResponse,
-  McpServerInfo,
-} from './types.js';
 import {
   McpConnectionError,
-  McpToolNotFoundError,
   McpInvocationError,
-  McpTimeoutError,
   McpServerError,
-} from './errors.js';
+  McpTimeoutError,
+  McpToolNotFoundError,
+} from "./errors.js";
+import type {
+  McpClientConfig,
+  McpListServersResponse,
+  McpListToolsResponse,
+  McpServerInfo,
+  McpToolInvocation,
+  McpToolMeta,
+  McpToolResult,
+  McpToolSpec,
+} from "./types.js";
 
 /**
  * MCP client for communicating with AIRIS MCP Gateway
@@ -36,9 +36,9 @@ export class McpClient {
 
   constructor(config: McpClientConfig = {}) {
     this.config = {
-      gatewayUrl: config.gatewayUrl || 'http://localhost:3000',
+      gatewayUrl: config.gatewayUrl || "http://localhost:3000",
       timeout: config.timeout || 30000,
-      apiKey: config.apiKey || '',
+      apiKey: config.apiKey || "",
       headers: config.headers || {},
       enableCache: config.enableCache !== false,
       cacheTTL: config.cacheTTL || 300000, // 5 minutes
@@ -49,9 +49,9 @@ export class McpClient {
    * List available tools (metadata only, lazy loading)
    */
   async listTools(server?: string): Promise<McpListToolsResponse> {
-    const url = new URL('/mcp/tools', this.config.gatewayUrl);
+    const url = new URL("/mcp/tools", this.config.gatewayUrl);
     if (server) {
-      url.searchParams.set('server', server);
+      url.searchParams.set("server", server);
     }
 
     try {
@@ -65,8 +65,8 @@ export class McpClient {
       };
     } catch (error) {
       throw new McpConnectionError(
-        `Failed to list tools: ${error instanceof Error ? error.message : 'Unknown error'}`,
-        url.toString()
+        `Failed to list tools: ${error instanceof Error ? error.message : "Unknown error"}`,
+        url.toString(),
       );
     }
   }
@@ -105,8 +105,8 @@ export class McpClient {
         throw new McpToolNotFoundError(name);
       }
       throw new McpConnectionError(
-        `Failed to get tool spec: ${error instanceof Error ? error.message : 'Unknown error'}`,
-        url
+        `Failed to get tool spec: ${error instanceof Error ? error.message : "Unknown error"}`,
+        url,
       );
     }
   }
@@ -121,7 +121,7 @@ export class McpClient {
 
     try {
       const response = await this.fetch(url, {
-        method: 'POST',
+        method: "POST",
         body: JSON.stringify(invocation.arguments),
       });
 
@@ -134,16 +134,15 @@ export class McpClient {
         executionTime,
       };
     } catch (error) {
-      const executionTime = Date.now() - startTime;
 
       if (error instanceof McpServerError && error.statusCode === 404) {
         throw new McpToolNotFoundError(invocation.name);
       }
 
       throw new McpInvocationError(
-        `Tool invocation failed: ${error instanceof Error ? error.message : 'Unknown error'}`,
+        `Tool invocation failed: ${error instanceof Error ? error.message : "Unknown error"}`,
         invocation.name,
-        error
+        error,
       );
     }
   }
@@ -164,8 +163,8 @@ export class McpClient {
       };
     } catch (error) {
       throw new McpConnectionError(
-        `Failed to list servers: ${error instanceof Error ? error.message : 'Unknown error'}`,
-        url
+        `Failed to list servers: ${error instanceof Error ? error.message : "Unknown error"}`,
+        url,
       );
     }
   }
@@ -181,8 +180,8 @@ export class McpClient {
       return (await response.json()) as McpServerInfo;
     } catch (error) {
       throw new McpConnectionError(
-        `Failed to get server info: ${error instanceof Error ? error.message : 'Unknown error'}`,
-        url
+        `Failed to get server info: ${error instanceof Error ? error.message : "Unknown error"}`,
+        url,
       );
     }
   }
@@ -218,24 +217,24 @@ export class McpClient {
       method?: string;
       headers?: Record<string, string>;
       body?: string;
-    }
+    },
   ): Promise<Response> {
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), this.config.timeout);
 
     try {
       const headers: Record<string, string> = {
-        'Content-Type': 'application/json',
+        "Content-Type": "application/json",
         ...this.config.headers,
         ...options?.headers,
       };
 
       if (this.config.apiKey) {
-        headers['Authorization'] = `Bearer ${this.config.apiKey}`;
+        headers["Authorization"] = `Bearer ${this.config.apiKey}`;
       }
 
       const response = await fetch(url, {
-        method: options?.method || 'GET',
+        method: options?.method || "GET",
         headers,
         body: options?.body,
         signal: controller.signal,
@@ -245,13 +244,13 @@ export class McpClient {
         throw new McpServerError(
           `HTTP ${response.status}: ${response.statusText}`,
           undefined,
-          response.status
+          response.status,
         );
       }
 
       return response;
     } catch (error) {
-      if (error instanceof Error && error.name === 'AbortError') {
+      if (error instanceof Error && error.name === "AbortError") {
         throw new McpTimeoutError(`Request timed out after ${this.config.timeout}ms`);
       }
       throw error;

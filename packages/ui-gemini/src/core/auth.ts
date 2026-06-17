@@ -4,11 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import {
-  type AuthType,
-  type Config,
-  getErrorMessage,
-} from '@airiscode/gemini-cli-core';
+import { type AuthType, type Config, getErrorMessage } from "@airiscode/gemini-cli-core";
 
 /**
  * Handles the initial authentication flow.

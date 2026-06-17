@@ -4,9 +4,9 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { Text } from 'ink';
-import { theme } from '../semantic-colors.js';
-import { tokenLimit } from '@airiscode/gemini-cli-core';
+import { tokenLimit } from "@airiscode/gemini-cli-core";
+import { Text } from "ink";
+import { theme } from "../semantic-colors.js";
 
 export const ContextUsageDisplay = ({
   promptTokenCount,
@@ -20,7 +20,7 @@ export const ContextUsageDisplay = ({
   const percentage = promptTokenCount / tokenLimit(model);
   const percentageLeft = ((1 - percentage) * 100).toFixed(0);
 
-  const label = terminalWidth < 100 ? '%' : '% context left';
+  const label = terminalWidth < 100 ? "%" : "% context left";
 
   return (
     <Text color={theme.text.secondary}>

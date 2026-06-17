@@ -4,8 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import * as fs from 'node:fs';
-import * as util from 'node:util';
+import * as fs from "node:fs";
+import * as util from "node:util";
 
 /**
  * A simple, centralized logger for developer-facing debug messages.
@@ -23,15 +23,15 @@ class DebugLogger {
   private logStream: fs.WriteStream | undefined;
 
   constructor() {
-    this.logStream = process.env['GEMINI_DEBUG_LOG_FILE']
-      ? fs.createWriteStream(process.env['GEMINI_DEBUG_LOG_FILE'], {
-          flags: 'a',
+    this.logStream = process.env["GEMINI_DEBUG_LOG_FILE"]
+      ? fs.createWriteStream(process.env["GEMINI_DEBUG_LOG_FILE"], {
+          flags: "a",
         })
       : undefined;
     // Handle potential errors with the stream
-    this.logStream?.on('error', (err) => {
+    this.logStream?.on("error", (err) => {
       // Log to console as a fallback, but don't crash the app
-      console.error('Error writing to debug log stream:', err);
+      console.error("Error writing to debug log stream:", err);
     });
   }
 
@@ -45,22 +45,22 @@ class DebugLogger {
   }
 
   log(...args: unknown[]): void {
-    this.writeToFile('LOG', args);
+    this.writeToFile("LOG", args);
     console.log(...args);
   }
 
   warn(...args: unknown[]): void {
-    this.writeToFile('WARN', args);
+    this.writeToFile("WARN", args);
     console.warn(...args);
   }
 
   error(...args: unknown[]): void {
-    this.writeToFile('ERROR', args);
+    this.writeToFile("ERROR", args);
     console.error(...args);
   }
 
   debug(...args: unknown[]): void {
-    this.writeToFile('DEBUG', args);
+    this.writeToFile("DEBUG", args);
     console.debug(...args);
   }
 }

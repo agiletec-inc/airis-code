@@ -4,32 +4,28 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import open from 'open';
-import process from 'node:process';
-import {
-  type CommandContext,
-  type SlashCommand,
-  CommandKind,
-} from './types.js';
-import { MessageType } from '../types.js';
-import { t, getCurrentLanguage } from '../../i18n/index.js';
+import process from "node:process";
+import open from "open";
+import { getCurrentLanguage, t } from "../../i18n/index.js";
+import { MessageType } from "../types.js";
+import { type CommandContext, CommandKind, type SlashCommand } from "./types.js";
 
 export const docsCommand: SlashCommand = {
-  name: 'docs',
+  name: "docs",
   get description() {
-    return t('open full AIRIS Code documentation in your browser');
+    return t("open full AIRIS Code documentation in your browser");
   },
   kind: CommandKind.BUILT_IN,
   action: async (context: CommandContext): Promise<void> => {
-    const langPath = getCurrentLanguage()?.startsWith('zh') ? 'zh' : 'en';
+    const langPath = getCurrentLanguage()?.startsWith("zh") ? "zh" : "en";
     const docsUrl = `https://qwenlm.github.io/airiscode-docs/${langPath}`;
 
-    if (process.env['SANDBOX'] && process.env['SANDBOX'] !== 'sandbox-exec') {
+    if (process.env["SANDBOX"] && process.env["SANDBOX"] !== "sandbox-exec") {
       context.ui.addItem(
         {
           type: MessageType.INFO,
           text: t(
-            'Please open the following URL in your browser to view the documentation:\n{{url}}',
+            "Please open the following URL in your browser to view the documentation:\n{{url}}",
             {
               url: docsUrl,
             },
@@ -41,7 +37,7 @@ export const docsCommand: SlashCommand = {
       context.ui.addItem(
         {
           type: MessageType.INFO,
-          text: t('Opening documentation in your browser: {{url}}', {
+          text: t("Opening documentation in your browser: {{url}}", {
             url: docsUrl,
           }),
         },

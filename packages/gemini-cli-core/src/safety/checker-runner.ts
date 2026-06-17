@@ -4,17 +4,17 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { spawn } from 'node:child_process';
-import type { FunctionCall } from '@google/genai';
+import { spawn } from "node:child_process";
+import type { FunctionCall } from "@google/genai";
 import type {
-  SafetyCheckerConfig,
-  InProcessCheckerConfig,
   ExternalCheckerConfig,
-} from '../policy/types.js';
-import type { SafetyCheckInput, SafetyCheckResult } from './protocol.js';
-import { SafetyCheckDecision } from './protocol.js';
-import type { CheckerRegistry } from './registry.js';
-import type { ContextBuilder } from './context-builder.js';
+  InProcessCheckerConfig,
+  SafetyCheckerConfig,
+} from "../policy/types.js";
+import type { ContextBuilder } from "./context-builder.js";
+import type { SafetyCheckInput, SafetyCheckResult } from "./protocol.js";
+import { SafetyCheckDecision } from "./protocol.js";
+import type { CheckerRegistry } from "./registry.js";
 
 /**
  * Configuration for the checker runner.
@@ -59,7 +59,7 @@ export class CheckerRunner {
     toolCall: FunctionCall,
     checkerConfig: SafetyCheckerConfig,
   ): Promise<SafetyCheckResult> {
-    if (checkerConfig.type === 'in-process') {
+    if (checkerConfig.type === "in-process") {
       return this.runInProcessChecker(toolCall, checkerConfig);
     }
     return this.runExternalChecker(toolCall, checkerConfig);
@@ -72,13 +72,11 @@ export class CheckerRunner {
     try {
       const checker = this.registry.resolveInProcess(checkerConfig.name);
       const context = checkerConfig.required_context
-        ? this.contextBuilder.buildMinimalContext(
-            checkerConfig.required_context,
-          )
+        ? this.contextBuilder.buildMinimalContext(checkerConfig.required_context)
         : this.contextBuilder.buildFullContext();
 
       const input: SafetyCheckInput = {
-        protocolVersion: '1.0.0',
+        protocolVersion: "1.0.0",
         toolCall,
         context,
         config: checkerConfig.config,
@@ -107,25 +105,19 @@ export class CheckerRunner {
 
       // Build the appropriate context
       const context = checkerConfig.required_context
-        ? this.contextBuilder.buildMinimalContext(
-            checkerConfig.required_context,
-          )
+        ? this.contextBuilder.buildMinimalContext(checkerConfig.required_context)
         : this.contextBuilder.buildFullContext();
 
       // Create the input payload
       const input: SafetyCheckInput = {
-        protocolVersion: '1.0.0',
+        protocolVersion: "1.0.0",
         toolCall,
         context,
         config: checkerConfig.config,
       };
 
       // Run the checker process
-      return await this.executeCheckerProcess(
-        checkerPath,
-        input,
-        checkerConfig.name,
-      );
+      return await this.executeCheckerProcess(checkerPath, input, checkerConfig.name);
     } catch (error) {
       // If anything goes wrong, deny the operation
       return {
@@ -147,11 +139,11 @@ export class CheckerRunner {
   ): Promise<SafetyCheckResult> {
     return new Promise((resolve) => {
       const child = spawn(checkerPath, [], {
-        stdio: ['pipe', 'pipe', 'pipe'],
+        stdio: ["pipe", "pipe", "pipe"],
       });
 
-      let stdout = '';
-      let stderr = '';
+      let stdout = "";
+      let stderr = "";
       let timeoutHandle: NodeJS.Timeout | null = null;
       let killed = false;
 
@@ -160,7 +152,7 @@ export class CheckerRunner {
       // Set up timeout
       timeoutHandle = setTimeout(() => {
         killed = true;
-        child.kill('SIGTERM');
+        child.kill("SIGTERM");
         resolve({
           decision: SafetyCheckDecision.DENY,
           reason: `Safety checker "${checkerName}" timed out after ${this.timeout}ms`,
@@ -169,26 +161,26 @@ export class CheckerRunner {
         // Fallback: if process doesn't exit after 5s, force kill
         setTimeout(() => {
           if (!exited) {
-            child.kill('SIGKILL');
+            child.kill("SIGKILL");
           }
         }, 5000).unref();
       }, this.timeout);
 
       // Collect output
       if (child.stdout) {
-        child.stdout.on('data', (data: Buffer) => {
+        child.stdout.on("data", (data: Buffer) => {
           stdout += data.toString();
         });
       }
 
       if (child.stderr) {
-        child.stderr.on('data', (data: Buffer) => {
+        child.stderr.on("data", (data: Buffer) => {
           stderr += data.toString();
         });
       }
 
       // Handle process completion
-      child.on('close', (code: number | null) => {
+      child.on("close", (code: number | null) => {
         exited = true;
         if (timeoutHandle) {
           clearTimeout(timeoutHandle);
@@ -204,7 +196,7 @@ export class CheckerRunner {
           resolve({
             decision: SafetyCheckDecision.DENY,
             reason: `Safety checker "${checkerName}" exited with code ${code}${
-              stderr ? `: ${stderr}` : ''
+              stderr ? `: ${stderr}` : ""
             }`,
           });
           return;
@@ -215,13 +207,8 @@ export class CheckerRunner {
           const result: SafetyCheckResult = JSON.parse(stdout);
 
           // Validate the result structure
-          if (
-            !result.decision ||
-            !Object.values(SafetyCheckDecision).includes(result.decision)
-          ) {
-            throw new Error(
-              'Invalid result: missing or invalid "decision" field',
-            );
+          if (!result.decision || !Object.values(SafetyCheckDecision).includes(result.decision)) {
+            throw new Error('Invalid result: missing or invalid "decision" field');
           }
 
           resolve(result);
@@ -229,16 +216,14 @@ export class CheckerRunner {
           resolve({
             decision: SafetyCheckDecision.DENY,
             reason: `Failed to parse output from safety checker "${checkerName}": ${
-              parseError instanceof Error
-                ? parseError.message
-                : String(parseError)
+              parseError instanceof Error ? parseError.message : String(parseError)
             }`,
           });
         }
       });
 
       // Handle process errors
-      child.on('error', (error: Error) => {
+      child.on("error", (error: Error) => {
         if (timeoutHandle) {
           clearTimeout(timeoutHandle);
         }
@@ -257,7 +242,7 @@ export class CheckerRunner {
           child.stdin.write(JSON.stringify(input));
           child.stdin.end();
         } else {
-          throw new Error('Failed to open stdin for checker process');
+          throw new Error("Failed to open stdin for checker process");
         }
       } catch (writeError) {
         if (timeoutHandle) {
@@ -268,9 +253,7 @@ export class CheckerRunner {
         resolve({
           decision: SafetyCheckDecision.DENY,
           reason: `Failed to write to stdin of safety checker "${checkerName}": ${
-            writeError instanceof Error
-              ? writeError.message
-              : String(writeError)
+            writeError instanceof Error ? writeError.message : String(writeError)
           }`,
         });
       }

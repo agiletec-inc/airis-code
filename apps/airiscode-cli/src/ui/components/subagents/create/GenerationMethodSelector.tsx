@@ -4,28 +4,28 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { Box } from 'ink';
-import { RadioButtonSelect } from '../../shared/RadioButtonSelect.js';
-import type { WizardStepProps } from '../types.js';
-import { t } from '../../../../i18n/index.js';
+import { Box } from "ink";
+import { t } from "../../../../i18n/index.js";
+import { RadioButtonSelect } from "../../shared/RadioButtonSelect.js";
+import type { WizardStepProps } from "../types.js";
 
 interface GenerationOption {
   label: string;
-  value: 'airiscode' | 'manual';
+  value: "airiscode" | "manual";
 }
 
 const generationOptions: GenerationOption[] = [
   {
     get label() {
-      return t('Generate with AIRIS Code (Recommended)');
+      return t("Generate with AIRIS Code (Recommended)");
     },
-    value: 'airiscode',
+    value: "airiscode",
   },
   {
     get label() {
-      return t('Manual Creation');
+      return t("Manual Creation");
     },
-    value: 'manual',
+    value: "manual",
   },
 ];
 
@@ -39,8 +39,8 @@ export function GenerationMethodSelector({
   onPrevious: _onPrevious,
 }: WizardStepProps) {
   const handleSelect = (selectedValue: string) => {
-    const method = selectedValue as 'airiscode' | 'manual';
-    dispatch({ type: 'SET_GENERATION_METHOD', method });
+    const method = selectedValue as "airiscode" | "manual";
+    dispatch({ type: "SET_GENERATION_METHOD", method });
     onNext();
   };
 
@@ -52,9 +52,7 @@ export function GenerationMethodSelector({
           label: option.label,
           value: option.value,
         }))}
-        initialIndex={generationOptions.findIndex(
-          (opt) => opt.value === state.generationMethod,
-        )}
+        initialIndex={generationOptions.findIndex((opt) => opt.value === state.generationMethod)}
         onSelect={handleSelect}
         isFocused={true}
       />

@@ -4,15 +4,11 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { CodeAssistServer, getCodeAssistServer } from '@airiscode/gemini-cli-core';
-import type { HistoryItemStats } from '../types.js';
-import { MessageType } from '../types.js';
-import { formatDuration } from '../utils/formatters.js';
-import {
-  type CommandContext,
-  type SlashCommand,
-  CommandKind,
-} from './types.js';
+import { CodeAssistServer, getCodeAssistServer } from "@airiscode/gemini-cli-core";
+import type { HistoryItemStats } from "../types.js";
+import { MessageType } from "../types.js";
+import { formatDuration } from "../utils/formatters.js";
+import { type CommandContext, CommandKind, type SlashCommand } from "./types.js";
 
 async function defaultSessionView(context: CommandContext) {
   const now = new Date();
@@ -21,7 +17,7 @@ async function defaultSessionView(context: CommandContext) {
     context.ui.addItem(
       {
         type: MessageType.ERROR,
-        text: 'Session start time is unavailable, cannot calculate stats.',
+        text: "Session start time is unavailable, cannot calculate stats.",
       },
       Date.now(),
     );
@@ -48,9 +44,9 @@ async function defaultSessionView(context: CommandContext) {
 }
 
 export const statsCommand: SlashCommand = {
-  name: 'stats',
-  altNames: ['usage'],
-  description: 'Check session stats. Usage: /stats [session|model|tools]',
+  name: "stats",
+  altNames: ["usage"],
+  description: "Check session stats. Usage: /stats [session|model|tools]",
   kind: CommandKind.BUILT_IN,
   autoExecute: false,
   action: async (context: CommandContext) => {
@@ -58,8 +54,8 @@ export const statsCommand: SlashCommand = {
   },
   subCommands: [
     {
-      name: 'session',
-      description: 'Show session-specific usage statistics',
+      name: "session",
+      description: "Show session-specific usage statistics",
       kind: CommandKind.BUILT_IN,
       autoExecute: true,
       action: async (context: CommandContext) => {
@@ -67,8 +63,8 @@ export const statsCommand: SlashCommand = {
       },
     },
     {
-      name: 'model',
-      description: 'Show model-specific usage statistics',
+      name: "model",
+      description: "Show model-specific usage statistics",
       kind: CommandKind.BUILT_IN,
       autoExecute: true,
       action: (context: CommandContext) => {
@@ -81,8 +77,8 @@ export const statsCommand: SlashCommand = {
       },
     },
     {
-      name: 'tools',
-      description: 'Show tool-specific usage statistics',
+      name: "tools",
+      description: "Show tool-specific usage statistics",
       kind: CommandKind.BUILT_IN,
       autoExecute: true,
       action: (context: CommandContext) => {

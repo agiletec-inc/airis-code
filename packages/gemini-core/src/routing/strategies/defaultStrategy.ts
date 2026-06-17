@@ -4,17 +4,13 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import type { Config } from '../../config/config.js';
-import type { BaseLlmClient } from '../../core/baseLlmClient.js';
-import type {
-  RoutingContext,
-  RoutingDecision,
-  TerminalStrategy,
-} from '../routingStrategy.js';
-import { DEFAULT_GEMINI_MODEL } from '../../config/models.js';
+import type { Config } from "../../config/config.js";
+import { DEFAULT_GEMINI_MODEL } from "../../config/models.js";
+import type { BaseLlmClient } from "../../core/baseLlmClient.js";
+import type { RoutingContext, RoutingDecision, TerminalStrategy } from "../routingStrategy.js";
 
 export class DefaultStrategy implements TerminalStrategy {
-  readonly name = 'default';
+  readonly name = "default";
 
   async route(
     _context: RoutingContext,

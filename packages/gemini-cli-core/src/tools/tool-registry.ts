@@ -4,32 +4,25 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import type { FunctionDeclaration } from '@google/genai';
-import type {
-  AnyDeclarativeTool,
-  ToolResult,
-  ToolInvocation,
-} from './tools.js';
-import { Kind, BaseDeclarativeTool, BaseToolInvocation } from './tools.js';
-import type { Config } from '../config/config.js';
-import { spawn } from 'node:child_process';
-import { StringDecoder } from 'node:string_decoder';
-import { DiscoveredMCPTool } from './mcp-tool.js';
-import { parse } from 'shell-quote';
-import { ToolErrorType } from './tool-error.js';
-import { safeJsonStringify } from '../utils/safeJsonStringify.js';
-import type { MessageBus } from '../confirmation-bus/message-bus.js';
-import { debugLogger } from '../utils/debugLogger.js';
-import { coreEvents } from '../utils/events.js';
+import { spawn } from "node:child_process";
+import { StringDecoder } from "node:string_decoder";
+import type { FunctionDeclaration } from "@google/genai";
+import { parse } from "shell-quote";
+import type { Config } from "../config/config.js";
+import type { MessageBus } from "../confirmation-bus/message-bus.js";
+import { debugLogger } from "../utils/debugLogger.js";
+import { coreEvents } from "../utils/events.js";
+import { safeJsonStringify } from "../utils/safeJsonStringify.js";
+import { DiscoveredMCPTool } from "./mcp-tool.js";
+import { ToolErrorType } from "./tool-error.js";
+import type { AnyDeclarativeTool, ToolInvocation, ToolResult } from "./tools.js";
+import { BaseDeclarativeTool, BaseToolInvocation, Kind } from "./tools.js";
 
-export const DISCOVERED_TOOL_PREFIX = 'discovered_tool_';
+export const DISCOVERED_TOOL_PREFIX = "discovered_tool_";
 
 type ToolParams = Record<string, unknown>;
 
-class DiscoveredToolInvocation extends BaseToolInvocation<
-  ToolParams,
-  ToolResult
-> {
+class DiscoveredToolInvocation extends BaseToolInvocation<ToolParams, ToolResult> {
   constructor(
     private readonly config: Config,
     private readonly originalToolName: string,
@@ -53,8 +46,8 @@ class DiscoveredToolInvocation extends BaseToolInvocation<
     child.stdin.write(JSON.stringify(this.params));
     child.stdin.end();
 
-    let stdout = '';
-    let stderr = '';
+    let stdout = "";
+    let stderr = "";
     let error: Error | null = null;
     let code: number | null = null;
     let signal: NodeJS.Signals | null = null;
@@ -72,10 +65,7 @@ class DiscoveredToolInvocation extends BaseToolInvocation<
         error = err;
       };
 
-      const onClose = (
-        _code: number | null,
-        _signal: NodeJS.Signals | null,
-      ) => {
+      const onClose = (_code: number | null, _signal: NodeJS.Signals | null) => {
         code = _code;
         signal = _signal;
         cleanup();
@@ -83,30 +73,30 @@ class DiscoveredToolInvocation extends BaseToolInvocation<
       };
 
       const cleanup = () => {
-        child.stdout.removeListener('data', onStdout);
-        child.stderr.removeListener('data', onStderr);
-        child.removeListener('error', onError);
-        child.removeListener('close', onClose);
+        child.stdout.removeListener("data", onStdout);
+        child.stderr.removeListener("data", onStderr);
+        child.removeListener("error", onError);
+        child.removeListener("close", onClose);
         if (child.connected) {
           child.disconnect();
         }
       };
 
-      child.stdout.on('data', onStdout);
-      child.stderr.on('data', onStderr);
-      child.on('error', onError);
-      child.on('close', onClose);
+      child.stdout.on("data", onStdout);
+      child.stderr.on("data", onStderr);
+      child.on("error", onError);
+      child.on("close", onClose);
     });
 
     // if there is any error, non-zero exit code, signal, or stderr, return error details instead of stdout
     if (error || code !== 0 || signal || stderr) {
       const llmContent = [
-        `Stdout: ${stdout || '(empty)'}`,
-        `Stderr: ${stderr || '(empty)'}`,
-        `Error: ${error ?? '(none)'}`,
-        `Exit Code: ${code ?? '(none)'}`,
-        `Signal: ${signal ?? '(none)'}`,
-      ].join('\n');
+        `Stdout: ${stdout || "(empty)"}`,
+        `Stderr: ${stderr || "(empty)"}`,
+        `Error: ${error ?? "(none)"}`,
+        `Exit Code: ${code ?? "(none)"}`,
+        `Signal: ${signal ?? "(none)"}`,
+      ].join("\n");
       return {
         llmContent,
         returnDisplay: llmContent,
@@ -124,10 +114,7 @@ class DiscoveredToolInvocation extends BaseToolInvocation<
   }
 }
 
-export class DiscoveredTool extends BaseDeclarativeTool<
-  ToolParams,
-  ToolResult
-> {
+export class DiscoveredTool extends BaseDeclarativeTool<ToolParams, ToolResult> {
   private readonly originalName: string;
 
   constructor(
@@ -221,9 +208,7 @@ export class ToolRegistry {
         tool = tool.asFullyQualifiedTool();
       } else {
         // Decide on behavior: throw error, log warning, or allow overwrite
-        debugLogger.warn(
-          `Tool with name "${tool.name}" is already registered. Overwriting.`,
-        );
+        debugLogger.warn(`Tool with name "${tool.name}" is already registered. Overwriting.`);
       }
     }
     this.allKnownTools.set(tool.name, tool);
@@ -306,15 +291,13 @@ export class ToolRegistry {
     try {
       const cmdParts = parse(discoveryCmd);
       if (cmdParts.length === 0) {
-        throw new Error(
-          'Tool discovery command is empty or contains only whitespace.',
-        );
+        throw new Error("Tool discovery command is empty or contains only whitespace.");
       }
       const proc = spawn(cmdParts[0] as string, cmdParts.slice(1) as string[]);
-      let stdout = '';
-      const stdoutDecoder = new StringDecoder('utf8');
-      let stderr = '';
-      const stderrDecoder = new StringDecoder('utf8');
+      let stdout = "";
+      const stdoutDecoder = new StringDecoder("utf8");
+      let stderr = "";
+      const stderrDecoder = new StringDecoder("utf8");
       let sizeLimitExceeded = false;
       const MAX_STDOUT_SIZE = 10 * 1024 * 1024; // 10MB limit
       const MAX_STDERR_SIZE = 10 * 1024 * 1024; // 10MB limit
@@ -322,7 +305,7 @@ export class ToolRegistry {
       let stdoutByteLength = 0;
       let stderrByteLength = 0;
 
-      proc.stdout.on('data', (data) => {
+      proc.stdout.on("data", (data) => {
         if (sizeLimitExceeded) return;
         if (stdoutByteLength + data.length > MAX_STDOUT_SIZE) {
           sizeLimitExceeded = true;
@@ -333,7 +316,7 @@ export class ToolRegistry {
         stdout += stdoutDecoder.write(data);
       });
 
-      proc.stderr.on('data', (data) => {
+      proc.stderr.on("data", (data) => {
         if (sizeLimitExceeded) return;
         if (stderrByteLength + data.length > MAX_STDERR_SIZE) {
           sizeLimitExceeded = true;
@@ -345,8 +328,8 @@ export class ToolRegistry {
       });
 
       await new Promise<void>((resolve, reject) => {
-        proc.on('error', reject);
-        proc.on('close', (code) => {
+        proc.on("error", reject);
+        proc.on("close", (code) => {
           stdout += stdoutDecoder.end();
           stderr += stderrDecoder.end();
 
@@ -360,13 +343,11 @@ export class ToolRegistry {
 
           if (code !== 0) {
             coreEvents.emitFeedback(
-              'error',
+              "error",
               `Tool discovery command failed with code ${code}.`,
               stderr,
             );
-            return reject(
-              new Error(`Tool discovery command failed with exit code ${code}`),
-            );
+            return reject(new Error(`Tool discovery command failed with exit code ${code}`));
           }
           resolve();
         });
@@ -377,18 +358,16 @@ export class ToolRegistry {
       const discoveredItems = JSON.parse(stdout.trim());
 
       if (!discoveredItems || !Array.isArray(discoveredItems)) {
-        throw new Error(
-          'Tool discovery command did not return a JSON array of tools.',
-        );
+        throw new Error("Tool discovery command did not return a JSON array of tools.");
       }
 
       for (const tool of discoveredItems) {
-        if (tool && typeof tool === 'object') {
-          if (Array.isArray(tool['function_declarations'])) {
-            functions.push(...tool['function_declarations']);
-          } else if (Array.isArray(tool['functionDeclarations'])) {
-            functions.push(...tool['functionDeclarations']);
-          } else if (tool['name']) {
+        if (tool && typeof tool === "object") {
+          if (Array.isArray(tool["function_declarations"])) {
+            functions.push(...tool["function_declarations"]);
+          } else if (Array.isArray(tool["functionDeclarations"])) {
+            functions.push(...tool["functionDeclarations"]);
+          } else if (tool["name"]) {
             functions.push(tool as FunctionDeclaration);
           }
         }
@@ -396,12 +375,12 @@ export class ToolRegistry {
       // register each function as a tool
       for (const func of functions) {
         if (!func.name) {
-          debugLogger.warn('Discovered a tool with no name. Skipping.');
+          debugLogger.warn("Discovered a tool with no name. Skipping.");
           continue;
         }
         const parameters =
           func.parametersJsonSchema &&
-          typeof func.parametersJsonSchema === 'object' &&
+          typeof func.parametersJsonSchema === "object" &&
           !Array.isArray(func.parametersJsonSchema)
             ? func.parametersJsonSchema
             : {};
@@ -410,7 +389,7 @@ export class ToolRegistry {
             this.config,
             func.name,
             DISCOVERED_TOOL_PREFIX + func.name,
-            func.description ?? '',
+            func.description ?? "",
             parameters as Record<string, unknown>,
             this.messageBus,
           ),
@@ -441,19 +420,14 @@ export class ToolRegistry {
    * @param excludeTools (optional, helps performance for repeated calls)
    * @returns Whether or not the `tool` is not excluded.
    */
-  private isActiveTool(
-    tool: AnyDeclarativeTool,
-    excludeTools?: Set<string>,
-  ): boolean {
+  private isActiveTool(tool: AnyDeclarativeTool, excludeTools?: Set<string>): boolean {
     excludeTools ??= this.config.getExcludeTools() ?? new Set([]);
-    const normalizedClassName = tool.constructor.name.replace(/^_+/, '');
+    const normalizedClassName = tool.constructor.name.replace(/^_+/, "");
     const possibleNames = [tool.name, normalizedClassName];
     if (tool instanceof DiscoveredMCPTool) {
       // Check both the unqualified and qualified name for MCP tools.
       if (tool.name.startsWith(tool.getFullyQualifiedPrefix())) {
-        possibleNames.push(
-          tool.name.substring(tool.getFullyQualifiedPrefix().length),
-        );
+        possibleNames.push(tool.name.substring(tool.getFullyQualifiedPrefix().length));
       } else {
         possibleNames.push(`${tool.getFullyQualifiedPrefix()}${tool.name}`);
       }
@@ -503,9 +477,7 @@ export class ToolRegistry {
    * Returns an array of all registered and discovered tool instances.
    */
   getAllTools(): AnyDeclarativeTool[] {
-    return this.getActiveTools().sort((a, b) =>
-      a.displayName.localeCompare(b.displayName),
-    );
+    return this.getActiveTools().sort((a, b) => a.displayName.localeCompare(b.displayName));
   }
 
   /**

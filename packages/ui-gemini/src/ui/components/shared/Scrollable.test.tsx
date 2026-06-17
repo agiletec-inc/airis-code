@@ -4,15 +4,15 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { renderWithProviders } from '../../../test-utils/render.js';
-import { Scrollable } from './Scrollable.js';
-import { Text } from 'ink';
-import { describe, it, expect, vi, beforeEach } from 'vitest';
-import * as ScrollProviderModule from '../../contexts/ScrollProvider.js';
-import { act } from 'react';
+import { Text } from "ink";
+import { act } from "react";
+import { beforeEach, describe, expect, it, vi } from "vitest";
+import { renderWithProviders } from "../../../test-utils/render.js";
+import * as ScrollProviderModule from "../../contexts/ScrollProvider.js";
+import { Scrollable } from "./Scrollable.js";
 
-vi.mock('ink', async (importOriginal) => {
-  const actual = await importOriginal<typeof import('ink')>();
+vi.mock("ink", async (importOriginal) => {
+  const actual = await importOriginal<typeof import("ink")>();
   return {
     ...actual,
     getInnerHeight: vi.fn(() => 5),
@@ -21,32 +21,29 @@ vi.mock('ink', async (importOriginal) => {
   };
 });
 
-vi.mock('../../hooks/useAnimatedScrollbar.js', () => ({
-  useAnimatedScrollbar: (
-    hasFocus: boolean,
-    scrollBy: (delta: number) => void,
-  ) => ({
-    scrollbarColor: 'white',
+vi.mock("../../hooks/useAnimatedScrollbar.js", () => ({
+  useAnimatedScrollbar: (hasFocus: boolean, scrollBy: (delta: number) => void) => ({
+    scrollbarColor: "white",
     flashScrollbar: vi.fn(),
     scrollByWithAnimation: scrollBy,
   }),
 }));
 
-describe('<Scrollable />', () => {
+describe("<Scrollable />", () => {
   beforeEach(() => {
     vi.restoreAllMocks();
   });
 
-  it('renders children', () => {
+  it("renders children", () => {
     const { lastFrame } = renderWithProviders(
       <Scrollable hasFocus={false} height={5}>
         <Text>Hello World</Text>
       </Scrollable>,
     );
-    expect(lastFrame()).toContain('Hello World');
+    expect(lastFrame()).toContain("Hello World");
   });
 
-  it('renders multiple children', () => {
+  it("renders multiple children", () => {
     const { lastFrame } = renderWithProviders(
       <Scrollable hasFocus={false} height={5}>
         <Text>Line 1</Text>
@@ -54,12 +51,12 @@ describe('<Scrollable />', () => {
         <Text>Line 3</Text>
       </Scrollable>,
     );
-    expect(lastFrame()).toContain('Line 1');
-    expect(lastFrame()).toContain('Line 2');
-    expect(lastFrame()).toContain('Line 3');
+    expect(lastFrame()).toContain("Line 1");
+    expect(lastFrame()).toContain("Line 2");
+    expect(lastFrame()).toContain("Line 3");
   });
 
-  it('matches snapshot', () => {
+  it("matches snapshot", () => {
     const { lastFrame } = renderWithProviders(
       <Scrollable hasFocus={false} height={5}>
         <Text>Line 1</Text>
@@ -70,15 +67,13 @@ describe('<Scrollable />', () => {
     expect(lastFrame()).toMatchSnapshot();
   });
 
-  it('updates scroll position correctly when scrollBy is called multiple times in the same tick', () => {
+  it("updates scroll position correctly when scrollBy is called multiple times in the same tick", () => {
     let capturedEntry: ScrollProviderModule.ScrollableEntry | undefined;
-    vi.spyOn(ScrollProviderModule, 'useScrollable').mockImplementation(
-      (entry, isActive) => {
-        if (isActive) {
-          capturedEntry = entry as ScrollProviderModule.ScrollableEntry;
-        }
-      },
-    );
+    vi.spyOn(ScrollProviderModule, "useScrollable").mockImplementation((entry, isActive) => {
+      if (isActive) {
+        capturedEntry = entry as ScrollProviderModule.ScrollableEntry;
+      }
+    });
 
     renderWithProviders(
       <Scrollable hasFocus={true} height={5}>
@@ -98,7 +93,7 @@ describe('<Scrollable />', () => {
     expect(capturedEntry).toBeDefined();
 
     if (!capturedEntry) {
-      throw new Error('capturedEntry is undefined');
+      throw new Error("capturedEntry is undefined");
     }
 
     // Initial state (starts at bottom because of auto-scroll logic)

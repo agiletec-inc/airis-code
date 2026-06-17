@@ -17,19 +17,16 @@
  * generationConfig (including tools) for callers like speculation that need them.
  */
 
+import type { Config } from "../config/config.js";
+import { GeminiChat, StreamEventType } from "../core/geminiChat.js";
 import type {
   Content,
   GenerateContentConfig,
   GenerateContentResponseUsageMetadata,
-} from '../types/llm.js';
-import { GeminiChat, StreamEventType } from '../core/geminiChat.js';
-import type { Config } from '../config/config.js';
+} from "../types/llm.js";
 
 /** Per-request config that strips tools so the model never produces function calls. */
-const NO_TOOLS = Object.freeze({ tools: [] as const }) as Pick<
-  GenerateContentConfig,
-  'tools'
->;
+const NO_TOOLS = Object.freeze({ tools: [] as const }) as Pick<GenerateContentConfig, "tools">;
 
 /**
  * Snapshot of the main conversation's cache-critical parameters.
@@ -85,8 +82,7 @@ export function saveCacheSafeParams(
     JSON.stringify(prevConfig.systemInstruction) !==
       JSON.stringify(generationConfig.systemInstruction);
   const toolsChanged =
-    !prevConfig ||
-    JSON.stringify(prevConfig.tools) !== JSON.stringify(generationConfig.tools);
+    !prevConfig || JSON.stringify(prevConfig.tools) !== JSON.stringify(generationConfig.tools);
 
   if (sysChanged || toolsChanged) {
     currentVersion++;
@@ -104,9 +100,7 @@ export function saveCacheSafeParams(
  * Get the current cache-safe params, or null if not yet captured.
  */
 export function getCacheSafeParams(): CacheSafeParams | null {
-  return currentCacheSafeParams
-    ? structuredClone(currentCacheSafeParams)
-    : null;
+  return currentCacheSafeParams ? structuredClone(currentCacheSafeParams) : null;
 }
 
 /**
@@ -132,10 +126,7 @@ export function clearCacheSafeParams(): void {
  * The fork does NOT have chatRecordingService or telemetryService to avoid
  * polluting the main session's recordings and token counts.
  */
-export function createForkedChat(
-  config: Config,
-  params: CacheSafeParams,
-): GeminiChat {
+export function createForkedChat(config: Config, params: CacheSafeParams): GeminiChat {
   // Limit history to avoid excessive cost
   const maxHistoryEntries = 40;
   const history =
@@ -167,9 +158,7 @@ export function createForkedChat(
 // Forked query execution
 // ---------------------------------------------------------------------------
 
-function extractUsage(
-  metadata?: GenerateContentResponseUsageMetadata,
-): ForkedQueryResult['usage'] {
+function extractUsage(metadata?: GenerateContentResponseUsageMetadata): ForkedQueryResult["usage"] {
   return {
     inputTokens: metadata?.promptTokenCount ?? 0,
     outputTokens: metadata?.candidatesTokenCount ?? 0,
@@ -199,7 +188,7 @@ export async function runForkedQuery(
 ): Promise<ForkedQueryResult> {
   const params = getCacheSafeParams();
   if (!params) {
-    throw new Error('CacheSafeParams not available');
+    throw new Error("CacheSafeParams not available");
   }
 
   const model = options?.model ?? params.model;
@@ -213,7 +202,7 @@ export async function runForkedQuery(
     requestConfig.abortSignal = options.abortSignal;
   }
   if (options?.jsonSchema) {
-    requestConfig.responseMimeType = 'application/json';
+    requestConfig.responseMimeType = "application/json";
     requestConfig.responseJsonSchema = options.jsonSchema;
   }
 
@@ -223,12 +212,12 @@ export async function runForkedQuery(
       message: [{ text: userMessage }],
       config: requestConfig,
     },
-    'forked_query',
+    "forked_query",
   );
 
   // Collect the full response
-  let fullText = '';
-  let usage: ForkedQueryResult['usage'] = {
+  let fullText = "";
+  let usage: ForkedQueryResult["usage"] = {
     inputTokens: 0,
     outputTokens: 0,
     cacheHitTokens: 0,
@@ -238,9 +227,7 @@ export async function runForkedQuery(
     if (event.type !== StreamEventType.CHUNK) continue;
     const response = event.value;
     // Extract text from candidates
-    const text = response.candidates?.[0]?.content?.parts
-      ?.map((p) => p.text ?? '')
-      .join('');
+    const text = response.candidates?.[0]?.content?.parts?.map((p) => p.text ?? "").join("");
     if (text) {
       fullText += text;
     }

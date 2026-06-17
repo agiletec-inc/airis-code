@@ -1,6 +1,6 @@
-import type OpenAI from 'openai';
-import { DefaultOpenAICompatibleProvider } from './default.js';
-import type { ContentGeneratorConfig } from '../../contentGenerator.js';
+import type OpenAI from "openai";
+import type { ContentGeneratorConfig } from "../../contentGenerator.js";
+import { DefaultOpenAICompatibleProvider } from "./default.js";
 
 /**
  * Provider for ModelScope API
@@ -10,7 +10,7 @@ export class ModelScopeOpenAICompatibleProvider extends DefaultOpenAICompatibleP
    * Checks if the configuration is for ModelScope.
    */
   static isModelScopeProvider(config: ContentGeneratorConfig): boolean {
-    return !!config.baseUrl?.includes('modelscope');
+    return !!config.baseUrl?.includes("modelscope");
   }
 
   /**
@@ -23,8 +23,7 @@ export class ModelScopeOpenAICompatibleProvider extends DefaultOpenAICompatibleP
   ): OpenAI.Chat.ChatCompletionCreateParams {
     const newRequest = super.buildRequest(request, userPromptId);
     if (!newRequest.stream) {
-      delete (newRequest as OpenAI.Chat.ChatCompletionCreateParamsNonStreaming)
-        .stream_options;
+      delete (newRequest as OpenAI.Chat.ChatCompletionCreateParamsNonStreaming).stream_options;
     }
 
     return newRequest;

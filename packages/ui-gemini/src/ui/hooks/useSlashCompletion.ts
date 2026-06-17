@@ -4,15 +4,11 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { useState, useEffect, useMemo } from 'react';
-import { AsyncFzf } from 'fzf';
-import type { Suggestion } from '../components/SuggestionsDisplay.js';
-import {
-  CommandKind,
-  type CommandContext,
-  type SlashCommand,
-} from '../commands/types.js';
-import { debugLogger } from '@airiscode/gemini-cli-core';
+import { debugLogger } from "@airiscode/gemini-cli-core";
+import { AsyncFzf } from "fzf";
+import { useEffect, useMemo, useState } from "react";
+import { type CommandContext, CommandKind, type SlashCommand } from "../commands/types.js";
+import type { Suggestion } from "../components/SuggestionsDisplay.js";
 
 // Type alias for improved type safety based on actual fzf result structure
 type FzfCommandResult = {
@@ -67,7 +63,7 @@ function useCommandParser(
       return {
         hasTrailingSpace: false,
         commandPathParts: [],
-        partial: '',
+        partial: "",
         currentLevel: slashCommands,
         leafCommand: null,
         exactMatchAsParent: undefined,
@@ -75,11 +71,11 @@ function useCommandParser(
       };
     }
 
-    const fullPath = query.substring(1) || '';
-    const hasTrailingSpace = !!query.endsWith(' ');
+    const fullPath = query.substring(1) || "";
+    const hasTrailingSpace = !!query.endsWith(" ");
     const rawParts = fullPath.split(/\s+/).filter((p) => p);
     let commandPathParts = rawParts;
-    let partial = '';
+    let partial = "";
 
     if (!hasTrailingSpace && rawParts.length > 0) {
       partial = rawParts[rawParts.length - 1];
@@ -95,9 +91,7 @@ function useCommandParser(
         currentLevel = [];
         break;
       }
-      const found: SlashCommand | undefined = currentLevel.find((cmd) =>
-        matchesCommand(cmd, part),
-      );
+      const found: SlashCommand | undefined = currentLevel.find((cmd) => matchesCommand(cmd, part));
 
       if (found) {
         leafCommand = found;
@@ -121,15 +115,14 @@ function useCommandParser(
       if (exactMatchAsParent) {
         leafCommand = exactMatchAsParent;
         currentLevel = exactMatchAsParent.subCommands;
-        partial = '';
+        partial = "";
       }
     }
 
     const depth = commandPathParts.length;
     const isArgumentCompletion = !!(
       leafCommand?.completion &&
-      (hasTrailingSpace ||
-        (rawParts.length > depth && depth > 0 && partial !== ''))
+      (hasTrailingSpace || (rawParts.length > depth && depth > 0 && partial !== ""))
     );
 
     return {
@@ -162,13 +155,8 @@ function useCommandSuggestions(
   query: string | null,
   parserResult: CommandParserResult,
   commandContext: CommandContext,
-  getFzfForCommands: (
-    commands: readonly SlashCommand[],
-  ) => FzfCommandCacheEntry | null,
-  getPrefixSuggestions: (
-    commands: readonly SlashCommand[],
-    partial: string,
-  ) => SlashCommand[],
+  getFzfForCommands: (commands: readonly SlashCommand[]) => FzfCommandCacheEntry | null,
+  getPrefixSuggestions: (commands: readonly SlashCommand[], partial: string) => SlashCommand[],
 ): SuggestionsResult {
   const [suggestions, setSuggestions] = useState<Suggestion[]>([]);
   const [isLoading, setIsLoading] = useState(false);
@@ -177,13 +165,8 @@ function useCommandSuggestions(
     const abortController = new AbortController();
     const { signal } = abortController;
 
-    const {
-      isArgumentCompletion,
-      leafCommand,
-      commandPathParts,
-      partial,
-      currentLevel,
-    } = parserResult;
+    const { isArgumentCompletion, leafCommand, commandPathParts, partial, currentLevel } =
+      parserResult;
 
     if (isArgumentCompletion) {
       const fetchAndSetSuggestions = async () => {
@@ -191,9 +174,7 @@ function useCommandSuggestions(
 
         // Safety check: ensure leafCommand and completion exist
         if (!leafCommand?.completion) {
-          debugLogger.warn(
-            'Attempted argument completion without completion function',
-          );
+          debugLogger.warn("Attempted argument completion without completion function");
           return;
         }
 
@@ -202,13 +183,13 @@ function useCommandSuggestions(
           const rawParts = [...commandPathParts];
           if (partial) rawParts.push(partial);
           const depth = commandPathParts.length;
-          const argString = rawParts.slice(depth).join(' ');
+          const argString = rawParts.slice(depth).join(" ");
           const results =
             (await leafCommand.completion(
               {
                 ...commandContext,
                 invocation: {
-                  raw: query || `/${rawParts.join(' ')}`,
+                  raw: query || `/${rawParts.join(" ")}`,
                   name: leafCommand.name,
                   args: argString,
                 },
@@ -226,7 +207,7 @@ function useCommandSuggestions(
           }
         } catch (error) {
           if (!signal.aborted) {
-            logErrorSafely(error, 'Argument completion');
+            logErrorSafely(error, "Argument completion");
             setSuggestions([]);
             setIsLoading(false);
           }
@@ -243,11 +224,9 @@ function useCommandSuggestions(
         if (signal.aborted) return;
         let potentialSuggestions: SlashCommand[] = [];
 
-        if (partial === '') {
+        if (partial === "") {
           // If no partial query, show all available commands
-          potentialSuggestions = commandsToSearch.filter(
-            (cmd) => cmd.description && !cmd.hidden,
-          );
+          potentialSuggestions = commandsToSearch.filter((cmd) => cmd.description && !cmd.hidden);
         } else {
           // Use fuzzy search for non-empty partial queries with fallback
           const fzfInstance = getFzfForCommands(commandsToSearch);
@@ -264,22 +243,13 @@ function useCommandSuggestions(
               });
               potentialSuggestions = Array.from(uniqueCommands);
             } catch (error) {
-              logErrorSafely(
-                error,
-                'Fuzzy search - falling back to prefix matching',
-              );
+              logErrorSafely(error, "Fuzzy search - falling back to prefix matching");
               // Fallback to prefix-based filtering
-              potentialSuggestions = getPrefixSuggestions(
-                commandsToSearch,
-                partial,
-              );
+              potentialSuggestions = getPrefixSuggestions(commandsToSearch, partial);
             }
           } else {
             // Fallback to prefix-based filtering when fzf instance creation fails
-            potentialSuggestions = getPrefixSuggestions(
-              commandsToSearch,
-              partial,
-            );
+            potentialSuggestions = getPrefixSuggestions(commandsToSearch, partial);
           }
         }
 
@@ -296,7 +266,7 @@ function useCommandSuggestions(
       };
 
       performFuzzySearch().catch((error) => {
-        logErrorSafely(error, 'Unexpected fuzzy search error');
+        logErrorSafely(error, "Unexpected fuzzy search error");
         if (!signal.aborted) {
           // Ultimate fallback: show no suggestions rather than confusing the user
           // with all available commands when their query clearly doesn't match anything
@@ -308,13 +278,7 @@ function useCommandSuggestions(
 
     setSuggestions([]);
     return () => abortController.abort();
-  }, [
-    query,
-    parserResult,
-    commandContext,
-    getFzfForCommands,
-    getPrefixSuggestions,
-  ]);
+  }, [query, parserResult, commandContext, getFzfForCommands, getPrefixSuggestions]);
 
   return { suggestions, isLoading };
 }
@@ -335,10 +299,9 @@ function useCompletionPositions(
       return { start: query.length, end: query.length };
     } else if (partial) {
       if (parserResult.isArgumentCompletion) {
-        const commandSoFar = `/${parserResult.commandPathParts.join(' ')}`;
+        const commandSoFar = `/${parserResult.commandPathParts.join(" ")}`;
         const argStartIndex =
-          commandSoFar.length +
-          (parserResult.commandPathParts.length > 0 ? 1 : 0);
+          commandSoFar.length + (parserResult.commandPathParts.length > 0 ? 1 : 0);
         return { start: argStartIndex, end: query.length };
       } else {
         return { start: query.length - partial.length, end: query.length };
@@ -349,25 +312,20 @@ function useCompletionPositions(
   }, [query, parserResult]);
 }
 
-function usePerfectMatch(
-  parserResult: CommandParserResult,
-): PerfectMatchResult {
+function usePerfectMatch(parserResult: CommandParserResult): PerfectMatchResult {
   return useMemo(() => {
-    const { hasTrailingSpace, partial, leafCommand, currentLevel } =
-      parserResult;
+    const { hasTrailingSpace, partial, leafCommand, currentLevel } = parserResult;
 
     if (hasTrailingSpace) {
       return { isPerfectMatch: false };
     }
 
-    if (leafCommand && partial === '' && leafCommand.action) {
+    if (leafCommand && partial === "" && leafCommand.action) {
       return { isPerfectMatch: true };
     }
 
     if (currentLevel) {
-      const perfectMatch = currentLevel.find(
-        (cmd) => matchesCommand(cmd, partial) && cmd.action,
-      );
+      const perfectMatch = currentLevel.find((cmd) => matchesCommand(cmd, partial) && cmd.action);
       if (perfectMatch) {
         return { isPerfectMatch: true };
       }
@@ -396,9 +354,7 @@ function getCommandFromSuggestion(
 
   // suggestion.value is just the command name at the current level (e.g., "list")
   // Find it in the current level's commands
-  const command = currentLevel.find((cmd) =>
-    matchesCommand(cmd, suggestion.value),
-  );
+  const command = currentLevel.find((cmd) => matchesCommand(cmd, suggestion.value));
 
   return command;
 }
@@ -416,9 +372,7 @@ export interface UseSlashCompletionProps {
 export function useSlashCompletion(props: UseSlashCompletionProps): {
   completionStart: number;
   completionEnd: number;
-  getCommandFromSuggestion: (
-    suggestion: Suggestion,
-  ) => SlashCommand | undefined;
+  getCommandFromSuggestion: (suggestion: Suggestion) => SlashCommand | undefined;
   isArgumentCompletion: boolean;
   leafCommand: SlashCommand | null;
 } {
@@ -478,8 +432,8 @@ export function useSlashCompletion(props: UseSlashCompletionProps): {
       try {
         const instance: FzfCommandCacheEntry = {
           fzf: new AsyncFzf(commandItems, {
-            fuzzy: 'v2',
-            casing: 'case-insensitive', // Explicitly enforce case-insensitivity
+            fuzzy: "v2",
+            casing: "case-insensitive", // Explicitly enforce case-insensitivity
           }),
           commandMap,
         };
@@ -489,7 +443,7 @@ export function useSlashCompletion(props: UseSlashCompletionProps): {
 
         return instance;
       } catch (error) {
-        logErrorSafely(error, 'FZF instance creation');
+        logErrorSafely(error, "FZF instance creation");
         return null;
       }
     },
@@ -504,9 +458,7 @@ export function useSlashCompletion(props: UseSlashCompletionProps): {
           cmd.description &&
           !cmd.hidden &&
           (cmd.name.toLowerCase().startsWith(partial.toLowerCase()) ||
-            cmd.altNames?.some((alt) =>
-              alt.toLowerCase().startsWith(partial.toLowerCase()),
-            )),
+            cmd.altNames?.some((alt) => alt.toLowerCase().startsWith(partial.toLowerCase()))),
       ),
     [],
   );

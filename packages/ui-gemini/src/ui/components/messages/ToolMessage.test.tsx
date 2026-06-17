@@ -4,17 +4,17 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import React from 'react';
-import type { ToolMessageProps } from './ToolMessage.js';
-import { ToolMessage } from './ToolMessage.js';
-import { StreamingState, ToolCallStatus } from '../../types.js';
-import { Text } from 'ink';
-import { StreamingContext } from '../../contexts/StreamingContext.js';
-import type { AnsiOutput } from '@airiscode/gemini-cli-core';
-import { renderWithProviders } from '../../../test-utils/render.js';
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import type { AnsiOutput } from "@airiscode/gemini-cli-core";
+import { Text } from "ink";
+import React from "react";
+import { beforeEach, describe, expect, it, vi } from "vitest";
+import { renderWithProviders } from "../../../test-utils/render.js";
+import { StreamingContext } from "../../contexts/StreamingContext.js";
+import { StreamingState, ToolCallStatus } from "../../types.js";
+import type { ToolMessageProps } from "./ToolMessage.js";
+import { ToolMessage } from "./ToolMessage.js";
 
-vi.mock('../TerminalOutput.js', () => ({
+vi.mock("../TerminalOutput.js", () => ({
   TerminalOutput: function MockTerminalOutput({
     cursor,
   }: {
@@ -28,23 +28,19 @@ vi.mock('../TerminalOutput.js', () => ({
   },
 }));
 
-vi.mock('../AnsiOutput.js', () => ({
+vi.mock("../AnsiOutput.js", () => ({
   AnsiOutputText: function MockAnsiOutputText({ data }: { data: AnsiOutput }) {
     // Simple serialization for snapshot stability
     const serialized = data
-      .map((line) => line.map((token) => token.text || '').join(''))
-      .join('\n');
+      .map((line) => line.map((token) => token.text || "").join(""))
+      .join("\n");
     return <Text>MockAnsiOutput:{serialized}</Text>;
   },
 }));
 
 // Mock child components or utilities if they are complex or have side effects
-vi.mock('../GeminiRespondingSpinner.js', () => ({
-  GeminiRespondingSpinner: ({
-    nonRespondingDisplay,
-  }: {
-    nonRespondingDisplay?: string;
-  }) => {
+vi.mock("../GeminiRespondingSpinner.js", () => ({
+  GeminiRespondingSpinner: ({ nonRespondingDisplay }: { nonRespondingDisplay?: string }) => {
     const streamingState = React.useContext(StreamingContext)!;
     if (streamingState === StreamingState.Responding) {
       return <Text>MockRespondingSpinner</Text>;
@@ -52,33 +48,29 @@ vi.mock('../GeminiRespondingSpinner.js', () => ({
     return nonRespondingDisplay ? <Text>{nonRespondingDisplay}</Text> : null;
   },
 }));
-vi.mock('./DiffRenderer.js', () => ({
-  DiffRenderer: function MockDiffRenderer({
-    diffContent,
-  }: {
-    diffContent: string;
-  }) {
+vi.mock("./DiffRenderer.js", () => ({
+  DiffRenderer: function MockDiffRenderer({ diffContent }: { diffContent: string }) {
     return <Text>MockDiff:{diffContent}</Text>;
   },
 }));
-vi.mock('../../utils/MarkdownDisplay.js', () => ({
+vi.mock("../../utils/MarkdownDisplay.js", () => ({
   MarkdownDisplay: function MockMarkdownDisplay({ text }: { text: string }) {
     return <Text>MockMarkdown:{text}</Text>;
   },
 }));
 
-describe('<ToolMessage />', () => {
+describe("<ToolMessage />", () => {
   const baseProps: ToolMessageProps = {
-    callId: 'tool-123',
-    name: 'test-tool',
-    description: 'A tool for testing',
-    resultDisplay: 'Test result',
+    callId: "tool-123",
+    name: "test-tool",
+    description: "A tool for testing",
+    resultDisplay: "Test result",
     status: ToolCallStatus.Success,
     terminalWidth: 80,
     confirmationDetails: undefined,
-    emphasis: 'medium',
+    emphasis: "medium",
     isFirst: true,
-    borderColor: 'green',
+    borderColor: "green",
     borderDimColor: false,
   };
 
@@ -88,10 +80,7 @@ describe('<ToolMessage />', () => {
   };
 
   // Helper to render with context
-  const renderWithContext = (
-    ui: React.ReactElement,
-    streamingState: StreamingState,
-  ) =>
+  const renderWithContext = (ui: React.ReactElement, streamingState: StreamingState) =>
     renderWithProviders(ui, {
       uiActions,
       uiState: { streamingState },
@@ -101,17 +90,14 @@ describe('<ToolMessage />', () => {
     vi.clearAllMocks();
   });
 
-  it('renders basic tool information', () => {
-    const { lastFrame } = renderWithContext(
-      <ToolMessage {...baseProps} />,
-      StreamingState.Idle,
-    );
+  it("renders basic tool information", () => {
+    const { lastFrame } = renderWithContext(<ToolMessage {...baseProps} />, StreamingState.Idle);
     const output = lastFrame();
     expect(output).toMatchSnapshot();
   });
 
-  describe('ToolStatusIndicator rendering', () => {
-    it('shows ✓ for Success status', () => {
+  describe("ToolStatusIndicator rendering", () => {
+    it("shows ✓ for Success status", () => {
       const { lastFrame } = renderWithContext(
         <ToolMessage {...baseProps} status={ToolCallStatus.Success} />,
         StreamingState.Idle,
@@ -119,7 +105,7 @@ describe('<ToolMessage />', () => {
       expect(lastFrame()).toMatchSnapshot();
     });
 
-    it('shows o for Pending status', () => {
+    it("shows o for Pending status", () => {
       const { lastFrame } = renderWithContext(
         <ToolMessage {...baseProps} status={ToolCallStatus.Pending} />,
         StreamingState.Idle,
@@ -127,7 +113,7 @@ describe('<ToolMessage />', () => {
       expect(lastFrame()).toMatchSnapshot();
     });
 
-    it('shows ? for Confirming status', () => {
+    it("shows ? for Confirming status", () => {
       const { lastFrame } = renderWithContext(
         <ToolMessage {...baseProps} status={ToolCallStatus.Confirming} />,
         StreamingState.Idle,
@@ -135,7 +121,7 @@ describe('<ToolMessage />', () => {
       expect(lastFrame()).toMatchSnapshot();
     });
 
-    it('shows - for Canceled status', () => {
+    it("shows - for Canceled status", () => {
       const { lastFrame } = renderWithContext(
         <ToolMessage {...baseProps} status={ToolCallStatus.Canceled} />,
         StreamingState.Idle,
@@ -143,7 +129,7 @@ describe('<ToolMessage />', () => {
       expect(lastFrame()).toMatchSnapshot();
     });
 
-    it('shows x for Error status', () => {
+    it("shows x for Error status", () => {
       const { lastFrame } = renderWithContext(
         <ToolMessage {...baseProps} status={ToolCallStatus.Error} />,
         StreamingState.Idle,
@@ -151,7 +137,7 @@ describe('<ToolMessage />', () => {
       expect(lastFrame()).toMatchSnapshot();
     });
 
-    it('shows paused spinner for Executing status when streamingState is Idle', () => {
+    it("shows paused spinner for Executing status when streamingState is Idle", () => {
       const { lastFrame } = renderWithContext(
         <ToolMessage {...baseProps} status={ToolCallStatus.Executing} />,
         StreamingState.Idle,
@@ -159,7 +145,7 @@ describe('<ToolMessage />', () => {
       expect(lastFrame()).toMatchSnapshot();
     });
 
-    it('shows paused spinner for Executing status when streamingState is WaitingForConfirmation', () => {
+    it("shows paused spinner for Executing status when streamingState is WaitingForConfirmation", () => {
       const { lastFrame } = renderWithContext(
         <ToolMessage {...baseProps} status={ToolCallStatus.Executing} />,
         StreamingState.WaitingForConfirmation,
@@ -167,7 +153,7 @@ describe('<ToolMessage />', () => {
       expect(lastFrame()).toMatchSnapshot();
     });
 
-    it('shows MockRespondingSpinner for Executing status when streamingState is Responding', () => {
+    it("shows MockRespondingSpinner for Executing status when streamingState is Responding", () => {
       const { lastFrame } = renderWithContext(
         <ToolMessage {...baseProps} status={ToolCallStatus.Executing} />,
         StreamingState.Responding, // Simulate app still responding
@@ -176,12 +162,12 @@ describe('<ToolMessage />', () => {
     });
   });
 
-  it('renders DiffRenderer for diff results', () => {
+  it("renders DiffRenderer for diff results", () => {
     const diffResult = {
-      fileDiff: '--- a/file.txt\n+++ b/file.txt\n@@ -1 +1 @@\n-old\n+new',
-      fileName: 'file.txt',
-      originalContent: 'old',
-      newContent: 'new',
+      fileDiff: "--- a/file.txt\n+++ b/file.txt\n@@ -1 +1 @@\n-old\n+new",
+      fileName: "file.txt",
+      originalContent: "old",
+      newContent: "new",
     };
     const { lastFrame } = renderWithContext(
       <ToolMessage {...baseProps} resultDisplay={diffResult} />,
@@ -191,7 +177,7 @@ describe('<ToolMessage />', () => {
     expect(lastFrame()).toMatchSnapshot();
   });
 
-  it('renders emphasis correctly', () => {
+  it("renders emphasis correctly", () => {
     const { lastFrame: highEmphasisFrame } = renderWithContext(
       <ToolMessage {...baseProps} emphasis="high" />,
       StreamingState.Idle,
@@ -209,13 +195,13 @@ describe('<ToolMessage />', () => {
     expect(lowEmphasisFrame()).toMatchSnapshot();
   });
 
-  it('renders AnsiOutputText for AnsiOutput results', () => {
+  it("renders AnsiOutputText for AnsiOutput results", () => {
     const ansiResult: AnsiOutput = [
       [
         {
-          text: 'hello',
-          fg: '#ffffff',
-          bg: '#000000',
+          text: "hello",
+          fg: "#ffffff",
+          bg: "#000000",
           bold: false,
           italic: false,
           underline: false,

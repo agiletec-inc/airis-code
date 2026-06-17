@@ -15,7 +15,7 @@ export interface OllamaMessage {
  * Ollama tool definition
  */
 export interface OllamaTool {
-  type: 'function';
+  type: "function";
   function: {
     name: string;
     description: string;
@@ -30,7 +30,7 @@ export interface OllamaChatRequest {
   model: string;
   messages: OllamaMessage[];
   stream?: boolean;
-  format?: 'json';
+  format?: "json";
   options?: {
     temperature?: number;
     top_p?: number;

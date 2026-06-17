@@ -5,15 +5,15 @@
  */
 
 import {
-  type PolicyEngineConfig,
   type ApprovalMode,
-  type PolicyEngine,
-  type MessageBus,
-  type PolicySettings,
   createPolicyEngineConfig as createCorePolicyEngineConfig,
   createPolicyUpdater as createCorePolicyUpdater,
-} from '@airiscode/gemini-cli-core';
-import { type Settings } from './settings.js';
+  type MessageBus,
+  type PolicyEngine,
+  type PolicyEngineConfig,
+  type PolicySettings,
+} from "@airiscode/gemini-cli-core";
+import { type Settings } from "./settings.js";
 
 export async function createPolicyEngineConfig(
   settings: Settings,
@@ -30,9 +30,6 @@ export async function createPolicyEngineConfig(
   return createCorePolicyEngineConfig(policySettings, approvalMode);
 }
 
-export function createPolicyUpdater(
-  policyEngine: PolicyEngine,
-  messageBus: MessageBus,
-) {
+export function createPolicyUpdater(policyEngine: PolicyEngine, messageBus: MessageBus) {
   return createCorePolicyUpdater(policyEngine, messageBus);
 }

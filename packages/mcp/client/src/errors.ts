@@ -6,9 +6,12 @@
  * Base error for MCP client issues
  */
 export class McpError extends Error {
-  constructor(message: string, public readonly code?: string) {
+  constructor(
+    message: string,
+    public readonly code?: string,
+  ) {
     super(message);
-    this.name = 'McpError';
+    this.name = "McpError";
   }
 }
 
@@ -16,9 +19,12 @@ export class McpError extends Error {
  * Error when MCP connection fails
  */
 export class McpConnectionError extends McpError {
-  constructor(message: string, public readonly url?: string) {
-    super(message, 'MCP_CONNECTION_ERROR');
-    this.name = 'McpConnectionError';
+  constructor(
+    message: string,
+    public readonly url?: string,
+  ) {
+    super(message, "MCP_CONNECTION_ERROR");
+    this.name = "McpConnectionError";
   }
 }
 
@@ -27,8 +33,8 @@ export class McpConnectionError extends McpError {
  */
 export class McpToolNotFoundError extends McpError {
   constructor(toolName: string) {
-    super(`Tool not found: ${toolName}`, 'MCP_TOOL_NOT_FOUND');
-    this.name = 'McpToolNotFoundError';
+    super(`Tool not found: ${toolName}`, "MCP_TOOL_NOT_FOUND");
+    this.name = "McpToolNotFoundError";
   }
 }
 
@@ -39,10 +45,10 @@ export class McpInvocationError extends McpError {
   constructor(
     message: string,
     public readonly toolName: string,
-    public readonly details?: unknown
+    public readonly details?: unknown,
   ) {
-    super(message, 'MCP_INVOCATION_ERROR');
-    this.name = 'McpInvocationError';
+    super(message, "MCP_INVOCATION_ERROR");
+    this.name = "McpInvocationError";
   }
 }
 
@@ -50,9 +56,9 @@ export class McpInvocationError extends McpError {
  * Error when request times out
  */
 export class McpTimeoutError extends McpError {
-  constructor(message: string = 'MCP request timed out') {
-    super(message, 'MCP_TIMEOUT_ERROR');
-    this.name = 'McpTimeoutError';
+  constructor(message: string = "MCP request timed out") {
+    super(message, "MCP_TIMEOUT_ERROR");
+    this.name = "McpTimeoutError";
   }
 }
 
@@ -63,9 +69,9 @@ export class McpServerError extends McpError {
   constructor(
     message: string,
     public readonly server?: string,
-    public readonly statusCode?: number
+    public readonly statusCode?: number,
   ) {
-    super(message, 'MCP_SERVER_ERROR');
-    this.name = 'McpServerError';
+    super(message, "MCP_SERVER_ERROR");
+    this.name = "McpServerError";
   }
 }

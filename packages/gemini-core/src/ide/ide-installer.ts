@@ -4,16 +4,16 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import * as child_process from 'node:child_process';
-import * as process from 'node:process';
-import * as path from 'node:path';
-import * as fs from 'node:fs';
-import * as os from 'node:os';
-import { IDE_DEFINITIONS, type IdeInfo } from './detect-ide.js';
-import { GEMINI_CLI_COMPANION_EXTENSION_NAME } from './constants.js';
+import * as child_process from "node:child_process";
+import * as fs from "node:fs";
+import * as os from "node:os";
+import * as path from "node:path";
+import * as process from "node:process";
+import { GEMINI_CLI_COMPANION_EXTENSION_NAME } from "./constants.js";
+import { IDE_DEFINITIONS, type IdeInfo } from "./detect-ide.js";
 
 function getVsCodeCommand(platform: NodeJS.Platform = process.platform) {
-  return platform === 'win32' ? 'code.cmd' : 'code';
+  return platform === "win32" ? "code.cmd" : "code";
 }
 
 export interface IdeInstaller {
@@ -31,11 +31,8 @@ async function findVsCodeCommand(
   // 1. Check PATH first.
   const vscodeCommand = getVsCodeCommand(platform);
   try {
-    if (platform === 'win32') {
-      const result = child_process
-        .execSync(`where.exe ${vscodeCommand}`)
-        .toString()
-        .trim();
+    if (platform === "win32") {
+      const result = child_process.execSync(`where.exe ${vscodeCommand}`).toString().trim();
       // `where.exe` can return multiple paths. Return the first one.
       const firstPath = result.split(/\r?\n/)[0];
       if (firstPath) {
@@ -43,7 +40,7 @@ async function findVsCodeCommand(
       }
     } else {
       child_process.execSync(`command -v ${vscodeCommand}`, {
-        stdio: 'ignore',
+        stdio: "ignore",
       });
       return vscodeCommand;
     }
@@ -55,37 +52,29 @@ async function findVsCodeCommand(
   const locations: string[] = [];
   const homeDir = os.homedir();
 
-  if (platform === 'darwin') {
+  if (platform === "darwin") {
     // macOS
     locations.push(
-      '/Applications/Visual Studio Code.app/Contents/Resources/app/bin/code',
-      path.join(homeDir, 'Library/Application Support/Code/bin/code'),
+      "/Applications/Visual Studio Code.app/Contents/Resources/app/bin/code",
+      path.join(homeDir, "Library/Application Support/Code/bin/code"),
     );
-  } else if (platform === 'linux') {
+  } else if (platform === "linux") {
     // Linux
     locations.push(
-      '/usr/share/code/bin/code',
-      '/snap/bin/code',
-      path.join(homeDir, '.local/share/code/bin/code'),
+      "/usr/share/code/bin/code",
+      "/snap/bin/code",
+      path.join(homeDir, ".local/share/code/bin/code"),
     );
-  } else if (platform === 'win32') {
+  } else if (platform === "win32") {
     // Windows
     locations.push(
       path.join(
-        process.env['ProgramFiles'] || 'C:\\Program Files',
-        'Microsoft VS Code',
-        'bin',
-        'code.cmd',
+        process.env["ProgramFiles"] || "C:\\Program Files",
+        "Microsoft VS Code",
+        "bin",
+        "code.cmd",
       ),
-      path.join(
-        homeDir,
-        'AppData',
-        'Local',
-        'Programs',
-        'Microsoft VS Code',
-        'bin',
-        'code.cmd',
-      ),
+      path.join(homeDir, "AppData", "Local", "Programs", "Microsoft VS Code", "bin", "code.cmd"),
     );
   }
 
@@ -120,18 +109,12 @@ class VsCodeInstaller implements IdeInstaller {
     try {
       const result = child_process.spawnSync(
         commandPath,
-        [
-          '--install-extension',
-          'google.gemini-cli-vscode-ide-companion',
-          '--force',
-        ],
-        { stdio: 'pipe', shell: this.platform === 'win32' },
+        ["--install-extension", "google.gemini-cli-vscode-ide-companion", "--force"],
+        { stdio: "pipe", shell: this.platform === "win32" },
       );
 
       if (result.status !== 0) {
-        throw new Error(
-          `Failed to install extension: ${result.stderr?.toString()}`,
-        );
+        throw new Error(`Failed to install extension: ${result.stderr?.toString()}`);
       }
 
       return {
@@ -147,10 +130,7 @@ class VsCodeInstaller implements IdeInstaller {
   }
 }
 
-export function getIdeInstaller(
-  ide: IdeInfo,
-  platform = process.platform,
-): IdeInstaller | null {
+export function getIdeInstaller(ide: IdeInfo, platform = process.platform): IdeInstaller | null {
   switch (ide.name) {
     case IDE_DEFINITIONS.vscode.name:
     case IDE_DEFINITIONS.firebasestudio.name:

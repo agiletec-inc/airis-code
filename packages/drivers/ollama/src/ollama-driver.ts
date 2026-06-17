@@ -5,17 +5,17 @@
  * Supports tool calling via Ollama's function calling API.
  */
 
-import { ModelDriver } from '@airiscode/drivers';
 import type {
+  Capabilities,
+  ChatMessage,
   ChatRequest,
   ChatResponse,
-  Capabilities,
   DriverConfig,
   StreamChunk,
-  ChatMessage,
-  ToolSpec,
   ToolCall,
-} from '@airiscode/drivers';
+  ToolSpec,
+} from "@airiscode/drivers";
+import { ModelDriver } from "@airiscode/drivers";
 
 export interface OllamaConfig extends DriverConfig {
   baseUrl?: string;
@@ -28,7 +28,7 @@ interface OllamaMessage {
 }
 
 interface OllamaTool {
-  type: 'function';
+  type: "function";
   function: {
     name: string;
     description: string;
@@ -60,10 +60,10 @@ export class OllamaDriver extends ModelDriver {
   constructor(config: OllamaConfig = {}) {
     super({
       timeout: 120000,
-      defaultModel: 'llama3.1:8b',
+      defaultModel: "llama3.1:8b",
       ...config,
     });
-    this.baseUrl = config.baseUrl || 'http://localhost:11434';
+    this.baseUrl = config.baseUrl || "http://localhost:11434";
   }
 
   async getCapabilities(): Promise<Capabilities> {
@@ -85,11 +85,11 @@ export class OllamaDriver extends ModelDriver {
         supportsTools: true, // Ollama supports function calling
         supportsStream: true,
         maxContextTokens: 8192, // Varies by model
-        apiVersion: '1.0',
+        apiVersion: "1.0",
       };
     } catch (error) {
       throw new Error(
-        `Failed to get Ollama capabilities: ${error instanceof Error ? error.message : String(error)}`
+        `Failed to get Ollama capabilities: ${error instanceof Error ? error.message : String(error)}`,
       );
     }
   }
@@ -117,8 +117,8 @@ export class OllamaDriver extends ModelDriver {
 
     try {
       const response = await fetch(`${this.baseUrl}/api/chat`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload),
         signal: AbortSignal.timeout(this.config.timeout || 120000),
       });
@@ -132,7 +132,7 @@ export class OllamaDriver extends ModelDriver {
       return this.parseResponse(data);
     } catch (error) {
       throw new Error(
-        `Ollama chat failed: ${error instanceof Error ? error.message : String(error)}`
+        `Ollama chat failed: ${error instanceof Error ? error.message : String(error)}`,
       );
     }
   }
@@ -160,8 +160,8 @@ export class OllamaDriver extends ModelDriver {
 
     try {
       const response = await fetch(`${this.baseUrl}/api/chat`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload),
         signal: AbortSignal.timeout(this.config.timeout || 120000),
       });
@@ -173,13 +173,13 @@ export class OllamaDriver extends ModelDriver {
 
       const reader = response.body?.getReader();
       if (!reader) {
-        throw new Error('No response body');
+        throw new Error("No response body");
       }
 
       const decoder = new TextDecoder();
-      let buffer = '';
-      let accumulatedText = '';
-      let accumulatedToolCalls: ToolCall[] = [];
+      let buffer = "";
+      let accumulatedText = "";
+      const accumulatedToolCalls: ToolCall[] = [];
 
       while (true) {
         const { done, value } = await reader.read();
@@ -188,8 +188,8 @@ export class OllamaDriver extends ModelDriver {
         }
 
         buffer += decoder.decode(value, { stream: true });
-        const lines = buffer.split('\n');
-        buffer = lines.pop() || '';
+        const lines = buffer.split("\n");
+        buffer = lines.pop() || "";
 
         for (const line of lines) {
           const trimmed = line.trim();
@@ -197,7 +197,7 @@ export class OllamaDriver extends ModelDriver {
 
           try {
             const data = JSON.parse(trimmed) as OllamaResponse;
-            const content = data.message?.content || '';
+            const content = data.message?.content || "";
 
             if (content) {
               accumulatedText += content;
@@ -218,7 +218,7 @@ export class OllamaDriver extends ModelDriver {
               const finalResponse: ChatResponse = {
                 text: accumulatedText,
                 incomplete: false,
-                finishReason: accumulatedToolCalls.length > 0 ? 'tool_calls' : 'stop',
+                finishReason: accumulatedToolCalls.length > 0 ? "tool_calls" : "stop",
                 toolCalls: accumulatedToolCalls.length > 0 ? accumulatedToolCalls : undefined,
                 usage: {
                   promptTokens: data.prompt_eval_count || 0,
@@ -235,13 +235,13 @@ export class OllamaDriver extends ModelDriver {
             }
           } catch (e) {
             // Skip invalid JSON
-            console.error('Failed to parse Ollama stream chunk:', e);
+            console.error("Failed to parse Ollama stream chunk:", e);
           }
         }
       }
     } catch (error) {
       throw new Error(
-        `Ollama stream failed: ${error instanceof Error ? error.message : String(error)}`
+        `Ollama stream failed: ${error instanceof Error ? error.message : String(error)}`,
       );
     }
   }
@@ -263,7 +263,7 @@ export class OllamaDriver extends ModelDriver {
     if (!tools) return [];
 
     return tools.map((tool) => ({
-      type: 'function',
+      type: "function",
       function: {
         name: tool.name,
         description: tool.description,
@@ -284,7 +284,7 @@ export class OllamaDriver extends ModelDriver {
       text: data.message.content,
       toolCalls,
       incomplete: false,
-      finishReason: toolCalls && toolCalls.length > 0 ? 'tool_calls' : 'stop',
+      finishReason: toolCalls && toolCalls.length > 0 ? "tool_calls" : "stop",
       usage: {
         promptTokens: data.prompt_eval_count || 0,
         completionTokens: data.eval_count || 0,

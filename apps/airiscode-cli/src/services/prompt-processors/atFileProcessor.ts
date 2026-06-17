@@ -4,21 +4,17 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import {
-  flatMapTextParts,
-  readPathFromWorkspace,
-  createDebugLogger,
-} from '@airiscode/core';
-import type { CommandContext } from '../../ui/commands/types.js';
-import { MessageType } from '../../ui/types.js';
+import { createDebugLogger, flatMapTextParts, readPathFromWorkspace } from "@airiscode/core";
+import type { CommandContext } from "../../ui/commands/types.js";
+import { MessageType } from "../../ui/types.js";
+import { extractInjections } from "./injectionParser.js";
 import {
   AT_FILE_INJECTION_TRIGGER,
   type IPromptProcessor,
   type PromptPipelineContent,
-} from './types.js';
-import { extractInjections } from './injectionParser.js';
+} from "./types.js";
 
-const debugLogger = createDebugLogger('AT_FILE_PROCESSOR');
+const debugLogger = createDebugLogger("AT_FILE_PROCESSOR");
 
 export class AtFileProcessor implements IPromptProcessor {
   constructor(private readonly commandName?: string) {}
@@ -37,11 +33,7 @@ export class AtFileProcessor implements IPromptProcessor {
         return [{ text }];
       }
 
-      const injections = extractInjections(
-        text,
-        AT_FILE_INJECTION_TRIGGER,
-        this.commandName,
-      );
+      const injections = extractInjections(text, AT_FILE_INJECTION_TRIGGER, this.commandName);
       if (injections.length === 0) {
         return [{ text }];
       }
@@ -60,29 +52,17 @@ export class AtFileProcessor implements IPromptProcessor {
           const fileContentParts = await readPathFromWorkspace(pathStr, config);
           if (fileContentParts.length === 0) {
             const uiMessage = `File '@{${pathStr}}' was ignored by .gitignore or .airiscodeigenore and was not included in the prompt.`;
-            context.ui.addItem(
-              { type: MessageType.INFO, text: uiMessage },
-              Date.now(),
-            );
+            context.ui.addItem({ type: MessageType.INFO, text: uiMessage }, Date.now());
           }
           output.push(...fileContentParts);
         } catch (error) {
-          const message =
-            error instanceof Error ? error.message : String(error);
+          const message = error instanceof Error ? error.message : String(error);
           const uiMessage = `Failed to inject content for '@{${pathStr}}': ${message}`;
 
-          debugLogger.error(
-            `[AtFileProcessor] ${uiMessage}. Leaving placeholder in prompt.`,
-          );
-          context.ui.addItem(
-            { type: MessageType.ERROR, text: uiMessage },
-            Date.now(),
-          );
+          debugLogger.error(`[AtFileProcessor] ${uiMessage}. Leaving placeholder in prompt.`);
+          context.ui.addItem({ type: MessageType.ERROR, text: uiMessage }, Date.now());
 
-          const placeholder = text.substring(
-            injection.startIndex,
-            injection.endIndex,
-          );
+          const placeholder = text.substring(injection.startIndex, injection.endIndex);
           output.push({ text: placeholder });
         }
         lastIndex = injection.endIndex;

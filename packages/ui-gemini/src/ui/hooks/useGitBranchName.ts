@@ -4,31 +4,25 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { useState, useEffect, useCallback } from 'react';
-import { spawnAsync } from '@airiscode/gemini-cli-core';
-import fs from 'node:fs';
-import fsPromises from 'node:fs/promises';
-import path from 'node:path';
+import fs from "node:fs";
+import fsPromises from "node:fs/promises";
+import path from "node:path";
+import { spawnAsync } from "@airiscode/gemini-cli-core";
+import { useCallback, useEffect, useState } from "react";
 
 export function useGitBranchName(cwd: string): string | undefined {
   const [branchName, setBranchName] = useState<string | undefined>(undefined);
 
   const fetchBranchName = useCallback(async () => {
     try {
-      const { stdout } = await spawnAsync(
-        'git',
-        ['rev-parse', '--abbrev-ref', 'HEAD'],
-        { cwd },
-      );
+      const { stdout } = await spawnAsync("git", ["rev-parse", "--abbrev-ref", "HEAD"], { cwd });
       const branch = stdout.toString().trim();
-      if (branch && branch !== 'HEAD') {
+      if (branch && branch !== "HEAD") {
         setBranchName(branch);
       } else {
-        const { stdout: hashStdout } = await spawnAsync(
-          'git',
-          ['rev-parse', '--short', 'HEAD'],
-          { cwd },
-        );
+        const { stdout: hashStdout } = await spawnAsync("git", ["rev-parse", "--short", "HEAD"], {
+          cwd,
+        });
         setBranchName(hashStdout.toString().trim());
       }
     } catch (_error) {
@@ -40,7 +34,7 @@ export function useGitBranchName(cwd: string): string | undefined {
     // eslint-disable-next-line @typescript-eslint/no-floating-promises
     fetchBranchName(); // Initial fetch
 
-    const gitLogsHeadPath = path.join(cwd, '.git', 'logs', 'HEAD');
+    const gitLogsHeadPath = path.join(cwd, ".git", "logs", "HEAD");
     let watcher: fs.FSWatcher | undefined;
     let cancelled = false;
 
@@ -51,7 +45,7 @@ export function useGitBranchName(cwd: string): string | undefined {
         if (cancelled) return;
         watcher = fs.watch(gitLogsHeadPath, (eventType: string) => {
           // Changes to .git/logs/HEAD (appends) indicate HEAD has likely changed
-          if (eventType === 'change' || eventType === 'rename') {
+          if (eventType === "change" || eventType === "rename") {
             // Handle rename just in case
             // eslint-disable-next-line @typescript-eslint/no-floating-promises
             fetchBranchName();

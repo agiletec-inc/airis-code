@@ -4,27 +4,27 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { enableMouseEvents, disableMouseEvents } from '@airiscode/gemini-cli-core';
+import { disableMouseEvents, enableMouseEvents } from "@airiscode/gemini-cli-core";
 import {
-  SGR_MOUSE_REGEX,
-  X11_MOUSE_REGEX,
-  SGR_EVENT_PREFIX,
-  X11_EVENT_PREFIX,
   couldBeMouseSequence as inputCouldBeMouseSequence,
-} from './input.js';
+  SGR_EVENT_PREFIX,
+  SGR_MOUSE_REGEX,
+  X11_EVENT_PREFIX,
+  X11_MOUSE_REGEX,
+} from "./input.js";
 
 export type MouseEventName =
-  | 'left-press'
-  | 'left-release'
-  | 'right-press'
-  | 'right-release'
-  | 'middle-press'
-  | 'middle-release'
-  | 'scroll-up'
-  | 'scroll-down'
-  | 'scroll-left'
-  | 'scroll-right'
-  | 'move';
+  | "left-press"
+  | "left-release"
+  | "right-press"
+  | "right-release"
+  | "middle-press"
+  | "middle-release"
+  | "scroll-up"
+  | "scroll-down"
+  | "scroll-left"
+  | "scroll-right"
+  | "move";
 
 export interface MouseEvent {
   name: MouseEventName;
@@ -33,32 +33,29 @@ export interface MouseEvent {
   shift: boolean;
   meta: boolean;
   ctrl: boolean;
-  button: 'left' | 'middle' | 'right' | 'none';
+  button: "left" | "middle" | "right" | "none";
 }
 
 export type MouseHandler = (event: MouseEvent) => void | boolean;
 
-export function getMouseEventName(
-  buttonCode: number,
-  isRelease: boolean,
-): MouseEventName | null {
+export function getMouseEventName(buttonCode: number, isRelease: boolean): MouseEventName | null {
   const isMove = (buttonCode & 32) !== 0;
 
   if (buttonCode === 66) {
-    return 'scroll-left';
+    return "scroll-left";
   } else if (buttonCode === 67) {
-    return 'scroll-right';
+    return "scroll-right";
   } else if ((buttonCode & 64) === 64) {
     if ((buttonCode & 1) === 0) {
-      return 'scroll-up';
+      return "scroll-up";
     } else {
-      return 'scroll-down';
+      return "scroll-down";
     }
   } else if (isMove) {
-    return 'move';
+    return "move";
   } else {
     const button = buttonCode & 3;
-    const type = isRelease ? 'release' : 'press';
+    const type = isRelease ? "release" : "press";
     switch (button) {
       case 0:
         return `left-${type}`;
@@ -72,23 +69,21 @@ export function getMouseEventName(
   }
 }
 
-function getButtonFromCode(code: number): MouseEvent['button'] {
+function getButtonFromCode(code: number): MouseEvent["button"] {
   const button = code & 3;
   switch (button) {
     case 0:
-      return 'left';
+      return "left";
     case 1:
-      return 'middle';
+      return "middle";
     case 2:
-      return 'right';
+      return "right";
     default:
-      return 'none';
+      return "none";
   }
 }
 
-export function parseSGRMouseEvent(
-  buffer: string,
-): { event: MouseEvent; length: number } | null {
+export function parseSGRMouseEvent(buffer: string): { event: MouseEvent; length: number } | null {
   const match = buffer.match(SGR_MOUSE_REGEX);
 
   if (match) {
@@ -96,7 +91,7 @@ export function parseSGRMouseEvent(
     const col = parseInt(match[2], 10);
     const row = parseInt(match[3], 10);
     const action = match[4];
-    const isRelease = action === 'm';
+    const isRelease = action === "m";
 
     const shift = (buttonCode & 4) !== 0;
     const meta = (buttonCode & 8) !== 0;
@@ -124,9 +119,7 @@ export function parseSGRMouseEvent(
   return null;
 }
 
-export function parseX11MouseEvent(
-  buffer: string,
-): { event: MouseEvent; length: number } | null {
+export function parseX11MouseEvent(buffer: string): { event: MouseEvent; length: number } | null {
   const match = buffer.match(X11_MOUSE_REGEX);
   if (!match) return null;
 
@@ -147,32 +140,32 @@ export function parseX11MouseEvent(
     const button = b & 3;
     switch (button) {
       case 0:
-        name = 'scroll-up';
+        name = "scroll-up";
         break;
       case 1:
-        name = 'scroll-down';
+        name = "scroll-down";
         break;
       default:
         break;
     }
   } else if (isMove) {
-    name = 'move';
+    name = "move";
   } else {
     const button = b & 3;
     if (button === 3) {
       // X11 reports 'release' (3) for all button releases without specifying which one.
       // We'll default to 'left-release' as a best-effort guess if we don't track state.
-      name = 'left-release';
+      name = "left-release";
     } else {
       switch (button) {
         case 0:
-          name = 'left-press';
+          name = "left-press";
           break;
         case 1:
-          name = 'middle-press';
+          name = "middle-press";
           break;
         case 2:
-          name = 'right-press';
+          name = "right-press";
           break;
         default:
           break;
@@ -182,8 +175,8 @@ export function parseX11MouseEvent(
 
   if (name) {
     let button = getButtonFromCode(b);
-    if (name === 'left-release' && button === 'none') {
-      button = 'left';
+    if (name === "left-release" && button === "none") {
+      button = "left";
     }
 
     return {
@@ -202,9 +195,7 @@ export function parseX11MouseEvent(
   return null;
 }
 
-export function parseMouseEvent(
-  buffer: string,
-): { event: MouseEvent; length: number } | null {
+export function parseMouseEvent(buffer: string): { event: MouseEvent; length: number } | null {
   return parseSGRMouseEvent(buffer) || parseX11MouseEvent(buffer);
 }
 
@@ -230,4 +221,4 @@ export function isIncompleteMouseSequence(buffer: string): boolean {
   return true;
 }
 
-export { enableMouseEvents, disableMouseEvents };
+export { disableMouseEvents, enableMouseEvents };

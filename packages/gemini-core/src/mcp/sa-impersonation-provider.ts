@@ -4,17 +4,17 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+import type { OAuthClientProvider } from "@modelcontextprotocol/sdk/client/auth.js";
 import type {
   OAuthClientInformation,
   OAuthClientInformationFull,
   OAuthClientMetadata,
   OAuthTokens,
-} from '@modelcontextprotocol/sdk/shared/auth.js';
-import { GoogleAuth } from 'google-auth-library';
-import { OAuthUtils, FIVE_MIN_BUFFER_MS } from './oauth-utils.js';
-import type { MCPServerConfig } from '../config/config.js';
-import type { OAuthClientProvider } from '@modelcontextprotocol/sdk/client/auth.js';
-import { coreEvents } from '../utils/events.js';
+} from "@modelcontextprotocol/sdk/shared/auth.js";
+import { GoogleAuth } from "google-auth-library";
+import type { MCPServerConfig } from "../config/config.js";
+import { coreEvents } from "../utils/events.js";
+import { FIVE_MIN_BUFFER_MS, OAuthUtils } from "./oauth-utils.js";
 
 function createIamApiUrl(targetSA: string): string {
   return `https://iamcredentials.googleapis.com/v1/projects/-/serviceAccounts/${encodeURIComponent(
@@ -22,9 +22,7 @@ function createIamApiUrl(targetSA: string): string {
   )}:generateIdToken`;
 }
 
-export class ServiceAccountImpersonationProvider
-  implements OAuthClientProvider
-{
+export class ServiceAccountImpersonationProvider implements OAuthClientProvider {
   private readonly targetServiceAccount: string;
   private readonly targetAudience: string; // OAuth Client Id
   private readonly auth: GoogleAuth;
@@ -32,13 +30,13 @@ export class ServiceAccountImpersonationProvider
   private tokenExpiryTime?: number;
 
   // Properties required by OAuthClientProvider, with no-op values
-  readonly redirectUrl = '';
+  readonly redirectUrl = "";
   readonly clientMetadata: OAuthClientMetadata = {
-    client_name: 'Gemini CLI (Service Account Impersonation)',
+    client_name: "Gemini CLI (Service Account Impersonation)",
     redirect_uris: [],
     grant_types: [],
     response_types: [],
-    token_endpoint_auth_method: 'none',
+    token_endpoint_auth_method: "none",
   };
   private _clientInformation?: OAuthClientInformationFull;
 
@@ -46,20 +44,20 @@ export class ServiceAccountImpersonationProvider
     // This check is done in mcp-client.ts. This is just an additional check.
     if (!this.config.httpUrl && !this.config.url) {
       throw new Error(
-        'A url or httpUrl must be provided for the Service Account Impersonation provider',
+        "A url or httpUrl must be provided for the Service Account Impersonation provider",
       );
     }
 
     if (!config.targetAudience) {
       throw new Error(
-        'targetAudience must be provided for the Service Account Impersonation provider',
+        "targetAudience must be provided for the Service Account Impersonation provider",
       );
     }
     this.targetAudience = config.targetAudience;
 
     if (!config.targetServiceAccount) {
       throw new Error(
-        'targetServiceAccount must be provided for the Service Account Impersonation provider',
+        "targetServiceAccount must be provided for the Service Account Impersonation provider",
       );
     }
     this.targetServiceAccount = config.targetServiceAccount;
@@ -97,7 +95,7 @@ export class ServiceAccountImpersonationProvider
     try {
       const res = await client.request<{ token: string }>({
         url,
-        method: 'POST',
+        method: "POST",
         data: {
           audience: this.targetAudience,
           includeEmail: true,
@@ -106,18 +104,11 @@ export class ServiceAccountImpersonationProvider
       idToken = res.data.token;
 
       if (!idToken || idToken.length === 0) {
-        coreEvents.emitFeedback(
-          'error',
-          'Failed to obtain authentication token.',
-        );
+        coreEvents.emitFeedback("error", "Failed to obtain authentication token.");
         return undefined;
       }
     } catch (e) {
-      coreEvents.emitFeedback(
-        'error',
-        'Failed to obtain authentication token.',
-        e as Error,
-      );
+      coreEvents.emitFeedback("error", "Failed to obtain authentication token.", e as Error);
       return undefined;
     }
 
@@ -128,7 +119,7 @@ export class ServiceAccountImpersonationProvider
     // present an ID token.
     const newTokens: OAuthTokens = {
       access_token: idToken,
-      token_type: 'Bearer',
+      token_type: "Bearer",
     };
 
     if (expiryTime) {
@@ -153,6 +144,6 @@ export class ServiceAccountImpersonationProvider
 
   codeVerifier(): string {
     // No-op
-    return '';
+    return "";
   }
 }

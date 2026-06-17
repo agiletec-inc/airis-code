@@ -4,11 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import type { ToolCallRequestInfo, Config } from '../index.js';
-import {
-  CoreToolScheduler,
-  type CompletedToolCall,
-} from './coreToolScheduler.js';
+import type { Config, ToolCallRequestInfo } from "../index.js";
+import { type CompletedToolCall, CoreToolScheduler } from "./coreToolScheduler.js";
 
 /**
  * Executes a single tool call non-interactively by leveraging the CoreToolScheduler.

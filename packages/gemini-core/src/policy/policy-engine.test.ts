@@ -4,39 +4,35 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { describe, it, expect, beforeEach } from 'vitest';
-import { PolicyEngine } from './policy-engine.js';
-import {
-  PolicyDecision,
-  type PolicyRule,
-  type PolicyEngineConfig,
-} from './types.js';
-import type { FunctionCall } from '@google/genai';
+import type { FunctionCall } from "@google/genai";
+import { beforeEach, describe, expect, it } from "vitest";
+import { PolicyEngine } from "./policy-engine.js";
+import { PolicyDecision, type PolicyEngineConfig, type PolicyRule } from "./types.js";
 
-describe('PolicyEngine', () => {
+describe("PolicyEngine", () => {
   let engine: PolicyEngine;
 
   beforeEach(() => {
     engine = new PolicyEngine();
   });
 
-  describe('constructor', () => {
-    it('should use default config when none provided', () => {
-      const decision = engine.check({ name: 'test' }, undefined);
+  describe("constructor", () => {
+    it("should use default config when none provided", () => {
+      const decision = engine.check({ name: "test" }, undefined);
       expect(decision).toBe(PolicyDecision.ASK_USER);
     });
 
-    it('should respect custom default decision', () => {
+    it("should respect custom default decision", () => {
       engine = new PolicyEngine({ defaultDecision: PolicyDecision.DENY });
-      const decision = engine.check({ name: 'test' }, undefined);
+      const decision = engine.check({ name: "test" }, undefined);
       expect(decision).toBe(PolicyDecision.DENY);
     });
 
-    it('should sort rules by priority', () => {
+    it("should sort rules by priority", () => {
       const rules: PolicyRule[] = [
-        { toolName: 'tool1', decision: PolicyDecision.DENY, priority: 1 },
-        { toolName: 'tool2', decision: PolicyDecision.ALLOW, priority: 10 },
-        { toolName: 'tool3', decision: PolicyDecision.ASK_USER, priority: 5 },
+        { toolName: "tool1", decision: PolicyDecision.DENY, priority: 1 },
+        { toolName: "tool2", decision: PolicyDecision.ALLOW, priority: 10 },
+        { toolName: "tool3", decision: PolicyDecision.ASK_USER, priority: 5 },
       ];
 
       engine = new PolicyEngine({ rules });
@@ -48,35 +44,29 @@ describe('PolicyEngine', () => {
     });
   });
 
-  describe('check', () => {
-    it('should match tool by name', () => {
+  describe("check", () => {
+    it("should match tool by name", () => {
       const rules: PolicyRule[] = [
-        { toolName: 'shell', decision: PolicyDecision.ALLOW },
-        { toolName: 'edit', decision: PolicyDecision.DENY },
+        { toolName: "shell", decision: PolicyDecision.ALLOW },
+        { toolName: "edit", decision: PolicyDecision.DENY },
       ];
 
       engine = new PolicyEngine({ rules });
 
-      expect(engine.check({ name: 'shell' }, undefined)).toBe(
-        PolicyDecision.ALLOW,
-      );
-      expect(engine.check({ name: 'edit' }, undefined)).toBe(
-        PolicyDecision.DENY,
-      );
-      expect(engine.check({ name: 'other' }, undefined)).toBe(
-        PolicyDecision.ASK_USER,
-      );
+      expect(engine.check({ name: "shell" }, undefined)).toBe(PolicyDecision.ALLOW);
+      expect(engine.check({ name: "edit" }, undefined)).toBe(PolicyDecision.DENY);
+      expect(engine.check({ name: "other" }, undefined)).toBe(PolicyDecision.ASK_USER);
     });
 
-    it('should match by args pattern', () => {
+    it("should match by args pattern", () => {
       const rules: PolicyRule[] = [
         {
-          toolName: 'shell',
+          toolName: "shell",
           argsPattern: /rm -rf/,
           decision: PolicyDecision.DENY,
         },
         {
-          toolName: 'shell',
+          toolName: "shell",
           decision: PolicyDecision.ALLOW,
         },
       ];
@@ -84,89 +74,77 @@ describe('PolicyEngine', () => {
       engine = new PolicyEngine({ rules });
 
       const dangerousCall: FunctionCall = {
-        name: 'shell',
-        args: { command: 'rm -rf /' },
+        name: "shell",
+        args: { command: "rm -rf /" },
       };
 
       const safeCall: FunctionCall = {
-        name: 'shell',
-        args: { command: 'ls -la' },
+        name: "shell",
+        args: { command: "ls -la" },
       };
 
       expect(engine.check(dangerousCall, undefined)).toBe(PolicyDecision.DENY);
       expect(engine.check(safeCall, undefined)).toBe(PolicyDecision.ALLOW);
     });
 
-    it('should apply rules by priority', () => {
+    it("should apply rules by priority", () => {
       const rules: PolicyRule[] = [
-        { toolName: 'shell', decision: PolicyDecision.DENY, priority: 1 },
-        { toolName: 'shell', decision: PolicyDecision.ALLOW, priority: 10 },
+        { toolName: "shell", decision: PolicyDecision.DENY, priority: 1 },
+        { toolName: "shell", decision: PolicyDecision.ALLOW, priority: 10 },
       ];
 
       engine = new PolicyEngine({ rules });
 
       // Higher priority rule (ALLOW) should win
-      expect(engine.check({ name: 'shell' }, undefined)).toBe(
-        PolicyDecision.ALLOW,
-      );
+      expect(engine.check({ name: "shell" }, undefined)).toBe(PolicyDecision.ALLOW);
     });
 
-    it('should apply wildcard rules (no toolName)', () => {
+    it("should apply wildcard rules (no toolName)", () => {
       const rules: PolicyRule[] = [
         { decision: PolicyDecision.DENY }, // Applies to all tools
-        { toolName: 'safe-tool', decision: PolicyDecision.ALLOW, priority: 10 },
+        { toolName: "safe-tool", decision: PolicyDecision.ALLOW, priority: 10 },
       ];
 
       engine = new PolicyEngine({ rules });
 
-      expect(engine.check({ name: 'safe-tool' }, undefined)).toBe(
-        PolicyDecision.ALLOW,
-      );
-      expect(engine.check({ name: 'any-other-tool' }, undefined)).toBe(
-        PolicyDecision.DENY,
-      );
+      expect(engine.check({ name: "safe-tool" }, undefined)).toBe(PolicyDecision.ALLOW);
+      expect(engine.check({ name: "any-other-tool" }, undefined)).toBe(PolicyDecision.DENY);
     });
 
-    it('should handle non-interactive mode', () => {
+    it("should handle non-interactive mode", () => {
       const config: PolicyEngineConfig = {
         nonInteractive: true,
         rules: [
-          { toolName: 'interactive-tool', decision: PolicyDecision.ASK_USER },
-          { toolName: 'allowed-tool', decision: PolicyDecision.ALLOW },
+          { toolName: "interactive-tool", decision: PolicyDecision.ASK_USER },
+          { toolName: "allowed-tool", decision: PolicyDecision.ALLOW },
         ],
       };
 
       engine = new PolicyEngine(config);
 
       // ASK_USER should become DENY in non-interactive mode
-      expect(engine.check({ name: 'interactive-tool' }, undefined)).toBe(
-        PolicyDecision.DENY,
-      );
+      expect(engine.check({ name: "interactive-tool" }, undefined)).toBe(PolicyDecision.DENY);
       // ALLOW should remain ALLOW
-      expect(engine.check({ name: 'allowed-tool' }, undefined)).toBe(
-        PolicyDecision.ALLOW,
-      );
+      expect(engine.check({ name: "allowed-tool" }, undefined)).toBe(PolicyDecision.ALLOW);
       // Default ASK_USER should also become DENY
-      expect(engine.check({ name: 'unknown-tool' }, undefined)).toBe(
-        PolicyDecision.DENY,
-      );
+      expect(engine.check({ name: "unknown-tool" }, undefined)).toBe(PolicyDecision.DENY);
     });
   });
 
-  describe('addRule', () => {
-    it('should add a new rule and maintain priority order', () => {
+  describe("addRule", () => {
+    it("should add a new rule and maintain priority order", () => {
       engine.addRule({
-        toolName: 'tool1',
+        toolName: "tool1",
         decision: PolicyDecision.ALLOW,
         priority: 5,
       });
       engine.addRule({
-        toolName: 'tool2',
+        toolName: "tool2",
         decision: PolicyDecision.DENY,
         priority: 10,
       });
       engine.addRule({
-        toolName: 'tool3',
+        toolName: "tool3",
         decision: PolicyDecision.ASK_USER,
         priority: 1,
       });
@@ -178,73 +156,69 @@ describe('PolicyEngine', () => {
       expect(rules[2].priority).toBe(1);
     });
 
-    it('should apply newly added rules', () => {
-      expect(engine.check({ name: 'new-tool' }, undefined)).toBe(
-        PolicyDecision.ASK_USER,
-      );
+    it("should apply newly added rules", () => {
+      expect(engine.check({ name: "new-tool" }, undefined)).toBe(PolicyDecision.ASK_USER);
 
-      engine.addRule({ toolName: 'new-tool', decision: PolicyDecision.ALLOW });
+      engine.addRule({ toolName: "new-tool", decision: PolicyDecision.ALLOW });
 
-      expect(engine.check({ name: 'new-tool' }, undefined)).toBe(
-        PolicyDecision.ALLOW,
-      );
+      expect(engine.check({ name: "new-tool" }, undefined)).toBe(PolicyDecision.ALLOW);
     });
   });
 
-  describe('removeRulesForTool', () => {
-    it('should remove rules for specific tool', () => {
-      engine.addRule({ toolName: 'tool1', decision: PolicyDecision.ALLOW });
-      engine.addRule({ toolName: 'tool2', decision: PolicyDecision.DENY });
+  describe("removeRulesForTool", () => {
+    it("should remove rules for specific tool", () => {
+      engine.addRule({ toolName: "tool1", decision: PolicyDecision.ALLOW });
+      engine.addRule({ toolName: "tool2", decision: PolicyDecision.DENY });
       engine.addRule({
-        toolName: 'tool1',
+        toolName: "tool1",
         decision: PolicyDecision.ASK_USER,
         priority: 10,
       });
 
       expect(engine.getRules()).toHaveLength(3);
 
-      engine.removeRulesForTool('tool1');
+      engine.removeRulesForTool("tool1");
 
       const remainingRules = engine.getRules();
       expect(remainingRules).toHaveLength(1);
-      expect(remainingRules.some((r) => r.toolName === 'tool1')).toBe(false);
-      expect(remainingRules.some((r) => r.toolName === 'tool2')).toBe(true);
+      expect(remainingRules.some((r) => r.toolName === "tool1")).toBe(false);
+      expect(remainingRules.some((r) => r.toolName === "tool2")).toBe(true);
     });
 
-    it('should handle removing non-existent tool', () => {
-      engine.addRule({ toolName: 'existing', decision: PolicyDecision.ALLOW });
+    it("should handle removing non-existent tool", () => {
+      engine.addRule({ toolName: "existing", decision: PolicyDecision.ALLOW });
 
-      expect(() => engine.removeRulesForTool('non-existent')).not.toThrow();
+      expect(() => engine.removeRulesForTool("non-existent")).not.toThrow();
       expect(engine.getRules()).toHaveLength(1);
     });
   });
 
-  describe('getRules', () => {
-    it('should return readonly array of rules', () => {
+  describe("getRules", () => {
+    it("should return readonly array of rules", () => {
       const rules: PolicyRule[] = [
-        { toolName: 'tool1', decision: PolicyDecision.ALLOW },
-        { toolName: 'tool2', decision: PolicyDecision.DENY },
+        { toolName: "tool1", decision: PolicyDecision.ALLOW },
+        { toolName: "tool2", decision: PolicyDecision.DENY },
       ];
 
       engine = new PolicyEngine({ rules });
 
       const retrievedRules = engine.getRules();
       expect(retrievedRules).toHaveLength(2);
-      expect(retrievedRules[0].toolName).toBe('tool1');
-      expect(retrievedRules[1].toolName).toBe('tool2');
+      expect(retrievedRules[0].toolName).toBe("tool1");
+      expect(retrievedRules[1].toolName).toBe("tool2");
     });
   });
 
-  describe('MCP server wildcard patterns', () => {
-    it('should match MCP server wildcard patterns', () => {
+  describe("MCP server wildcard patterns", () => {
+    it("should match MCP server wildcard patterns", () => {
       const rules: PolicyRule[] = [
         {
-          toolName: 'my-server__*',
+          toolName: "my-server__*",
           decision: PolicyDecision.ALLOW,
           priority: 10,
         },
         {
-          toolName: 'blocked-server__*',
+          toolName: "blocked-server__*",
           decision: PolicyDecision.DENY,
           priority: 20,
         },
@@ -253,42 +227,32 @@ describe('PolicyEngine', () => {
       engine = new PolicyEngine({ rules });
 
       // Should match my-server tools
-      expect(engine.check({ name: 'my-server__tool1' }, undefined)).toBe(
-        PolicyDecision.ALLOW,
-      );
-      expect(engine.check({ name: 'my-server__another_tool' }, undefined)).toBe(
+      expect(engine.check({ name: "my-server__tool1" }, undefined)).toBe(PolicyDecision.ALLOW);
+      expect(engine.check({ name: "my-server__another_tool" }, undefined)).toBe(
         PolicyDecision.ALLOW,
       );
 
       // Should match blocked-server tools
-      expect(engine.check({ name: 'blocked-server__tool1' }, undefined)).toBe(
+      expect(engine.check({ name: "blocked-server__tool1" }, undefined)).toBe(PolicyDecision.DENY);
+      expect(engine.check({ name: "blocked-server__dangerous" }, undefined)).toBe(
         PolicyDecision.DENY,
       );
-      expect(
-        engine.check({ name: 'blocked-server__dangerous' }, undefined),
-      ).toBe(PolicyDecision.DENY);
 
       // Should not match other patterns
-      expect(engine.check({ name: 'other-server__tool' }, undefined)).toBe(
-        PolicyDecision.ASK_USER,
-      );
-      expect(engine.check({ name: 'my-server-tool' }, undefined)).toBe(
-        PolicyDecision.ASK_USER,
-      ); // No __ separator
-      expect(engine.check({ name: 'my-server' }, undefined)).toBe(
-        PolicyDecision.ASK_USER,
-      ); // No tool name
+      expect(engine.check({ name: "other-server__tool" }, undefined)).toBe(PolicyDecision.ASK_USER);
+      expect(engine.check({ name: "my-server-tool" }, undefined)).toBe(PolicyDecision.ASK_USER); // No __ separator
+      expect(engine.check({ name: "my-server" }, undefined)).toBe(PolicyDecision.ASK_USER); // No tool name
     });
 
-    it('should prioritize specific tool rules over server wildcards', () => {
+    it("should prioritize specific tool rules over server wildcards", () => {
       const rules: PolicyRule[] = [
         {
-          toolName: 'my-server__*',
+          toolName: "my-server__*",
           decision: PolicyDecision.ALLOW,
           priority: 10,
         },
         {
-          toolName: 'my-server__dangerous-tool',
+          toolName: "my-server__dangerous-tool",
           decision: PolicyDecision.DENY,
           priority: 20,
         },
@@ -297,74 +261,66 @@ describe('PolicyEngine', () => {
       engine = new PolicyEngine({ rules });
 
       // Specific tool deny should override server allow
-      expect(
-        engine.check({ name: 'my-server__dangerous-tool' }, undefined),
-      ).toBe(PolicyDecision.DENY);
-      expect(engine.check({ name: 'my-server__safe-tool' }, undefined)).toBe(
-        PolicyDecision.ALLOW,
+      expect(engine.check({ name: "my-server__dangerous-tool" }, undefined)).toBe(
+        PolicyDecision.DENY,
       );
+      expect(engine.check({ name: "my-server__safe-tool" }, undefined)).toBe(PolicyDecision.ALLOW);
     });
 
-    it('should NOT match spoofed server names when using wildcards', () => {
+    it("should NOT match spoofed server names when using wildcards", () => {
       // Vulnerability: A rule for 'prefix__*' matches 'prefix__suffix__tool'
       // effectively allowing a server named 'prefix__suffix' to spoof 'prefix'.
       const rules: PolicyRule[] = [
         {
-          toolName: 'safe_server__*',
+          toolName: "safe_server__*",
           decision: PolicyDecision.ALLOW,
         },
       ];
       engine = new PolicyEngine({ rules });
 
       // A tool from a different server 'safe_server__malicious'
-      const spoofedToolCall = { name: 'safe_server__malicious__tool' };
+      const spoofedToolCall = { name: "safe_server__malicious__tool" };
 
       // CURRENT BEHAVIOR (FIXED): Matches because it starts with 'safe_server__' BUT serverName doesn't match 'safe_server'
       // We expect this to FAIL matching the ALLOW rule, thus falling back to default (ASK_USER)
-      expect(engine.check(spoofedToolCall, 'safe_server__malicious')).toBe(
-        PolicyDecision.ASK_USER,
-      );
+      expect(engine.check(spoofedToolCall, "safe_server__malicious")).toBe(PolicyDecision.ASK_USER);
     });
 
-    it('should verify tool name prefix even if serverName matches', () => {
+    it("should verify tool name prefix even if serverName matches", () => {
       const rules: PolicyRule[] = [
         {
-          toolName: 'safe_server__*',
+          toolName: "safe_server__*",
           decision: PolicyDecision.ALLOW,
         },
       ];
       engine = new PolicyEngine({ rules });
 
       // serverName matches, but tool name does not start with prefix
-      const invalidToolCall = { name: 'other_server__tool' };
-      expect(engine.check(invalidToolCall, 'safe_server')).toBe(
-        PolicyDecision.ASK_USER,
-      );
+      const invalidToolCall = { name: "other_server__tool" };
+      expect(engine.check(invalidToolCall, "safe_server")).toBe(PolicyDecision.ASK_USER);
     });
 
-    it('should allow when both serverName and tool name prefix match', () => {
+    it("should allow when both serverName and tool name prefix match", () => {
       const rules: PolicyRule[] = [
         {
-          toolName: 'safe_server__*',
+          toolName: "safe_server__*",
           decision: PolicyDecision.ALLOW,
         },
       ];
       engine = new PolicyEngine({ rules });
 
-      const validToolCall = { name: 'safe_server__tool' };
-      expect(engine.check(validToolCall, 'safe_server')).toBe(
-        PolicyDecision.ALLOW,
-      );
+      const validToolCall = { name: "safe_server__tool" };
+      expect(engine.check(validToolCall, "safe_server")).toBe(PolicyDecision.ALLOW);
     });
   });
 
-  describe('complex scenarios', () => {
-    it('should handle multiple matching rules with different priorities', () => {
+  describe("complex scenarios", () => {
+    it("should handle multiple matching rules with different priorities", () => {
       const rules: PolicyRule[] = [
         { decision: PolicyDecision.DENY, priority: 0 }, // Default deny all
-        { toolName: 'shell', decision: PolicyDecision.ASK_USER, priority: 5 },
+        { toolName: "shell", decision: PolicyDecision.ASK_USER, priority: 5 },
         {
-          toolName: 'shell',
+          toolName: "shell",
           argsPattern: /"command":"ls/,
           decision: PolicyDecision.ALLOW,
           priority: 10,
@@ -374,25 +330,23 @@ describe('PolicyEngine', () => {
       engine = new PolicyEngine({ rules });
 
       // Matches highest priority rule (ls command)
-      expect(
-        engine.check({ name: 'shell', args: { command: 'ls -la' } }, undefined),
-      ).toBe(PolicyDecision.ALLOW);
+      expect(engine.check({ name: "shell", args: { command: "ls -la" } }, undefined)).toBe(
+        PolicyDecision.ALLOW,
+      );
 
       // Matches middle priority rule (shell without ls)
-      expect(
-        engine.check({ name: 'shell', args: { command: 'pwd' } }, undefined),
-      ).toBe(PolicyDecision.ASK_USER);
+      expect(engine.check({ name: "shell", args: { command: "pwd" } }, undefined)).toBe(
+        PolicyDecision.ASK_USER,
+      );
 
       // Matches lowest priority rule (not shell)
-      expect(engine.check({ name: 'edit' }, undefined)).toBe(
-        PolicyDecision.DENY,
-      );
+      expect(engine.check({ name: "edit" }, undefined)).toBe(PolicyDecision.DENY);
     });
 
-    it('should handle tools with no args', () => {
+    it("should handle tools with no args", () => {
       const rules: PolicyRule[] = [
         {
-          toolName: 'read',
+          toolName: "read",
           argsPattern: /secret/,
           decision: PolicyDecision.DENY,
         },
@@ -401,25 +355,23 @@ describe('PolicyEngine', () => {
       engine = new PolicyEngine({ rules });
 
       // Tool call without args should not match pattern
-      expect(engine.check({ name: 'read' }, undefined)).toBe(
+      expect(engine.check({ name: "read" }, undefined)).toBe(PolicyDecision.ASK_USER);
+
+      // Tool call with args not matching pattern
+      expect(engine.check({ name: "read", args: { file: "public.txt" } }, undefined)).toBe(
         PolicyDecision.ASK_USER,
       );
 
-      // Tool call with args not matching pattern
-      expect(
-        engine.check({ name: 'read', args: { file: 'public.txt' } }, undefined),
-      ).toBe(PolicyDecision.ASK_USER);
-
       // Tool call with args matching pattern
-      expect(
-        engine.check({ name: 'read', args: { file: 'secret.txt' } }, undefined),
-      ).toBe(PolicyDecision.DENY);
+      expect(engine.check({ name: "read", args: { file: "secret.txt" } }, undefined)).toBe(
+        PolicyDecision.DENY,
+      );
     });
 
-    it('should match args pattern regardless of property order', () => {
+    it("should match args pattern regardless of property order", () => {
       const rules: PolicyRule[] = [
         {
-          toolName: 'shell',
+          toolName: "shell",
           // Pattern matches the stable stringified format
           argsPattern: /"command":"rm[^"]*-rf/,
           decision: PolicyDecision.DENY,
@@ -429,27 +381,23 @@ describe('PolicyEngine', () => {
       engine = new PolicyEngine({ rules });
 
       // Same args with different property order should both match
-      const args1 = { command: 'rm -rf /', path: '/home' };
-      const args2 = { path: '/home', command: 'rm -rf /' };
+      const args1 = { command: "rm -rf /", path: "/home" };
+      const args2 = { path: "/home", command: "rm -rf /" };
 
-      expect(engine.check({ name: 'shell', args: args1 }, undefined)).toBe(
-        PolicyDecision.DENY,
-      );
-      expect(engine.check({ name: 'shell', args: args2 }, undefined)).toBe(
-        PolicyDecision.DENY,
-      );
+      expect(engine.check({ name: "shell", args: args1 }, undefined)).toBe(PolicyDecision.DENY);
+      expect(engine.check({ name: "shell", args: args2 }, undefined)).toBe(PolicyDecision.DENY);
 
       // Verify safe command doesn't match
-      const safeArgs = { command: 'ls -la', path: '/home' };
-      expect(engine.check({ name: 'shell', args: safeArgs }, undefined)).toBe(
+      const safeArgs = { command: "ls -la", path: "/home" };
+      expect(engine.check({ name: "shell", args: safeArgs }, undefined)).toBe(
         PolicyDecision.ASK_USER,
       );
     });
 
-    it('should handle nested objects in args with stable stringification', () => {
+    it("should handle nested objects in args with stable stringification", () => {
       const rules: PolicyRule[] = [
         {
-          toolName: 'api',
+          toolName: "api",
           argsPattern: /"sensitive":true/,
           decision: PolicyDecision.DENY,
         },
@@ -459,26 +407,22 @@ describe('PolicyEngine', () => {
 
       // Nested objects with different key orders should match consistently
       const args1 = {
-        data: { sensitive: true, value: 'secret' },
-        method: 'POST',
+        data: { sensitive: true, value: "secret" },
+        method: "POST",
       };
       const args2 = {
-        method: 'POST',
-        data: { value: 'secret', sensitive: true },
+        method: "POST",
+        data: { value: "secret", sensitive: true },
       };
 
-      expect(engine.check({ name: 'api', args: args1 }, undefined)).toBe(
-        PolicyDecision.DENY,
-      );
-      expect(engine.check({ name: 'api', args: args2 }, undefined)).toBe(
-        PolicyDecision.DENY,
-      );
+      expect(engine.check({ name: "api", args: args1 }, undefined)).toBe(PolicyDecision.DENY);
+      expect(engine.check({ name: "api", args: args2 }, undefined)).toBe(PolicyDecision.DENY);
     });
 
-    it('should handle circular references without stack overflow', () => {
+    it("should handle circular references without stack overflow", () => {
       const rules: PolicyRule[] = [
         {
-          toolName: 'test',
+          toolName: "test",
           argsPattern: /\[Circular\]/,
           decision: PolicyDecision.DENY,
         },
@@ -491,34 +435,31 @@ describe('PolicyEngine', () => {
         data?: Record<string, unknown>;
       };
       const circularArgs: CircularArgs = {
-        name: 'test',
+        name: "test",
         data: {},
       };
       // Create circular reference - TypeScript allows this since data is Record<string, unknown>
-      (circularArgs.data as Record<string, unknown>)['self'] =
-        circularArgs.data;
+      (circularArgs.data as Record<string, unknown>)["self"] = circularArgs.data;
 
       // Should not throw stack overflow error
-      expect(() =>
-        engine.check({ name: 'test', args: circularArgs }, undefined),
-      ).not.toThrow();
+      expect(() => engine.check({ name: "test", args: circularArgs }, undefined)).not.toThrow();
 
       // Should detect the circular reference pattern
-      expect(
-        engine.check({ name: 'test', args: circularArgs }, undefined),
-      ).toBe(PolicyDecision.DENY);
+      expect(engine.check({ name: "test", args: circularArgs }, undefined)).toBe(
+        PolicyDecision.DENY,
+      );
 
       // Non-circular object should not match
-      const normalArgs = { name: 'test', data: { value: 'normal' } };
-      expect(engine.check({ name: 'test', args: normalArgs }, undefined)).toBe(
+      const normalArgs = { name: "test", data: { value: "normal" } };
+      expect(engine.check({ name: "test", args: normalArgs }, undefined)).toBe(
         PolicyDecision.ASK_USER,
       );
     });
 
-    it('should handle deep circular references', () => {
+    it("should handle deep circular references", () => {
       const rules: PolicyRule[] = [
         {
-          toolName: 'deep',
+          toolName: "deep",
           argsPattern: /\[Circular\]/,
           decision: PolicyDecision.DENY,
         },
@@ -543,28 +484,26 @@ describe('PolicyEngine', () => {
       };
       // Create circular reference with proper type assertions
       const level3 = deepCircular.level1!.level2!.level3!;
-      level3['back'] = deepCircular.level1;
+      level3["back"] = deepCircular.level1;
 
       // Should handle without stack overflow
-      expect(() =>
-        engine.check({ name: 'deep', args: deepCircular }, undefined),
-      ).not.toThrow();
+      expect(() => engine.check({ name: "deep", args: deepCircular }, undefined)).not.toThrow();
 
       // Should detect the circular reference
-      expect(
-        engine.check({ name: 'deep', args: deepCircular }, undefined),
-      ).toBe(PolicyDecision.DENY);
+      expect(engine.check({ name: "deep", args: deepCircular }, undefined)).toBe(
+        PolicyDecision.DENY,
+      );
     });
 
-    it('should handle repeated non-circular objects correctly', () => {
+    it("should handle repeated non-circular objects correctly", () => {
       const rules: PolicyRule[] = [
         {
-          toolName: 'test',
+          toolName: "test",
           argsPattern: /\[Circular\]/,
           decision: PolicyDecision.DENY,
         },
         {
-          toolName: 'test',
+          toolName: "test",
           argsPattern: /"value":"shared"/,
           decision: PolicyDecision.ALLOW,
           priority: 10,
@@ -574,7 +513,7 @@ describe('PolicyEngine', () => {
       engine = new PolicyEngine({ rules });
 
       // Create an object with repeated references but no cycles
-      const sharedObj = { value: 'shared' };
+      const sharedObj = { value: "shared" };
       const args = {
         first: sharedObj,
         second: sharedObj,
@@ -582,15 +521,13 @@ describe('PolicyEngine', () => {
       };
 
       // Should NOT mark repeated objects as circular, and should match the shared value pattern
-      expect(engine.check({ name: 'test', args }, undefined)).toBe(
-        PolicyDecision.ALLOW,
-      );
+      expect(engine.check({ name: "test", args }, undefined)).toBe(PolicyDecision.ALLOW);
     });
 
-    it('should omit undefined and function values from objects', () => {
+    it("should omit undefined and function values from objects", () => {
       const rules: PolicyRule[] = [
         {
-          toolName: 'test',
+          toolName: "test",
           argsPattern: /"definedValue":"test"/,
           decision: PolicyDecision.ALLOW,
         },
@@ -599,48 +536,42 @@ describe('PolicyEngine', () => {
       engine = new PolicyEngine({ rules });
 
       const args = {
-        definedValue: 'test',
+        definedValue: "test",
         undefinedValue: undefined,
-        functionValue: () => 'hello',
+        functionValue: () => "hello",
         nullValue: null,
       };
 
       // Should match pattern with defined value, undefined and functions omitted
-      expect(engine.check({ name: 'test', args }, undefined)).toBe(
-        PolicyDecision.ALLOW,
-      );
+      expect(engine.check({ name: "test", args }, undefined)).toBe(PolicyDecision.ALLOW);
 
       // Check that the pattern would NOT match if undefined was included
       const rulesWithUndefined: PolicyRule[] = [
         {
-          toolName: 'test',
+          toolName: "test",
           argsPattern: /undefinedValue/,
           decision: PolicyDecision.DENY,
         },
       ];
       engine = new PolicyEngine({ rules: rulesWithUndefined });
-      expect(engine.check({ name: 'test', args }, undefined)).toBe(
-        PolicyDecision.ASK_USER,
-      );
+      expect(engine.check({ name: "test", args }, undefined)).toBe(PolicyDecision.ASK_USER);
 
       // Check that the pattern would NOT match if function was included
       const rulesWithFunction: PolicyRule[] = [
         {
-          toolName: 'test',
+          toolName: "test",
           argsPattern: /functionValue/,
           decision: PolicyDecision.DENY,
         },
       ];
       engine = new PolicyEngine({ rules: rulesWithFunction });
-      expect(engine.check({ name: 'test', args }, undefined)).toBe(
-        PolicyDecision.ASK_USER,
-      );
+      expect(engine.check({ name: "test", args }, undefined)).toBe(PolicyDecision.ASK_USER);
     });
 
-    it('should convert undefined and functions to null in arrays', () => {
+    it("should convert undefined and functions to null in arrays", () => {
       const rules: PolicyRule[] = [
         {
-          toolName: 'test',
+          toolName: "test",
           argsPattern: /\["value",null,null,null\]/,
           decision: PolicyDecision.ALLOW,
         },
@@ -649,39 +580,36 @@ describe('PolicyEngine', () => {
       engine = new PolicyEngine({ rules });
 
       const args = {
-        array: ['value', undefined, () => 'hello', null],
+        array: ["value", undefined, () => "hello", null],
       };
 
       // Should match pattern with undefined and functions converted to null
-      expect(engine.check({ name: 'test', args }, undefined)).toBe(
-        PolicyDecision.ALLOW,
-      );
+      expect(engine.check({ name: "test", args }, undefined)).toBe(PolicyDecision.ALLOW);
     });
 
-    it('should produce valid JSON for all inputs', () => {
-      const testCases: Array<{ input: Record<string, unknown>; desc: string }> =
-        [
-          { input: { simple: 'string' }, desc: 'simple object' },
-          {
-            input: { nested: { deep: { value: 123 } } },
-            desc: 'nested object',
-          },
-          { input: { data: [1, 2, 3] }, desc: 'simple array' },
-          { input: { mixed: [1, { a: 'b' }, null] }, desc: 'mixed array' },
-          {
-            input: { undef: undefined, func: () => {}, normal: 'value' },
-            desc: 'object with undefined and function',
-          },
-          {
-            input: { data: ['a', undefined, () => {}, null] },
-            desc: 'array with undefined and function',
-          },
-        ];
+    it("should produce valid JSON for all inputs", () => {
+      const testCases: Array<{ input: Record<string, unknown>; desc: string }> = [
+        { input: { simple: "string" }, desc: "simple object" },
+        {
+          input: { nested: { deep: { value: 123 } } },
+          desc: "nested object",
+        },
+        { input: { data: [1, 2, 3] }, desc: "simple array" },
+        { input: { mixed: [1, { a: "b" }, null] }, desc: "mixed array" },
+        {
+          input: { undef: undefined, func: () => {}, normal: "value" },
+          desc: "object with undefined and function",
+        },
+        {
+          input: { data: ["a", undefined, () => {}, null] },
+          desc: "array with undefined and function",
+        },
+      ];
 
       for (const { input } of testCases) {
         const rules: PolicyRule[] = [
           {
-            toolName: 'test',
+            toolName: "test",
             argsPattern: /.*/,
             decision: PolicyDecision.ALLOW,
           },
@@ -689,26 +617,22 @@ describe('PolicyEngine', () => {
         engine = new PolicyEngine({ rules });
 
         // Should not throw when checking (which internally uses stableStringify)
-        expect(() =>
-          engine.check({ name: 'test', args: input }, undefined),
-        ).not.toThrow();
+        expect(() => engine.check({ name: "test", args: input }, undefined)).not.toThrow();
 
         // The check should succeed
-        expect(engine.check({ name: 'test', args: input }, undefined)).toBe(
-          PolicyDecision.ALLOW,
-        );
+        expect(engine.check({ name: "test", args: input }, undefined)).toBe(PolicyDecision.ALLOW);
       }
     });
 
-    it('should respect toJSON methods on objects', () => {
+    it("should respect toJSON methods on objects", () => {
       const rules: PolicyRule[] = [
         {
-          toolName: 'test',
+          toolName: "test",
           argsPattern: /"sanitized":"safe"/,
           decision: PolicyDecision.ALLOW,
         },
         {
-          toolName: 'test',
+          toolName: "test",
           argsPattern: /"dangerous":"data"/,
           decision: PolicyDecision.DENY,
         },
@@ -719,21 +643,19 @@ describe('PolicyEngine', () => {
       // Object with toJSON that sanitizes output
       const args = {
         data: {
-          dangerous: 'data',
-          toJSON: () => ({ sanitized: 'safe' }),
+          dangerous: "data",
+          toJSON: () => ({ sanitized: "safe" }),
         },
       };
 
       // Should match the sanitized pattern, not the dangerous one
-      expect(engine.check({ name: 'test', args }, undefined)).toBe(
-        PolicyDecision.ALLOW,
-      );
+      expect(engine.check({ name: "test", args }, undefined)).toBe(PolicyDecision.ALLOW);
     });
 
-    it('should handle toJSON that returns primitives', () => {
+    it("should handle toJSON that returns primitives", () => {
       const rules: PolicyRule[] = [
         {
-          toolName: 'test',
+          toolName: "test",
           argsPattern: /"value":"string-value"/,
           decision: PolicyDecision.ALLOW,
         },
@@ -743,21 +665,19 @@ describe('PolicyEngine', () => {
 
       const args = {
         value: {
-          complex: 'object',
-          toJSON: () => 'string-value',
+          complex: "object",
+          toJSON: () => "string-value",
         },
       };
 
       // toJSON returns a string, which should be properly stringified
-      expect(engine.check({ name: 'test', args }, undefined)).toBe(
-        PolicyDecision.ALLOW,
-      );
+      expect(engine.check({ name: "test", args }, undefined)).toBe(PolicyDecision.ALLOW);
     });
 
-    it('should handle toJSON that throws an error', () => {
+    it("should handle toJSON that throws an error", () => {
       const rules: PolicyRule[] = [
         {
-          toolName: 'test',
+          toolName: "test",
           argsPattern: /"fallback":"value"/,
           decision: PolicyDecision.ALLOW,
         },
@@ -767,31 +687,25 @@ describe('PolicyEngine', () => {
 
       const args = {
         data: {
-          fallback: 'value',
+          fallback: "value",
           toJSON: () => {
-            throw new Error('toJSON error');
+            throw new Error("toJSON error");
           },
         },
       };
 
       // Should fall back to regular object serialization when toJSON throws
-      expect(engine.check({ name: 'test', args }, undefined)).toBe(
-        PolicyDecision.ALLOW,
-      );
+      expect(engine.check({ name: "test", args }, undefined)).toBe(PolicyDecision.ALLOW);
     });
   });
 
-  describe('serverName requirement', () => {
-    it('should require serverName for checks', () => {
+  describe("serverName requirement", () => {
+    it("should require serverName for checks", () => {
       // @ts-expect-error - intentionally testing missing serverName
-      expect(engine.check({ name: 'test' })).toBe(PolicyDecision.ASK_USER);
+      expect(engine.check({ name: "test" })).toBe(PolicyDecision.ASK_USER);
       // When serverName is provided (even undefined), it should work
-      expect(engine.check({ name: 'test' }, undefined)).toBe(
-        PolicyDecision.ASK_USER,
-      );
-      expect(engine.check({ name: 'test' }, 'some-server')).toBe(
-        PolicyDecision.ASK_USER,
-      );
+      expect(engine.check({ name: "test" }, undefined)).toBe(PolicyDecision.ASK_USER);
+      expect(engine.check({ name: "test" }, "some-server")).toBe(PolicyDecision.ASK_USER);
     });
   });
 });

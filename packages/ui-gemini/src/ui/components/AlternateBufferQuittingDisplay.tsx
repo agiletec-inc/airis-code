@@ -4,13 +4,13 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { Box } from 'ink';
-import { useUIState } from '../contexts/UIStateContext.js';
-import { AppHeader } from './AppHeader.js';
-import { HistoryItemDisplay } from './HistoryItemDisplay.js';
-import { QuittingDisplay } from './QuittingDisplay.js';
-import { useAppContext } from '../contexts/AppContext.js';
-import { MAX_GEMINI_MESSAGE_LINES } from '../constants.js';
+import { Box } from "ink";
+import { MAX_GEMINI_MESSAGE_LINES } from "../constants.js";
+import { useAppContext } from "../contexts/AppContext.js";
+import { useUIState } from "../contexts/UIStateContext.js";
+import { AppHeader } from "./AppHeader.js";
+import { HistoryItemDisplay } from "./HistoryItemDisplay.js";
+import { QuittingDisplay } from "./QuittingDisplay.js";
 
 export const AlternateBufferQuittingDisplay = () => {
   const { version } = useAppContext();
@@ -22,12 +22,7 @@ export const AlternateBufferQuittingDisplay = () => {
   // Our version of Ink is clever and will render a final frame outside of
   // the alternate buffer on app exit.
   return (
-    <Box
-      flexDirection="column"
-      flexShrink={0}
-      flexGrow={0}
-      width={uiState.terminalWidth}
-    >
+    <Box flexDirection="column" flexShrink={0} flexGrow={0} width={uiState.terminalWidth}>
       <AppHeader key="app-header" version={version} />
       {uiState.history.map((h) => (
         <HistoryItemDisplay

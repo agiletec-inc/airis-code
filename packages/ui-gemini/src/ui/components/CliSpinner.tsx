@@ -4,9 +4,9 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import Spinner from 'ink-spinner';
-import { type ComponentProps, useEffect } from 'react';
-import { debugState } from '../debug.js';
+import Spinner from "ink-spinner";
+import { type ComponentProps, useEffect } from "react";
+import { debugState } from "../debug.js";
 
 export type SpinnerProps = ComponentProps<typeof Spinner>;
 

@@ -4,20 +4,17 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { isApiError, isStructuredError } from './quotaErrorDetection.js';
-import { AuthType } from '../core/contentGenerator.js';
+import { AuthType } from "../core/contentGenerator.js";
+import { isApiError, isStructuredError } from "./quotaErrorDetection.js";
 
 const RATE_LIMIT_ERROR_MESSAGE_DEFAULT =
-  '\nPossible quota limitations in place or slow response times detected. Please wait and try again later.';
+  "\nPossible quota limitations in place or slow response times detected. Please wait and try again later.";
 
 function getRateLimitMessage(_authType?: AuthType): string {
   return RATE_LIMIT_ERROR_MESSAGE_DEFAULT;
 }
 
-export function parseAndFormatApiError(
-  error: unknown,
-  authType?: AuthType,
-): string {
+export function parseAndFormatApiError(error: unknown, authType?: AuthType): string {
   if (isStructuredError(error)) {
     let text = `[API Error: ${error.message}]`;
     if (error.status === 429) {
@@ -27,8 +24,8 @@ export function parseAndFormatApiError(
   }
 
   // The error message might be a string containing a JSON object.
-  if (typeof error === 'string') {
-    const jsonStart = error.indexOf('{');
+  if (typeof error === "string") {
+    const jsonStart = error.indexOf("{");
     if (jsonStart === -1) {
       return `[API Error: ${error}]`; // Not a JSON error, return as is.
     }
@@ -48,9 +45,7 @@ export function parseAndFormatApiError(
         } catch (_e) {
           // It's not a nested JSON error, so we just use the message as is.
         }
-        const statusText = parsedError.error.status
-          ? ` (Status: ${parsedError.error.status})`
-          : '';
+        const statusText = parsedError.error.status ? ` (Status: ${parsedError.error.status})` : "";
         let text = `[API Error: ${finalMessage}${statusText}]`;
         if (parsedError.error.code === 429) {
           text += getRateLimitMessage(authType);
@@ -63,5 +58,5 @@ export function parseAndFormatApiError(
     return `[API Error: ${error}]`;
   }
 
-  return '[API Error: An unknown error occurred.]';
+  return "[API Error: An unknown error occurred.]";
 }

@@ -4,24 +4,13 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import {
-  vi,
-  describe,
-  it,
-  expect,
-  beforeEach,
-  afterEach,
-  type Mock,
-} from 'vitest';
-import EventEmitter from 'node:events';
-import type { Readable } from 'node:stream';
-import { type ChildProcess } from 'node:child_process';
-import type {
-  ShellOutputEvent,
-  ShellExecutionConfig,
-} from './shellExecutionService.js';
-import { ShellExecutionService } from './shellExecutionService.js';
-import type { AnsiOutput, AnsiToken } from '../utils/terminalSerializer.js';
+import { type ChildProcess } from "node:child_process";
+import EventEmitter from "node:events";
+import type { Readable } from "node:stream";
+import { afterEach, beforeEach, describe, expect, it, type Mock, vi } from "vitest";
+import type { AnsiOutput, AnsiToken } from "../utils/terminalSerializer.js";
+import type { ShellExecutionConfig, ShellOutputEvent } from "./shellExecutionService.js";
+import { ShellExecutionService } from "./shellExecutionService.js";
 
 // Hoisted Mocks
 const mockPtySpawn = vi.hoisted(() => vi.fn());
@@ -32,21 +21,20 @@ const mockGetPty = vi.hoisted(() => vi.fn());
 const mockSerializeTerminalToObject = vi.hoisted(() => vi.fn());
 
 // Top-level Mocks
-vi.mock('@lydell/node-pty', () => ({
+vi.mock("@lydell/node-pty", () => ({
   spawn: mockPtySpawn,
 }));
-vi.mock('node:child_process', async (importOriginal) => {
-  const actual =
-    (await importOriginal()) as typeof import('node:child_process');
+vi.mock("node:child_process", async (importOriginal) => {
+  const actual = (await importOriginal()) as typeof import("node:child_process");
   return {
     ...actual,
     spawn: mockCpSpawn,
   };
 });
-vi.mock('../utils/textUtils.js', () => ({
+vi.mock("../utils/textUtils.js", () => ({
   isBinary: mockIsBinary,
 }));
-vi.mock('os', () => ({
+vi.mock("os", () => ({
   default: {
     platform: mockPlatform,
     constants: {
@@ -64,64 +52,60 @@ vi.mock('os', () => ({
     },
   },
 }));
-vi.mock('../utils/getPty.js', () => ({
+vi.mock("../utils/getPty.js", () => ({
   getPty: mockGetPty,
 }));
-vi.mock('../utils/terminalSerializer.js', () => ({
+vi.mock("../utils/terminalSerializer.js", () => ({
   serializeTerminalToObject: mockSerializeTerminalToObject,
 }));
 
-const mockProcessKill = vi
-  .spyOn(process, 'kill')
-  .mockImplementation(() => true);
+const mockProcessKill = vi.spyOn(process, "kill").mockImplementation(() => true);
 
 const shellExecutionConfig: ShellExecutionConfig = {
   terminalWidth: 80,
   terminalHeight: 24,
-  pager: 'cat',
+  pager: "cat",
   showColor: false,
   disableDynamicLineTrimming: true,
 };
 
-const createMockSerializeTerminalToObjectReturnValue = (
-  text: string | string[],
-): AnsiOutput => {
-  const lines = Array.isArray(text) ? text : text.split('\n');
+const createMockSerializeTerminalToObjectReturnValue = (text: string | string[]): AnsiOutput => {
+  const lines = Array.isArray(text) ? text : text.split("\n");
   const len = (shellExecutionConfig.terminalHeight ?? 24) as number;
   const expected: AnsiOutput = Array.from({ length: len }, (_, i) => [
     {
-      text: (lines[i] || '').trim(),
+      text: (lines[i] || "").trim(),
       bold: false,
       italic: false,
       underline: false,
       dim: false,
       inverse: false,
-      fg: '#ffffff',
-      bg: '#000000',
+      fg: "#ffffff",
+      bg: "#000000",
     },
   ]);
   return expected;
 };
 
 const createExpectedAnsiOutput = (text: string | string[]): AnsiOutput => {
-  const lines = Array.isArray(text) ? text : text.split('\n');
+  const lines = Array.isArray(text) ? text : text.split("\n");
   const len = (shellExecutionConfig.terminalHeight ?? 24) as number;
   const expected: AnsiOutput = Array.from({ length: len }, (_, i) => [
     {
-      text: expect.stringMatching((lines[i] || '').trim()),
+      text: expect.stringMatching((lines[i] || "").trim()),
       bold: false,
       italic: false,
       underline: false,
       dim: false,
       inverse: false,
-      fg: '',
-      bg: '',
+      fg: "",
+      bg: "",
     } as AnsiToken,
   ]);
   return expected;
 };
 
-describe('ShellExecutionService', () => {
+describe("ShellExecutionService", () => {
   let mockPtyProcess: EventEmitter & {
     pid: number;
     kill: Mock;
@@ -145,10 +129,10 @@ describe('ShellExecutionService', () => {
     vi.clearAllMocks();
     mockSerializeTerminalToObject.mockReturnValue([]);
     mockIsBinary.mockReturnValue(false);
-    mockPlatform.mockReturnValue('linux');
+    mockPlatform.mockReturnValue("linux");
     mockGetPty.mockResolvedValue({
       module: { spawn: mockPtySpawn },
-      name: 'mock-pty',
+      name: "mock-pty",
     });
 
     onOutputEventMock = vi.fn();
@@ -184,16 +168,13 @@ describe('ShellExecutionService', () => {
   // Helper function to run a standard execution simulation
   const simulateExecution = async (
     command: string,
-    simulation: (
-      ptyProcess: typeof mockPtyProcess,
-      ac: AbortController,
-    ) => void | Promise<void>,
+    simulation: (ptyProcess: typeof mockPtyProcess, ac: AbortController) => void | Promise<void>,
     config = shellExecutionConfig,
   ) => {
     const abortController = new AbortController();
     const handle = await ShellExecutionService.execute(
       command,
-      '/test/dir',
+      "/test/dir",
       onOutputEventMock,
       abortController.signal,
       true,
@@ -206,120 +187,112 @@ describe('ShellExecutionService', () => {
     return { result, handle, abortController };
   };
 
-  describe('Successful Execution', () => {
-    it('should execute a command and capture output', async () => {
+  describe("Successful Execution", () => {
+    it("should execute a command and capture output", async () => {
       mockSerializeTerminalToObject.mockReturnValue(
-        createMockSerializeTerminalToObjectReturnValue('file1.txt'),
+        createMockSerializeTerminalToObjectReturnValue("file1.txt"),
       );
-      const { result, handle } = await simulateExecution('ls -l', (pty) => {
-        pty.onData.mock.calls[0][0]('file1.txt\n');
+      const { result, handle } = await simulateExecution("ls -l", (pty) => {
+        pty.onData.mock.calls[0][0]("file1.txt\n");
         pty.onExit.mock.calls[0][0]({ exitCode: 0, signal: null });
       });
 
       expect(mockPtySpawn).toHaveBeenCalledWith(
-        'bash',
-        [
-          '-c',
-          'shopt -u promptvars nullglob extglob nocaseglob dotglob; ls -l',
-        ],
+        "bash",
+        ["-c", "shopt -u promptvars nullglob extglob nocaseglob dotglob; ls -l"],
         expect.any(Object),
       );
       expect(result.exitCode).toBe(0);
       expect(result.signal).toBeNull();
       expect(result.error).toBeNull();
       expect(result.aborted).toBe(false);
-      expect(result.output.trim()).toBe('file1.txt');
+      expect(result.output.trim()).toBe("file1.txt");
       expect(handle.pid).toBe(12345);
 
       expect(onOutputEventMock).toHaveBeenCalledWith({
-        type: 'data',
-        chunk: createExpectedAnsiOutput('file1.txt'),
+        type: "data",
+        chunk: createExpectedAnsiOutput("file1.txt"),
       });
     });
 
-    it('should strip ANSI color codes from output', async () => {
+    it("should strip ANSI color codes from output", async () => {
       mockSerializeTerminalToObject.mockReturnValue(
-        createMockSerializeTerminalToObjectReturnValue('aredword'),
+        createMockSerializeTerminalToObjectReturnValue("aredword"),
       );
-      const { result } = await simulateExecution('ls --color=auto', (pty) => {
-        pty.onData.mock.calls[0][0]('a\u001b[31mred\u001b[0mword');
+      const { result } = await simulateExecution("ls --color=auto", (pty) => {
+        pty.onData.mock.calls[0][0]("a\u001b[31mred\u001b[0mword");
         pty.onExit.mock.calls[0][0]({ exitCode: 0, signal: null });
       });
 
-      expect(result.output.trim()).toBe('aredword');
+      expect(result.output.trim()).toBe("aredword");
       expect(onOutputEventMock).toHaveBeenCalledWith(
         expect.objectContaining({
-          type: 'data',
-          chunk: createExpectedAnsiOutput('aredword'),
+          type: "data",
+          chunk: createExpectedAnsiOutput("aredword"),
         }),
       );
     });
 
-    it('should correctly decode multi-byte characters split across chunks', async () => {
+    it("should correctly decode multi-byte characters split across chunks", async () => {
       const { result } = await simulateExecution('echo "你好"', (pty) => {
-        const multiByteChar = '你好';
+        const multiByteChar = "你好";
         pty.onData.mock.calls[0][0](multiByteChar.slice(0, 1));
         pty.onData.mock.calls[0][0](multiByteChar.slice(1));
         pty.onExit.mock.calls[0][0]({ exitCode: 0, signal: null });
       });
-      expect(result.output.trim()).toBe('你好');
+      expect(result.output.trim()).toBe("你好");
     });
 
-    it('should handle commands with no output', async () => {
+    it("should handle commands with no output", async () => {
       mockSerializeTerminalToObject.mockReturnValue(
-        createMockSerializeTerminalToObjectReturnValue(''),
+        createMockSerializeTerminalToObjectReturnValue(""),
       );
-      await simulateExecution('touch file', (pty) => {
+      await simulateExecution("touch file", (pty) => {
         pty.onExit.mock.calls[0][0]({ exitCode: 0, signal: null });
       });
 
       expect(onOutputEventMock).toHaveBeenCalledWith(
         expect.objectContaining({
-          chunk: createExpectedAnsiOutput(''),
+          chunk: createExpectedAnsiOutput(""),
         }),
       );
     });
 
-    it('should capture large output (10000 lines)', async () => {
+    it("should capture large output (10000 lines)", async () => {
       const lineCount = 10000;
       const lines = Array.from({ length: lineCount }, (_, i) => `line ${i}`);
-      const expectedOutput = lines.join('\n');
+      const expectedOutput = lines.join("\n");
 
-      const { result } = await simulateExecution(
-        'large-output-command',
-        (pty) => {
-          // Send data in chunks to simulate realistic streaming
-          // Use \r\n to ensure the terminal moves the cursor to the start of the line
-          const chunkSize = 1000;
-          for (let i = 0; i < lineCount; i += chunkSize) {
-            const chunk = lines.slice(i, i + chunkSize).join('\r\n') + '\r\n';
-            pty.onData.mock.calls[0][0](chunk);
-          }
-          pty.onExit.mock.calls[0][0]({ exitCode: 0, signal: null });
-        },
-      );
+      const { result } = await simulateExecution("large-output-command", (pty) => {
+        // Send data in chunks to simulate realistic streaming
+        // Use \r\n to ensure the terminal moves the cursor to the start of the line
+        const chunkSize = 1000;
+        for (let i = 0; i < lineCount; i += chunkSize) {
+          const chunk = lines.slice(i, i + chunkSize).join("\r\n") + "\r\n";
+          pty.onData.mock.calls[0][0](chunk);
+        }
+        pty.onExit.mock.calls[0][0]({ exitCode: 0, signal: null });
+      });
 
       expect(result.exitCode).toBe(0);
       // The terminal buffer output includes trailing spaces for each line (up to terminal width).
       // We trim each line to match our expected simple string.
       const processedOutput = result.output
-        .split('\n')
+        .split("\n")
         .map((l) => l.trimEnd())
-        .join('\n')
+        .join("\n")
         .trim();
       expect(processedOutput).toBe(expectedOutput);
-      expect(result.output.split('\n').length).toBeGreaterThanOrEqual(
-        lineCount,
-      );
+      expect(result.output.split("\n").length).toBeGreaterThanOrEqual(lineCount);
     });
 
-    it('should not wrap long lines in the final output', async () => {
+    it("should not wrap long lines in the final output", async () => {
       // Set a small width to force wrapping
       const narrowConfig = { ...shellExecutionConfig, terminalWidth: 10 };
-      const longString = '123456789012345'; // 15 chars, should wrap at 10
+      const longString = "123456789012345"; // 15 chars, should wrap at 10
 
       const { result } = await simulateExecution(
-        'long-line-command',
+        "long-line-command",
         (pty) => {
           pty.onData.mock.calls[0][0](longString);
           pty.onExit.mock.calls[0][0]({ exitCode: 0, signal: null });
@@ -331,27 +304,27 @@ describe('ShellExecutionService', () => {
       expect(result.output.trim()).toBe(longString);
     });
 
-    it('should not add extra padding but preserve explicit trailing whitespace', async () => {
-      const { result } = await simulateExecution('cmd', (pty) => {
+    it("should not add extra padding but preserve explicit trailing whitespace", async () => {
+      const { result } = await simulateExecution("cmd", (pty) => {
         // "value" should not get terminal-width padding
         // "value2    " should keep its spaces
-        pty.onData.mock.calls[0][0]('value\r\nvalue2    ');
+        pty.onData.mock.calls[0][0]("value\r\nvalue2    ");
         pty.onExit.mock.calls[0][0]({ exitCode: 0, signal: null });
       });
 
-      expect(result.output).toBe('value\nvalue2    ');
+      expect(result.output).toBe("value\nvalue2    ");
     });
 
-    it('should truncate output exceeding the scrollback limit', async () => {
+    it("should truncate output exceeding the scrollback limit", async () => {
       const scrollbackLimit = 100;
       const totalLines = 150;
       // Generate lines: "line 0", "line 1", ...
       const lines = Array.from({ length: totalLines }, (_, i) => `line ${i}`);
 
       const { result } = await simulateExecution(
-        'overflow-command',
+        "overflow-command",
         (pty) => {
-          const chunk = lines.join('\r\n') + '\r\n';
+          const chunk = lines.join("\r\n") + "\r\n";
           pty.onData.mock.calls[0][0](chunk);
           pty.onExit.mock.calls[0][0]({ exitCode: 0, signal: null });
         },
@@ -369,7 +342,7 @@ describe('ShellExecutionService', () => {
 
       const outputLines = result.output
         .trim()
-        .split('\n')
+        .split("\n")
         .map((l) => l.trimEnd());
 
       // We expect the *start* of the output to be truncated.
@@ -379,19 +352,17 @@ describe('ShellExecutionService', () => {
 
       // Check that we lost some lines from the beginning
       expect(outputLines.length).toBeLessThan(totalLines);
-      expect(outputLines[0]).not.toBe('line 0');
+      expect(outputLines[0]).not.toBe("line 0");
 
       // Check that we have the *last* lines
-      expect(outputLines[outputLines.length - 1]).toBe(
-        `line ${totalLines - 1}`,
-      );
+      expect(outputLines[outputLines.length - 1]).toBe(`line ${totalLines - 1}`);
     });
 
-    it('should call onPid with the process id', async () => {
+    it("should call onPid with the process id", async () => {
       const abortController = new AbortController();
       const handle = await ShellExecutionService.execute(
-        'ls -l',
-        '/test/dir',
+        "ls -l",
+        "/test/dir",
         onOutputEventMock,
         abortController.signal,
         true,
@@ -403,9 +374,9 @@ describe('ShellExecutionService', () => {
     });
   });
 
-  describe('pty interaction', () => {
+  describe("pty interaction", () => {
     beforeEach(() => {
-      vi.spyOn(ShellExecutionService['activePtys'], 'get').mockReturnValue({
+      vi.spyOn(ShellExecutionService["activePtys"], "get").mockReturnValue({
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         ptyProcess: mockPtyProcess as any,
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -413,14 +384,14 @@ describe('ShellExecutionService', () => {
       });
     });
 
-    it('should write to the pty and trigger a render', async () => {
+    it("should write to the pty and trigger a render", async () => {
       vi.useFakeTimers();
-      await simulateExecution('interactive-app', (pty) => {
-        ShellExecutionService.writeToPty(pty.pid!, 'input');
+      await simulateExecution("interactive-app", (pty) => {
+        ShellExecutionService.writeToPty(pty.pid!, "input");
         pty.onExit.mock.calls[0][0]({ exitCode: 0, signal: null });
       });
 
-      expect(mockPtyProcess.write).toHaveBeenCalledWith('input');
+      expect(mockPtyProcess.write).toHaveBeenCalledWith("input");
       // Use fake timers to check for the delayed render
       await vi.advanceTimersByTimeAsync(17);
       // The render will cause an output event
@@ -428,9 +399,9 @@ describe('ShellExecutionService', () => {
       vi.useRealTimers();
     });
 
-    it('should resize the pty and the headless terminal', async () => {
-      await simulateExecution('ls -l', (pty) => {
-        pty.onData.mock.calls[0][0]('file1.txt\n');
+    it("should resize the pty and the headless terminal", async () => {
+      await simulateExecution("ls -l", (pty) => {
+        pty.onData.mock.calls[0][0]("file1.txt\n");
         ShellExecutionService.resizePty(pty.pid!, 100, 40);
         pty.onExit.mock.calls[0][0]({ exitCode: 0, signal: null });
       });
@@ -439,12 +410,10 @@ describe('ShellExecutionService', () => {
       expect(mockHeadlessTerminal.resize).toHaveBeenCalledWith(100, 40);
     });
 
-    it('should not resize the pty if it is not active', async () => {
-      const isPtyActiveSpy = vi
-        .spyOn(ShellExecutionService, 'isPtyActive')
-        .mockReturnValue(false);
+    it("should not resize the pty if it is not active", async () => {
+      const isPtyActiveSpy = vi.spyOn(ShellExecutionService, "isPtyActive").mockReturnValue(false);
 
-      await simulateExecution('ls -l', (pty) => {
+      await simulateExecution("ls -l", (pty) => {
         ShellExecutionService.resizePty(pty.pid!, 100, 40);
         pty.onExit.mock.calls[0][0]({ exitCode: 0, signal: null });
       });
@@ -454,17 +423,15 @@ describe('ShellExecutionService', () => {
       isPtyActiveSpy.mockRestore();
     });
 
-    it('should ignore errors when resizing an exited pty', async () => {
-      const resizeError = new Error(
-        'Cannot resize a pty that has already exited',
-      );
+    it("should ignore errors when resizing an exited pty", async () => {
+      const resizeError = new Error("Cannot resize a pty that has already exited");
       mockPtyProcess.resize.mockImplementation(() => {
         throw resizeError;
       });
 
       // We don't expect this test to throw an error
       await expect(
-        simulateExecution('ls -l', (pty) => {
+        simulateExecution("ls -l", (pty) => {
           ShellExecutionService.resizePty(pty.pid!, 100, 40);
           pty.onExit.mock.calls[0][0]({ exitCode: 0, signal: null });
         }),
@@ -473,23 +440,23 @@ describe('ShellExecutionService', () => {
       expect(mockPtyProcess.resize).toHaveBeenCalledWith(100, 40);
     });
 
-    it('should re-throw other errors during resize', async () => {
-      const otherError = new Error('Some other error');
+    it("should re-throw other errors during resize", async () => {
+      const otherError = new Error("Some other error");
       mockPtyProcess.resize.mockImplementation(() => {
         throw otherError;
       });
 
       await expect(
-        simulateExecution('ls -l', (pty) => {
+        simulateExecution("ls -l", (pty) => {
           ShellExecutionService.resizePty(pty.pid!, 100, 40);
           pty.onExit.mock.calls[0][0]({ exitCode: 0, signal: null });
         }),
-      ).rejects.toThrow('Some other error');
+      ).rejects.toThrow("Some other error");
     });
 
-    it('should scroll the headless terminal', async () => {
-      await simulateExecution('ls -l', (pty) => {
-        pty.onData.mock.calls[0][0]('file1.txt\n');
+    it("should scroll the headless terminal", async () => {
+      await simulateExecution("ls -l", (pty) => {
+        pty.onData.mock.calls[0][0]("file1.txt\n");
         ShellExecutionService.scrollPty(pty.pid!, 10);
         pty.onExit.mock.calls[0][0]({ exitCode: 0, signal: null });
       });
@@ -497,10 +464,8 @@ describe('ShellExecutionService', () => {
       expect(mockHeadlessTerminal.scrollLines).toHaveBeenCalledWith(10);
     });
 
-    it('should not throw when resizing a pty that has already exited (Windows)', () => {
-      const resizeError = new Error(
-        'Cannot resize a pty that has already exited',
-      );
+    it("should not throw when resizing a pty that has already exited (Windows)", () => {
+      const resizeError = new Error("Cannot resize a pty that has already exited");
       mockPtyProcess.resize.mockImplementation(() => {
         throw resizeError;
       });
@@ -515,20 +480,20 @@ describe('ShellExecutionService', () => {
     });
   });
 
-  describe('Failed Execution', () => {
-    it('should capture a non-zero exit code', async () => {
-      const { result } = await simulateExecution('a-bad-command', (pty) => {
-        pty.onData.mock.calls[0][0]('command not found');
+  describe("Failed Execution", () => {
+    it("should capture a non-zero exit code", async () => {
+      const { result } = await simulateExecution("a-bad-command", (pty) => {
+        pty.onData.mock.calls[0][0]("command not found");
         pty.onExit.mock.calls[0][0]({ exitCode: 127, signal: null });
       });
 
       expect(result.exitCode).toBe(127);
-      expect(result.output.trim()).toBe('command not found');
+      expect(result.output.trim()).toBe("command not found");
       expect(result.error).toBeNull();
     });
 
-    it('should capture a termination signal', async () => {
-      const { result } = await simulateExecution('long-process', (pty) => {
+    it("should capture a termination signal", async () => {
+      const { result } = await simulateExecution("long-process", (pty) => {
         pty.onExit.mock.calls[0][0]({ exitCode: 0, signal: 15 });
       });
 
@@ -536,16 +501,16 @@ describe('ShellExecutionService', () => {
       expect(result.signal).toBe(15);
     });
 
-    it('should handle a synchronous spawn error', async () => {
+    it("should handle a synchronous spawn error", async () => {
       mockGetPty.mockImplementation(() => null);
 
       mockCpSpawn.mockImplementation(() => {
-        throw new Error('Simulated PTY spawn error');
+        throw new Error("Simulated PTY spawn error");
       });
 
       const handle = await ShellExecutionService.execute(
-        'any-command',
-        '/test/dir',
+        "any-command",
+        "/test/dir",
         onOutputEventMock,
         new AbortController().signal,
         true,
@@ -554,31 +519,28 @@ describe('ShellExecutionService', () => {
       const result = await handle.result;
 
       expect(result.error).toBeInstanceOf(Error);
-      expect(result.error?.message).toContain('Simulated PTY spawn error');
+      expect(result.error?.message).toContain("Simulated PTY spawn error");
       expect(result.exitCode).toBe(1);
-      expect(result.output).toBe('');
+      expect(result.output).toBe("");
       expect(handle.pid).toBeUndefined();
     });
   });
 
-  describe('Aborting Commands', () => {
-    it('should abort a running process and set the aborted flag', async () => {
-      const { result } = await simulateExecution(
-        'sleep 10',
-        (pty, abortController) => {
-          abortController.abort();
-          pty.onExit.mock.calls[0][0]({ exitCode: 1, signal: null });
-        },
-      );
+  describe("Aborting Commands", () => {
+    it("should abort a running process and set the aborted flag", async () => {
+      const { result } = await simulateExecution("sleep 10", (pty, abortController) => {
+        abortController.abort();
+        pty.onExit.mock.calls[0][0]({ exitCode: 1, signal: null });
+      });
 
       expect(result.aborted).toBe(true);
       // The process kill is mocked, so we just check that the flag is set.
     });
 
-    it('should send SIGTERM and then SIGKILL on abort', async () => {
+    it("should send SIGTERM and then SIGKILL on abort", async () => {
       const sigkillPromise = new Promise<void>((resolve) => {
         mockProcessKill.mockImplementation((pid, signal) => {
-          if (signal === 'SIGKILL' && pid === -mockPtyProcess.pid) {
+          if (signal === "SIGKILL" && pid === -mockPtyProcess.pid) {
             resolve();
           }
           return true;
@@ -586,7 +548,7 @@ describe('ShellExecutionService', () => {
       });
 
       const { result } = await simulateExecution(
-        'long-running-process',
+        "long-running-process",
         async (pty, abortController) => {
           abortController.abort();
           await sigkillPromise; // Wait for SIGKILL to be sent before exiting.
@@ -599,10 +561,10 @@ describe('ShellExecutionService', () => {
       // Verify the calls were made in the correct order.
       const killCalls = mockProcessKill.mock.calls;
       const sigtermCallIndex = killCalls.findIndex(
-        (call) => call[0] === -mockPtyProcess.pid && call[1] === 'SIGTERM',
+        (call) => call[0] === -mockPtyProcess.pid && call[1] === "SIGTERM",
       );
       const sigkillCallIndex = killCalls.findIndex(
-        (call) => call[0] === -mockPtyProcess.pid && call[1] === 'SIGKILL',
+        (call) => call[0] === -mockPtyProcess.pid && call[1] === "SIGKILL",
       );
 
       expect(sigtermCallIndex).toBe(0);
@@ -612,18 +574,15 @@ describe('ShellExecutionService', () => {
       expect(result.signal).toBe(9);
     });
 
-    it('should resolve without waiting for the processing chain on abort', async () => {
-      const { result } = await simulateExecution(
-        'long-output',
-        (pty, abortController) => {
-          // Simulate a lot of data being in the queue to be processed
-          for (let i = 0; i < 1000; i++) {
-            pty.onData.mock.calls[0][0]('some data');
-          }
-          abortController.abort();
-          pty.onExit.mock.calls[0][0]({ exitCode: 1, signal: null });
-        },
-      );
+    it("should resolve without waiting for the processing chain on abort", async () => {
+      const { result } = await simulateExecution("long-output", (pty, abortController) => {
+        // Simulate a lot of data being in the queue to be processed
+        for (let i = 0; i < 1000; i++) {
+          pty.onData.mock.calls[0][0]("some data");
+        }
+        abortController.abort();
+        pty.onExit.mock.calls[0][0]({ exitCode: 1, signal: null });
+      });
 
       // The main assertion here is implicit: the `await` for the result above
       // should complete without timing out. This proves that the resolution
@@ -633,104 +592,93 @@ describe('ShellExecutionService', () => {
     });
   });
 
-  describe('Binary Output', () => {
-    it('should detect binary output and switch to progress events', async () => {
+  describe("Binary Output", () => {
+    it("should detect binary output and switch to progress events", async () => {
       mockIsBinary.mockReturnValueOnce(true);
       const binaryChunk1 = Buffer.from([0x89, 0x50, 0x4e, 0x47]);
       const binaryChunk2 = Buffer.from([0x0d, 0x0a, 0x1a, 0x0a]);
 
-      const { result } = await simulateExecution('cat image.png', (pty) => {
+      const { result } = await simulateExecution("cat image.png", (pty) => {
         pty.onData.mock.calls[0][0](binaryChunk1);
         pty.onData.mock.calls[0][0](binaryChunk2);
         pty.onExit.mock.calls[0][0]({ exitCode: 0, signal: null });
       });
 
-      expect(result.rawOutput).toEqual(
-        Buffer.concat([binaryChunk1, binaryChunk2]),
-      );
+      expect(result.rawOutput).toEqual(Buffer.concat([binaryChunk1, binaryChunk2]));
       expect(onOutputEventMock).toHaveBeenCalledTimes(3);
       expect(onOutputEventMock.mock.calls[0][0]).toEqual({
-        type: 'binary_detected',
+        type: "binary_detected",
       });
       expect(onOutputEventMock.mock.calls[1][0]).toEqual({
-        type: 'binary_progress',
+        type: "binary_progress",
         bytesReceived: 4,
       });
       expect(onOutputEventMock.mock.calls[2][0]).toEqual({
-        type: 'binary_progress',
+        type: "binary_progress",
         bytesReceived: 8,
       });
     });
 
-    it('should not emit data events after binary is detected', async () => {
+    it("should not emit data events after binary is detected", async () => {
       mockIsBinary.mockImplementation((buffer) => buffer.includes(0x00));
 
-      await simulateExecution('cat mixed_file', (pty) => {
+      await simulateExecution("cat mixed_file", (pty) => {
         pty.onData.mock.calls[0][0](Buffer.from([0x00, 0x01, 0x02]));
-        pty.onData.mock.calls[0][0](Buffer.from('more text'));
+        pty.onData.mock.calls[0][0](Buffer.from("more text"));
         pty.onExit.mock.calls[0][0]({ exitCode: 0, signal: null });
       });
 
       const eventTypes = onOutputEventMock.mock.calls.map(
         (call: [ShellOutputEvent]) => call[0].type,
       );
-      expect(eventTypes).toEqual([
-        'binary_detected',
-        'binary_progress',
-        'binary_progress',
-      ]);
+      expect(eventTypes).toEqual(["binary_detected", "binary_progress", "binary_progress"]);
     });
   });
 
-  describe('Platform-Specific Behavior', () => {
-    it('should use powershell.exe on Windows', async () => {
-      mockPlatform.mockReturnValue('win32');
+  describe("Platform-Specific Behavior", () => {
+    it("should use powershell.exe on Windows", async () => {
+      mockPlatform.mockReturnValue("win32");
       await simulateExecution('dir "foo bar"', (pty) =>
         pty.onExit.mock.calls[0][0]({ exitCode: 0, signal: null }),
       );
 
       expect(mockPtySpawn).toHaveBeenCalledWith(
-        'powershell.exe',
-        ['-NoProfile', '-Command', 'dir "foo bar"'],
+        "powershell.exe",
+        ["-NoProfile", "-Command", 'dir "foo bar"'],
         expect.any(Object),
       );
     });
 
-    it('should use bash on Linux', async () => {
-      mockPlatform.mockReturnValue('linux');
+    it("should use bash on Linux", async () => {
+      mockPlatform.mockReturnValue("linux");
       await simulateExecution('ls "foo bar"', (pty) =>
         pty.onExit.mock.calls[0][0]({ exitCode: 0, signal: null }),
       );
 
       expect(mockPtySpawn).toHaveBeenCalledWith(
-        'bash',
-        [
-          '-c',
-          'shopt -u promptvars nullglob extglob nocaseglob dotglob; ls "foo bar"',
-        ],
+        "bash",
+        ["-c", 'shopt -u promptvars nullglob extglob nocaseglob dotglob; ls "foo bar"'],
         expect.any(Object),
       );
     });
   });
 
-  describe('AnsiOutput rendering', () => {
-    it('should call onOutputEvent with AnsiOutput when showColor is true', async () => {
+  describe("AnsiOutput rendering", () => {
+    it("should call onOutputEvent with AnsiOutput when showColor is true", async () => {
       const coloredShellExecutionConfig = {
         ...shellExecutionConfig,
         showColor: true,
-        defaultFg: '#ffffff',
-        defaultBg: '#000000',
+        defaultFg: "#ffffff",
+        defaultBg: "#000000",
         disableDynamicLineTrimming: true,
       };
-      const mockAnsiOutput = [
-        [{ text: 'hello', fg: '#ffffff', bg: '#000000' }],
-      ];
+      const mockAnsiOutput = [[{ text: "hello", fg: "#ffffff", bg: "#000000" }]];
       mockSerializeTerminalToObject.mockReturnValue(mockAnsiOutput);
 
       await simulateExecution(
-        'ls --color=auto',
+        "ls --color=auto",
         (pty) => {
-          pty.onData.mock.calls[0][0]('a\u001b[31mred\u001b[0mword');
+          pty.onData.mock.calls[0][0]("a\u001b[31mred\u001b[0mword");
           pty.onExit.mock.calls[0][0]({ exitCode: 0, signal: null });
         },
         coloredShellExecutionConfig,
@@ -742,20 +690,20 @@ describe('ShellExecutionService', () => {
 
       expect(onOutputEventMock).toHaveBeenCalledWith(
         expect.objectContaining({
-          type: 'data',
+          type: "data",
           chunk: mockAnsiOutput,
         }),
       );
     });
 
-    it('should call onOutputEvent with AnsiOutput when showColor is false', async () => {
+    it("should call onOutputEvent with AnsiOutput when showColor is false", async () => {
       mockSerializeTerminalToObject.mockReturnValue(
-        createMockSerializeTerminalToObjectReturnValue('aredword'),
+        createMockSerializeTerminalToObjectReturnValue("aredword"),
       );
       await simulateExecution(
-        'ls --color=auto',
+        "ls --color=auto",
         (pty) => {
-          pty.onData.mock.calls[0][0]('a\u001b[31mred\u001b[0mword');
+          pty.onData.mock.calls[0][0]("a\u001b[31mred\u001b[0mword");
           pty.onExit.mock.calls[0][0]({ exitCode: 0, signal: null });
         },
         {
@@ -765,30 +713,24 @@ describe('ShellExecutionService', () => {
         },
       );
 
-      const expected = createExpectedAnsiOutput('aredword');
+      const expected = createExpectedAnsiOutput("aredword");
 
       expect(onOutputEventMock).toHaveBeenCalledWith(
         expect.objectContaining({
-          type: 'data',
+          type: "data",
           chunk: expected,
         }),
       );
     });
 
-    it('should handle multi-line output correctly when showColor is false', async () => {
+    it("should handle multi-line output correctly when showColor is false", async () => {
       mockSerializeTerminalToObject.mockReturnValue(
-        createMockSerializeTerminalToObjectReturnValue([
-          'line 1',
-          'line 2',
-          'line 3',
-        ]),
+        createMockSerializeTerminalToObjectReturnValue(["line 1", "line 2", "line 3"]),
       );
       await simulateExecution(
-        'ls --color=auto',
+        "ls --color=auto",
         (pty) => {
-          pty.onData.mock.calls[0][0](
-            'line 1\n\u001b[32mline 2\u001b[0m\nline 3',
-          );
+          pty.onData.mock.calls[0][0]("line 1\n\u001b[32mline 2\u001b[0m\nline 3");
           pty.onExit.mock.calls[0][0]({ exitCode: 0, signal: null });
         },
         {
@@ -798,11 +740,11 @@ describe('ShellExecutionService', () => {
         },
       );
 
-      const expected = createExpectedAnsiOutput(['line 1', 'line 2', 'line 3']);
+      const expected = createExpectedAnsiOutput(["line 1", "line 2", "line 3"]);
 
       expect(onOutputEventMock).toHaveBeenCalledWith(
         expect.objectContaining({
-          type: 'data',
+          type: "data",
           chunk: expected,
         }),
       );
@@ -810,7 +752,7 @@ describe('ShellExecutionService', () => {
   });
 });
 
-describe('ShellExecutionService child_process fallback', () => {
+describe("ShellExecutionService child_process fallback", () => {
   let mockChildProcess: EventEmitter & Partial<ChildProcess>;
   let onOutputEventMock: Mock<(event: ShellOutputEvent) => void>;
 
@@ -818,18 +760,17 @@ describe('ShellExecutionService child_process fallback', () => {
     vi.clearAllMocks();
 
     mockIsBinary.mockReturnValue(false);
-    mockPlatform.mockReturnValue('linux');
+    mockPlatform.mockReturnValue("linux");
     mockGetPty.mockResolvedValue(null);
 
     onOutputEventMock = vi.fn();
 
-    mockChildProcess = new EventEmitter() as EventEmitter &
-      Partial<ChildProcess>;
+    mockChildProcess = new EventEmitter() as EventEmitter & Partial<ChildProcess>;
     mockChildProcess.stdout = new EventEmitter() as Readable;
     mockChildProcess.stderr = new EventEmitter() as Readable;
     mockChildProcess.kill = vi.fn();
 
-    Object.defineProperty(mockChildProcess, 'pid', {
+    Object.defineProperty(mockChildProcess, "pid", {
       value: 12345,
       configurable: true,
     });
@@ -845,7 +786,7 @@ describe('ShellExecutionService child_process fallback', () => {
     const abortController = new AbortController();
     const handle = await ShellExecutionService.execute(
       command,
-      '/test/dir',
+      "/test/dir",
       onOutputEventMock,
       abortController.signal,
       true,
@@ -858,88 +799,85 @@ describe('ShellExecutionService child_process fallback', () => {
     return { result, handle, abortController };
   };
 
-  describe('Successful Execution', () => {
-    it('should execute a command and capture stdout and stderr', async () => {
-      const { result, handle } = await simulateExecution('ls -l', (cp) => {
-        cp.stdout?.emit('data', Buffer.from('file1.txt\n'));
-        cp.stderr?.emit('data', Buffer.from('a warning'));
-        cp.emit('exit', 0, null);
-        cp.emit('close', 0, null);
+  describe("Successful Execution", () => {
+    it("should execute a command and capture stdout and stderr", async () => {
+      const { result, handle } = await simulateExecution("ls -l", (cp) => {
+        cp.stdout?.emit("data", Buffer.from("file1.txt\n"));
+        cp.stderr?.emit("data", Buffer.from("a warning"));
+        cp.emit("exit", 0, null);
+        cp.emit("close", 0, null);
       });
 
       expect(mockCpSpawn).toHaveBeenCalledWith(
-        'bash',
-        [
-          '-c',
-          'shopt -u promptvars nullglob extglob nocaseglob dotglob; ls -l',
-        ],
+        "bash",
+        ["-c", "shopt -u promptvars nullglob extglob nocaseglob dotglob; ls -l"],
         expect.objectContaining({ shell: false, detached: true }),
       );
       expect(result.exitCode).toBe(0);
       expect(result.signal).toBeNull();
       expect(result.error).toBeNull();
       expect(result.aborted).toBe(false);
-      expect(result.output).toBe('file1.txt\na warning');
+      expect(result.output).toBe("file1.txt\na warning");
       expect(handle.pid).toBe(undefined);
 
       expect(onOutputEventMock).toHaveBeenCalledWith({
-        type: 'data',
-        chunk: 'file1.txt\na warning',
+        type: "data",
+        chunk: "file1.txt\na warning",
       });
     });
 
-    it('should strip ANSI color codes from output', async () => {
-      const { result } = await simulateExecution('ls --color=auto', (cp) => {
-        cp.stdout?.emit('data', Buffer.from('a\u001b[31mred\u001b[0mword'));
-        cp.emit('exit', 0, null);
-        cp.emit('close', 0, null);
+    it("should strip ANSI color codes from output", async () => {
+      const { result } = await simulateExecution("ls --color=auto", (cp) => {
+        cp.stdout?.emit("data", Buffer.from("a\u001b[31mred\u001b[0mword"));
+        cp.emit("exit", 0, null);
+        cp.emit("close", 0, null);
       });
 
-      expect(result.output.trim()).toBe('aredword');
+      expect(result.output.trim()).toBe("aredword");
       expect(onOutputEventMock).toHaveBeenCalledWith(
         expect.objectContaining({
-          type: 'data',
-          chunk: 'aredword',
+          type: "data",
+          chunk: "aredword",
         }),
       );
     });
 
-    it('should correctly decode multi-byte characters split across chunks', async () => {
+    it("should correctly decode multi-byte characters split across chunks", async () => {
       const { result } = await simulateExecution('echo "你好"', (cp) => {
-        const multiByteChar = Buffer.from('你好', 'utf-8');
-        cp.stdout?.emit('data', multiByteChar.slice(0, 2));
-        cp.stdout?.emit('data', multiByteChar.slice(2));
-        cp.emit('exit', 0, null);
-        cp.emit('close', 0, null);
+        const multiByteChar = Buffer.from("你好", "utf-8");
+        cp.stdout?.emit("data", multiByteChar.slice(0, 2));
+        cp.stdout?.emit("data", multiByteChar.slice(2));
+        cp.emit("exit", 0, null);
+        cp.emit("close", 0, null);
       });
-      expect(result.output.trim()).toBe('你好');
+      expect(result.output.trim()).toBe("你好");
     });
 
-    it('should handle commands with no output', async () => {
-      const { result } = await simulateExecution('touch file', (cp) => {
-        cp.emit('exit', 0, null);
-        cp.emit('close', 0, null);
+    it("should handle commands with no output", async () => {
+      const { result } = await simulateExecution("touch file", (cp) => {
+        cp.emit("exit", 0, null);
+        cp.emit("close", 0, null);
       });
 
-      expect(result.output.trim()).toBe('');
+      expect(result.output.trim()).toBe("");
       expect(onOutputEventMock).not.toHaveBeenCalled();
     });
 
-    it.skip('should truncate stdout using a sliding window and show a warning', async () => {
+    it.skip("should truncate stdout using a sliding window and show a warning", async () => {
       const MAX_SIZE = 16 * 1024 * 1024;
-      const chunk1 = 'a'.repeat(MAX_SIZE / 2 - 5);
-      const chunk2 = 'b'.repeat(MAX_SIZE / 2 - 5);
-      const chunk3 = 'c'.repeat(20);
+      const chunk1 = "a".repeat(MAX_SIZE / 2 - 5);
+      const chunk2 = "b".repeat(MAX_SIZE / 2 - 5);
+      const chunk3 = "c".repeat(20);
 
-      const { result } = await simulateExecution('large-output', (cp) => {
-        cp.stdout?.emit('data', Buffer.from(chunk1));
-        cp.stdout?.emit('data', Buffer.from(chunk2));
-        cp.stdout?.emit('data', Buffer.from(chunk3));
-        cp.emit('exit', 0, null);
+      const { result } = await simulateExecution("large-output", (cp) => {
+        cp.stdout?.emit("data", Buffer.from(chunk1));
+        cp.stdout?.emit("data", Buffer.from(chunk2));
+        cp.stdout?.emit("data", Buffer.from(chunk3));
+        cp.emit("exit", 0, null);
       });
 
       const truncationMessage =
-        '[GEMINI_CLI_WARNING: Output truncated. The buffer is limited to 16MB.]';
+        "[GEMINI_CLI_WARNING: Output truncated. The buffer is limited to 16MB.]";
       expect(result.output).toContain(truncationMessage);
 
       const outputWithoutMessage = result.output
@@ -949,53 +887,51 @@ describe('ShellExecutionService child_process fallback', () => {
       expect(outputWithoutMessage.length).toBe(MAX_SIZE);
 
       const expectedStart = (chunk1 + chunk2 + chunk3).slice(-MAX_SIZE);
-      expect(
-        outputWithoutMessage.startsWith(expectedStart.substring(0, 10)),
-      ).toBe(true);
-      expect(outputWithoutMessage.endsWith('c'.repeat(20))).toBe(true);
+      expect(outputWithoutMessage.startsWith(expectedStart.substring(0, 10))).toBe(true);
+      expect(outputWithoutMessage.endsWith("c".repeat(20))).toBe(true);
     }, 120000);
   });
 
-  describe('Failed Execution', () => {
-    it('should capture a non-zero exit code and format output correctly', async () => {
-      const { result } = await simulateExecution('a-bad-command', (cp) => {
-        cp.stderr?.emit('data', Buffer.from('command not found'));
-        cp.emit('exit', 127, null);
-        cp.emit('close', 127, null);
+  describe("Failed Execution", () => {
+    it("should capture a non-zero exit code and format output correctly", async () => {
+      const { result } = await simulateExecution("a-bad-command", (cp) => {
+        cp.stderr?.emit("data", Buffer.from("command not found"));
+        cp.emit("exit", 127, null);
+        cp.emit("close", 127, null);
       });
 
       expect(result.exitCode).toBe(127);
-      expect(result.output.trim()).toBe('command not found');
+      expect(result.output.trim()).toBe("command not found");
       expect(result.error).toBeNull();
     });
 
-    it('should capture a termination signal', async () => {
-      const { result } = await simulateExecution('long-process', (cp) => {
-        cp.emit('exit', null, 'SIGTERM');
-        cp.emit('close', null, 'SIGTERM');
+    it("should capture a termination signal", async () => {
+      const { result } = await simulateExecution("long-process", (cp) => {
+        cp.emit("exit", null, "SIGTERM");
+        cp.emit("close", null, "SIGTERM");
       });
 
       expect(result.exitCode).toBeNull();
       expect(result.signal).toBe(15);
     });
 
-    it('should handle a spawn error', async () => {
-      const spawnError = new Error('spawn EACCES');
-      const { result } = await simulateExecution('protected-cmd', (cp) => {
-        cp.emit('error', spawnError);
-        cp.emit('exit', 1, null);
-        cp.emit('close', 1, null);
+    it("should handle a spawn error", async () => {
+      const spawnError = new Error("spawn EACCES");
+      const { result } = await simulateExecution("protected-cmd", (cp) => {
+        cp.emit("error", spawnError);
+        cp.emit("exit", 1, null);
+        cp.emit("close", 1, null);
       });
 
       expect(result.error).toBe(spawnError);
       expect(result.exitCode).toBe(1);
     });
 
-    it('handles errors that do not fire the exit event', async () => {
-      const error = new Error('spawn abc ENOENT');
-      const { result } = await simulateExecution('touch cat.jpg', (cp) => {
-        cp.emit('error', error); // No exit event is fired.
-        cp.emit('close', 1, null);
+    it("handles errors that do not fire the exit event", async () => {
+      const error = new Error("spawn abc ENOENT");
+      const { result } = await simulateExecution("touch cat.jpg", (cp) => {
+        cp.emit("error", error); // No exit event is fired.
+        cp.emit("close", 1, null);
       });
 
       expect(result.error).toBe(error);
@@ -1003,68 +939,59 @@ describe('ShellExecutionService child_process fallback', () => {
     });
   });
 
-  describe('Aborting Commands', () => {
+  describe("Aborting Commands", () => {
     describe.each([
       {
-        platform: 'linux',
-        expectedSignal: 'SIGTERM',
-        expectedExit: { signal: 'SIGKILL' as const },
+        platform: "linux",
+        expectedSignal: "SIGTERM",
+        expectedExit: { signal: "SIGKILL" as const },
       },
       {
-        platform: 'win32',
-        expectedCommand: 'taskkill',
+        platform: "win32",
+        expectedCommand: "taskkill",
         expectedExit: { code: 1 },
       },
-    ])(
-      'on $platform',
-      ({ platform, expectedSignal, expectedCommand, expectedExit }) => {
-        it('should abort a running process and set the aborted flag', async () => {
-          mockPlatform.mockReturnValue(platform);
+    ])("on $platform", ({ platform, expectedSignal, expectedCommand, expectedExit }) => {
+      it("should abort a running process and set the aborted flag", async () => {
+        mockPlatform.mockReturnValue(platform);
 
-          const { result } = await simulateExecution(
-            'sleep 10',
-            (cp, abortController) => {
-              abortController.abort();
-              if (expectedExit.signal) {
-                cp.emit('exit', null, expectedExit.signal);
-                cp.emit('close', null, expectedExit.signal);
-              }
-              if (typeof expectedExit.code === 'number') {
-                cp.emit('exit', expectedExit.code, null);
-                cp.emit('close', expectedExit.code, null);
-              }
-            },
-          );
-
-          expect(result.aborted).toBe(true);
-
-          if (platform === 'linux') {
-            expect(mockProcessKill).toHaveBeenCalledWith(
-              -mockChildProcess.pid!,
-              expectedSignal,
-            );
-          } else {
-            expect(mockCpSpawn).toHaveBeenCalledWith(expectedCommand, [
-              '/pid',
-              String(mockChildProcess.pid),
-              '/f',
-              '/t',
-            ]);
+        const { result } = await simulateExecution("sleep 10", (cp, abortController) => {
+          abortController.abort();
+          if (expectedExit.signal) {
+            cp.emit("exit", null, expectedExit.signal);
+            cp.emit("close", null, expectedExit.signal);
+          }
+          if (typeof expectedExit.code === "number") {
+            cp.emit("exit", expectedExit.code, null);
+            cp.emit("close", expectedExit.code, null);
           }
         });
-      },
-    );
 
-    it('should gracefully attempt SIGKILL on linux if SIGTERM fails', async () => {
-      mockPlatform.mockReturnValue('linux');
+        expect(result.aborted).toBe(true);
+
+        if (platform === "linux") {
+          expect(mockProcessKill).toHaveBeenCalledWith(-mockChildProcess.pid!, expectedSignal);
+        } else {
+          expect(mockCpSpawn).toHaveBeenCalledWith(expectedCommand, [
+            "/pid",
+            String(mockChildProcess.pid),
+            "/f",
+            "/t",
+          ]);
+        }
+      });
+    });
+
+    it("should gracefully attempt SIGKILL on linux if SIGTERM fails", async () => {
+      mockPlatform.mockReturnValue("linux");
       vi.useFakeTimers();
 
       // Don't await the result inside the simulation block for this specific test.
       // We need to control the timeline manually.
       const abortController = new AbortController();
       const handle = await ShellExecutionService.execute(
-        'unresponsive_process',
-        '/test/dir',
+        "unresponsive_process",
+        "/test/dir",
         onOutputEventMock,
         abortController.signal,
         true,
@@ -1074,23 +1001,17 @@ describe('ShellExecutionService child_process fallback', () => {
       abortController.abort();
 
       // Check the first kill signal
-      expect(mockProcessKill).toHaveBeenCalledWith(
-        -mockChildProcess.pid!,
-        'SIGTERM',
-      );
+      expect(mockProcessKill).toHaveBeenCalledWith(-mockChildProcess.pid!, "SIGTERM");
 
       // Now, advance time past the timeout
       await vi.advanceTimersByTimeAsync(250);
 
       // Check the second kill signal
-      expect(mockProcessKill).toHaveBeenCalledWith(
-        -mockChildProcess.pid!,
-        'SIGKILL',
-      );
+      expect(mockProcessKill).toHaveBeenCalledWith(-mockChildProcess.pid!, "SIGKILL");
 
       // Finally, simulate the process exiting and await the result
-      mockChildProcess.emit('exit', null, 'SIGKILL');
-      mockChildProcess.emit('close', null, 'SIGKILL');
+      mockChildProcess.emit("exit", null, "SIGKILL");
+      mockChildProcess.emit("close", null, "SIGKILL");
       const result = await handle.result;
 
       vi.useRealTimers();
@@ -1100,54 +1021,50 @@ describe('ShellExecutionService child_process fallback', () => {
     });
   });
 
-  describe('Binary Output', () => {
-    it('should detect binary output and switch to progress events', async () => {
+  describe("Binary Output", () => {
+    it("should detect binary output and switch to progress events", async () => {
       mockIsBinary.mockReturnValueOnce(true);
       const binaryChunk1 = Buffer.from([0x89, 0x50, 0x4e, 0x47]);
       const binaryChunk2 = Buffer.from([0x0d, 0x0a, 0x1a, 0x0a]);
 
-      const { result } = await simulateExecution('cat image.png', (cp) => {
-        cp.stdout?.emit('data', binaryChunk1);
-        cp.stdout?.emit('data', binaryChunk2);
-        cp.emit('exit', 0, null);
+      const { result } = await simulateExecution("cat image.png", (cp) => {
+        cp.stdout?.emit("data", binaryChunk1);
+        cp.stdout?.emit("data", binaryChunk2);
+        cp.emit("exit", 0, null);
       });
 
-      expect(result.rawOutput).toEqual(
-        Buffer.concat([binaryChunk1, binaryChunk2]),
-      );
+      expect(result.rawOutput).toEqual(Buffer.concat([binaryChunk1, binaryChunk2]));
       expect(onOutputEventMock).toHaveBeenCalledTimes(1);
       expect(onOutputEventMock.mock.calls[0][0]).toEqual({
-        type: 'binary_detected',
+        type: "binary_detected",
       });
     });
 
-    it('should not emit data events after binary is detected', async () => {
+    it("should not emit data events after binary is detected", async () => {
       mockIsBinary.mockImplementation((buffer) => buffer.includes(0x00));
 
-      await simulateExecution('cat mixed_file', (cp) => {
-        cp.stdout?.emit('data', Buffer.from('some text'));
-        cp.stdout?.emit('data', Buffer.from([0x00, 0x01, 0x02]));
-        cp.stdout?.emit('data', Buffer.from('more text'));
-        cp.emit('exit', 0, null);
+      await simulateExecution("cat mixed_file", (cp) => {
+        cp.stdout?.emit("data", Buffer.from("some text"));
+        cp.stdout?.emit("data", Buffer.from([0x00, 0x01, 0x02]));
+        cp.stdout?.emit("data", Buffer.from("more text"));
+        cp.emit("exit", 0, null);
       });
 
       const eventTypes = onOutputEventMock.mock.calls.map(
         (call: [ShellOutputEvent]) => call[0].type,
       );
-      expect(eventTypes).toEqual(['binary_detected']);
+      expect(eventTypes).toEqual(["binary_detected"]);
     });
   });
 
-  describe('Platform-Specific Behavior', () => {
-    it('should use powershell.exe on Windows', async () => {
-      mockPlatform.mockReturnValue('win32');
-      await simulateExecution('dir "foo bar"', (cp) =>
-        cp.emit('exit', 0, null),
-      );
+  describe("Platform-Specific Behavior", () => {
+    it("should use powershell.exe on Windows", async () => {
+      mockPlatform.mockReturnValue("win32");
+      await simulateExecution('dir "foo bar"', (cp) => cp.emit("exit", 0, null));
 
       expect(mockCpSpawn).toHaveBeenCalledWith(
-        'powershell.exe',
-        ['-NoProfile', '-Command', 'dir "foo bar"'],
+        "powershell.exe",
+        ["-NoProfile", "-Command", 'dir "foo bar"'],
         expect.objectContaining({
           shell: false,
           detached: false,
@@ -1156,16 +1073,13 @@ describe('ShellExecutionService child_process fallback', () => {
       );
     });
 
-    it('should use bash and detached process group on Linux', async () => {
-      mockPlatform.mockReturnValue('linux');
-      await simulateExecution('ls "foo bar"', (cp) => cp.emit('exit', 0, null));
+    it("should use bash and detached process group on Linux", async () => {
+      mockPlatform.mockReturnValue("linux");
+      await simulateExecution('ls "foo bar"', (cp) => cp.emit("exit", 0, null));
 
       expect(mockCpSpawn).toHaveBeenCalledWith(
-        'bash',
-        [
-          '-c',
-          'shopt -u promptvars nullglob extglob nocaseglob dotglob; ls "foo bar"',
-        ],
+        "bash",
+        ["-c", 'shopt -u promptvars nullglob extglob nocaseglob dotglob; ls "foo bar"'],
         expect.objectContaining({
           shell: false,
           detached: true,
@@ -1175,7 +1089,7 @@ describe('ShellExecutionService child_process fallback', () => {
   });
 });
 
-describe('ShellExecutionService execution method selection', () => {
+describe("ShellExecutionService execution method selection", () => {
   let onOutputEventMock: Mock<(event: ShellOutputEvent) => void>;
   let mockPtyProcess: EventEmitter & {
     pid: number;
@@ -1210,28 +1124,27 @@ describe('ShellExecutionService execution method selection', () => {
     mockPtySpawn.mockReturnValue(mockPtyProcess);
     mockGetPty.mockResolvedValue({
       module: { spawn: mockPtySpawn },
-      name: 'mock-pty',
+      name: "mock-pty",
     });
 
     // Mock for child_process
-    mockChildProcess = new EventEmitter() as EventEmitter &
-      Partial<ChildProcess>;
+    mockChildProcess = new EventEmitter() as EventEmitter & Partial<ChildProcess>;
     mockChildProcess.stdout = new EventEmitter() as Readable;
     mockChildProcess.stderr = new EventEmitter() as Readable;
     mockChildProcess.kill = vi.fn();
-    Object.defineProperty(mockChildProcess, 'pid', {
+    Object.defineProperty(mockChildProcess, "pid", {
       value: 54321,
       configurable: true,
     });
     mockCpSpawn.mockReturnValue(mockChildProcess);
   });
 
-  it('should use node-pty when shouldUseNodePty is true and pty is available', async () => {
+  it("should use node-pty when shouldUseNodePty is true and pty is available", async () => {
     mockSerializeTerminalToObject.mockReturnValue([]);
     const abortController = new AbortController();
     const handle = await ShellExecutionService.execute(
-      'test command',
-      '/test/dir',
+      "test command",
+      "/test/dir",
       onOutputEventMock,
       abortController.signal,
       true, // shouldUseNodePty
@@ -1245,14 +1158,14 @@ describe('ShellExecutionService execution method selection', () => {
     expect(mockGetPty).toHaveBeenCalled();
     expect(mockPtySpawn).toHaveBeenCalled();
     expect(mockCpSpawn).not.toHaveBeenCalled();
-    expect(result.executionMethod).toBe('mock-pty');
+    expect(result.executionMethod).toBe("mock-pty");
   });
 
-  it('should use child_process when shouldUseNodePty is false', async () => {
+  it("should use child_process when shouldUseNodePty is false", async () => {
     const abortController = new AbortController();
     const handle = await ShellExecutionService.execute(
-      'test command',
-      '/test/dir',
+      "test command",
+      "/test/dir",
       onOutputEventMock,
       abortController.signal,
       false, // shouldUseNodePty
@@ -1260,22 +1173,22 @@ describe('ShellExecutionService execution method selection', () => {
     );
 
     // Simulate exit to allow promise to resolve
-    mockChildProcess.emit('exit', 0, null);
+    mockChildProcess.emit("exit", 0, null);
     const result = await handle.result;
 
     expect(mockGetPty).not.toHaveBeenCalled();
     expect(mockPtySpawn).not.toHaveBeenCalled();
     expect(mockCpSpawn).toHaveBeenCalled();
-    expect(result.executionMethod).toBe('child_process');
+    expect(result.executionMethod).toBe("child_process");
   });
 
-  it('should fall back to child_process if pty is not available even if shouldUseNodePty is true', async () => {
+  it("should fall back to child_process if pty is not available even if shouldUseNodePty is true", async () => {
     mockGetPty.mockResolvedValue(null);
 
     const abortController = new AbortController();
     const handle = await ShellExecutionService.execute(
-      'test command',
-      '/test/dir',
+      "test command",
+      "/test/dir",
       onOutputEventMock,
       abortController.signal,
       true, // shouldUseNodePty
@@ -1283,17 +1196,17 @@ describe('ShellExecutionService execution method selection', () => {
     );
 
     // Simulate exit to allow promise to resolve
-    mockChildProcess.emit('exit', 0, null);
+    mockChildProcess.emit("exit", 0, null);
     const result = await handle.result;
 
     expect(mockGetPty).toHaveBeenCalled();
     expect(mockPtySpawn).not.toHaveBeenCalled();
     expect(mockCpSpawn).toHaveBeenCalled();
-    expect(result.executionMethod).toBe('child_process');
+    expect(result.executionMethod).toBe("child_process");
   });
 });
 
-describe('ShellExecutionService environment variables', () => {
+describe("ShellExecutionService environment variables", () => {
   let mockPtyProcess: EventEmitter & {
     pid: number;
     kill: Mock;
@@ -1327,16 +1240,15 @@ describe('ShellExecutionService environment variables', () => {
     mockPtySpawn.mockReturnValue(mockPtyProcess);
     mockGetPty.mockResolvedValue({
       module: { spawn: mockPtySpawn },
-      name: 'mock-pty',
+      name: "mock-pty",
     });
 
     // Mock for child_process
-    mockChildProcess = new EventEmitter() as EventEmitter &
-      Partial<ChildProcess>;
+    mockChildProcess = new EventEmitter() as EventEmitter & Partial<ChildProcess>;
     mockChildProcess.stdout = new EventEmitter() as Readable;
     mockChildProcess.stderr = new EventEmitter() as Readable;
     mockChildProcess.kill = vi.fn();
-    Object.defineProperty(mockChildProcess, 'pid', {
+    Object.defineProperty(mockChildProcess, "pid", {
       value: 54321,
       configurable: true,
     });
@@ -1345,11 +1257,11 @@ describe('ShellExecutionService environment variables', () => {
     // Default exit behavior for mocks
     mockPtyProcess.onExit.mockImplementationOnce(({ exitCode, signal }) => {
       // Small delay to allow async ops to complete
-      setTimeout(() => mockPtyProcess.emit('exit', { exitCode, signal }), 0);
+      setTimeout(() => mockPtyProcess.emit("exit", { exitCode, signal }), 0);
     });
-    mockChildProcess.on('exit', (code, signal) => {
+    mockChildProcess.on("exit", (code, signal) => {
       // Small delay to allow async ops to complete
-      setTimeout(() => mockChildProcess.emit('close', code, signal), 0);
+      setTimeout(() => mockChildProcess.emit("close", code, signal), 0);
     });
   });
 
@@ -1358,22 +1270,20 @@ describe('ShellExecutionService environment variables', () => {
     vi.unstubAllEnvs();
   });
 
-  it('should use a sanitized environment when in a GitHub run', async () => {
+  it("should use a sanitized environment when in a GitHub run", async () => {
     // Mock the environment to simulate a GitHub Actions run
-    vi.stubEnv('GITHUB_SHA', 'test-sha');
-    vi.stubEnv('MY_SENSITIVE_VAR', 'secret-value'); // This should be stripped out
-    vi.stubEnv('PATH', '/test/path'); // An essential var that should be kept
-    vi.stubEnv('GEMINI_CLI_TEST_VAR', 'test-value'); // A test var that should be kept
+    vi.stubEnv("GITHUB_SHA", "test-sha");
+    vi.stubEnv("MY_SENSITIVE_VAR", "secret-value"); // This should be stripped out
+    vi.stubEnv("PATH", "/test/path"); // An essential var that should be kept
+    vi.stubEnv("GEMINI_CLI_TEST_VAR", "test-value"); // A test var that should be kept
 
     vi.resetModules();
-    const { ShellExecutionService } = await import(
-      './shellExecutionService.js'
-    );
+    const { ShellExecutionService } = await import("./shellExecutionService.js");
 
     // Test pty path
     await ShellExecutionService.execute(
-      'test-pty-command',
-      '/',
+      "test-pty-command",
+      "/",
       vi.fn(),
       new AbortController().signal,
       true,
@@ -1381,9 +1291,9 @@ describe('ShellExecutionService environment variables', () => {
     );
 
     const ptyEnv = mockPtySpawn.mock.calls[0][2].env;
-    expect(ptyEnv).not.toHaveProperty('MY_SENSITIVE_VAR');
-    expect(ptyEnv).toHaveProperty('PATH', '/test/path');
-    expect(ptyEnv).toHaveProperty('GEMINI_CLI_TEST_VAR', 'test-value');
+    expect(ptyEnv).not.toHaveProperty("MY_SENSITIVE_VAR");
+    expect(ptyEnv).toHaveProperty("PATH", "/test/path");
+    expect(ptyEnv).toHaveProperty("GEMINI_CLI_TEST_VAR", "test-value");
 
     // Ensure pty process exits for next test
     mockPtyProcess.onExit.mock.calls[0][0]({ exitCode: 0, signal: null });
@@ -1392,8 +1302,8 @@ describe('ShellExecutionService environment variables', () => {
     // Test child_process path
     mockGetPty.mockResolvedValue(null); // Force fallback
     await ShellExecutionService.execute(
-      'test-cp-command',
-      '/',
+      "test-cp-command",
+      "/",
       vi.fn(),
       new AbortController().signal,
       true,
@@ -1401,29 +1311,27 @@ describe('ShellExecutionService environment variables', () => {
     );
 
     const cpEnv = mockCpSpawn.mock.calls[0][2].env;
-    expect(cpEnv).not.toHaveProperty('MY_SENSITIVE_VAR');
-    expect(cpEnv).toHaveProperty('PATH', '/test/path');
-    expect(cpEnv).toHaveProperty('GEMINI_CLI_TEST_VAR', 'test-value');
+    expect(cpEnv).not.toHaveProperty("MY_SENSITIVE_VAR");
+    expect(cpEnv).toHaveProperty("PATH", "/test/path");
+    expect(cpEnv).toHaveProperty("GEMINI_CLI_TEST_VAR", "test-value");
 
     // Ensure child_process exits
-    mockChildProcess.emit('exit', 0, null);
-    mockChildProcess.emit('close', 0, null);
+    mockChildProcess.emit("exit", 0, null);
+    mockChildProcess.emit("close", 0, null);
     await new Promise(process.nextTick);
   });
 
-  it('should include the full process.env when not in a GitHub run', async () => {
-    vi.stubEnv('MY_TEST_VAR', 'test-value');
-    vi.stubEnv('GITHUB_SHA', '');
-    vi.stubEnv('SURFACE', '');
+  it("should include the full process.env when not in a GitHub run", async () => {
+    vi.stubEnv("MY_TEST_VAR", "test-value");
+    vi.stubEnv("GITHUB_SHA", "");
+    vi.stubEnv("SURFACE", "");
     vi.resetModules();
-    const { ShellExecutionService } = await import(
-      './shellExecutionService.js'
-    );
+    const { ShellExecutionService } = await import("./shellExecutionService.js");
 
     // Test pty path
     await ShellExecutionService.execute(
-      'test-pty-command-no-github',
-      '/',
+      "test-pty-command-no-github",
+      "/",
       vi.fn(),
       new AbortController().signal,
       true,
@@ -1431,8 +1339,8 @@ describe('ShellExecutionService environment variables', () => {
     );
     expect(mockPtySpawn).toHaveBeenCalled();
     const ptyEnv = mockPtySpawn.mock.calls[0][2].env;
-    expect(ptyEnv).toHaveProperty('MY_TEST_VAR', 'test-value');
-    expect(ptyEnv).toHaveProperty('GEMINI_CLI', '1');
+    expect(ptyEnv).toHaveProperty("MY_TEST_VAR", "test-value");
+    expect(ptyEnv).toHaveProperty("GEMINI_CLI", "1");
 
     // Ensure pty process exits
     mockPtyProcess.onExit.mock.calls[0][0]({ exitCode: 0, signal: null });
@@ -1441,8 +1349,8 @@ describe('ShellExecutionService environment variables', () => {
     // Test child_process path (forcing fallback by making pty unavailable)
     mockGetPty.mockResolvedValue(null);
     await ShellExecutionService.execute(
-      'test-cp-command-no-github',
-      '/',
+      "test-cp-command-no-github",
+      "/",
       vi.fn(),
       new AbortController().signal,
       true, // Still tries pty, but it will fall back
@@ -1450,12 +1358,12 @@ describe('ShellExecutionService environment variables', () => {
     );
     expect(mockCpSpawn).toHaveBeenCalled();
     const cpEnv = mockCpSpawn.mock.calls[0][2].env;
-    expect(cpEnv).toHaveProperty('MY_TEST_VAR', 'test-value');
-    expect(cpEnv).toHaveProperty('GEMINI_CLI', '1');
+    expect(cpEnv).toHaveProperty("MY_TEST_VAR", "test-value");
+    expect(cpEnv).toHaveProperty("GEMINI_CLI", "1");
 
     // Ensure child_process exits
-    mockChildProcess.emit('exit', 0, null);
-    mockChildProcess.emit('close', 0, null);
+    mockChildProcess.emit("exit", 0, null);
+    mockChildProcess.emit("close", 0, null);
     await new Promise(process.nextTick);
   });
 });

@@ -4,12 +4,12 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { useState, useEffect } from 'react';
-import { Box, Text } from 'ink';
-import { RadioButtonSelect } from '../../shared/RadioButtonSelect.js';
-import { type ColorOption } from '../types.js';
-import { theme } from '../../../semantic-colors.js';
-import { COLOR_OPTIONS } from '../constants.js';
+import { Box, Text } from "ink";
+import { useEffect, useState } from "react";
+import { theme } from "../../../semantic-colors.js";
+import { RadioButtonSelect } from "../../shared/RadioButtonSelect.js";
+import { COLOR_OPTIONS } from "../constants.js";
+import { type ColorOption } from "../types.js";
 
 const colorOptions: ColorOption[] = COLOR_OPTIONS;
 
@@ -23,8 +23,8 @@ interface ColorSelectorProps {
  * Color selection with preview.
  */
 export function ColorSelector({
-  color = 'auto',
-  agentName = 'Agent',
+  color = "auto",
+  agentName = "Agent",
   onSelect,
 }: ColorSelectorProps) {
   const [selectedColor, setSelectedColor] = useState<string>(color);
@@ -35,26 +35,21 @@ export function ColorSelector({
   }, [color]);
 
   const handleSelect = (selectedValue: string) => {
-    const colorOption = colorOptions.find(
-      (option) => option.id === selectedValue,
-    );
+    const colorOption = colorOptions.find((option) => option.id === selectedValue);
     if (colorOption) {
       onSelect(colorOption.name);
     }
   };
 
   const handleHighlight = (selectedValue: string) => {
-    const colorOption = colorOptions.find(
-      (option) => option.id === selectedValue,
-    );
+    const colorOption = colorOptions.find((option) => option.id === selectedValue);
     if (colorOption) {
       setSelectedColor(colorOption.name);
     }
   };
 
   const currentColor =
-    colorOptions.find((option) => option.name === selectedColor) ||
-    colorOptions[0];
+    colorOptions.find((option) => option.name === selectedColor) || colorOptions[0];
 
   return (
     <Box flexDirection="column" gap={1}>
@@ -65,9 +60,7 @@ export function ColorSelector({
             label: option.name,
             value: option.id,
           }))}
-          initialIndex={colorOptions.findIndex(
-            (opt) => opt.id === currentColor.id,
-          )}
+          initialIndex={colorOptions.findIndex((opt) => opt.id === currentColor.id)}
           onSelect={handleSelect}
           onHighlight={handleHighlight}
           isFocused={true}

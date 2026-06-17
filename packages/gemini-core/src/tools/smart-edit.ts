@@ -4,10 +4,27 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import * as fs from 'node:fs';
-import * as path from 'node:path';
-import * as crypto from 'node:crypto';
-import * as Diff from 'diff';
+import * as crypto from "node:crypto";
+import * as fs from "node:fs";
+import * as path from "node:path";
+import * as Diff from "diff";
+import type { Config } from "../config/config.js";
+import type { MessageBus } from "../confirmation-bus/message-bus.js";
+import { IdeClient } from "../ide/ide-client.js";
+import { ApprovalMode } from "../policy/types.js";
+import { logSmartEditCorrectionEvent, logSmartEditStrategy } from "../telemetry/loggers.js";
+import { SmartEditCorrectionEvent, SmartEditStrategyEvent } from "../telemetry/types.js";
+import { debugLogger } from "../utils/debugLogger.js";
+import { isNodeError } from "../utils/errors.js";
+import { FixLLMEditWithInstruction } from "../utils/llm-edit-fixer.js";
+import { correctPath } from "../utils/pathCorrector.js";
+import { makeRelative, shortenPath } from "../utils/paths.js";
+import { safeLiteralReplace } from "../utils/textUtils.js";
+import { DEFAULT_DIFF_OPTIONS, getDiffStat } from "./diffOptions.js";
+import { applyReplacement } from "./edit.js";
+import { type ModifiableDeclarativeTool, type ModifyContext } from "./modifiable-tool.js";
+import { ToolErrorType } from "./tool-error.js";
+import { EDIT_TOOL_NAME, READ_FILE_TOOL_NAME } from "./tool-names.js";
 import {
   BaseDeclarativeTool,
   BaseToolInvocation,
@@ -19,31 +36,8 @@ import {
   type ToolLocation,
   type ToolResult,
   type ToolResultDisplay,
-} from './tools.js';
-import type { MessageBus } from '../confirmation-bus/message-bus.js';
-import { ToolErrorType } from './tool-error.js';
-import { makeRelative, shortenPath } from '../utils/paths.js';
-import { isNodeError } from '../utils/errors.js';
-import type { Config } from '../config/config.js';
-import { ApprovalMode } from '../policy/types.js';
+} from "./tools.js";
 
-import { DEFAULT_DIFF_OPTIONS, getDiffStat } from './diffOptions.js';
-import {
-  type ModifiableDeclarativeTool,
-  type ModifyContext,
-} from './modifiable-tool.js';
-import { IdeClient } from '../ide/ide-client.js';
-import { FixLLMEditWithInstruction } from '../utils/llm-edit-fixer.js';
-import { applyReplacement } from './edit.js';
-import { safeLiteralReplace } from '../utils/textUtils.js';
-import { SmartEditStrategyEvent } from '../telemetry/types.js';
-import { logSmartEditStrategy } from '../telemetry/loggers.js';
-import { SmartEditCorrectionEvent } from '../telemetry/types.js';
-import { logSmartEditCorrectionEvent } from '../telemetry/loggers.js';
-
-import { correctPath } from '../utils/pathCorrector.js';
-import { EDIT_TOOL_NAME, READ_FILE_TOOL_NAME } from './tool-names.js';
-import { debugLogger } from '../utils/debugLogger.js';
 interface ReplacementContext {
   params: EditToolParams;
   currentContent: string;
@@ -63,18 +57,15 @@ interface ReplacementResult {
  * @returns A hex-encoded hash string.
  */
 function hashContent(content: string): string {
-  return crypto.createHash('sha256').update(content).digest('hex');
+  return crypto.createHash("sha256").update(content).digest("hex");
 }
 
-function restoreTrailingNewline(
-  originalContent: string,
-  modifiedContent: string,
-): string {
-  const hadTrailingNewline = originalContent.endsWith('\n');
-  if (hadTrailingNewline && !modifiedContent.endsWith('\n')) {
-    return modifiedContent + '\n';
-  } else if (!hadTrailingNewline && modifiedContent.endsWith('\n')) {
-    return modifiedContent.replace(/\n$/, '');
+function restoreTrailingNewline(originalContent: string, modifiedContent: string): string {
+  const hadTrailingNewline = originalContent.endsWith("\n");
+  if (hadTrailingNewline && !modifiedContent.endsWith("\n")) {
+    return modifiedContent + "\n";
+  } else if (!hadTrailingNewline && modifiedContent.endsWith("\n")) {
+    return modifiedContent.replace(/\n$/, "");
   }
   return modifiedContent;
 }
@@ -85,7 +76,7 @@ function restoreTrailingNewline(
  * @returns The escaped string.
  */
 function escapeRegex(str: string): string {
-  return str.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'); // $& means the whole matched string
+  return str.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"); // $& means the whole matched string
 }
 
 async function calculateExactReplacement(
@@ -95,16 +86,12 @@ async function calculateExactReplacement(
   const { old_string, new_string } = params;
 
   const normalizedCode = currentContent;
-  const normalizedSearch = old_string.replace(/\r\n/g, '\n');
-  const normalizedReplace = new_string.replace(/\r\n/g, '\n');
+  const normalizedSearch = old_string.replace(/\r\n/g, "\n");
+  const normalizedReplace = new_string.replace(/\r\n/g, "\n");
 
   const exactOccurrences = normalizedCode.split(normalizedSearch).length - 1;
   if (exactOccurrences > 0) {
-    let modifiedCode = safeLiteralReplace(
-      normalizedCode,
-      normalizedSearch,
-      normalizedReplace,
-    );
+    let modifiedCode = safeLiteralReplace(normalizedCode, normalizedSearch, normalizedReplace);
     modifiedCode = restoreTrailingNewline(currentContent, modifiedCode);
     return {
       newContent: modifiedCode,
@@ -124,14 +111,12 @@ async function calculateFlexibleReplacement(
   const { old_string, new_string } = params;
 
   const normalizedCode = currentContent;
-  const normalizedSearch = old_string.replace(/\r\n/g, '\n');
-  const normalizedReplace = new_string.replace(/\r\n/g, '\n');
+  const normalizedSearch = old_string.replace(/\r\n/g, "\n");
+  const normalizedReplace = new_string.replace(/\r\n/g, "\n");
 
   const sourceLines = normalizedCode.match(/.*(?:\n|$)/g)?.slice(0, -1) ?? [];
-  const searchLinesStripped = normalizedSearch
-    .split('\n')
-    .map((line: string) => line.trim());
-  const replaceLines = normalizedReplace.split('\n');
+  const searchLinesStripped = normalizedSearch.split("\n").map((line: string) => line.trim());
+  const replaceLines = normalizedReplace.split("\n");
 
   let flexibleOccurrences = 0;
   let i = 0;
@@ -146,15 +131,9 @@ async function calculateFlexibleReplacement(
       flexibleOccurrences++;
       const firstLineInMatch = window[0];
       const indentationMatch = firstLineInMatch.match(/^(\s*)/);
-      const indentation = indentationMatch ? indentationMatch[1] : '';
-      const newBlockWithIndent = replaceLines.map(
-        (line: string) => `${indentation}${line}`,
-      );
-      sourceLines.splice(
-        i,
-        searchLinesStripped.length,
-        newBlockWithIndent.join('\n'),
-      );
+      const indentation = indentationMatch ? indentationMatch[1] : "";
+      const newBlockWithIndent = replaceLines.map((line: string) => `${indentation}${line}`);
+      sourceLines.splice(i, searchLinesStripped.length, newBlockWithIndent.join("\n"));
       i += replaceLines.length;
     } else {
       i++;
@@ -162,7 +141,7 @@ async function calculateFlexibleReplacement(
   }
 
   if (flexibleOccurrences > 0) {
-    let modifiedCode = sourceLines.join('');
+    let modifiedCode = sourceLines.join("");
     modifiedCode = restoreTrailingNewline(currentContent, modifiedCode);
     return {
       newContent: modifiedCode,
@@ -182,12 +161,12 @@ async function calculateRegexReplacement(
   const { old_string, new_string } = params;
 
   // Normalize line endings for consistent processing.
-  const normalizedSearch = old_string.replace(/\r\n/g, '\n');
-  const normalizedReplace = new_string.replace(/\r\n/g, '\n');
+  const normalizedSearch = old_string.replace(/\r\n/g, "\n");
+  const normalizedReplace = new_string.replace(/\r\n/g, "\n");
 
   // This logic is ported from your Python implementation.
   // It builds a flexible, multi-line regex from a search string.
-  const delimiters = ['(', ')', ':', '[', ']', '{', '}', '>', '<', '='];
+  const delimiters = ["(", ")", ":", "[", "]", "{", "}", ">", "<", "="];
 
   let processedString = normalizedSearch;
   for (const delim of delimiters) {
@@ -203,12 +182,12 @@ async function calculateRegexReplacement(
 
   const escapedTokens = tokens.map(escapeRegex);
   // Join tokens with `\s*` to allow for flexible whitespace between them.
-  const pattern = escapedTokens.join('\\s*');
+  const pattern = escapedTokens.join("\\s*");
 
   // The final pattern captures leading whitespace (indentation) and then matches the token pattern.
   // 'm' flag enables multi-line mode, so '^' matches the start of any line.
   const finalPattern = `^(\\s*)${pattern}`;
-  const flexibleRegex = new RegExp(finalPattern, 'm');
+  const flexibleRegex = new RegExp(finalPattern, "m");
 
   const match = flexibleRegex.exec(currentContent);
 
@@ -216,18 +195,13 @@ async function calculateRegexReplacement(
     return null;
   }
 
-  const indentation = match[1] || '';
-  const newLines = normalizedReplace.split('\n');
-  const newBlockWithIndent = newLines
-    .map((line) => `${indentation}${line}`)
-    .join('\n');
+  const indentation = match[1] || "";
+  const newLines = normalizedReplace.split("\n");
+  const newBlockWithIndent = newLines.map((line) => `${indentation}${line}`).join("\n");
 
   // Use replace with the regex to substitute the matched content.
   // Since the regex doesn't have the 'g' flag, it will only replace the first occurrence.
-  const modifiedCode = currentContent.replace(
-    flexibleRegex,
-    newBlockWithIndent,
-  );
+  const modifiedCode = currentContent.replace(flexibleRegex, newBlockWithIndent);
 
   return {
     newContent: restoreTrailingNewline(currentContent, modifiedCode),
@@ -242,10 +216,10 @@ async function calculateRegexReplacement(
  * @param content The string content to analyze.
  * @returns '\r\n' for Windows-style, '\n' for Unix-style.
  */
-function detectLineEnding(content: string): '\r\n' | '\n' {
+function detectLineEnding(content: string): "\r\n" | "\n" {
   // If a Carriage Return is found, assume Windows-style endings.
   // This is a simple but effective heuristic.
-  return content.includes('\r\n') ? '\r\n' : '\n';
+  return content.includes("\r\n") ? "\r\n" : "\n";
 }
 
 export async function calculateReplacement(
@@ -254,10 +228,10 @@ export async function calculateReplacement(
 ): Promise<ReplacementResult> {
   const { currentContent, params } = context;
   const { old_string, new_string } = params;
-  const normalizedSearch = old_string.replace(/\r\n/g, '\n');
-  const normalizedReplace = new_string.replace(/\r\n/g, '\n');
+  const normalizedSearch = old_string.replace(/\r\n/g, "\n");
+  const normalizedReplace = new_string.replace(/\r\n/g, "\n");
 
-  if (normalizedSearch === '') {
+  if (normalizedSearch === "") {
     return {
       newContent: currentContent,
       occurrences: 0,
@@ -268,21 +242,21 @@ export async function calculateReplacement(
 
   const exactResult = await calculateExactReplacement(context);
   if (exactResult) {
-    const event = new SmartEditStrategyEvent('exact');
+    const event = new SmartEditStrategyEvent("exact");
     logSmartEditStrategy(config, event);
     return exactResult;
   }
 
   const flexibleResult = await calculateFlexibleReplacement(context);
   if (flexibleResult) {
-    const event = new SmartEditStrategyEvent('flexible');
+    const event = new SmartEditStrategyEvent("flexible");
     logSmartEditStrategy(config, event);
     return flexibleResult;
   }
 
   const regexResult = await calculateRegexReplacement(context);
   if (regexResult) {
-    const event = new SmartEditStrategyEvent('regex');
+    const event = new SmartEditStrategyEvent("regex");
     logSmartEditStrategy(config, event);
     return regexResult;
   }
@@ -302,8 +276,7 @@ export function getErrorReplaceResult(
   finalOldString: string,
   finalNewString: string,
 ) {
-  let error: { display: string; raw: string; type: ToolErrorType } | undefined =
-    undefined;
+  let error: { display: string; raw: string; type: ToolErrorType } | undefined = undefined;
   if (occurrences === 0) {
     error = {
       display: `Failed to edit, could not find the string to replace.`,
@@ -311,8 +284,7 @@ export function getErrorReplaceResult(
       type: ToolErrorType.EDIT_NO_OCCURRENCE_FOUND,
     };
   } else if (occurrences !== expectedReplacements) {
-    const occurrenceTerm =
-      expectedReplacements === 1 ? 'occurrence' : 'occurrences';
+    const occurrenceTerm = expectedReplacements === 1 ? "occurrence" : "occurrences";
 
     error = {
       display: `Failed to edit, expected ${expectedReplacements} ${occurrenceTerm} but found ${occurrences}.`,
@@ -376,7 +348,7 @@ interface CalculatedEdit {
   occurrences: number;
   error?: { display: string; raw: string; type: ToolErrorType };
   isNewFile: boolean;
-  originalLineEnding: '\r\n' | '\n';
+  originalLineEnding: "\r\n" | "\n";
 }
 
 class EditToolInvocation
@@ -402,7 +374,7 @@ class EditToolInvocation
     currentContent: string,
     initialError: { display: string; raw: string; type: ToolErrorType },
     abortSignal: AbortSignal,
-    originalLineEnding: '\r\n' | '\n',
+    originalLineEnding: "\r\n" | "\n",
   ): Promise<CalculatedEdit> {
     // In order to keep from clobbering edits made outside our system,
     // check if the file has been modified since we first read it.
@@ -410,15 +382,13 @@ class EditToolInvocation
     let contentForLlmEditFixer = currentContent;
 
     const initialContentHash = hashContent(currentContent);
-    const onDiskContent = await this.config
-      .getFileSystemService()
-      .readTextFile(params.file_path);
-    const onDiskContentHash = hashContent(onDiskContent.replace(/\r\n/g, '\n'));
+    const onDiskContent = await this.config.getFileSystemService().readTextFile(params.file_path);
+    const onDiskContentHash = hashContent(onDiskContent.replace(/\r\n/g, "\n"));
 
     if (initialContentHash !== onDiskContentHash) {
       // The file has changed on disk since we first read it.
       // Use the latest content for the correction attempt.
-      contentForLlmEditFixer = onDiskContent.replace(/\r\n/g, '\n');
+      contentForLlmEditFixer = onDiskContent.replace(/\r\n/g, "\n");
       errorForLlmEditFixer = `The initial edit attempt failed with the following error: "${initialError.raw}". However, the file has been modified by either the user or an external process since that edit attempt. The file content provided to you is the latest version. Please base your correction on this new content.`;
     }
 
@@ -479,7 +449,7 @@ class EditToolInvocation
 
     if (secondError) {
       // The fix failed, log failure and return the original error
-      const event = new SmartEditCorrectionEvent('failure');
+      const event = new SmartEditCorrectionEvent("failure");
       logSmartEditCorrectionEvent(this.config, event);
 
       return {
@@ -492,7 +462,7 @@ class EditToolInvocation
       };
     }
 
-    const event = new SmartEditCorrectionEvent('success');
+    const event = new SmartEditCorrectionEvent("success");
     logSmartEditCorrectionEvent(this.config, event);
 
     return {
@@ -518,23 +488,21 @@ class EditToolInvocation
     const expectedReplacements = params.expected_replacements ?? 1;
     let currentContent: string | null = null;
     let fileExists = false;
-    let originalLineEnding: '\r\n' | '\n' = '\n'; // Default for new files
+    let originalLineEnding: "\r\n" | "\n" = "\n"; // Default for new files
 
     try {
-      currentContent = await this.config
-        .getFileSystemService()
-        .readTextFile(params.file_path);
+      currentContent = await this.config.getFileSystemService().readTextFile(params.file_path);
       originalLineEnding = detectLineEnding(currentContent);
-      currentContent = currentContent.replace(/\r\n/g, '\n');
+      currentContent = currentContent.replace(/\r\n/g, "\n");
       fileExists = true;
     } catch (err: unknown) {
-      if (!isNodeError(err) || err.code !== 'ENOENT') {
+      if (!isNodeError(err) || err.code !== "ENOENT") {
         throw err;
       }
       fileExists = false;
     }
 
-    const isNewFile = params.old_string === '' && !fileExists;
+    const isNewFile = params.old_string === "" && !fileExists;
 
     if (isNewFile) {
       return {
@@ -551,7 +519,7 @@ class EditToolInvocation
     if (!fileExists) {
       return {
         currentContent,
-        newContent: '',
+        newContent: "",
         occurrences: 0,
         isNewFile: false,
         error: {
@@ -566,7 +534,7 @@ class EditToolInvocation
     if (currentContent === null) {
       return {
         currentContent,
-        newContent: '',
+        newContent: "",
         occurrences: 0,
         isNewFile: false,
         error: {
@@ -578,7 +546,7 @@ class EditToolInvocation
       };
     }
 
-    if (params.old_string === '') {
+    if (params.old_string === "") {
       return {
         currentContent,
         newContent: currentContent,
@@ -659,10 +627,10 @@ class EditToolInvocation
     const fileName = path.basename(this.params.file_path);
     const fileDiff = Diff.createPatch(
       fileName,
-      editData.currentContent ?? '',
+      editData.currentContent ?? "",
       editData.newContent,
-      'Current',
-      'Proposed',
+      "Current",
+      "Proposed",
       DEFAULT_DIFF_OPTIONS,
     );
     const ideClient = await IdeClient.getInstance();
@@ -672,7 +640,7 @@ class EditToolInvocation
         : undefined;
 
     const confirmationDetails: ToolEditConfirmationDetails = {
-      type: 'edit',
+      type: "edit",
       title: `Confirm Edit: ${shortenPath(makeRelative(this.params.file_path, this.config.getTargetDir()))}`,
       fileName,
       filePath: this.params.file_path,
@@ -686,10 +654,10 @@ class EditToolInvocation
 
         if (ideConfirmation) {
           const result = await ideConfirmation;
-          if (result.status === 'accepted' && result.content) {
+          if (result.status === "accepted" && result.content) {
             // TODO(chrstn): See https://github.com/google-gemini/gemini-cli/pull/5618#discussion_r2255413084
             // for info on a possible race condition where the file is modified on disk while being edited.
-            this.params.old_string = editData.currentContent ?? '';
+            this.params.old_string = editData.currentContent ?? "";
             this.params.new_string = result.content;
           }
         }
@@ -700,20 +668,17 @@ class EditToolInvocation
   }
 
   getDescription(): string {
-    const relativePath = makeRelative(
-      this.params.file_path,
-      this.config.getTargetDir(),
-    );
-    if (this.params.old_string === '') {
+    const relativePath = makeRelative(this.params.file_path, this.config.getTargetDir());
+    if (this.params.old_string === "") {
       return `Create ${shortenPath(relativePath)}`;
     }
 
     const oldStringSnippet =
-      this.params.old_string.split('\n')[0].substring(0, 30) +
-      (this.params.old_string.length > 30 ? '...' : '');
+      this.params.old_string.split("\n")[0].substring(0, 30) +
+      (this.params.old_string.length > 30 ? "..." : "");
     const newStringSnippet =
-      this.params.new_string.split('\n')[0].substring(0, 30) +
-      (this.params.new_string.length > 30 ? '...' : '');
+      this.params.new_string.split("\n")[0].substring(0, 30) +
+      (this.params.new_string.length > 30 ? "..." : "");
 
     if (this.params.old_string === this.params.new_string) {
       return `No file changes to ${shortenPath(relativePath)}`;
@@ -761,12 +726,10 @@ class EditToolInvocation
       let finalContent = editData.newContent;
 
       // Restore original line endings if they were CRLF
-      if (!editData.isNewFile && editData.originalLineEnding === '\r\n') {
-        finalContent = finalContent.replace(/\n/g, '\r\n');
+      if (!editData.isNewFile && editData.originalLineEnding === "\r\n") {
+        finalContent = finalContent.replace(/\n/g, "\r\n");
       }
-      await this.config
-        .getFileSystemService()
-        .writeTextFile(this.params.file_path, finalContent);
+      await this.config.getFileSystemService().writeTextFile(this.params.file_path, finalContent);
 
       let displayResult: ToolResultDisplay;
       if (editData.isNewFile) {
@@ -777,16 +740,16 @@ class EditToolInvocation
         const fileName = path.basename(this.params.file_path);
         const fileDiff = Diff.createPatch(
           fileName,
-          editData.currentContent ?? '', // Should not be null here if not isNewFile
+          editData.currentContent ?? "", // Should not be null here if not isNewFile
           editData.newContent,
-          'Current',
-          'Proposed',
+          "Current",
+          "Proposed",
           DEFAULT_DIFF_OPTIONS,
         );
 
         const diffStat = getDiffStat(
           fileName,
-          editData.currentContent ?? '',
+          editData.currentContent ?? "",
           editData.newContent,
           this.params.new_string,
         );
@@ -811,7 +774,7 @@ class EditToolInvocation
       }
 
       return {
-        llmContent: llmSuccessMessageParts.join(' '),
+        llmContent: llmSuccessMessageParts.join(" "),
         returnDisplay: displayResult,
       };
     } catch (error) {
@@ -853,7 +816,7 @@ export class SmartEditTool
   ) {
     super(
       SmartEditTool.Name,
-      'Edit',
+      "Edit",
       `Replaces text within a file. By default, replaces a single occurrence, but can replace multiple occurrences when \`expected_replacements\` is specified. This tool requires providing significant context around the change to ensure precise targeting. Always use the ${READ_FILE_TOOL_NAME} tool to examine the file's current content before attempting a text replacement.
       
       The user has the ability to modify the \`new_string\` content. If modified, this will be stated in the response.
@@ -870,8 +833,8 @@ export class SmartEditTool
       {
         properties: {
           file_path: {
-            description: 'The path to the file to modify.',
-            type: 'string',
+            description: "The path to the file to modify.",
+            type: "string",
           },
           instruction: {
             description: `A clear, semantic instruction for the code change, acting as a high-quality prompt for an expert LLM assistant. It must be self-contained and explain the goal of the change.
@@ -889,27 +852,27 @@ A good instruction should concisely answer:
 - "Fix the bug." (Doesn't explain the bug or the fix)
 - "Replace the line with this new line." (Brittle, just repeats the other parameters)
 `,
-            type: 'string',
+            type: "string",
           },
           old_string: {
             description:
-              'The exact literal text to replace, preferably unescaped. For single replacements (default), include at least 3 lines of context BEFORE and AFTER the target text, matching whitespace and indentation precisely. If this string is not the exact literal text (i.e. you escaped it) or does not match exactly, the tool will fail.',
-            type: 'string',
+              "The exact literal text to replace, preferably unescaped. For single replacements (default), include at least 3 lines of context BEFORE and AFTER the target text, matching whitespace and indentation precisely. If this string is not the exact literal text (i.e. you escaped it) or does not match exactly, the tool will fail.",
+            type: "string",
           },
           new_string: {
             description:
-              'The exact literal text to replace `old_string` with, preferably unescaped. Provide the EXACT text. Ensure the resulting code is correct and idiomatic.',
-            type: 'string',
+              "The exact literal text to replace `old_string` with, preferably unescaped. Provide the EXACT text. Ensure the resulting code is correct and idiomatic.",
+            type: "string",
           },
           expected_replacements: {
-            type: 'number',
+            type: "number",
             description:
-              'Number of replacements expected. Defaults to 1 if not specified. Use when you want to replace multiple occurrences.',
+              "Number of replacements expected. Defaults to 1 if not specified. Use when you want to replace multiple occurrences.",
             minimum: 1,
           },
         },
-        required: ['file_path', 'instruction', 'old_string', 'new_string'],
-        type: 'object',
+        required: ["file_path", "instruction", "old_string", "new_string"],
+        type: "object",
       },
       true, // isOutputMarkdown
       false, // canUpdateOutput
@@ -922,9 +885,7 @@ A good instruction should concisely answer:
    * @param params Parameters to validate
    * @returns Error message string or null if valid
    */
-  protected override validateToolParamValues(
-    params: EditToolParams,
-  ): string | null {
+  protected override validateToolParamValues(params: EditToolParams): string | null {
     if (!params.file_path) {
       return "The 'file_path' parameter must be non-empty.";
     }
@@ -943,15 +904,13 @@ A good instruction should concisely answer:
     const workspaceContext = this.config.getWorkspaceContext();
     if (!workspaceContext.isPathWithinWorkspace(params.file_path)) {
       const directories = workspaceContext.getDirectories();
-      return `File path must be within one of the workspace directories: ${directories.join(', ')}`;
+      return `File path must be within one of the workspace directories: ${directories.join(", ")}`;
     }
 
     return null;
   }
 
-  protected createInvocation(
-    params: EditToolParams,
-  ): ToolInvocation<EditToolParams, ToolResult> {
+  protected createInvocation(params: EditToolParams): ToolInvocation<EditToolParams, ToolResult> {
     return new EditToolInvocation(
       this.config,
       params,
@@ -966,12 +925,10 @@ A good instruction should concisely answer:
       getFilePath: (params: EditToolParams) => params.file_path,
       getCurrentContent: async (params: EditToolParams): Promise<string> => {
         try {
-          return this.config
-            .getFileSystemService()
-            .readTextFile(params.file_path);
+          return this.config.getFileSystemService().readTextFile(params.file_path);
         } catch (err) {
-          if (!isNodeError(err) || err.code !== 'ENOENT') throw err;
-          return '';
+          if (!isNodeError(err) || err.code !== "ENOENT") throw err;
+          return "";
         }
       },
       getProposedContent: async (params: EditToolParams): Promise<string> => {
@@ -983,11 +940,11 @@ A good instruction should concisely answer:
             currentContent,
             params.old_string,
             params.new_string,
-            params.old_string === '' && currentContent === '',
+            params.old_string === "" && currentContent === "",
           );
         } catch (err) {
-          if (!isNodeError(err) || err.code !== 'ENOENT') throw err;
-          return '';
+          if (!isNodeError(err) || err.code !== "ENOENT") throw err;
+          return "";
         }
       },
       createUpdatedParams: (

@@ -20,9 +20,7 @@
  * @returns The normalized proxy URL with protocol prefix, or undefined if input is undefined/empty
  * @throws Error if a SOCKS proxy URL is provided
  */
-export function normalizeProxyUrl(
-  proxyUrl: string | undefined,
-): string | undefined {
+export function normalizeProxyUrl(proxyUrl: string | undefined): string | undefined {
   if (!proxyUrl) {
     return undefined;
   }

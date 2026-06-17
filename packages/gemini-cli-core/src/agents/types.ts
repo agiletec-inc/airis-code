@@ -8,20 +8,20 @@
  * @fileoverview Defines the core configuration interfaces and types for the agent architecture.
  */
 
-import type { Content, FunctionDeclaration } from '@google/genai';
-import type { AnyDeclarativeTool } from '../tools/tools.js';
-import { type z } from 'zod';
+import type { Content, FunctionDeclaration } from "@google/genai";
+import { type z } from "zod";
+import type { AnyDeclarativeTool } from "../tools/tools.js";
 
 /**
  * Describes the possible termination modes for an agent.
  */
 export enum AgentTerminateMode {
-  ERROR = 'ERROR',
-  TIMEOUT = 'TIMEOUT',
-  GOAL = 'GOAL',
-  MAX_TURNS = 'MAX_TURNS',
-  ABORTED = 'ABORTED',
-  ERROR_NO_COMPLETE_TASK_CALL = 'ERROR_NO_COMPLETE_TASK_CALL',
+  ERROR = "ERROR",
+  TIMEOUT = "TIMEOUT",
+  GOAL = "GOAL",
+  MAX_TURNS = "MAX_TURNS",
+  ABORTED = "ABORTED",
+  ERROR_NO_COMPLETE_TASK_CALL = "ERROR_NO_COMPLETE_TASK_CALL",
 }
 
 /**
@@ -44,7 +44,7 @@ export type AgentInputs = Record<string, unknown>;
 export interface SubagentActivityEvent {
   isSubagentActivityEvent: true;
   agentName: string;
-  type: 'TOOL_CALL_START' | 'TOOL_CALL_END' | 'THOUGHT_CHUNK' | 'ERROR';
+  type: "TOOL_CALL_START" | "TOOL_CALL_END" | "THOUGHT_CHUNK" | "ERROR";
   data: Record<string, unknown>;
 }
 
@@ -114,13 +114,7 @@ export interface InputConfig {
     string,
     {
       description: string;
-      type:
-        | 'string'
-        | 'number'
-        | 'boolean'
-        | 'integer'
-        | 'string[]'
-        | 'number[]';
+      type: "string" | "number" | "boolean" | "integer" | "string[]" | "number[]";
       required: boolean;
     }
   >;

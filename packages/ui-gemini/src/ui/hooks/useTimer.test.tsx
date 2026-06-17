@@ -4,12 +4,12 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { act } from 'react';
-import { render } from '../../test-utils/render.js';
-import { useTimer } from './useTimer.js';
+import { act } from "react";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { render } from "../../test-utils/render.js";
+import { useTimer } from "./useTimer.js";
 
-describe('useTimer', () => {
+describe("useTimer", () => {
   beforeEach(() => {
     vi.useFakeTimers();
   });
@@ -18,18 +18,9 @@ describe('useTimer', () => {
     vi.restoreAllMocks();
   });
 
-  const renderTimerHook = (
-    initialIsActive: boolean,
-    initialResetKey: number,
-  ) => {
+  const renderTimerHook = (initialIsActive: boolean, initialResetKey: number) => {
     let hookResult: ReturnType<typeof useTimer>;
-    function TestComponent({
-      isActive,
-      resetKey,
-    }: {
-      isActive: boolean;
-      resetKey: number;
-    }) {
+    function TestComponent({ isActive, resetKey }: { isActive: boolean; resetKey: number }) {
       hookResult = useTimer(isActive, resetKey);
       return null;
     }
@@ -48,12 +39,12 @@ describe('useTimer', () => {
     };
   };
 
-  it('should initialize with 0', () => {
+  it("should initialize with 0", () => {
     const { result } = renderTimerHook(false, 0);
     expect(result.current).toBe(0);
   });
 
-  it('should not increment time if isActive is false', () => {
+  it("should not increment time if isActive is false", () => {
     const { result } = renderTimerHook(false, 0);
     act(() => {
       vi.advanceTimersByTime(5000);
@@ -61,7 +52,7 @@ describe('useTimer', () => {
     expect(result.current).toBe(0);
   });
 
-  it('should increment time every second if isActive is true', () => {
+  it("should increment time every second if isActive is true", () => {
     const { result } = renderTimerHook(true, 0);
     act(() => {
       vi.advanceTimersByTime(1000);
@@ -73,7 +64,7 @@ describe('useTimer', () => {
     expect(result.current).toBe(3);
   });
 
-  it('should reset to 0 and start incrementing when isActive becomes true from false', () => {
+  it("should reset to 0 and start incrementing when isActive becomes true from false", () => {
     const { result, rerender } = renderTimerHook(false, 0);
     expect(result.current).toBe(0);
 
@@ -88,7 +79,7 @@ describe('useTimer', () => {
     expect(result.current).toBe(1);
   });
 
-  it('should reset to 0 when resetKey changes while active', () => {
+  it("should reset to 0 when resetKey changes while active", () => {
     const { result, rerender } = renderTimerHook(true, 0);
     act(() => {
       vi.advanceTimersByTime(3000); // 3s
@@ -106,7 +97,7 @@ describe('useTimer', () => {
     expect(result.current).toBe(1); // Starts incrementing from 0
   });
 
-  it('should be 0 if isActive is false, regardless of resetKey changes', () => {
+  it("should be 0 if isActive is false, regardless of resetKey changes", () => {
     const { result, rerender } = renderTimerHook(false, 0);
     expect(result.current).toBe(0);
 
@@ -116,14 +107,14 @@ describe('useTimer', () => {
     expect(result.current).toBe(0);
   });
 
-  it('should clear timer on unmount', () => {
+  it("should clear timer on unmount", () => {
     const { unmount } = renderTimerHook(true, 0);
-    const clearIntervalSpy = vi.spyOn(global, 'clearInterval');
+    const clearIntervalSpy = vi.spyOn(global, "clearInterval");
     unmount();
     expect(clearIntervalSpy).toHaveBeenCalledOnce();
   });
 
-  it('should preserve elapsedTime when isActive becomes false, and reset to 0 when it becomes active again', () => {
+  it("should preserve elapsedTime when isActive becomes false, and reset to 0 when it becomes active again", () => {
     const { result, rerender } = renderTimerHook(true, 0);
 
     act(() => {

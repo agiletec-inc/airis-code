@@ -4,20 +4,15 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { useState, useCallback } from 'react';
-import * as process from 'node:process';
-import * as path from 'node:path';
-import {
-  loadTrustedFolders,
-  TrustLevel,
-  isWorkspaceTrusted,
-} from '../../config/trustedFolders.js';
-import { useSettings } from '../contexts/SettingsContext.js';
-
-import { MessageType } from '../types.js';
-import { type UseHistoryManagerReturn } from './useHistoryManager.js';
-import type { LoadedSettings } from '../../config/settings.js';
-import { coreEvents } from '@airiscode/gemini-cli-core';
+import * as path from "node:path";
+import * as process from "node:process";
+import { coreEvents } from "@airiscode/gemini-cli-core";
+import { useCallback, useState } from "react";
+import type { LoadedSettings } from "../../config/settings.js";
+import { isWorkspaceTrusted, loadTrustedFolders, TrustLevel } from "../../config/trustedFolders.js";
+import { useSettings } from "../contexts/SettingsContext.js";
+import { MessageType } from "../types.js";
+import { type UseHistoryManagerReturn } from "./useHistoryManager.js";
 
 interface TrustState {
   currentTrustLevel: TrustLevel | undefined;
@@ -44,19 +39,18 @@ function getInitialTrustState(
   const { isTrusted, source } = isWorkspaceTrusted(settings.merged);
 
   const isInheritedTrust =
-    isTrusted &&
-    (!explicitTrustLevel || explicitTrustLevel === TrustLevel.DO_NOT_TRUST);
+    isTrusted && (!explicitTrustLevel || explicitTrustLevel === TrustLevel.DO_NOT_TRUST);
 
   return {
     currentTrustLevel: explicitTrustLevel,
-    isInheritedTrustFromParent: !!(source === 'file' && isInheritedTrust),
-    isInheritedTrustFromIde: !!(source === 'ide' && isInheritedTrust),
+    isInheritedTrustFromParent: !!(source === "file" && isInheritedTrust),
+    isInheritedTrustFromIde: !!(source === "ide" && isInheritedTrust),
   };
 }
 
 export const usePermissionsModifyTrust = (
   onExit: () => void,
-  addItem: UseHistoryManagerReturn['addItem'],
+  addItem: UseHistoryManagerReturn["addItem"],
   targetDirectory: string,
 ) => {
   const settings = useSettings();
@@ -64,25 +58,14 @@ export const usePermissionsModifyTrust = (
   // Normalize paths for case-insensitive file systems (macOS/Windows) to ensure
   // accurate comparison between targetDirectory and process.cwd().
   const isCurrentWorkspace =
-    path.resolve(targetDirectory).toLowerCase() ===
-    path.resolve(process.cwd()).toLowerCase();
+    path.resolve(targetDirectory).toLowerCase() === path.resolve(process.cwd()).toLowerCase();
 
-  const [initialState] = useState(() =>
-    getInitialTrustState(settings, cwd, isCurrentWorkspace),
-  );
+  const [initialState] = useState(() => getInitialTrustState(settings, cwd, isCurrentWorkspace));
 
-  const [currentTrustLevel] = useState<TrustLevel | undefined>(
-    initialState.currentTrustLevel,
-  );
-  const [pendingTrustLevel, setPendingTrustLevel] = useState<
-    TrustLevel | undefined
-  >();
-  const [isInheritedTrustFromParent] = useState(
-    initialState.isInheritedTrustFromParent,
-  );
-  const [isInheritedTrustFromIde] = useState(
-    initialState.isInheritedTrustFromIde,
-  );
+  const [currentTrustLevel] = useState<TrustLevel | undefined>(initialState.currentTrustLevel);
+  const [pendingTrustLevel, setPendingTrustLevel] = useState<TrustLevel | undefined>();
+  const [isInheritedTrustFromParent] = useState(initialState.isInheritedTrustFromParent);
+  const [isInheritedTrustFromIde] = useState(initialState.isInheritedTrustFromIde);
   const [needsRestart, setNeedsRestart] = useState(false);
 
   const isFolderTrustEnabled = !!settings.merged.security?.folderTrust?.enabled;
@@ -105,17 +88,13 @@ export const usePermissionsModifyTrust = (
       const currentConfig = loadTrustedFolders().user.config;
       const newConfig = { ...currentConfig, [cwd]: trustLevel };
 
-      const { isTrusted, source } = isWorkspaceTrusted(
-        settings.merged,
-        newConfig,
-      );
+      const { isTrusted, source } = isWorkspaceTrusted(settings.merged, newConfig);
 
       if (trustLevel === TrustLevel.DO_NOT_TRUST && isTrusted) {
         let message =
-          'Note: This folder is still trusted because the connected IDE workspace is trusted.';
-        if (source === 'file') {
-          message =
-            'Note: This folder is still trusted because a parent folder is trusted.';
+          "Note: This folder is still trusted because the connected IDE workspace is trusted.";
+        if (source === "file") {
+          message = "Note: This folder is still trusted because a parent folder is trusted.";
         }
         addItem(
           {
@@ -135,8 +114,8 @@ export const usePermissionsModifyTrust = (
           folders.setValue(cwd, trustLevel);
         } catch (_e) {
           coreEvents.emitFeedback(
-            'error',
-            'Failed to save trust settings. Your changes may not persist.',
+            "error",
+            "Failed to save trust settings. Your changes may not persist.",
           );
         }
         onExit();
@@ -153,8 +132,8 @@ export const usePermissionsModifyTrust = (
         return true;
       } catch (_e) {
         coreEvents.emitFeedback(
-          'error',
-          'Failed to save trust settings. Your changes may not persist.',
+          "error",
+          "Failed to save trust settings. Your changes may not persist.",
         );
         setNeedsRestart(false);
         setPendingTrustLevel(undefined);

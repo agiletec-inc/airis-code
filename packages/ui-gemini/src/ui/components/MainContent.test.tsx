@@ -4,24 +4,24 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { render } from '../../test-utils/render.js';
-import { MainContent } from './MainContent.js';
-import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { Box, Text } from 'ink';
-import type React from 'react';
+import { Box, Text } from "ink";
+import type React from "react";
+import { beforeEach, describe, expect, it, vi } from "vitest";
+import { render } from "../../test-utils/render.js";
+import { MainContent } from "./MainContent.js";
 
 // Mock dependencies
-vi.mock('../contexts/AppContext.js', () => ({
+vi.mock("../contexts/AppContext.js", () => ({
   useAppContext: () => ({
-    version: '1.0.0',
+    version: "1.0.0",
   }),
 }));
 
-vi.mock('../contexts/UIStateContext.js', () => ({
+vi.mock("../contexts/UIStateContext.js", () => ({
   useUIState: () => ({
     history: [
-      { id: 1, role: 'user', content: 'Hello' },
-      { id: 2, role: 'model', content: 'Hi there' },
+      { id: 1, role: "user", content: "Hello" },
+      { id: 2, role: "model", content: "Hi there" },
     ],
     pendingHistoryItems: [],
     mainAreaWidth: 80,
@@ -36,11 +36,11 @@ vi.mock('../contexts/UIStateContext.js', () => ({
   }),
 }));
 
-vi.mock('../hooks/useAlternateBuffer.js', () => ({
+vi.mock("../hooks/useAlternateBuffer.js", () => ({
   useAlternateBuffer: vi.fn(),
 }));
 
-vi.mock('./HistoryItemDisplay.js', () => ({
+vi.mock("./HistoryItemDisplay.js", () => ({
   HistoryItemDisplay: ({ item }: { item: { content: string } }) => (
     <Box>
       <Text>HistoryItem: {item.content}</Text>
@@ -48,15 +48,15 @@ vi.mock('./HistoryItemDisplay.js', () => ({
   ),
 }));
 
-vi.mock('./AppHeader.js', () => ({
+vi.mock("./AppHeader.js", () => ({
   AppHeader: () => <Text>AppHeader</Text>,
 }));
 
-vi.mock('./ShowMoreLines.js', () => ({
+vi.mock("./ShowMoreLines.js", () => ({
   ShowMoreLines: () => <Text>ShowMoreLines</Text>,
 }));
 
-vi.mock('./shared/ScrollableList.js', () => ({
+vi.mock("./shared/ScrollableList.js", () => ({
   ScrollableList: ({
     data,
     renderItem,
@@ -74,30 +74,30 @@ vi.mock('./shared/ScrollableList.js', () => ({
   SCROLL_TO_ITEM_END: 0,
 }));
 
-import { useAlternateBuffer } from '../hooks/useAlternateBuffer.js';
+import { useAlternateBuffer } from "../hooks/useAlternateBuffer.js";
 
-describe('MainContent', () => {
+describe("MainContent", () => {
   beforeEach(() => {
     vi.mocked(useAlternateBuffer).mockReturnValue(false);
   });
 
-  it('renders in normal buffer mode', () => {
+  it("renders in normal buffer mode", () => {
     const { lastFrame } = render(<MainContent />);
     const output = lastFrame();
 
-    expect(output).toContain('AppHeader');
-    expect(output).toContain('HistoryItem: Hello');
-    expect(output).toContain('HistoryItem: Hi there');
+    expect(output).toContain("AppHeader");
+    expect(output).toContain("HistoryItem: Hello");
+    expect(output).toContain("HistoryItem: Hi there");
   });
 
-  it('renders in alternate buffer mode', () => {
+  it("renders in alternate buffer mode", () => {
     vi.mocked(useAlternateBuffer).mockReturnValue(true);
     const { lastFrame } = render(<MainContent />);
     const output = lastFrame();
 
-    expect(output).toContain('ScrollableList');
-    expect(output).toContain('AppHeader');
-    expect(output).toContain('HistoryItem: Hello');
-    expect(output).toContain('HistoryItem: Hi there');
+    expect(output).toContain("ScrollableList");
+    expect(output).toContain("AppHeader");
+    expect(output).toContain("HistoryItem: Hello");
+    expect(output).toContain("HistoryItem: Hi there");
   });
 });

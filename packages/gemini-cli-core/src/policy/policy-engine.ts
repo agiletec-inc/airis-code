@@ -4,21 +4,21 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { type FunctionCall } from '@google/genai';
+import { type FunctionCall } from "@google/genai";
+import type { HookExecutionRequest } from "../confirmation-bus/types.js";
+import type { CheckerRunner } from "../safety/checker-runner.js";
+import { SafetyCheckDecision } from "../safety/protocol.js";
+import { debugLogger } from "../utils/debugLogger.js";
+import { stableStringify } from "./stable-stringify.js";
 import {
+  getHookSource,
+  type HookCheckerRule,
+  type HookExecutionContext,
   PolicyDecision,
   type PolicyEngineConfig,
   type PolicyRule,
   type SafetyCheckerRule,
-  type HookCheckerRule,
-  type HookExecutionContext,
-  getHookSource,
-} from './types.js';
-import { stableStringify } from './stable-stringify.js';
-import { debugLogger } from '../utils/debugLogger.js';
-import type { CheckerRunner } from '../safety/checker-runner.js';
-import { SafetyCheckDecision } from '../safety/protocol.js';
-import type { HookExecutionRequest } from '../confirmation-bus/types.js';
+} from "./types.js";
 
 function ruleMatches(
   rule: PolicyRule | SafetyCheckerRule,
@@ -29,7 +29,7 @@ function ruleMatches(
   // Check tool name if specified
   if (rule.toolName) {
     // Support wildcard patterns: "serverName__*" matches "serverName__anyTool"
-    if (rule.toolName.endsWith('__*')) {
+    if (rule.toolName.endsWith("__*")) {
       const prefix = rule.toolName.slice(0, -3); // Remove "__*"
       if (serverName !== undefined) {
         // Robust check: if serverName is provided, it MUST match the prefix exactly.
@@ -39,7 +39,7 @@ function ruleMatches(
         }
       }
       // Always verify the prefix, even if serverName matched
-      if (!toolCall.name || !toolCall.name.startsWith(prefix + '__')) {
+      if (!toolCall.name || !toolCall.name.startsWith(prefix + "__")) {
         return false;
       }
     } else if (toolCall.name !== rule.toolName) {
@@ -54,10 +54,7 @@ function ruleMatches(
       return false;
     }
     // Use stable JSON stringification with sorted keys to ensure consistent matching
-    if (
-      stringifiedArgs === undefined ||
-      !rule.argsPattern.test(stringifiedArgs)
-    ) {
+    if (stringifiedArgs === undefined || !rule.argsPattern.test(stringifiedArgs)) {
       return false;
     }
   }
@@ -68,10 +65,7 @@ function ruleMatches(
 /**
  * Check if a hook checker rule matches a hook execution context.
  */
-function hookCheckerMatches(
-  rule: HookCheckerRule,
-  context: HookExecutionContext,
-): boolean {
+function hookCheckerMatches(rule: HookCheckerRule, context: HookExecutionContext): boolean {
   // Check event name if specified
   if (rule.eventName && rule.eventName !== context.eventName) {
     return false;
@@ -95,12 +89,8 @@ export class PolicyEngine {
   private readonly allowHooks: boolean;
 
   constructor(config: PolicyEngineConfig = {}, checkerRunner?: CheckerRunner) {
-    this.rules = (config.rules ?? []).sort(
-      (a, b) => (b.priority ?? 0) - (a.priority ?? 0),
-    );
-    this.checkers = (config.checkers ?? []).sort(
-      (a, b) => (b.priority ?? 0) - (a.priority ?? 0),
-    );
+    this.rules = (config.rules ?? []).sort((a, b) => (b.priority ?? 0) - (a.priority ?? 0));
+    this.checkers = (config.checkers ?? []).sort((a, b) => (b.priority ?? 0) - (a.priority ?? 0));
     this.hookCheckers = (config.hookCheckers ?? []).sort(
       (a, b) => (b.priority ?? 0) - (a.priority ?? 0),
     );
@@ -142,7 +132,7 @@ export class PolicyEngine {
     for (const rule of this.rules) {
       if (ruleMatches(rule, toolCall, stringifiedArgs, serverName)) {
         debugLogger.debug(
-          `[PolicyEngine.check] MATCHED rule: toolName=${rule.toolName}, decision=${rule.decision}, priority=${rule.priority}, argsPattern=${rule.argsPattern?.source || 'none'}`,
+          `[PolicyEngine.check] MATCHED rule: toolName=${rule.toolName}, decision=${rule.decision}, priority=${rule.priority}, argsPattern=${rule.argsPattern?.source || "none"}`,
         );
         matchedRule = rule;
         decision = this.applyNonInteractiveMode(rule.decision);
@@ -166,15 +156,10 @@ export class PolicyEngine {
             `[PolicyEngine.check] Running safety checker: ${checkerRule.checker.name}`,
           );
           try {
-            const result = await this.checkerRunner.runChecker(
-              toolCall,
-              checkerRule.checker,
-            );
+            const result = await this.checkerRunner.runChecker(toolCall, checkerRule.checker);
 
             if (result.decision === SafetyCheckDecision.DENY) {
-              debugLogger.debug(
-                `[PolicyEngine.check] Safety checker denied: ${result.reason}`,
-              );
+              debugLogger.debug(`[PolicyEngine.check] Safety checker denied: ${result.reason}`);
               return {
                 decision: PolicyDecision.DENY,
                 rule: matchedRule,
@@ -186,9 +171,7 @@ export class PolicyEngine {
               decision = PolicyDecision.ASK_USER;
             }
           } catch (error) {
-            debugLogger.debug(
-              `[PolicyEngine.check] Safety checker failed: ${error}`,
-            );
+            debugLogger.debug(`[PolicyEngine.check] Safety checker failed: ${error}`);
             return {
               decision: PolicyDecision.DENY,
               rule: matchedRule,
@@ -255,28 +238,26 @@ export class PolicyEngine {
    * Check if a hook execution is allowed based on the configured policies.
    * Runs hook-specific safety checkers if configured.
    */
-  async checkHook(
-    request: HookExecutionRequest | HookExecutionContext,
-  ): Promise<PolicyDecision> {
+  async checkHook(request: HookExecutionRequest | HookExecutionContext): Promise<PolicyDecision> {
     // If hooks are globally disabled, deny all hook executions
     if (!this.allowHooks) {
       return PolicyDecision.DENY;
     }
 
     const context: HookExecutionContext =
-      'input' in request
+      "input" in request
         ? {
             eventName: request.eventName,
             hookSource: getHookSource(request.input),
             trustedFolder:
-              typeof request.input['trusted_folder'] === 'boolean'
-                ? request.input['trusted_folder']
+              typeof request.input["trusted_folder"] === "boolean"
+                ? request.input["trusted_folder"]
                 : undefined,
           }
         : request;
 
     // In untrusted folders, deny project-level hooks
-    if (context.trustedFolder === false && context.hookSource === 'project') {
+    if (context.trustedFolder === false && context.hookSource === "project") {
       return PolicyDecision.DENY;
     }
 
@@ -298,15 +279,10 @@ export class PolicyEngine {
               },
             };
 
-            const result = await this.checkerRunner.runChecker(
-              syntheticCall,
-              checkerRule.checker,
-            );
+            const result = await this.checkerRunner.runChecker(syntheticCall, checkerRule.checker);
 
             if (result.decision === SafetyCheckDecision.DENY) {
-              debugLogger.debug(
-                `[PolicyEngine.checkHook] Hook checker denied: ${result.reason}`,
-              );
+              debugLogger.debug(`[PolicyEngine.checkHook] Hook checker denied: ${result.reason}`);
               return PolicyDecision.DENY;
             } else if (result.decision === SafetyCheckDecision.ASK_USER) {
               debugLogger.debug(
@@ -316,9 +292,7 @@ export class PolicyEngine {
               return this.applyNonInteractiveMode(PolicyDecision.ASK_USER);
             }
           } catch (error) {
-            debugLogger.debug(
-              `[PolicyEngine.checkHook] Hook checker failed: ${error}`,
-            );
+            debugLogger.debug(`[PolicyEngine.checkHook] Hook checker failed: ${error}`);
             return PolicyDecision.DENY;
           }
         }

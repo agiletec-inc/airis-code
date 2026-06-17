@@ -10,11 +10,11 @@
  * .airiscode/rules/ takes precedence if the same filename exists in both.
  */
 
-import * as fs from 'node:fs';
-import * as path from 'node:path';
+import * as fs from "node:fs";
+import * as path from "node:path";
 
 /** Directories to scan for rules, in priority order (last wins on conflict) */
-const RULES_DIRS = ['.claude/rules', '.airiscode/rules'];
+const RULES_DIRS = [".claude/rules", ".airiscode/rules"];
 
 /**
  * Load all rule files from rules directories.
@@ -36,11 +36,11 @@ export function loadProjectRules(cwd: string): string[] {
     try {
       const files = fs
         .readdirSync(rulesDir)
-        .filter((f) => f.endsWith('.md'))
+        .filter((f) => f.endsWith(".md"))
         .sort();
 
       for (const file of files) {
-        const content = fs.readFileSync(path.join(rulesDir, file), 'utf-8');
+        const content = fs.readFileSync(path.join(rulesDir, file), "utf-8");
         // Later directories override earlier ones (airiscode > claude)
         rulesByName.set(file, content);
       }
@@ -61,7 +61,7 @@ export function loadProjectRules(cwd: string): string[] {
 export function loadProjectRulesAsPrompt(cwd: string): string {
   const rules = loadProjectRules(cwd);
   if (rules.length === 0) {
-    return '';
+    return "";
   }
-  return `\n# Project Rules\n\n${rules.join('\n\n')}\n`;
+  return `\n# Project Rules\n\n${rules.join("\n\n")}\n`;
 }

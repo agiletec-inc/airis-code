@@ -4,9 +4,9 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import type { AnyDeclarativeTool, AnyToolInvocation } from '../index.js';
-import { isTool } from '../index.js';
-import { SHELL_TOOL_NAMES } from './shell-utils.js';
+import type { AnyDeclarativeTool, AnyToolInvocation } from "../index.js";
+import { isTool } from "../index.js";
+import { SHELL_TOOL_NAMES } from "./shell-utils.js";
 
 /**
  * Checks if a tool invocation matches any of a list of patterns.
@@ -37,7 +37,7 @@ export function doesToolInvocationMatch(
   }
 
   for (const pattern of patterns) {
-    const openParen = pattern.indexOf('(');
+    const openParen = pattern.indexOf("(");
 
     if (openParen === -1) {
       // No arguments, just a tool name
@@ -52,17 +52,17 @@ export function doesToolInvocationMatch(
       continue;
     }
 
-    if (!pattern.endsWith(')')) {
+    if (!pattern.endsWith(")")) {
       continue;
     }
 
     const argPattern = pattern.substring(openParen + 1, pattern.length - 1);
 
     let command: string;
-    if (typeof invocation === 'string') {
+    if (typeof invocation === "string") {
       command = invocation;
     } else {
-      if (!('command' in invocation.params)) {
+      if (!("command" in invocation.params)) {
         // This invocation has no command - nothing to check.
         continue;
       }
@@ -70,7 +70,7 @@ export function doesToolInvocationMatch(
     }
 
     if (toolNames.some((name) => SHELL_TOOL_NAMES.includes(name))) {
-      if (command === argPattern || command.startsWith(argPattern + ' ')) {
+      if (command === argPattern || command.startsWith(argPattern + " ")) {
         return true;
       }
     }

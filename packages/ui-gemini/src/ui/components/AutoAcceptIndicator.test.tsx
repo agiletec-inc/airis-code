@@ -4,36 +4,30 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { render } from '../../test-utils/render.js';
-import { AutoAcceptIndicator } from './AutoAcceptIndicator.js';
-import { describe, it, expect } from 'vitest';
-import { ApprovalMode } from '@airiscode/gemini-cli-core';
+import { ApprovalMode } from "@airiscode/gemini-cli-core";
+import { describe, expect, it } from "vitest";
+import { render } from "../../test-utils/render.js";
+import { AutoAcceptIndicator } from "./AutoAcceptIndicator.js";
 
-describe('AutoAcceptIndicator', () => {
-  it('renders correctly for AUTO_EDIT mode', () => {
-    const { lastFrame } = render(
-      <AutoAcceptIndicator approvalMode={ApprovalMode.AUTO_EDIT} />,
-    );
+describe("AutoAcceptIndicator", () => {
+  it("renders correctly for AUTO_EDIT mode", () => {
+    const { lastFrame } = render(<AutoAcceptIndicator approvalMode={ApprovalMode.AUTO_EDIT} />);
     const output = lastFrame();
-    expect(output).toContain('accepting edits');
-    expect(output).toContain('(shift + tab to toggle)');
+    expect(output).toContain("accepting edits");
+    expect(output).toContain("(shift + tab to toggle)");
   });
 
-  it('renders correctly for YOLO mode', () => {
-    const { lastFrame } = render(
-      <AutoAcceptIndicator approvalMode={ApprovalMode.YOLO} />,
-    );
+  it("renders correctly for YOLO mode", () => {
+    const { lastFrame } = render(<AutoAcceptIndicator approvalMode={ApprovalMode.YOLO} />);
     const output = lastFrame();
-    expect(output).toContain('YOLO mode');
-    expect(output).toContain('(ctrl + y to toggle)');
+    expect(output).toContain("YOLO mode");
+    expect(output).toContain("(ctrl + y to toggle)");
   });
 
-  it('renders nothing for DEFAULT mode', () => {
-    const { lastFrame } = render(
-      <AutoAcceptIndicator approvalMode={ApprovalMode.DEFAULT} />,
-    );
+  it("renders nothing for DEFAULT mode", () => {
+    const { lastFrame } = render(<AutoAcceptIndicator approvalMode={ApprovalMode.DEFAULT} />);
     const output = lastFrame();
-    expect(output).not.toContain('accepting edits');
-    expect(output).not.toContain('YOLO mode');
+    expect(output).not.toContain("accepting edits");
+    expect(output).not.toContain("YOLO mode");
   });
 });

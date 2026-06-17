@@ -6,6 +6,6 @@
 
 export const SettingPaths = {
   General: {
-    PreferredEditor: 'general.preferredEditor',
+    PreferredEditor: "general.preferredEditor",
   },
 } as const;

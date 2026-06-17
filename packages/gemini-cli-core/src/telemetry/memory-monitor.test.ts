@@ -4,44 +4,44 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
-import v8 from 'node:v8';
-import process from 'node:process';
+import process from "node:process";
+import v8 from "node:v8";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import type { Config } from "../config/config.js";
+import { HighWaterMarkTracker } from "./high-water-mark-tracker.js";
 import {
-  MemoryMonitor,
-  initializeMemoryMonitor,
+  _resetGlobalMemoryMonitorForTests,
   getMemoryMonitor,
+  initializeMemoryMonitor,
+  MemoryMonitor,
   recordCurrentMemoryUsage,
   startGlobalMemoryMonitoring,
   stopGlobalMemoryMonitoring,
-  _resetGlobalMemoryMonitorForTests,
-} from './memory-monitor.js';
-import type { Config } from '../config/config.js';
-import { recordMemoryUsage, isPerformanceMonitoringActive } from './metrics.js';
-import { HighWaterMarkTracker } from './high-water-mark-tracker.js';
-import { RateLimiter } from './rate-limiter.js';
+} from "./memory-monitor.js";
+import { isPerformanceMonitoringActive, recordMemoryUsage } from "./metrics.js";
+import { RateLimiter } from "./rate-limiter.js";
 
 // Mock dependencies
-vi.mock('./metrics.js', () => ({
+vi.mock("./metrics.js", () => ({
   recordMemoryUsage: vi.fn(),
   isPerformanceMonitoringActive: vi.fn(),
   MemoryMetricType: {
-    HEAP_USED: 'heap_used',
-    HEAP_TOTAL: 'heap_total',
-    EXTERNAL: 'external',
-    RSS: 'rss',
+    HEAP_USED: "heap_used",
+    HEAP_TOTAL: "heap_total",
+    EXTERNAL: "external",
+    RSS: "rss",
   },
 }));
 
 // Mock Node.js modules
-vi.mock('node:v8', () => ({
+vi.mock("node:v8", () => ({
   default: {
     getHeapStatistics: vi.fn(),
     getHeapSpaceStatistics: vi.fn(),
   },
 }));
 
-vi.mock('node:process', () => ({
+vi.mock("node:process", () => ({
   default: {
     memoryUsage: vi.fn(),
     cpuUsage: vi.fn(),
@@ -50,9 +50,7 @@ vi.mock('node:process', () => ({
 }));
 
 const mockRecordMemoryUsage = vi.mocked(recordMemoryUsage);
-const mockIsPerformanceMonitoringActive = vi.mocked(
-  isPerformanceMonitoringActive,
-);
+const mockIsPerformanceMonitoringActive = vi.mocked(isPerformanceMonitoringActive);
 const mockV8GetHeapStatistics = vi.mocked(v8.getHeapStatistics);
 const mockV8GetHeapSpaceStatistics = vi.mocked(v8.getHeapSpaceStatistics);
 const mockProcessMemoryUsage = vi.mocked(process.memoryUsage);
@@ -61,7 +59,7 @@ const mockProcessUptime = vi.mocked(process.uptime);
 
 // Mock config object
 const mockConfig = {
-  getSessionId: () => 'test-session-id',
+  getSessionId: () => "test-session-id",
   getTelemetryEnabled: () => true,
 } as unknown as Config;
 
@@ -93,14 +91,14 @@ const mockHeapStatistics = {
 
 const mockHeapSpaceStatistics = [
   {
-    space_name: 'new_space',
+    space_name: "new_space",
     space_size: 8388608,
     space_used_size: 4194304,
     space_available_size: 4194304,
     physical_space_size: 8388608,
   },
   {
-    space_name: 'old_space',
+    space_name: "old_space",
     space_size: 16777216,
     space_used_size: 8388608,
     space_available_size: 8388608,
@@ -113,10 +111,10 @@ const mockCpuUsage = {
   system: 500000, // 0.5 seconds
 };
 
-describe('MemoryMonitor', () => {
+describe("MemoryMonitor", () => {
   beforeEach(() => {
     vi.useFakeTimers();
-    vi.setSystemTime(new Date('2025-01-01T00:00:00.000Z'));
+    vi.setSystemTime(new Date("2025-01-01T00:00:00.000Z"));
 
     // Setup default mocks
     mockIsPerformanceMonitoringActive.mockReturnValue(true);
@@ -134,19 +132,19 @@ describe('MemoryMonitor', () => {
     _resetGlobalMemoryMonitorForTests();
   });
 
-  describe('MemoryMonitor Class', () => {
-    describe('constructor', () => {
-      it('should create a new MemoryMonitor instance without config to avoid multi-session attribution', () => {
+  describe("MemoryMonitor Class", () => {
+    describe("constructor", () => {
+      it("should create a new MemoryMonitor instance without config to avoid multi-session attribution", () => {
         const monitor = new MemoryMonitor();
         expect(monitor).toBeInstanceOf(MemoryMonitor);
       });
     });
 
-    describe('takeSnapshot', () => {
-      it('should take a memory snapshot and record metrics when performance monitoring is active', () => {
+    describe("takeSnapshot", () => {
+      it("should take a memory snapshot and record metrics when performance monitoring is active", () => {
         const monitor = new MemoryMonitor();
 
-        const snapshot = monitor.takeSnapshot('test_context', mockConfig);
+        const snapshot = monitor.takeSnapshot("test_context", mockConfig);
 
         expect(snapshot).toEqual({
           timestamp: Date.now(),
@@ -159,45 +157,29 @@ describe('MemoryMonitor', () => {
         });
 
         // Verify metrics were recorded
-        expect(mockRecordMemoryUsage).toHaveBeenCalledWith(
-          mockConfig,
-          mockMemoryUsage.heapUsed,
-          {
-            memory_type: 'heap_used',
-            component: 'test_context',
-          },
-        );
-        expect(mockRecordMemoryUsage).toHaveBeenCalledWith(
-          mockConfig,
-          mockMemoryUsage.heapTotal,
-          {
-            memory_type: 'heap_total',
-            component: 'test_context',
-          },
-        );
-        expect(mockRecordMemoryUsage).toHaveBeenCalledWith(
-          mockConfig,
-          mockMemoryUsage.external,
-          {
-            memory_type: 'external',
-            component: 'test_context',
-          },
-        );
-        expect(mockRecordMemoryUsage).toHaveBeenCalledWith(
-          mockConfig,
-          mockMemoryUsage.rss,
-          {
-            memory_type: 'rss',
-            component: 'test_context',
-          },
-        );
+        expect(mockRecordMemoryUsage).toHaveBeenCalledWith(mockConfig, mockMemoryUsage.heapUsed, {
+          memory_type: "heap_used",
+          component: "test_context",
+        });
+        expect(mockRecordMemoryUsage).toHaveBeenCalledWith(mockConfig, mockMemoryUsage.heapTotal, {
+          memory_type: "heap_total",
+          component: "test_context",
+        });
+        expect(mockRecordMemoryUsage).toHaveBeenCalledWith(mockConfig, mockMemoryUsage.external, {
+          memory_type: "external",
+          component: "test_context",
+        });
+        expect(mockRecordMemoryUsage).toHaveBeenCalledWith(mockConfig, mockMemoryUsage.rss, {
+          memory_type: "rss",
+          component: "test_context",
+        });
       });
 
-      it('should not record metrics when performance monitoring is inactive', () => {
+      it("should not record metrics when performance monitoring is inactive", () => {
         mockIsPerformanceMonitoringActive.mockReturnValue(false);
         const monitor = new MemoryMonitor();
 
-        const snapshot = monitor.takeSnapshot('test_context', mockConfig);
+        const snapshot = monitor.takeSnapshot("test_context", mockConfig);
 
         expect(snapshot).toEqual({
           timestamp: Date.now(),
@@ -214,8 +196,8 @@ describe('MemoryMonitor', () => {
       });
     });
 
-    describe('getCurrentMemoryUsage', () => {
-      it('should return current memory usage without recording metrics', () => {
+    describe("getCurrentMemoryUsage", () => {
+      it("should return current memory usage without recording metrics", () => {
         const monitor = new MemoryMonitor();
 
         const usage = monitor.getCurrentMemoryUsage();
@@ -235,8 +217,8 @@ describe('MemoryMonitor', () => {
       });
     });
 
-    describe('start and stop', () => {
-      it('should start and stop memory monitoring with proper lifecycle', () => {
+    describe("start and stop", () => {
+      it("should start and stop memory monitoring with proper lifecycle", () => {
         const monitor = new MemoryMonitor();
         const intervalMs = 1000;
 
@@ -244,43 +226,31 @@ describe('MemoryMonitor', () => {
         monitor.start(mockConfig, intervalMs);
 
         // Verify initial snapshot was taken
-        expect(mockRecordMemoryUsage).toHaveBeenCalledWith(
-          mockConfig,
-          mockMemoryUsage.heapUsed,
-          {
-            memory_type: 'heap_used',
-            component: 'monitoring_start',
-          },
-        );
+        expect(mockRecordMemoryUsage).toHaveBeenCalledWith(mockConfig, mockMemoryUsage.heapUsed, {
+          memory_type: "heap_used",
+          component: "monitoring_start",
+        });
 
         // Fast-forward time to trigger periodic snapshot
         vi.advanceTimersByTime(intervalMs);
 
         // Verify monitoring_start snapshot was taken (multiple metrics)
-        expect(mockRecordMemoryUsage).toHaveBeenCalledWith(
-          mockConfig,
-          expect.any(Number),
-          {
-            memory_type: 'heap_used',
-            component: 'monitoring_start',
-          },
-        );
+        expect(mockRecordMemoryUsage).toHaveBeenCalledWith(mockConfig, expect.any(Number), {
+          memory_type: "heap_used",
+          component: "monitoring_start",
+        });
 
         // Stop monitoring
         monitor.stop(mockConfig);
 
         // Verify final snapshot was taken
-        expect(mockRecordMemoryUsage).toHaveBeenCalledWith(
-          mockConfig,
-          mockMemoryUsage.heapUsed,
-          {
-            memory_type: 'heap_used',
-            component: 'monitoring_stop',
-          },
-        );
+        expect(mockRecordMemoryUsage).toHaveBeenCalledWith(mockConfig, mockMemoryUsage.heapUsed, {
+          memory_type: "heap_used",
+          component: "monitoring_stop",
+        });
       });
 
-      it('should not start monitoring when performance monitoring is inactive', () => {
+      it("should not start monitoring when performance monitoring is inactive", () => {
         mockIsPerformanceMonitoringActive.mockReturnValue(false);
         const monitor = new MemoryMonitor();
 
@@ -290,7 +260,7 @@ describe('MemoryMonitor', () => {
         expect(mockRecordMemoryUsage).not.toHaveBeenCalled();
       });
 
-      it('should not start monitoring when already running', () => {
+      it("should not start monitoring when already running", () => {
         const monitor = new MemoryMonitor();
 
         // Start monitoring twice
@@ -303,14 +273,14 @@ describe('MemoryMonitor', () => {
         expect(mockRecordMemoryUsage).toHaveBeenCalledTimes(initialCallCount);
       });
 
-      it('should handle stop when not running', () => {
+      it("should handle stop when not running", () => {
         const monitor = new MemoryMonitor();
 
         // Should not throw error
         expect(() => monitor.stop(mockConfig)).not.toThrow();
       });
 
-      it('should stop without taking final snapshot when no config provided', () => {
+      it("should stop without taking final snapshot when no config provided", () => {
         const monitor = new MemoryMonitor();
 
         monitor.start(mockConfig, 1000);
@@ -322,15 +292,9 @@ describe('MemoryMonitor', () => {
         expect(mockRecordMemoryUsage).toHaveBeenCalledTimes(callsBeforeStop);
       });
 
-      it('should periodically cleanup tracker state to prevent growth', () => {
-        const trackerCleanupSpy = vi.spyOn(
-          HighWaterMarkTracker.prototype,
-          'cleanup',
-        );
-        const rateLimiterCleanupSpy = vi.spyOn(
-          RateLimiter.prototype,
-          'cleanup',
-        );
+      it("should periodically cleanup tracker state to prevent growth", () => {
+        const trackerCleanupSpy = vi.spyOn(HighWaterMarkTracker.prototype, "cleanup");
+        const rateLimiterCleanupSpy = vi.spyOn(RateLimiter.prototype, "cleanup");
 
         const monitor = new MemoryMonitor();
         monitor.start(mockConfig, 1000);
@@ -351,12 +315,12 @@ describe('MemoryMonitor', () => {
       });
     });
 
-    describe('getMemoryGrowth', () => {
-      it('should calculate memory growth between snapshots', () => {
+    describe("getMemoryGrowth", () => {
+      it("should calculate memory growth between snapshots", () => {
         const monitor = new MemoryMonitor();
 
         // Take initial snapshot
-        monitor.takeSnapshot('initial', mockConfig);
+        monitor.takeSnapshot("initial", mockConfig);
 
         // Change memory usage
         const newMemoryUsage = {
@@ -377,7 +341,7 @@ describe('MemoryMonitor', () => {
         });
       });
 
-      it('should return null when no previous snapshot exists', () => {
+      it("should return null when no previous snapshot exists", () => {
         const monitor = new MemoryMonitor();
 
         const growth = monitor.getMemoryGrowth();
@@ -386,8 +350,8 @@ describe('MemoryMonitor', () => {
       });
     });
 
-    describe('checkMemoryThreshold', () => {
-      it('should return true when memory usage exceeds threshold', () => {
+    describe("checkMemoryThreshold", () => {
+      it("should return true when memory usage exceeds threshold", () => {
         const monitor = new MemoryMonitor();
         const thresholdMB = 10; // 10MB threshold
 
@@ -396,7 +360,7 @@ describe('MemoryMonitor', () => {
         expect(exceeds).toBe(true); // heapUsed is ~15MB
       });
 
-      it('should return false when memory usage is below threshold', () => {
+      it("should return false when memory usage is below threshold", () => {
         const monitor = new MemoryMonitor();
         const thresholdMB = 20; // 20MB threshold
 
@@ -406,8 +370,8 @@ describe('MemoryMonitor', () => {
       });
     });
 
-    describe('getMemoryUsageSummary', () => {
-      it('should return memory usage summary in MB with proper rounding', () => {
+    describe("getMemoryUsageSummary", () => {
+      it("should return memory usage summary in MB with proper rounding", () => {
         const monitor = new MemoryMonitor();
 
         const summary = monitor.getMemoryUsageSummary();
@@ -422,8 +386,8 @@ describe('MemoryMonitor', () => {
       });
     });
 
-    describe('getHeapStatistics', () => {
-      it('should return V8 heap statistics', () => {
+    describe("getHeapStatistics", () => {
+      it("should return V8 heap statistics", () => {
         const monitor = new MemoryMonitor();
 
         const stats = monitor.getHeapStatistics();
@@ -433,8 +397,8 @@ describe('MemoryMonitor', () => {
       });
     });
 
-    describe('getHeapSpaceStatistics', () => {
-      it('should return V8 heap space statistics', () => {
+    describe("getHeapSpaceStatistics", () => {
+      it("should return V8 heap space statistics", () => {
         const monitor = new MemoryMonitor();
 
         const stats = monitor.getHeapSpaceStatistics();
@@ -444,8 +408,8 @@ describe('MemoryMonitor', () => {
       });
     });
 
-    describe('getProcessMetrics', () => {
-      it('should return process CPU and memory metrics', () => {
+    describe("getProcessMetrics", () => {
+      it("should return process CPU and memory metrics", () => {
         const monitor = new MemoryMonitor();
 
         const metrics = monitor.getProcessMetrics();
@@ -458,14 +422,11 @@ describe('MemoryMonitor', () => {
       });
     });
 
-    describe('recordComponentMemoryUsage', () => {
-      it('should record memory usage for specific component', () => {
+    describe("recordComponentMemoryUsage", () => {
+      it("should record memory usage for specific component", () => {
         const monitor = new MemoryMonitor();
 
-        const snapshot = monitor.recordComponentMemoryUsage(
-          mockConfig,
-          'test_component',
-        );
+        const snapshot = monitor.recordComponentMemoryUsage(mockConfig, "test_component");
 
         expect(snapshot).toEqual({
           timestamp: Date.now(),
@@ -477,38 +438,26 @@ describe('MemoryMonitor', () => {
           heapSizeLimit: mockHeapStatistics.heap_size_limit,
         });
 
-        expect(mockRecordMemoryUsage).toHaveBeenCalledWith(
-          mockConfig,
-          mockMemoryUsage.heapUsed,
-          {
-            memory_type: 'heap_used',
-            component: 'test_component',
-          },
-        );
+        expect(mockRecordMemoryUsage).toHaveBeenCalledWith(mockConfig, mockMemoryUsage.heapUsed, {
+          memory_type: "heap_used",
+          component: "test_component",
+        });
       });
 
-      it('should record memory usage for component with operation', () => {
+      it("should record memory usage for component with operation", () => {
         const monitor = new MemoryMonitor();
 
-        monitor.recordComponentMemoryUsage(
-          mockConfig,
-          'test_component',
-          'test_operation',
-        );
+        monitor.recordComponentMemoryUsage(mockConfig, "test_component", "test_operation");
 
-        expect(mockRecordMemoryUsage).toHaveBeenCalledWith(
-          mockConfig,
-          mockMemoryUsage.heapUsed,
-          {
-            memory_type: 'heap_used',
-            component: 'test_component_test_operation',
-          },
-        );
+        expect(mockRecordMemoryUsage).toHaveBeenCalledWith(mockConfig, mockMemoryUsage.heapUsed, {
+          memory_type: "heap_used",
+          component: "test_component_test_operation",
+        });
       });
     });
 
-    describe('destroy', () => {
-      it('should stop monitoring and cleanup resources', () => {
+    describe("destroy", () => {
+      it("should stop monitoring and cleanup resources", () => {
         const monitor = new MemoryMonitor();
 
         monitor.start(mockConfig, 1000);
@@ -523,9 +472,9 @@ describe('MemoryMonitor', () => {
     });
   });
 
-  describe('Global Memory Monitor Functions', () => {
-    describe('initializeMemoryMonitor', () => {
-      it('should create singleton instance', () => {
+  describe("Global Memory Monitor Functions", () => {
+    describe("initializeMemoryMonitor", () => {
+      it("should create singleton instance", () => {
         const monitor1 = initializeMemoryMonitor();
         const monitor2 = initializeMemoryMonitor();
 
@@ -534,13 +483,13 @@ describe('MemoryMonitor', () => {
       });
     });
 
-    describe('getMemoryMonitor', () => {
-      it('should return null when not initialized', () => {
+    describe("getMemoryMonitor", () => {
+      it("should return null when not initialized", () => {
         _resetGlobalMemoryMonitorForTests();
         expect(getMemoryMonitor()).toBeNull();
       });
 
-      it('should return initialized monitor', () => {
+      it("should return initialized monitor", () => {
         const initialized = initializeMemoryMonitor();
         const retrieved = getMemoryMonitor();
 
@@ -548,9 +497,9 @@ describe('MemoryMonitor', () => {
       });
     });
 
-    describe('recordCurrentMemoryUsage', () => {
-      it('should initialize monitor and take snapshot', () => {
-        const snapshot = recordCurrentMemoryUsage(mockConfig, 'test_context');
+    describe("recordCurrentMemoryUsage", () => {
+      it("should initialize monitor and take snapshot", () => {
+        const snapshot = recordCurrentMemoryUsage(mockConfig, "test_context");
 
         expect(snapshot).toEqual({
           timestamp: Date.now(),
@@ -562,58 +511,42 @@ describe('MemoryMonitor', () => {
           heapSizeLimit: mockHeapStatistics.heap_size_limit,
         });
 
-        expect(mockRecordMemoryUsage).toHaveBeenCalledWith(
-          mockConfig,
-          mockMemoryUsage.heapUsed,
-          {
-            memory_type: 'heap_used',
-            component: 'test_context',
-          },
-        );
+        expect(mockRecordMemoryUsage).toHaveBeenCalledWith(mockConfig, mockMemoryUsage.heapUsed, {
+          memory_type: "heap_used",
+          component: "test_context",
+        });
       });
     });
 
-    describe('startGlobalMemoryMonitoring', () => {
-      it('should initialize and start global monitoring', () => {
+    describe("startGlobalMemoryMonitoring", () => {
+      it("should initialize and start global monitoring", () => {
         startGlobalMemoryMonitoring(mockConfig, 1000);
 
         // Verify initial snapshot
-        expect(mockRecordMemoryUsage).toHaveBeenCalledWith(
-          mockConfig,
-          mockMemoryUsage.heapUsed,
-          {
-            memory_type: 'heap_used',
-            component: 'monitoring_start',
-          },
-        );
+        expect(mockRecordMemoryUsage).toHaveBeenCalledWith(mockConfig, mockMemoryUsage.heapUsed, {
+          memory_type: "heap_used",
+          component: "monitoring_start",
+        });
 
         // Fast-forward and verify monitoring snapshot
         vi.advanceTimersByTime(1000);
-        expect(mockRecordMemoryUsage).toHaveBeenCalledWith(
-          mockConfig,
-          expect.any(Number),
-          {
-            memory_type: 'heap_used',
-            component: 'monitoring_start',
-          },
-        );
+        expect(mockRecordMemoryUsage).toHaveBeenCalledWith(mockConfig, expect.any(Number), {
+          memory_type: "heap_used",
+          component: "monitoring_start",
+        });
       });
     });
 
-    describe('stopGlobalMemoryMonitoring', () => {
-      it('should stop global monitoring when monitor exists', () => {
+    describe("stopGlobalMemoryMonitoring", () => {
+      it("should stop global monitoring when monitor exists", () => {
         startGlobalMemoryMonitoring(mockConfig, 1000);
         stopGlobalMemoryMonitoring(mockConfig);
 
         // Verify final snapshot
-        expect(mockRecordMemoryUsage).toHaveBeenCalledWith(
-          mockConfig,
-          mockMemoryUsage.heapUsed,
-          {
-            memory_type: 'heap_used',
-            component: 'monitoring_stop',
-          },
-        );
+        expect(mockRecordMemoryUsage).toHaveBeenCalledWith(mockConfig, mockMemoryUsage.heapUsed, {
+          memory_type: "heap_used",
+          component: "monitoring_stop",
+        });
 
         // Verify no more periodic snapshots
         const callsAfterStop = mockRecordMemoryUsage.mock.calls.length;
@@ -621,48 +554,42 @@ describe('MemoryMonitor', () => {
         expect(mockRecordMemoryUsage.mock.calls.length).toBe(callsAfterStop);
       });
 
-      it('should handle stop when no global monitor exists', () => {
+      it("should handle stop when no global monitor exists", () => {
         expect(() => stopGlobalMemoryMonitoring(mockConfig)).not.toThrow();
       });
     });
   });
 
-  describe('Error Scenarios', () => {
-    it('should handle process.memoryUsage() errors gracefully', () => {
+  describe("Error Scenarios", () => {
+    it("should handle process.memoryUsage() errors gracefully", () => {
       mockProcessMemoryUsage.mockImplementation(() => {
-        throw new Error('Memory access error');
+        throw new Error("Memory access error");
       });
 
       const monitor = new MemoryMonitor();
 
-      expect(() => monitor.getCurrentMemoryUsage()).toThrow(
-        'Memory access error',
-      );
+      expect(() => monitor.getCurrentMemoryUsage()).toThrow("Memory access error");
     });
 
-    it('should handle v8.getHeapStatistics() errors gracefully', () => {
+    it("should handle v8.getHeapStatistics() errors gracefully", () => {
       mockV8GetHeapStatistics.mockImplementation(() => {
-        throw new Error('Heap statistics error');
+        throw new Error("Heap statistics error");
       });
 
       const monitor = new MemoryMonitor();
 
-      expect(() => monitor.getCurrentMemoryUsage()).toThrow(
-        'Heap statistics error',
-      );
+      expect(() => monitor.getCurrentMemoryUsage()).toThrow("Heap statistics error");
     });
 
-    it('should handle metric recording errors gracefully', () => {
+    it("should handle metric recording errors gracefully", () => {
       mockRecordMemoryUsage.mockImplementation(() => {
-        throw new Error('Metric recording error');
+        throw new Error("Metric recording error");
       });
 
       const monitor = new MemoryMonitor();
 
       // Should propagate error if metric recording fails
-      expect(() => monitor.takeSnapshot('test', mockConfig)).toThrow(
-        'Metric recording error',
-      );
+      expect(() => monitor.takeSnapshot("test", mockConfig)).toThrow("Metric recording error");
     });
   });
 });

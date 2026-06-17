@@ -4,12 +4,13 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import stripAnsi from 'strip-ansi';
-import type { PtyImplementation } from '../utils/getPty.js';
-import { getPty } from '../utils/getPty.js';
-import { spawn as cpSpawn, spawnSync } from 'node:child_process';
-import { TextDecoder } from 'node:util';
-import os from 'node:os';
+import { spawn as cpSpawn, spawnSync } from "node:child_process";
+import os from "node:os";
+import { TextDecoder } from "node:util";
+import stripAnsi from "strip-ansi";
+import type { PtyImplementation } from "../utils/getPty.js";
+import { getPty } from "../utils/getPty.js";
+
 // Local stub for @lydell/node-pty — the optional native dep is not installed
 // in this build. Consumers that actually need PTY support must wire it up
 // through getPty() which provides a runtime implementation.
@@ -23,25 +24,21 @@ interface IPty {
     dispose: () => void;
   };
 }
-import { getCachedEncodingForBuffer } from '../utils/systemEncoding.js';
-import { isBinary } from '../utils/textUtils.js';
-import { getShellConfiguration } from '../utils/shell-utils.js';
-import pkg from '@xterm/headless';
-import {
-  serializeTerminalToObject,
-  type AnsiOutput,
-} from '../utils/terminalSerializer.js';
+
+import pkg from "@xterm/headless";
+import { getShellConfiguration } from "../utils/shell-utils.js";
+import { getCachedEncodingForBuffer } from "../utils/systemEncoding.js";
+import { type AnsiOutput, serializeTerminalToObject } from "../utils/terminalSerializer.js";
+import { isBinary } from "../utils/textUtils.js";
+
 const { Terminal } = pkg;
 
 const SIGKILL_TIMEOUT_MS = 200;
-const WINDOWS_PATH_DELIMITER = ';';
+const WINDOWS_PATH_DELIMITER = ";";
 let cachedWindowsPathFingerprint: string | undefined;
 let cachedMergedWindowsPath: string | undefined;
 
-function mergeWindowsPathValues(
-  env: NodeJS.ProcessEnv,
-  pathKeys: string[],
-): string | undefined {
+function mergeWindowsPathValues(env: NodeJS.ProcessEnv, pathKeys: string[]): string | undefined {
   const mergedEntries: string[] = [];
   const seenEntries = new Set<string>();
 
@@ -60,37 +57,30 @@ function mergeWindowsPathValues(
     }
   }
 
-  return mergedEntries.length > 0
-    ? mergedEntries.join(WINDOWS_PATH_DELIMITER)
-    : undefined;
+  return mergedEntries.length > 0 ? mergedEntries.join(WINDOWS_PATH_DELIMITER) : undefined;
 }
 
-function getWindowsPathFingerprint(
-  env: NodeJS.ProcessEnv,
-  pathKeys: string[],
-): string {
-  return pathKeys.map((key) => `${key}=${env[key] ?? ''}`).join('\0');
+function getWindowsPathFingerprint(env: NodeJS.ProcessEnv, pathKeys: string[]): string {
+  return pathKeys.map((key) => `${key}=${env[key] ?? ""}`).join("\0");
 }
 
 function normalizePathEnvForWindows(env: NodeJS.ProcessEnv): NodeJS.ProcessEnv {
-  if (os.platform() !== 'win32') {
+  if (os.platform() !== "win32") {
     return env;
   }
 
   const normalized: NodeJS.ProcessEnv = { ...env };
-  const pathKeys = Object.keys(normalized).filter(
-    (key) => key.toLowerCase() === 'path',
-  );
+  const pathKeys = Object.keys(normalized).filter((key) => key.toLowerCase() === "path");
 
   if (pathKeys.length === 0) {
     return normalized;
   }
 
   const orderedPathKeys = [...pathKeys].sort((left, right) => {
-    if (left === 'PATH') {
+    if (left === "PATH") {
       return -1;
     }
-    if (right === 'PATH') {
+    if (right === "PATH") {
       return 1;
     }
     return left.localeCompare(right);
@@ -108,13 +98,13 @@ function normalizePathEnvForWindows(env: NodeJS.ProcessEnv): NodeJS.ProcessEnv {
   }
 
   for (const key of pathKeys) {
-    if (key !== 'PATH') {
+    if (key !== "PATH") {
       delete normalized[key];
     }
   }
 
   if (canonicalValue !== undefined) {
-    normalized['PATH'] = canonicalValue;
+    normalized["PATH"] = canonicalValue;
   }
 
   return normalized;
@@ -126,8 +116,8 @@ function normalizePathEnvForWindows(env: NodeJS.ProcessEnv): NodeJS.ProcessEnv {
  * as UTF-8 regardless of the system codepage.
  */
 function applyPowerShellUtf8Prefix(command: string, shell: string): string {
-  if (os.platform() === 'win32' && shell === 'powershell') {
-    return '[Console]::OutputEncoding=[System.Text.Encoding]::UTF8;' + command;
+  if (os.platform() === "win32" && shell === "powershell") {
+    return "[Console]::OutputEncoding=[System.Text.Encoding]::UTF8;" + command;
   }
   return command;
 }
@@ -149,7 +139,7 @@ export interface ShellExecutionResult {
   /** The process ID of the spawned shell. */
   pid: number | undefined;
   /** The method used to execute the shell command. */
-  executionMethod: 'lydell-node-pty' | 'node-pty' | 'child_process' | 'none';
+  executionMethod: "lydell-node-pty" | "node-pty" | "child_process" | "none";
 }
 
 /** A handle for an ongoing shell execution. */
@@ -177,17 +167,17 @@ export interface ShellExecutionConfig {
 export type ShellOutputEvent =
   | {
       /** The event contains a chunk of output data. */
-      type: 'data';
+      type: "data";
       /** The decoded string chunk. */
       chunk: string | AnsiOutput;
     }
   | {
       /** Signals that the output stream has been identified as binary. */
-      type: 'binary_detected';
+      type: "binary_detected";
     }
   | {
       /** Provides progress updates for a binary stream. */
-      type: 'binary_progress';
+      type: "binary_progress";
       /** The total number of bytes received so far. */
       bytesReceived: number;
     };
@@ -198,11 +188,11 @@ interface ActivePty {
 }
 
 const getErrnoCode = (error: unknown): string | undefined => {
-  if (!error || typeof error !== 'object' || !('code' in error)) {
+  if (!error || typeof error !== "object" || !("code" in error)) {
     return undefined;
   }
   const code = (error as { code?: unknown }).code;
-  return typeof code === 'string' ? code : undefined;
+  return typeof code === "string" ? code : undefined;
 };
 
 const getErrorMessage = (error: unknown): string =>
@@ -210,24 +200,24 @@ const getErrorMessage = (error: unknown): string =>
 
 const isExpectedPtyReadExitError = (error: unknown): boolean => {
   const code = getErrnoCode(error);
-  if (code === 'EIO') {
+  if (code === "EIO") {
     return true;
   }
 
   const message = getErrorMessage(error);
-  return message.includes('read EIO');
+  return message.includes("read EIO");
 };
 
 const isExpectedPtyExitRaceError = (error: unknown): boolean => {
   const code = getErrnoCode(error);
-  if (code === 'ESRCH' || code === 'EBADF') {
+  if (code === "ESRCH" || code === "EBADF") {
     return true;
   }
 
   const message = getErrorMessage(error);
   return (
-    message.includes('ioctl(2) failed, EBADF') ||
-    message.includes('Cannot resize a pty that has already exited')
+    message.includes("ioctl(2) failed, EBADF") ||
+    message.includes("Cannot resize a pty that has already exited")
   );
 };
 
@@ -236,10 +226,10 @@ const getFullBufferText = (terminal: pkg.Terminal): string => {
   const lines: string[] = [];
   for (let i = 0; i < buffer.length; i++) {
     const line = buffer.getLine(i);
-    const lineContent = line ? line.translateToString(true) : '';
+    const lineContent = line ? line.translateToString(true) : "";
     lines.push(lineContent);
   }
-  return lines.join('\n').trimEnd();
+  return lines.join("\n").trimEnd();
 };
 
 const replayTerminalOutput = async (
@@ -274,11 +264,11 @@ const windowsStrategy: ProcessCleanupStrategy = {
   killChildProcesses: (pids) => {
     if (pids.size > 0) {
       try {
-        const args = ['/f', '/t'];
+        const args = ["/f", "/t"];
         for (const pid of pids) {
-          args.push('/pid', pid.toString());
+          args.push("/pid", pid.toString());
         }
-        spawnSync('taskkill', args);
+        spawnSync("taskkill", args);
       } catch {
         // ignore
       }
@@ -288,12 +278,12 @@ const windowsStrategy: ProcessCleanupStrategy = {
 
 const posixStrategy: ProcessCleanupStrategy = {
   killPty: (pid, _pty) => {
-    process.kill(-pid, 'SIGKILL');
+    process.kill(-pid, "SIGKILL");
   },
   killChildProcesses: (pids) => {
     for (const pid of pids) {
       try {
-        process.kill(-pid, 'SIGKILL');
+        process.kill(-pid, "SIGKILL");
       } catch {
         // ignore
       }
@@ -301,8 +291,7 @@ const posixStrategy: ProcessCleanupStrategy = {
   },
 };
 
-const getCleanupStrategy = () =>
-  os.platform() === 'win32' ? windowsStrategy : posixStrategy;
+const getCleanupStrategy = () => (os.platform() === "win32" ? windowsStrategy : posixStrategy);
 
 /**
  * A centralized service for executing shell commands with robust process
@@ -330,7 +319,7 @@ export class ShellExecutionService {
   }
 
   static {
-    process.on('exit', () => {
+    process.on("exit", () => {
       ShellExecutionService.cleanup();
     });
   }
@@ -371,12 +360,7 @@ export class ShellExecutionService {
       }
     }
 
-    return this.childProcessFallback(
-      commandToExecute,
-      cwd,
-      onOutputEvent,
-      abortSignal,
-    );
+    return this.childProcessFallback(commandToExecute, cwd, onOutputEvent, abortSignal);
   }
 
   private static childProcessFallback(
@@ -386,7 +370,7 @@ export class ShellExecutionService {
     abortSignal: AbortSignal,
   ): ShellExecutionHandle {
     try {
-      const isWindows = os.platform() === 'win32';
+      const isWindows = os.platform() === "win32";
       const { executable, argsPrefix, shell } = getShellConfiguration();
       commandToExecute = applyPowerShellUtf8Prefix(commandToExecute, shell);
       const shellArgs = [...argsPrefix, commandToExecute];
@@ -400,15 +384,15 @@ export class ShellExecutionService {
       // round-trip correctly through CommandLineToArgvW.
       const child = cpSpawn(executable, shellArgs, {
         cwd,
-        stdio: ['ignore', 'pipe', 'pipe'],
-        windowsVerbatimArguments: isWindows && shell === 'cmd',
+        stdio: ["ignore", "pipe", "pipe"],
+        windowsVerbatimArguments: isWindows && shell === "cmd",
         detached: !isWindows,
         windowsHide: isWindows,
         env: {
           ...normalizePathEnvForWindows(process.env),
-          QWEN_CODE: '1',
-          TERM: 'xterm-256color',
-          PAGER: 'cat',
+          QWEN_CODE: "1",
+          TERM: "xterm-256color",
+          PAGER: "cat",
         },
       });
 
@@ -416,8 +400,8 @@ export class ShellExecutionService {
         let stdoutDecoder: TextDecoder | null = null;
         let stderrDecoder: TextDecoder | null = null;
 
-        let stdout = '';
-        let stderr = '';
+        let stdout = "";
+        let stderr = "";
         const outputChunks: Buffer[] = [];
         let error: Error | null = null;
         let exited = false;
@@ -426,15 +410,15 @@ export class ShellExecutionService {
         const MAX_SNIFF_SIZE = 4096;
         let sniffedBytes = 0;
 
-        const handleOutput = (data: Buffer, stream: 'stdout' | 'stderr') => {
+        const handleOutput = (data: Buffer, stream: "stdout" | "stderr") => {
           if (!stdoutDecoder || !stderrDecoder) {
             const encoding = getCachedEncodingForBuffer(data);
             try {
               stdoutDecoder = new TextDecoder(encoding);
               stderrDecoder = new TextDecoder(encoding);
             } catch {
-              stdoutDecoder = new TextDecoder('utf-8');
-              stderrDecoder = new TextDecoder('utf-8');
+              stdoutDecoder = new TextDecoder("utf-8");
+              stderrDecoder = new TextDecoder("utf-8");
             }
           }
 
@@ -450,10 +434,10 @@ export class ShellExecutionService {
           }
 
           if (isStreamingRawContent) {
-            const decoder = stream === 'stdout' ? stdoutDecoder : stderrDecoder;
+            const decoder = stream === "stdout" ? stdoutDecoder : stderrDecoder;
             const decodedChunk = decoder.decode(data, { stream: true });
 
-            if (stream === 'stdout') {
+            if (stream === "stdout") {
               stdout += decodedChunk;
             } else {
               stderr += decodedChunk;
@@ -461,24 +445,20 @@ export class ShellExecutionService {
           }
         };
 
-        const handleExit = (
-          code: number | null,
-          signal: NodeJS.Signals | null,
-        ) => {
+        const handleExit = (code: number | null, signal: NodeJS.Signals | null) => {
           const { finalBuffer } = cleanup();
           // Ensure we don't add an extra newline if stdout already ends with one.
-          const separator = stdout.endsWith('\n') ? '' : '\n';
-          const combinedOutput =
-            stdout + (stderr ? (stdout ? separator : '') + stderr : '');
+          const separator = stdout.endsWith("\n") ? "" : "\n";
+          const combinedOutput = stdout + (stderr ? (stdout ? separator : "") + stderr : "");
 
           const finalStrippedOutput = stripAnsi(combinedOutput).trim();
 
           if (isStreamingRawContent) {
             if (finalStrippedOutput) {
-              onOutputEvent({ type: 'data', chunk: finalStrippedOutput });
+              onOutputEvent({ type: "data", chunk: finalStrippedOutput });
             }
           } else {
-            onOutputEvent({ type: 'binary_detected' });
+            onOutputEvent({ type: "binary_detected" });
           }
 
           resolve({
@@ -489,13 +469,13 @@ export class ShellExecutionService {
             error,
             aborted: abortSignal.aborted,
             pid: undefined,
-            executionMethod: 'child_process',
+            executionMethod: "child_process",
           });
         };
 
-        child.stdout.on('data', (data) => handleOutput(data, 'stdout'));
-        child.stderr.on('data', (data) => handleOutput(data, 'stderr'));
-        child.on('error', (err) => {
+        child.stdout.on("data", (data) => handleOutput(data, "stdout"));
+        child.stderr.on("data", (data) => handleOutput(data, "stderr"));
+        child.on("error", (err) => {
           error = err;
           handleExit(1, null);
         });
@@ -503,28 +483,28 @@ export class ShellExecutionService {
         const abortHandler = async () => {
           if (child.pid && !exited) {
             if (isWindows) {
-              cpSpawn('taskkill', ['/pid', child.pid.toString(), '/f', '/t']);
+              cpSpawn("taskkill", ["/pid", child.pid.toString(), "/f", "/t"]);
             } else {
               try {
-                process.kill(-child.pid, 'SIGTERM');
+                process.kill(-child.pid, "SIGTERM");
                 await new Promise((res) => setTimeout(res, SIGKILL_TIMEOUT_MS));
                 if (!exited) {
-                  process.kill(-child.pid, 'SIGKILL');
+                  process.kill(-child.pid, "SIGKILL");
                 }
               } catch (_e) {
-                if (!exited) child.kill('SIGKILL');
+                if (!exited) child.kill("SIGKILL");
               }
             }
           }
         };
 
-        abortSignal.addEventListener('abort', abortHandler, { once: true });
+        abortSignal.addEventListener("abort", abortHandler, { once: true });
 
         if (child.pid) {
           this.activeChildProcesses.add(child.pid);
         }
 
-        child.on('exit', (code, signal) => {
+        child.on("exit", (code, signal) => {
           if (child.pid) {
             this.activeChildProcesses.delete(child.pid);
           }
@@ -533,7 +513,7 @@ export class ShellExecutionService {
 
         function cleanup() {
           exited = true;
-          abortSignal.removeEventListener('abort', abortHandler);
+          abortSignal.removeEventListener("abort", abortHandler);
           if (stdoutDecoder) {
             const remaining = stdoutDecoder.decode();
             if (remaining) {
@@ -560,13 +540,13 @@ export class ShellExecutionService {
         pid: undefined,
         result: Promise.resolve({
           error,
-          rawOutput: Buffer.from(''),
-          output: '',
+          rawOutput: Buffer.from(""),
+          output: "",
           exitCode: 1,
           signal: null,
           aborted: false,
           pid: undefined,
-          executionMethod: 'none',
+          executionMethod: "none",
         }),
       };
     }
@@ -582,7 +562,7 @@ export class ShellExecutionService {
   ): ShellExecutionHandle {
     if (!ptyInfo) {
       // This should not happen, but as a safeguard...
-      throw new Error('PTY implementation not found');
+      throw new Error("PTY implementation not found");
     }
     try {
       const cols = shellExecutionConfig.terminalWidth ?? 80;
@@ -601,21 +581,21 @@ export class ShellExecutionService {
       // The string form breaks quoted paths ending in \ (e.g., "C:\Temp\")
       // because CommandLineToArgvW treats \" as an escaped quote.
       const args: string[] | string =
-        os.platform() === 'win32' && shell === 'cmd'
-          ? [...argsPrefix, commandToExecute].join(' ')
+        os.platform() === "win32" && shell === "cmd"
+          ? [...argsPrefix, commandToExecute].join(" ")
           : [...argsPrefix, commandToExecute];
 
       const ptyProcess = ptyInfo.module.spawn(executable, args, {
         cwd,
-        name: 'xterm',
+        name: "xterm",
         cols,
         rows,
         env: {
           ...normalizePathEnvForWindows(process.env),
-          QWEN_CODE: '1',
-          TERM: 'xterm-256color',
-          PAGER: shellExecutionConfig.pager ?? 'cat',
-          GIT_PAGER: shellExecutionConfig.pager ?? 'cat',
+          QWEN_CODE: "1",
+          TERM: "xterm-256color",
+          PAGER: shellExecutionConfig.pager ?? "cat",
+          GIT_PAGER: shellExecutionConfig.pager ?? "cat",
         },
         handleFlowControl: true,
       });
@@ -670,7 +650,7 @@ export class ShellExecutionService {
             const lines: AnsiOutput = [];
             for (let y = 0; y < headlessTerminal.rows; y++) {
               const line = buffer.getLine(buffer.viewportY + y);
-              const lineContent = line ? line.translateToString(true) : '';
+              const lineContent = line ? line.translateToString(true) : "";
               lines.push([
                 {
                   text: lineContent,
@@ -679,8 +659,8 @@ export class ShellExecutionService {
                   underline: false,
                   dim: false,
                   inverse: false,
-                  fg: '',
-                  bg: '',
+                  fg: "",
+                  bg: "",
                 },
               ]);
             }
@@ -693,7 +673,7 @@ export class ShellExecutionService {
             if (
               line
                 .map((segment) => segment.text)
-                .join('')
+                .join("")
                 .trim().length > 0
             ) {
               lastNonEmptyLine = i;
@@ -711,7 +691,7 @@ export class ShellExecutionService {
           if (JSON.stringify(output) !== JSON.stringify(finalOutput)) {
             output = finalOutput;
             onOutputEvent({
-              type: 'data',
+              type: "data",
               chunk: finalOutput,
             });
           }
@@ -764,7 +744,7 @@ export class ShellExecutionService {
           try {
             decoder = new TextDecoder(encoding);
           } catch {
-            decoder = new TextDecoder('utf-8');
+            decoder = new TextDecoder("utf-8");
           }
         };
 
@@ -786,7 +766,7 @@ export class ShellExecutionService {
 
                   if (isBinary(sniffBuffer)) {
                     isStreamingRawContent = false;
-                    onOutputEvent({ type: 'binary_detected' });
+                    onOutputEvent({ type: "binary_detected" });
                   }
                 }
 
@@ -800,7 +780,7 @@ export class ShellExecutionService {
                   });
                 } else {
                   onOutputEvent({
-                    type: 'binary_progress',
+                    type: "binary_progress",
                     bytesReceived,
                   });
                   resolve();
@@ -810,7 +790,7 @@ export class ShellExecutionService {
         };
 
         ptyProcess.onData((data: string) => {
-          const bufferData = Buffer.from(data, 'utf-8');
+          const bufferData = Buffer.from(data, "utf-8");
           handleOutput(bufferData);
         });
 
@@ -818,7 +798,7 @@ export class ShellExecutionService {
         // due to race conditions between the exit event and read operations.
         // This is a normal behavior on macOS/Linux and should not crash the app.
         // See: https://github.com/microsoft/node-pty/issues/178
-        ptyProcess.on('error', (err: NodeJS.ErrnoException) => {
+        ptyProcess.on("error", (err: NodeJS.ErrnoException) => {
           if (isExpectedPtyReadExitError(err)) {
             // EIO is expected when the PTY process exits - ignore it
             return;
@@ -828,87 +808,71 @@ export class ShellExecutionService {
           throw err;
         });
 
-        ptyProcess.onExit(
-          ({ exitCode, signal }: { exitCode: number; signal?: number }) => {
-            exited = true;
-            abortSignal.removeEventListener('abort', abortHandler);
-            this.activePtys.delete(ptyProcess.pid);
+        ptyProcess.onExit(({ exitCode, signal }: { exitCode: number; signal?: number }) => {
+          exited = true;
+          abortSignal.removeEventListener("abort", abortHandler);
+          this.activePtys.delete(ptyProcess.pid);
 
-            const finalize = async () => {
-              render(true);
-              const finalBuffer = Buffer.concat(outputChunks);
-              let fullOutput = '';
+          const finalize = async () => {
+            render(true);
+            const finalBuffer = Buffer.concat(outputChunks);
+            let fullOutput = "";
 
-              try {
-                if (isStreamingRawContent) {
-                  // Re-decode the full buffer with proper encoding detection.
-                  // The streaming decoder used the first-chunk heuristic which
-                  // can misdetect when early output is ASCII-only but later
-                  // output is in a different encoding (e.g. GBK).
-                  const finalEncoding = getCachedEncodingForBuffer(finalBuffer);
-                  const decodedOutput = new TextDecoder(finalEncoding).decode(
-                    finalBuffer,
-                  );
-                  fullOutput = await replayTerminalOutput(
-                    decodedOutput,
-                    cols,
-                    rows,
-                  );
-                } else {
-                  fullOutput = getFullBufferText(headlessTerminal);
-                }
-              } catch {
-                try {
-                  fullOutput = getFullBufferText(headlessTerminal);
-                } catch {
-                  // Ignore fallback rendering errors and resolve with empty text.
-                }
+            try {
+              if (isStreamingRawContent) {
+                // Re-decode the full buffer with proper encoding detection.
+                // The streaming decoder used the first-chunk heuristic which
+                // can misdetect when early output is ASCII-only but later
+                // output is in a different encoding (e.g. GBK).
+                const finalEncoding = getCachedEncodingForBuffer(finalBuffer);
+                const decodedOutput = new TextDecoder(finalEncoding).decode(finalBuffer);
+                fullOutput = await replayTerminalOutput(decodedOutput, cols, rows);
+              } else {
+                fullOutput = getFullBufferText(headlessTerminal);
               }
+            } catch {
+              try {
+                fullOutput = getFullBufferText(headlessTerminal);
+              } catch {
+                // Ignore fallback rendering errors and resolve with empty text.
+              }
+            }
 
-              resolve({
-                rawOutput: finalBuffer,
-                output: fullOutput,
-                exitCode,
-                signal: signal ?? null,
-                error,
-                aborted: abortSignal.aborted,
-                pid: ptyProcess.pid,
-                executionMethod:
-                  (ptyInfo?.name as 'node-pty' | 'lydell-node-pty') ??
-                  'node-pty',
-              });
-            };
-
-            // Give any last onData callbacks a chance to run before finalizing.
-            // onExit can arrive slightly before late PTY data is processed.
-            const flushChain = () => processingChain.then(() => {});
-            const deadline = new Promise<void>((res) =>
-              setTimeout(res, SIGKILL_TIMEOUT_MS),
-            );
-            const drain = () =>
-              new Promise<void>((res) => setImmediate(res)).then(flushChain);
-
-            void Promise.race([
-              flushChain().then(drain).then(drain),
-              deadline,
-            ]).then(() => {
-              void finalize();
+            resolve({
+              rawOutput: finalBuffer,
+              output: fullOutput,
+              exitCode,
+              signal: signal ?? null,
+              error,
+              aborted: abortSignal.aborted,
+              pid: ptyProcess.pid,
+              executionMethod: (ptyInfo?.name as "node-pty" | "lydell-node-pty") ?? "node-pty",
             });
-          },
-        );
+          };
+
+          // Give any last onData callbacks a chance to run before finalizing.
+          // onExit can arrive slightly before late PTY data is processed.
+          const flushChain = () => processingChain.then(() => {});
+          const deadline = new Promise<void>((res) => setTimeout(res, SIGKILL_TIMEOUT_MS));
+          const drain = () => new Promise<void>((res) => setImmediate(res)).then(flushChain);
+
+          void Promise.race([flushChain().then(drain).then(drain), deadline]).then(() => {
+            void finalize();
+          });
+        });
 
         const abortHandler = async () => {
           if (ptyProcess.pid && !exited) {
-            if (os.platform() === 'win32') {
+            if (os.platform() === "win32") {
               ptyProcess.kill();
             } else {
               try {
                 // Send SIGTERM first to allow graceful shutdown
-                process.kill(-ptyProcess.pid, 'SIGTERM');
+                process.kill(-ptyProcess.pid, "SIGTERM");
                 await new Promise((res) => setTimeout(res, SIGKILL_TIMEOUT_MS));
                 if (!exited) {
                   // Escalate to SIGKILL if still running
-                  process.kill(-ptyProcess.pid, 'SIGKILL');
+                  process.kill(-ptyProcess.pid, "SIGKILL");
                 }
               } catch (_e) {
                 // Fallback to killing just the process if the group kill fails
@@ -920,17 +884,17 @@ export class ShellExecutionService {
           }
         };
 
-        abortSignal.addEventListener('abort', abortHandler, { once: true });
+        abortSignal.addEventListener("abort", abortHandler, { once: true });
       });
 
       return { pid: ptyProcess.pid, result };
     } catch (e) {
       const error = e as Error;
-      if (error.message.includes('posix_spawnp failed')) {
+      if (error.message.includes("posix_spawnp failed")) {
         onOutputEvent({
-          type: 'data',
+          type: "data",
           chunk:
-            '[WARNING] PTY execution failed, falling back to child_process. This may be due to sandbox restrictions.\n',
+            "[WARNING] PTY execution failed, falling back to child_process. This may be due to sandbox restrictions.\n",
         });
         throw e;
       } else {
@@ -938,13 +902,13 @@ export class ShellExecutionService {
           pid: undefined,
           result: Promise.resolve({
             error,
-            rawOutput: Buffer.from(''),
-            output: '',
+            rawOutput: Buffer.from(""),
+            output: "",
             exitCode: 1,
             signal: null,
             aborted: false,
             pid: undefined,
-            executionMethod: 'none',
+            executionMethod: "none",
           }),
         };
       }

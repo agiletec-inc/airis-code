@@ -4,22 +4,22 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { Storage } from '../config/storage.js';
-import { getProjectHash } from '../utils/paths.js';
-import path from 'node:path';
-import fs from 'node:fs';
-import readline from 'node:readline';
-import type { Content, Part } from '../types/llm.js';
-import * as jsonl from '../utils/jsonl-utils.js';
+import fs from "node:fs";
+import path from "node:path";
+import readline from "node:readline";
+import { Storage } from "../config/storage.js";
+import { uiTelemetryService } from "../telemetry/uiTelemetry.js";
+import type { Content, Part } from "../types/llm.js";
+import { createDebugLogger } from "../utils/debugLogger.js";
+import * as jsonl from "../utils/jsonl-utils.js";
+import { getProjectHash } from "../utils/paths.js";
 import type {
   ChatCompressionRecordPayload,
   ChatRecord,
   UiTelemetryRecordPayload,
-} from './chatRecordingService.js';
-import { uiTelemetryService } from '../telemetry/uiTelemetry.js';
-import { createDebugLogger } from '../utils/debugLogger.js';
+} from "./chatRecordingService.js";
 
-const debugLogger = createDebugLogger('SESSION');
+const debugLogger = createDebugLogger("SESSION");
 
 /**
  * Session item for list display.
@@ -135,24 +135,24 @@ export class SessionService {
   }
 
   private getChatsDir(): string {
-    return path.join(this.storage.getProjectDir(), 'chats');
+    return path.join(this.storage.getProjectDir(), "chats");
   }
 
   /**
    * Extracts the first user prompt text from a Content object.
    */
   private extractPromptText(message: Content | undefined): string {
-    if (!message?.parts) return '';
+    if (!message?.parts) return "";
 
     for (const part of message.parts as Part[]) {
-      if ('text' in part) {
+      if ("text" in part) {
         const textPart = part as { text: string };
         const text = textPart.text;
         // Truncate long prompts for display
         return text.length > 200 ? `${text.slice(0, 200)}...` : text;
       }
     }
-    return '';
+    return "";
   }
 
   /**
@@ -161,11 +161,11 @@ export class SessionService {
    */
   private extractFirstPromptFromRecords(records: ChatRecord[]): string {
     for (const record of records) {
-      if (record.type !== 'user') continue;
+      if (record.type !== "user") continue;
       const prompt = this.extractPromptText(record.message);
       if (prompt) return prompt;
     }
-    return '';
+    return "";
   }
 
   /**
@@ -186,7 +186,7 @@ export class SessionService {
         if (!trimmed) continue;
         try {
           const record = JSON.parse(trimmed) as ChatRecord;
-          if (record.type === 'user' || record.type === 'assistant') {
+          if (record.type === "user" || record.type === "assistant") {
             uniqueUuids.add(record.uuid);
           }
         } catch {
@@ -213,9 +213,7 @@ export class SessionService {
    * @param options Pagination options
    * @returns Paginated list of sessions
    */
-  async listSessions(
-    options: ListSessionsOptions = {},
-  ): Promise<ListSessionsResult> {
+  async listSessions(options: ListSessionsOptions = {}): Promise<ListSessionsResult> {
     const { cursor, size = 20 } = options;
     const chatsDir = this.getChatsDir();
 
@@ -236,7 +234,7 @@ export class SessionService {
         }
       }
     } catch (error) {
-      if ((error as NodeJS.ErrnoException).code === 'ENOENT') {
+      if ((error as NodeJS.ErrnoException).code === "ENOENT") {
         return { items: [], hasMore: false };
       }
       throw error;
@@ -275,10 +273,7 @@ export class SessionService {
       lastProcessedMtime = file.mtime;
 
       const filePath = path.join(chatsDir, file.name);
-      const records = await jsonl.readLines<ChatRecord>(
-        filePath,
-        MAX_PROMPT_SCAN_LINES,
-      );
+      const records = await jsonl.readLines<ChatRecord>(filePath, MAX_PROMPT_SCAN_LINES);
 
       if (records.length === 0) continue;
       const firstRecord = records[0];
@@ -308,9 +303,7 @@ export class SessionService {
     // Determine next cursor (mtime of last processed file)
     // Only set if there are more files to process
     const nextCursor =
-      hasMoreFiles && lastProcessedMtime !== undefined
-        ? lastProcessedMtime
-        : undefined;
+      hasMoreFiles && lastProcessedMtime !== undefined ? lastProcessedMtime : undefined;
 
     return {
       items,
@@ -326,8 +319,8 @@ export class SessionService {
     try {
       return await jsonl.read<ChatRecord>(filePath);
     } catch (error) {
-      if ((error as NodeJS.ErrnoException).code !== 'ENOENT') {
-        debugLogger.error('Error reading session file:', error);
+      if ((error as NodeJS.ErrnoException).code !== "ENOENT") {
+        debugLogger.error("Error reading session file:", error);
       }
       return [];
     }
@@ -339,7 +332,7 @@ export class SessionService {
    */
   private aggregateRecords(records: ChatRecord[]): ChatRecord {
     if (records.length === 0) {
-      throw new Error('Cannot aggregate empty records array');
+      throw new Error("Cannot aggregate empty records array");
     }
 
     const base = { ...records[0] };
@@ -354,10 +347,7 @@ export class SessionService {
         } else {
           base.message = {
             role: base.message.role,
-            parts: [
-              ...(base.message.parts || []),
-              ...(record.message.parts || []),
-            ],
+            parts: [...(base.message.parts || []), ...(record.message.parts || [])],
           };
         }
       }
@@ -389,10 +379,7 @@ export class SessionService {
   /**
    * Reconstructs a linear conversation from tree-structured records.
    */
-  private reconstructHistory(
-    records: ChatRecord[],
-    leafUuid?: string,
-  ): ChatRecord[] {
+  private reconstructHistory(records: ChatRecord[], leafUuid?: string): ChatRecord[] {
     if (records.length === 0) return [];
 
     const recordsByUuid = new Map<string, ChatRecord[]>();
@@ -402,8 +389,7 @@ export class SessionService {
       recordsByUuid.set(record.uuid, existing);
     }
 
-    let currentUuid: string | null =
-      leafUuid ?? records[records.length - 1].uuid;
+    let currentUuid: string | null = leafUuid ?? records[records.length - 1].uuid;
     const uuidChain: string[] = [];
     const visited = new Set<string>();
 
@@ -434,9 +420,7 @@ export class SessionService {
    * @param sessionId The session ID to load
    * @returns Session data for resumption, or null if not found
    */
-  async loadSession(
-    sessionId: string,
-  ): Promise<ResumedSessionData | undefined> {
+  async loadSession(sessionId: string): Promise<ResumedSessionData | undefined> {
     const chatsDir = this.getChatsDir();
     const filePath = path.join(chatsDir, `${sessionId}.jsonl`);
 
@@ -501,7 +485,7 @@ export class SessionService {
       fs.unlinkSync(filePath);
       return true;
     } catch (error) {
-      if ((error as NodeJS.ErrnoException).code === 'ENOENT') {
+      if ((error as NodeJS.ErrnoException).code === "ENOENT") {
         return false;
       }
       throw error;
@@ -600,10 +584,8 @@ export function buildApiHistoryFromConversation(
   let compressedHistory: Content[] | undefined;
 
   messages.forEach((record, index) => {
-    if (record.type === 'system' && record.subtype === 'chat_compression') {
-      const payload = record.systemPayload as
-        | ChatCompressionRecordPayload
-        | undefined;
+    if (record.type === "system" && record.subtype === "chat_compression") {
+      const payload = record.systemPayload as ChatCompressionRecordPayload | undefined;
       if (payload?.compressedHistory) {
         lastCompressionIndex = index;
         compressedHistory = payload.compressedHistory;
@@ -617,7 +599,7 @@ export function buildApiHistoryFromConversation(
     // Append everything after the compression record (newer turns)
     for (let i = lastCompressionIndex + 1; i < messages.length; i++) {
       const record = messages[i];
-      if (record.type === 'system') continue;
+      if (record.type === "system") continue;
       if (record.message) {
         baseHistory.push(structuredClone(record.message as Content));
       }
@@ -649,18 +631,14 @@ export function buildApiHistoryFromConversation(
  * Replays stored UI telemetry events to rebuild metrics when resuming a session.
  * Also restores the last prompt token count from the best available source.
  */
-export function replayUiTelemetryFromConversation(
-  conversation: ConversationRecord,
-): void {
+export function replayUiTelemetryFromConversation(conversation: ConversationRecord): void {
   uiTelemetryService.reset();
 
   for (const record of conversation.messages) {
-    if (record.type !== 'system' || record.subtype !== 'ui_telemetry') {
+    if (record.type !== "system" || record.subtype !== "ui_telemetry") {
       continue;
     }
-    const payload = record.systemPayload as
-      | UiTelemetryRecordPayload
-      | undefined;
+    const payload = record.systemPayload as UiTelemetryRecordPayload | undefined;
     const uiEvent = payload?.uiEvent;
     if (uiEvent) {
       uiTelemetryService.addEvent(uiEvent);
@@ -678,23 +656,19 @@ export function replayUiTelemetryFromConversation(
  * - If a chat compression checkpoint exists, use its new token count.
  * - Otherwise, use the last assistant usageMetadata input (fallback to total).
  */
-export function getResumePromptTokenCount(
-  conversation: ConversationRecord,
-): number | undefined {
+export function getResumePromptTokenCount(conversation: ConversationRecord): number | undefined {
   let fallback: number | undefined;
 
   for (let i = conversation.messages.length - 1; i >= 0; i--) {
     const record = conversation.messages[i];
-    if (record.type === 'system' && record.subtype === 'chat_compression') {
-      const payload = record.systemPayload as
-        | ChatCompressionRecordPayload
-        | undefined;
+    if (record.type === "system" && record.subtype === "chat_compression") {
+      const payload = record.systemPayload as ChatCompressionRecordPayload | undefined;
       if (payload?.info) {
         return payload.info.newTokenCount;
       }
     }
 
-    if (fallback === undefined && record.type === 'assistant') {
+    if (fallback === undefined && record.type === "assistant") {
       const usage = record.usageMetadata;
       if (usage) {
         fallback = usage.totalTokenCount ?? usage.promptTokenCount;

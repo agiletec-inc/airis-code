@@ -1,6 +1,4 @@
-import type { ContentGenerator } from '../contentGenerator.js';
-import type { Config } from '../../config/config.js';
-import { type OpenAICompatibleProvider } from './provider/index.js';
+import type { Config } from "../../config/config.js";
 import type {
   CountTokensParameters,
   CountTokensResponse,
@@ -8,16 +6,17 @@ import type {
   EmbedContentResponse,
   GenerateContentParameters,
   GenerateContentResponse,
-} from '../../types/llm.js';
-import type { PipelineConfig } from './pipeline.js';
-import { ContentGenerationPipeline } from './pipeline.js';
-import { EnhancedErrorHandler } from './errorHandler.js';
-import { RequestTokenEstimator } from '../../utils/request-tokenizer/index.js';
-import type { ContentGeneratorConfig } from '../contentGenerator.js';
-import { isAbortError } from '../../utils/errors.js';
-import { createDebugLogger } from '../../utils/debugLogger.js';
+} from "../../types/llm.js";
+import { createDebugLogger } from "../../utils/debugLogger.js";
+import { isAbortError } from "../../utils/errors.js";
+import { RequestTokenEstimator } from "../../utils/request-tokenizer/index.js";
+import type { ContentGenerator, ContentGeneratorConfig } from "../contentGenerator.js";
+import { EnhancedErrorHandler } from "./errorHandler.js";
+import type { PipelineConfig } from "./pipeline.js";
+import { ContentGenerationPipeline } from "./pipeline.js";
+import { type OpenAICompatibleProvider } from "./provider/index.js";
 
-const debugLogger = createDebugLogger('OPENAI');
+const debugLogger = createDebugLogger("OPENAI");
 
 export class OpenAIContentGenerator implements ContentGenerator {
   protected pipeline: ContentGenerationPipeline;
@@ -32,9 +31,8 @@ export class OpenAIContentGenerator implements ContentGenerator {
       cliConfig,
       provider,
       contentGeneratorConfig,
-      errorHandler: new EnhancedErrorHandler(
-        (error: unknown, request: GenerateContentParameters) =>
-          this.shouldSuppressErrorLogging(error, request),
+      errorHandler: new EnhancedErrorHandler((error: unknown, request: GenerateContentParameters) =>
+        this.shouldSuppressErrorLogging(error, request),
       ),
     };
 
@@ -79,9 +77,7 @@ export class OpenAIContentGenerator implements ContentGenerator {
     return this.pipeline.executeStream(request, userPromptId);
   }
 
-  async countTokens(
-    request: CountTokensParameters,
-  ): Promise<CountTokensResponse> {
+  async countTokens(request: CountTokensParameters): Promise<CountTokensResponse> {
     try {
       // Use the request token estimator (character-based).
       const estimator = new RequestTokenEstimator();
@@ -92,7 +88,7 @@ export class OpenAIContentGenerator implements ContentGenerator {
       };
     } catch (error) {
       debugLogger.warn(
-        'Failed to calculate tokens with new tokenizer, falling back to simple method:',
+        "Failed to calculate tokens with new tokenizer, falling back to simple method:",
         error,
       );
 
@@ -106,52 +102,50 @@ export class OpenAIContentGenerator implements ContentGenerator {
     }
   }
 
-  async embedContent(
-    request: EmbedContentParameters,
-  ): Promise<EmbedContentResponse> {
+  async embedContent(request: EmbedContentParameters): Promise<EmbedContentResponse> {
     // Extract text from contents
-    let text = '';
+    let text = "";
     if (Array.isArray(request.contents)) {
       text = request.contents
         .map((content) => {
-          if (typeof content === 'string') return content;
+          if (typeof content === "string") return content;
           const parts = (content as { parts?: unknown[] }).parts;
           if (Array.isArray(parts)) {
             return parts
               .map((part: unknown) =>
-                typeof part === 'string'
+                typeof part === "string"
                   ? part
-                  : part && typeof part === 'object' && 'text' in part
-                    ? (part as { text?: string }).text || ''
-                    : '',
+                  : part && typeof part === "object" && "text" in part
+                    ? (part as { text?: string }).text || ""
+                    : "",
               )
-              .join(' ');
+              .join(" ");
           }
-          return '';
+          return "";
         })
-        .join(' ');
+        .join(" ");
     } else if (request.contents) {
-      if (typeof request.contents === 'string') {
+      if (typeof request.contents === "string") {
         text = request.contents;
       } else {
         const parts = (request.contents as { parts?: unknown[] }).parts;
         if (Array.isArray(parts)) {
           text = parts
             .map((part: unknown) =>
-              typeof part === 'string'
+              typeof part === "string"
                 ? part
-                : part && typeof part === 'object' && 'text' in part
-                  ? (part as { text?: string }).text || ''
-                  : '',
+                : part && typeof part === "object" && "text" in part
+                  ? (part as { text?: string }).text || ""
+                  : "",
             )
-            .join(' ');
+            .join(" ");
         }
       }
     }
 
     try {
       const embedding = await this.pipeline.client.embeddings.create({
-        model: 'text-embedding-ada-002', // Default embedding model
+        model: "text-embedding-ada-002", // Default embedding model
         input: text,
       });
 
@@ -163,7 +157,7 @@ export class OpenAIContentGenerator implements ContentGenerator {
         ],
       };
     } catch (error) {
-      debugLogger.error('OpenAI API Embedding Error:', error);
+      debugLogger.error("OpenAI API Embedding Error:", error);
       throw new Error(
         `OpenAI API error: ${error instanceof Error ? error.message : String(error)}`,
       );

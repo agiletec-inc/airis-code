@@ -4,13 +4,13 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import * as path from 'node:path';
-import type { GitService } from '../services/gitService.js';
-import type { GeminiClient } from '../core/client.js';
-import { getErrorMessage } from './errors.js';
-import { z } from 'zod';
-import type { Content } from '@google/genai';
-import type { ToolCallRequestInfo } from '../core/turn.js';
+import * as path from "node:path";
+import type { Content } from "@google/genai";
+import { z } from "zod";
+import type { GeminiClient } from "../core/client.js";
+import type { ToolCallRequestInfo } from "../core/turn.js";
+import type { GitService } from "../services/gitService.js";
+import { getErrorMessage } from "./errors.js";
 
 export interface ToolCallData<HistoryType = unknown, ArgsType = unknown> {
   history?: HistoryType;
@@ -45,20 +45,15 @@ export function getToolCallDataSchema(historyItemSchema?: z.ZodTypeAny) {
   });
 }
 
-export function generateCheckpointFileName(
-  toolCall: ToolCallRequestInfo,
-): string | null {
+export function generateCheckpointFileName(toolCall: ToolCallRequestInfo): string | null {
   const toolArgs = toolCall.args as Record<string, unknown>;
-  const toolFilePath = toolArgs['file_path'] as string;
+  const toolFilePath = toolArgs["file_path"] as string;
 
   if (!toolFilePath) {
     return null;
   }
 
-  const timestamp = new Date()
-    .toISOString()
-    .replace(/:/g, '-')
-    .replace(/\./g, '_');
+  const timestamp = new Date().toISOString().replace(/:/g, "-").replace(/\./g, "_");
   const toolName = toolCall.name;
   const fileName = path.basename(toolFilePath);
 
@@ -66,17 +61,17 @@ export function generateCheckpointFileName(
 }
 
 export function formatCheckpointDisplayList(filenames: string[]): string {
-  return getTruncatedCheckpointNames(filenames).join('\n');
+  return getTruncatedCheckpointNames(filenames).join("\n");
 }
 
 export function getTruncatedCheckpointNames(filenames: string[]): string[] {
   return filenames.map((file) => {
-    const components = file.split('.');
+    const components = file.split(".");
     if (components.length <= 1) {
       return file;
     }
     components.pop();
-    return components.join('.');
+    return components.join(".");
   });
 }
 
@@ -98,9 +93,7 @@ export async function processRestorableToolCalls<HistoryType>(
     try {
       let commitHash: string | undefined;
       try {
-        commitHash = await gitService.createFileSnapshot(
-          `Snapshot for ${toolCall.name}`,
-        );
+        commitHash = await gitService.createFileSnapshot(`Snapshot for ${toolCall.name}`);
       } catch (error) {
         errors.push(
           `Failed to create new snapshot for ${
@@ -119,9 +112,7 @@ export async function processRestorableToolCalls<HistoryType>(
 
       const checkpointFileName = generateCheckpointFileName(toolCall);
       if (!checkpointFileName) {
-        errors.push(
-          `Skipping restorable tool call due to missing file_path: ${toolCall.name}`,
-        );
+        errors.push(`Skipping restorable tool call due to missing file_path: ${toolCall.name}`);
         continue;
       }
 
@@ -139,16 +130,9 @@ export async function processRestorableToolCalls<HistoryType>(
 
       const fileName = `${checkpointFileName}.json`;
       checkpointsToWrite.set(fileName, JSON.stringify(checkpointData, null, 2));
-      toolCallToCheckpointMap.set(
-        toolCall.callId,
-        fileName.replace('.json', ''),
-      );
+      toolCallToCheckpointMap.set(toolCall.callId, fileName.replace(".json", ""));
     } catch (error) {
-      errors.push(
-        `Failed to create checkpoint for ${toolCall.name}: ${getErrorMessage(
-          error,
-        )}`,
-      );
+      errors.push(`Failed to create checkpoint for ${toolCall.name}: ${getErrorMessage(error)}`);
     }
   }
 
@@ -160,9 +144,7 @@ export interface CheckpointInfo {
   checkpoint: string;
 }
 
-export function getCheckpointInfoList(
-  checkpointFiles: Map<string, string>,
-): CheckpointInfo[] {
+export function getCheckpointInfoList(checkpointFiles: Map<string, string>): CheckpointInfo[] {
   const checkpointInfoList: CheckpointInfo[] = [];
 
   for (const [file, content] of checkpointFiles) {
@@ -171,7 +153,7 @@ export function getCheckpointInfoList(
       if (toolCallData.messageId) {
         checkpointInfoList.push({
           messageId: toolCallData.messageId,
-          checkpoint: file.replace('.json', ''),
+          checkpoint: file.replace(".json", ""),
         });
       }
     } catch (_e) {

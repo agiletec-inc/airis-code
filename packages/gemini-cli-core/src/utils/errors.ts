@@ -11,7 +11,7 @@ interface GaxiosError {
 }
 
 export function isNodeError(error: unknown): error is NodeJS.ErrnoException {
-  return error instanceof Error && 'code' in error;
+  return error instanceof Error && "code" in error;
 }
 
 export function getErrorMessage(error: unknown): string {
@@ -21,7 +21,7 @@ export function getErrorMessage(error: unknown): string {
   try {
     return String(error);
   } catch {
-    return 'Failed to get error details';
+    return "Failed to get error details";
   }
 }
 
@@ -71,9 +71,9 @@ export class FatalCancellationError extends FatalError {
 }
 
 export class CanceledError extends Error {
-  constructor(message = 'The operation was canceled.') {
+  constructor(message = "The operation was canceled.") {
     super(message);
-    this.name = 'CanceledError';
+    this.name = "CanceledError";
   }
 }
 
@@ -89,7 +89,7 @@ interface ResponseData {
 }
 
 export function toFriendlyError(error: unknown): unknown {
-  if (error && typeof error === 'object' && 'response' in error) {
+  if (error && typeof error === "object" && "response" in error) {
     const gaxiosError = error as GaxiosError;
     const data = parseResponseData(gaxiosError);
     if (data && data.error && data.error.message && data.error.code) {
@@ -112,7 +112,7 @@ export function toFriendlyError(error: unknown): unknown {
 
 function parseResponseData(error: GaxiosError): ResponseData | undefined {
   // Inexplicably, Gaxios sometimes doesn't JSONify the response data.
-  if (typeof error.response?.data === 'string') {
+  if (typeof error.response?.data === "string") {
     try {
       return JSON.parse(error.response?.data) as ResponseData;
     } catch {
@@ -132,7 +132,7 @@ function parseResponseData(error: GaxiosError): ResponseData | undefined {
 export function isAuthenticationError(error: unknown): boolean {
   // Check for MCP SDK errors with code property
   // (SseError and StreamableHTTPError both have numeric 'code' property)
-  if (error && typeof error === 'object' && 'code' in error) {
+  if (error && typeof error === "object" && "code" in error) {
     const errorCode = (error as { code: unknown }).code;
     if (errorCode === 401) {
       return true;
@@ -140,10 +140,7 @@ export function isAuthenticationError(error: unknown): boolean {
   }
 
   // Check for UnauthorizedError class (from MCP SDK or our own)
-  if (
-    error instanceof Error &&
-    error.constructor.name === 'UnauthorizedError'
-  ) {
+  if (error instanceof Error && error.constructor.name === "UnauthorizedError") {
     return true;
   }
 
@@ -154,7 +151,7 @@ export function isAuthenticationError(error: unknown): boolean {
   // Fallback: Check for MCP SDK's plain Error messages with HTTP 401
   // The SDK sometimes throws: new Error(`Error POSTing to endpoint (HTTP 401): ...`)
   const message = getErrorMessage(error);
-  if (message.includes('401')) {
+  if (message.includes("401")) {
     return true;
   }
 

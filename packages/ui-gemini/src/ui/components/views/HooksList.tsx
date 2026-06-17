@@ -4,8 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import type React from 'react';
-import { Box, Text } from 'ink';
+import { Box, Text } from "ink";
+import type React from "react";
 
 interface HooksListProps {
   hooks: ReadonlyArray<{
@@ -50,9 +50,9 @@ export const HooksList: React.FC<HooksListProps> = ({ hooks }) => {
             </Text>
             <Box flexDirection="column" paddingLeft={2}>
               {eventHooks.map((hook, index) => {
-                const hookName = hook.config.command || 'unknown';
-                const statusColor = hook.enabled ? 'green' : 'gray';
-                const statusText = hook.enabled ? 'enabled' : 'disabled';
+                const hookName = hook.config.command || "unknown";
+                const statusColor = hook.enabled ? "green" : "gray";
+                const statusText = hook.enabled ? "enabled" : "disabled";
 
                 return (
                   <Box key={`${eventName}-${index}`} flexDirection="column">
@@ -67,8 +67,7 @@ export const HooksList: React.FC<HooksListProps> = ({ hooks }) => {
                         Source: {hook.source}
                         {hook.matcher && ` | Matcher: ${hook.matcher}`}
                         {hook.sequential && ` | Sequential`}
-                        {hook.config.timeout &&
-                          ` | Timeout: ${hook.config.timeout}s`}
+                        {hook.config.timeout && ` | Timeout: ${hook.config.timeout}s`}
                       </Text>
                     </Box>
                   </Box>
@@ -80,8 +79,8 @@ export const HooksList: React.FC<HooksListProps> = ({ hooks }) => {
       </Box>
       <Box marginTop={1}>
         <Text dimColor>
-          Tip: Use `/hooks enable {'<hook-name>'}` or `/hooks disable{' '}
-          {'<hook-name>'}` to toggle hooks
+          Tip: Use `/hooks enable {"<hook-name>"}` or `/hooks disable {"<hook-name>"}` to toggle
+          hooks
         </Text>
       </Box>
     </Box>

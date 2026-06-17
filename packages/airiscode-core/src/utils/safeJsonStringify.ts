@@ -11,17 +11,14 @@
  * @param space - Optional space parameter for formatting (defaults to no formatting)
  * @returns JSON string with circular references replaced by [Circular]
  */
-export function safeJsonStringify(
-  obj: unknown,
-  space?: string | number,
-): string {
+export function safeJsonStringify(obj: unknown, space?: string | number): string {
   const seen = new WeakSet();
   return JSON.stringify(
     obj,
     (key, value) => {
-      if (typeof value === 'object' && value !== null) {
+      if (typeof value === "object" && value !== null) {
         if (seen.has(value)) {
-          return '[Circular]';
+          return "[Circular]";
         }
         seen.add(value);
       }

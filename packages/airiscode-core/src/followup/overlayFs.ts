@@ -10,11 +10,11 @@
  * or the real filesystem.
  */
 
-import { mkdir, copyFile, rm } from 'node:fs/promises';
-import { existsSync } from 'node:fs';
-import { join, dirname, relative, isAbsolute } from 'node:path';
-import { tmpdir } from 'node:os';
-import { randomUUID } from 'node:crypto';
+import { randomUUID } from "node:crypto";
+import { existsSync } from "node:fs";
+import { copyFile, mkdir, rm } from "node:fs/promises";
+import { tmpdir } from "node:os";
+import { dirname, isAbsolute, join, relative } from "node:path";
 
 /**
  * Copy-on-write overlay filesystem for speculation safety.
@@ -25,12 +25,7 @@ export class OverlayFs {
 
   constructor(private readonly realCwd: string) {
     const id = randomUUID().slice(0, 8);
-    this.overlayDir = join(
-      tmpdir(),
-      'qwen-speculation',
-      String(process.pid),
-      id,
-    );
+    this.overlayDir = join(tmpdir(), "qwen-speculation", String(process.pid), id);
   }
 
   /** Get the overlay directory path */
@@ -128,11 +123,9 @@ export class OverlayFs {
    */
   private toRelative(inputPath: string): string | null {
     // Resolve relative paths against realCwd (not process.cwd())
-    const abs = isAbsolute(inputPath)
-      ? inputPath
-      : join(this.realCwd, inputPath);
+    const abs = isAbsolute(inputPath) ? inputPath : join(this.realCwd, inputPath);
     const rel = relative(this.realCwd, abs);
-    if (isAbsolute(rel) || rel.startsWith('..')) {
+    if (isAbsolute(rel) || rel.startsWith("..")) {
       return null;
     }
     return rel;

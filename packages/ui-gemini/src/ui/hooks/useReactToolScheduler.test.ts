@@ -4,15 +4,14 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { CoreToolScheduler } from '@airiscode/gemini-cli-core';
-import type { Config } from '@airiscode/gemini-cli-core';
-import { renderHook } from '../../test-utils/render.js';
-import { vi, describe, it, expect, beforeEach } from 'vitest';
-import { useReactToolScheduler } from './useReactToolScheduler.js';
+import type { Config } from "@airiscode/gemini-cli-core";
+import { CoreToolScheduler } from "@airiscode/gemini-cli-core";
+import { beforeEach, describe, expect, it, vi } from "vitest";
+import { renderHook } from "../../test-utils/render.js";
+import { useReactToolScheduler } from "./useReactToolScheduler.js";
 
-vi.mock('@airiscode/gemini-cli-core', async (importOriginal) => {
-  const actual =
-    await importOriginal<typeof import('@airiscode/gemini-cli-core')>();
+vi.mock("@airiscode/gemini-cli-core", async (importOriginal) => {
+  const actual = await importOriginal<typeof import("@airiscode/gemini-cli-core")>();
   return {
     ...actual,
     CoreToolScheduler: vi.fn(),
@@ -21,23 +20,18 @@ vi.mock('@airiscode/gemini-cli-core', async (importOriginal) => {
 
 const mockCoreToolScheduler = vi.mocked(CoreToolScheduler);
 
-describe('useReactToolScheduler', () => {
+describe("useReactToolScheduler", () => {
   beforeEach(() => {
     vi.clearAllMocks();
   });
 
-  it('only creates one instance of CoreToolScheduler even if props change', () => {
+  it("only creates one instance of CoreToolScheduler even if props change", () => {
     const onComplete = vi.fn();
     const getPreferredEditor = vi.fn();
     const config = {} as Config;
 
     const { rerender } = renderHook(
-      (props) =>
-        useReactToolScheduler(
-          props.onComplete,
-          props.config,
-          props.getPreferredEditor,
-        ),
+      (props) => useReactToolScheduler(props.onComplete, props.config, props.getPreferredEditor),
       {
         initialProps: {
           onComplete,

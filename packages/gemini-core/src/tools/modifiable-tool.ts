@@ -4,20 +4,16 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import type { EditorType } from '../utils/editor.js';
-import { openDiff } from '../utils/editor.js';
-import os from 'node:os';
-import path from 'node:path';
-import fs from 'node:fs';
-import * as Diff from 'diff';
-import { DEFAULT_DIFF_OPTIONS } from './diffOptions.js';
-import { isNodeError } from '../utils/errors.js';
-import type {
-  AnyDeclarativeTool,
-  DeclarativeTool,
-  ToolResult,
-} from './tools.js';
-import { debugLogger } from '../utils/debugLogger.js';
+import fs from "node:fs";
+import os from "node:os";
+import path from "node:path";
+import * as Diff from "diff";
+import { debugLogger } from "../utils/debugLogger.js";
+import type { EditorType } from "../utils/editor.js";
+import { openDiff } from "../utils/editor.js";
+import { isNodeError } from "../utils/errors.js";
+import { DEFAULT_DIFF_OPTIONS } from "./diffOptions.js";
+import type { AnyDeclarativeTool, DeclarativeTool, ToolResult } from "./tools.js";
 
 /**
  * A declarative tool that supports a modify operation.
@@ -57,7 +53,7 @@ export interface ModifyContentOverrides {
 export function isModifiableDeclarativeTool(
   tool: AnyDeclarativeTool,
 ): tool is ModifiableDeclarativeTool<object> {
-  return 'getModifyContext' in tool;
+  return "getModifyContext" in tool;
 }
 
 function createTempFilesForModify(
@@ -65,38 +61,27 @@ function createTempFilesForModify(
   proposedContent: string,
   file_path: string,
 ): { oldPath: string; newPath: string; dirPath: string } {
-  const diffDir = fs.mkdtempSync(
-    path.join(os.tmpdir(), 'gemini-cli-tool-modify-'),
-  );
+  const diffDir = fs.mkdtempSync(path.join(os.tmpdir(), "gemini-cli-tool-modify-"));
 
   try {
     fs.chmodSync(diffDir, 0o700);
   } catch (e) {
-    debugLogger.error(
-      `Error setting permissions on temp diff directory: ${diffDir}`,
-      e,
-    );
+    debugLogger.error(`Error setting permissions on temp diff directory: ${diffDir}`, e);
     throw e;
   }
 
   const ext = path.extname(file_path);
   const fileName = path.basename(file_path, ext);
   const timestamp = Date.now();
-  const tempOldPath = path.join(
-    diffDir,
-    `gemini-cli-modify-${fileName}-old-${timestamp}${ext}`,
-  );
-  const tempNewPath = path.join(
-    diffDir,
-    `gemini-cli-modify-${fileName}-new-${timestamp}${ext}`,
-  );
+  const tempOldPath = path.join(diffDir, `gemini-cli-modify-${fileName}-old-${timestamp}${ext}`);
+  const tempNewPath = path.join(diffDir, `gemini-cli-modify-${fileName}-new-${timestamp}${ext}`);
 
   fs.writeFileSync(tempOldPath, currentContent, {
-    encoding: 'utf8',
+    encoding: "utf8",
     mode: 0o600,
   });
   fs.writeFileSync(tempNewPath, proposedContent, {
-    encoding: 'utf8',
+    encoding: "utf8",
     mode: 0o600,
   });
 
@@ -109,45 +94,37 @@ function getUpdatedParams<ToolParams>(
   originalParams: ToolParams,
   modifyContext: ModifyContext<ToolParams>,
 ): { updatedParams: ToolParams; updatedDiff: string } {
-  let oldContent = '';
-  let newContent = '';
+  let oldContent = "";
+  let newContent = "";
 
   try {
-    oldContent = fs.readFileSync(tmpOldPath, 'utf8');
+    oldContent = fs.readFileSync(tmpOldPath, "utf8");
   } catch (err) {
-    if (!isNodeError(err) || err.code !== 'ENOENT') throw err;
-    oldContent = '';
+    if (!isNodeError(err) || err.code !== "ENOENT") throw err;
+    oldContent = "";
   }
 
   try {
-    newContent = fs.readFileSync(tempNewPath, 'utf8');
+    newContent = fs.readFileSync(tempNewPath, "utf8");
   } catch (err) {
-    if (!isNodeError(err) || err.code !== 'ENOENT') throw err;
-    newContent = '';
+    if (!isNodeError(err) || err.code !== "ENOENT") throw err;
+    newContent = "";
   }
 
-  const updatedParams = modifyContext.createUpdatedParams(
-    oldContent,
-    newContent,
-    originalParams,
-  );
+  const updatedParams = modifyContext.createUpdatedParams(oldContent, newContent, originalParams);
   const updatedDiff = Diff.createPatch(
     path.basename(modifyContext.getFilePath(originalParams)),
     oldContent,
     newContent,
-    'Current',
-    'Proposed',
+    "Current",
+    "Proposed",
     DEFAULT_DIFF_OPTIONS,
   );
 
   return { updatedParams, updatedDiff };
 }
 
-function deleteTempFiles(
-  oldPath: string,
-  newPath: string,
-  dirPath: string,
-): void {
+function deleteTempFiles(oldPath: string, newPath: string, dirPath: string): void {
   try {
     fs.unlinkSync(oldPath);
   } catch {
@@ -179,33 +156,26 @@ export async function modifyWithEditor<ToolParams>(
   onEditorClose: () => void,
   overrides?: ModifyContentOverrides,
 ): Promise<ModifyResult<ToolParams>> {
-  const hasCurrentOverride =
-    overrides !== undefined && 'currentContent' in overrides;
-  const hasProposedOverride =
-    overrides !== undefined && 'proposedContent' in overrides;
+  const hasCurrentOverride = overrides !== undefined && "currentContent" in overrides;
+  const hasProposedOverride = overrides !== undefined && "proposedContent" in overrides;
 
   const currentContent = hasCurrentOverride
-    ? (overrides!.currentContent ?? '')
+    ? (overrides!.currentContent ?? "")
     : await modifyContext.getCurrentContent(originalParams);
 
   const proposedContent = hasProposedOverride
-    ? (overrides!.proposedContent ?? '')
+    ? (overrides!.proposedContent ?? "")
     : await modifyContext.getProposedContent(originalParams);
 
   const { oldPath, newPath, dirPath } = createTempFilesForModify(
-    currentContent ?? '',
-    proposedContent ?? '',
+    currentContent ?? "",
+    proposedContent ?? "",
     modifyContext.getFilePath(originalParams),
   );
 
   try {
     await openDiff(oldPath, newPath, editorType, onEditorClose);
-    const result = getUpdatedParams(
-      oldPath,
-      newPath,
-      originalParams,
-      modifyContext,
-    );
+    const result = getUpdatedParams(oldPath, newPath, originalParams, modifyContext);
 
     return result;
   } finally {

@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { safeJsonParse } from '../../utils/safeJsonParse.js';
+import { safeJsonParse } from "../../utils/safeJsonParse.js";
 
 /**
  * Type definition for the result of parsing a JSON chunk in tool calls
@@ -62,12 +62,7 @@ export class StreamingToolCallParser {
    * @param name - Optional function name stored as metadata
    * @returns ToolCallParseResult with completion status, parsed value, and repair info
    */
-  addChunk(
-    index: number,
-    chunk: string,
-    id?: string,
-    name?: string,
-  ): ToolCallParseResult {
+  addChunk(index: number, chunk: string, id?: string, name?: string): ToolCallParseResult {
     let actualIndex = index;
 
     // Handle tool call ID mapping for collision detection
@@ -133,7 +128,7 @@ export class StreamingToolCallParser {
 
     // Initialize state for the actual index if not exists
     if (!this.buffers.has(actualIndex)) {
-      this.buffers.set(actualIndex, '');
+      this.buffers.set(actualIndex, "");
       this.depths.set(actualIndex, 0);
       this.inStrings.set(actualIndex, false);
       this.escapes.set(actualIndex, false);
@@ -158,26 +153,26 @@ export class StreamingToolCallParser {
     // Track JSON structure depth - only count brackets/braces outside of strings
     let depth = currentDepth;
     let inString = currentInString;
-    let escape = currentEscape;
+    let isEscaped = currentEscape;
 
     for (const char of chunk) {
       if (!inString) {
-        if (char === '{' || char === '[') depth++;
-        else if (char === '}' || char === ']') depth--;
+        if (char === "{" || char === "[") depth++;
+        else if (char === "}" || char === "]") depth--;
       }
 
       // Track string boundaries - toggle inString state on unescaped quotes
-      if (char === '"' && !escape) {
+      if (char === '"' && !isEscaped) {
         inString = !inString;
       }
       // Track escape sequences - backslash followed by any character is escaped
-      escape = char === '\\' && !escape;
+      isEscaped = char === "\\" && !isEscaped;
     }
 
     // Update state
     this.depths.set(actualIndex, depth);
     this.inStrings.set(actualIndex, inString);
-    this.escapes.set(actualIndex, escape);
+    this.escapes.set(actualIndex, isEscaped);
 
     // Attempt parse when we're back at root level (depth 0) and have data
     if (depth === 0 && newBuffer.trim().length > 0) {
@@ -360,7 +355,7 @@ export class StreamingToolCallParser {
    * @param index - The tool call index to reset
    */
   resetIndex(index: number): void {
-    this.buffers.set(index, '');
+    this.buffers.set(index, "");
     this.depths.set(index, 0);
     this.inStrings.set(index, false);
     this.escapes.set(index, false);
@@ -391,7 +386,7 @@ export class StreamingToolCallParser {
    * @returns The current buffer content for the specified index (empty string if not found)
    */
   getBuffer(index: number): string {
-    return this.buffers.get(index) || '';
+    return this.buffers.get(index) || "";
   }
 
   /**

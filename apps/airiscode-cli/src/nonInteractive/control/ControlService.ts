@@ -26,14 +26,14 @@
  * plane exclusively through ControlService.
  */
 
-import type { IControlContext } from './ControlContext.js';
-import type { ControlDispatcher } from './ControlDispatcher.js';
+import type { IControlContext } from "./ControlContext.js";
+import type { ControlDispatcher } from "./ControlDispatcher.js";
 import type {
   PermissionServiceAPI,
   SystemServiceAPI,
   // McpServiceAPI,
   // HookServiceAPI,
-} from './types/serviceAPIs.js';
+} from "./types/serviceAPIs.js";
 
 /**
  * Control Service
@@ -72,8 +72,7 @@ export class ControlService {
        * @param confirmationDetails - Tool confirmation details
        * @returns Array of permission suggestions or null
        */
-      buildPermissionSuggestions:
-        controller.buildPermissionSuggestions.bind(controller),
+      buildPermissionSuggestions: controller.buildPermissionSuggestions.bind(controller),
 
       /**
        * Get callback for monitoring tool call status updates
@@ -82,8 +81,7 @@ export class ControlService {
        *
        * @returns Callback function for tool call updates
        */
-      getToolCallUpdateCallback:
-        controller.getToolCallUpdateCallback.bind(controller),
+      getToolCallUpdateCallback: controller.getToolCallUpdateCallback.bind(controller),
     };
   }
 

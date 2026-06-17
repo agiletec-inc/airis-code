@@ -4,15 +4,15 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import type { Mock } from 'vitest';
-import { vi, describe, it, expect, beforeEach } from 'vitest';
-import { clearCommand } from './clearCommand.js';
-import { type CommandContext } from './types.js';
-import { createMockCommandContext } from '../../test-utils/mockCommandContext.js';
+import type { Mock } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
+import { createMockCommandContext } from "../../test-utils/mockCommandContext.js";
+import { clearCommand } from "./clearCommand.js";
+import { type CommandContext } from "./types.js";
 
 // Mock the telemetry service
-vi.mock('@airiscode/gemini-cli-core', async () => {
-  const actual = await vi.importActual('@airiscode/gemini-cli-core');
+vi.mock("@airiscode/gemini-cli-core", async () => {
+  const actual = await vi.importActual("@airiscode/gemini-cli-core");
   return {
     ...actual,
     uiTelemetryService: {
@@ -21,10 +21,10 @@ vi.mock('@airiscode/gemini-cli-core', async () => {
   };
 });
 
-import type { GeminiClient } from '@airiscode/gemini-cli-core';
-import { uiTelemetryService } from '@airiscode/gemini-cli-core';
+import type { GeminiClient } from "@airiscode/gemini-cli-core";
+import { uiTelemetryService } from "@airiscode/gemini-cli-core";
 
-describe('clearCommand', () => {
+describe("clearCommand", () => {
   let mockContext: CommandContext;
   let mockResetChat: ReturnType<typeof vi.fn>;
 
@@ -51,15 +51,15 @@ describe('clearCommand', () => {
     });
   });
 
-  it('should set debug message, reset chat, reset telemetry, and clear UI when config is available', async () => {
+  it("should set debug message, reset chat, reset telemetry, and clear UI when config is available", async () => {
     if (!clearCommand.action) {
-      throw new Error('clearCommand must have an action.');
+      throw new Error("clearCommand must have an action.");
     }
 
-    await clearCommand.action(mockContext, '');
+    await clearCommand.action(mockContext, "");
 
     expect(mockContext.ui.setDebugMessage).toHaveBeenCalledWith(
-      'Clearing terminal and resetting chat.',
+      "Clearing terminal and resetting chat.",
     );
     expect(mockContext.ui.setDebugMessage).toHaveBeenCalledTimes(1);
 
@@ -72,20 +72,18 @@ describe('clearCommand', () => {
     const setDebugMessageOrder = (mockContext.ui.setDebugMessage as Mock).mock
       .invocationCallOrder[0];
     const resetChatOrder = mockResetChat.mock.invocationCallOrder[0];
-    const resetTelemetryOrder = (
-      uiTelemetryService.setLastPromptTokenCount as Mock
-    ).mock.invocationCallOrder[0];
-    const clearOrder = (mockContext.ui.clear as Mock).mock
+    const resetTelemetryOrder = (uiTelemetryService.setLastPromptTokenCount as Mock).mock
       .invocationCallOrder[0];
+    const clearOrder = (mockContext.ui.clear as Mock).mock.invocationCallOrder[0];
 
     expect(setDebugMessageOrder).toBeLessThan(resetChatOrder);
     expect(resetChatOrder).toBeLessThan(resetTelemetryOrder);
     expect(resetTelemetryOrder).toBeLessThan(clearOrder);
   });
 
-  it('should not attempt to reset chat if config service is not available', async () => {
+  it("should not attempt to reset chat if config service is not available", async () => {
     if (!clearCommand.action) {
-      throw new Error('clearCommand must have an action.');
+      throw new Error("clearCommand must have an action.");
     }
 
     const nullConfigContext = createMockCommandContext({
@@ -94,11 +92,9 @@ describe('clearCommand', () => {
       },
     });
 
-    await clearCommand.action(nullConfigContext, '');
+    await clearCommand.action(nullConfigContext, "");
 
-    expect(nullConfigContext.ui.setDebugMessage).toHaveBeenCalledWith(
-      'Clearing terminal.',
-    );
+    expect(nullConfigContext.ui.setDebugMessage).toHaveBeenCalledWith("Clearing terminal.");
     expect(mockResetChat).not.toHaveBeenCalled();
     expect(uiTelemetryService.setLastPromptTokenCount).toHaveBeenCalledWith(0);
     expect(uiTelemetryService.setLastPromptTokenCount).toHaveBeenCalledTimes(1);

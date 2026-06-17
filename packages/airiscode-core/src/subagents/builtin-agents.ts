@@ -4,21 +4,19 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { ToolDisplayNames, ToolNames } from '../tools/tool-names.js';
-import type { SubagentConfig } from './types.js';
+import { ToolDisplayNames, ToolNames } from "../tools/tool-names.js";
+import type { SubagentConfig } from "./types.js";
 
 /**
  * Registry of built-in subagents that are always available to all users.
  * These agents are embedded in the codebase and cannot be modified or deleted.
  */
 export class BuiltinAgentRegistry {
-  private static readonly BUILTIN_AGENTS: Array<
-    Omit<SubagentConfig, 'level' | 'filePath'>
-  > = [
+  private static readonly BUILTIN_AGENTS: Array<Omit<SubagentConfig, "level" | "filePath">> = [
     {
-      name: 'general-purpose',
+      name: "general-purpose",
       description:
-        'General-purpose agent for researching complex questions, searching for code, and executing multi-step tasks. When you are searching for a keyword or file and are not confident that you will find the right match in the first few tries use this agent to perform the search for you.',
+        "General-purpose agent for researching complex questions, searching for code, and executing multi-step tasks. When you are searching for a keyword or file and are not confident that you will find the right match in the first few tries use this agent to perform the search for you.",
       systemPrompt: `You are a general-purpose agent. Given the user's message, you should use the tools available to complete the task. Do what has been asked; nothing more, nothing less. When you complete the task, respond with a concise report covering what was done and any key findings — the caller will relay this to the user, so it only needs the essentials.
 
 Your strengths:
@@ -42,7 +40,7 @@ Notes:
 - For clear communication with the user the assistant MUST avoid using emojis.`,
     },
     {
-      name: 'Explore',
+      name: "Explore",
       description:
         'Fast agent specialized for exploring codebases. Use this when you need to quickly find files by patterns (eg. "src/components/**/*.tsx"), search code for keywords (eg. "API endpoints"), or answer questions about the codebase (eg. "how do API endpoints work?"). When calling this agent, specify the desired thoroughness level: "quick" for basic searches, "medium" for moderate exploration, or "very thorough" for comprehensive analysis across multiple locations and naming conventions.',
       systemPrompt: `You are a file search specialist agent. You excel at thoroughly navigating and exploring codebases.
@@ -101,16 +99,15 @@ Notes:
       ],
     },
     {
-      name: 'statusline-setup',
-      description:
-        "Use this agent to configure the user's AIRIS Code status line setting.",
+      name: "statusline-setup",
+      description: "Use this agent to configure the user's AIRIS Code status line setting.",
       tools: [
         ToolNames.READ_FILE,
         ToolNames.WRITE_FILE,
         ToolNames.EDIT,
         ToolNames.ASK_USER_QUESTION,
       ],
-      color: 'orange',
+      color: "orange",
       systemPrompt: `You are a status line setup agent for AIRIS Code. Your job is to create or update the statusLine command in the user's AIRIS Code settings.
 
 When asked to convert the user's shell PS1 configuration, follow these steps:
@@ -219,9 +216,9 @@ Guidelines:
 `,
     },
     {
-      name: 'Plan',
+      name: "Plan",
       description:
-        'Software architect agent for designing implementation plans. Use this when you need to plan the implementation strategy for a task. Returns step-by-step plans, identifies critical files, and considers architectural trade-offs.',
+        "Software architect agent for designing implementation plans. Use this when you need to plan the implementation strategy for a task. Returns step-by-step plans, identifies critical files, and considers architectural trade-offs.",
       systemPrompt: `You are a planning specialist agent. Your job is to analyze codebases and design implementation plans.
 
 Your strengths:
@@ -262,9 +259,9 @@ Notes:
       ],
     },
     {
-      name: 'code-reviewer',
+      name: "code-reviewer",
       description:
-        'Use this agent when a major project step has been completed and needs to be reviewed against the original plan and coding standards. Examples: after implementing a feature, before creating a PR, after a refactor.',
+        "Use this agent when a major project step has been completed and needs to be reviewed against the original plan and coding standards. Examples: after implementing a feature, before creating a PR, after a refactor.",
       systemPrompt: `You are a code review specialist agent. Your job is to review code changes against project standards and the original plan.
 
 === CRITICAL: READ-ONLY MODE ===
@@ -314,7 +311,7 @@ Notes:
   static getBuiltinAgents(): SubagentConfig[] {
     return this.BUILTIN_AGENTS.map((agent) => ({
       ...agent,
-      level: 'builtin' as const,
+      level: "builtin" as const,
       filePath: `<builtin:${agent.name}>`,
       isBuiltin: true,
     }));
@@ -327,16 +324,14 @@ Notes:
    */
   static getBuiltinAgent(name: string): SubagentConfig | null {
     const lowerName = name.toLowerCase();
-    const agent = this.BUILTIN_AGENTS.find(
-      (a) => a.name.toLowerCase() === lowerName,
-    );
+    const agent = this.BUILTIN_AGENTS.find((a) => a.name.toLowerCase() === lowerName);
     if (!agent) {
       return null;
     }
 
     return {
       ...agent,
-      level: 'builtin' as const,
+      level: "builtin" as const,
       filePath: `<builtin:${agent.name}>`,
       isBuiltin: true,
     };
@@ -349,9 +344,7 @@ Notes:
    */
   static isBuiltinAgent(name: string): boolean {
     const lowerName = name.toLowerCase();
-    return this.BUILTIN_AGENTS.some(
-      (agent) => agent.name.toLowerCase() === lowerName,
-    );
+    return this.BUILTIN_AGENTS.some((agent) => agent.name.toLowerCase() === lowerName);
   }
 
   /**

@@ -4,36 +4,36 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import * as fs from 'node:fs';
-import * as path from 'node:path';
-import { homedir } from 'node:os';
+import * as fs from "node:fs";
+import { homedir } from "node:os";
+import * as path from "node:path";
 import {
   FatalConfigError,
-  getErrorMessage,
-  isWithinRoot,
-  ideContextStore,
   GEMINI_DIR,
-} from '@airiscode/gemini-cli-core';
-import type { Settings } from './settings.js';
-import stripJsonComments from 'strip-json-comments';
+  getErrorMessage,
+  ideContextStore,
+  isWithinRoot,
+} from "@airiscode/gemini-cli-core";
+import stripJsonComments from "strip-json-comments";
+import type { Settings } from "./settings.js";
 
-export const TRUSTED_FOLDERS_FILENAME = 'trustedFolders.json';
+export const TRUSTED_FOLDERS_FILENAME = "trustedFolders.json";
 
 export function getUserSettingsDir(): string {
   return path.join(homedir(), GEMINI_DIR);
 }
 
 export function getTrustedFoldersPath(): string {
-  if (process.env['GEMINI_CLI_TRUSTED_FOLDERS_PATH']) {
-    return process.env['GEMINI_CLI_TRUSTED_FOLDERS_PATH'];
+  if (process.env["GEMINI_CLI_TRUSTED_FOLDERS_PATH"]) {
+    return process.env["GEMINI_CLI_TRUSTED_FOLDERS_PATH"];
   }
   return path.join(getUserSettingsDir(), TRUSTED_FOLDERS_FILENAME);
 }
 
 export enum TrustLevel {
-  TRUST_FOLDER = 'TRUST_FOLDER',
-  TRUST_PARENT = 'TRUST_PARENT',
-  DO_NOT_TRUST = 'DO_NOT_TRUST',
+  TRUST_FOLDER = "TRUST_FOLDER",
+  TRUST_PARENT = "TRUST_PARENT",
+  DO_NOT_TRUST = "DO_NOT_TRUST",
 }
 
 export interface TrustRule {
@@ -53,7 +53,7 @@ export interface TrustedFoldersFile {
 
 export interface TrustResult {
   isTrusted: boolean | undefined;
-  source: 'ide' | 'file' | undefined;
+  source: "ide" | "file" | undefined;
 }
 
 export class LoadedTrustedFolders {
@@ -76,17 +76,15 @@ export class LoadedTrustedFolders {
    * @param location path
    * @returns
    */
-  isPathTrusted(
-    location: string,
-    config?: Record<string, TrustLevel>,
-  ): boolean | undefined {
+  isPathTrusted(location: string, config?: Record<string, TrustLevel>): boolean | undefined {
     const configToUse = config ?? this.user.config;
     const trustedPaths: string[] = [];
     const untrustedPaths: string[] = [];
 
-    for (const rule of Object.entries(configToUse).map(
-      ([path, trustLevel]) => ({ path, trustLevel }),
-    )) {
+    for (const rule of Object.entries(configToUse).map(([path, trustLevel]) => ({
+      path,
+      trustLevel,
+    }))) {
       switch (rule.trustLevel) {
         case TrustLevel.TRUST_FOLDER:
           trustedPaths.push(rule.path);
@@ -158,16 +156,12 @@ export function loadTrustedFolders(): LoadedTrustedFolders {
   // Load user trusted folders
   try {
     if (fs.existsSync(userPath)) {
-      const content = fs.readFileSync(userPath, 'utf-8');
+      const content = fs.readFileSync(userPath, "utf-8");
       const parsed: unknown = JSON.parse(stripJsonComments(content));
 
-      if (
-        typeof parsed !== 'object' ||
-        parsed === null ||
-        Array.isArray(parsed)
-      ) {
+      if (typeof parsed !== "object" || parsed === null || Array.isArray(parsed)) {
         errors.push({
-          message: 'Trusted folders file is not a valid JSON object.',
+          message: "Trusted folders file is not a valid JSON object.",
           path: userPath,
         });
       } else {
@@ -181,27 +175,21 @@ export function loadTrustedFolders(): LoadedTrustedFolders {
     });
   }
 
-  loadedTrustedFolders = new LoadedTrustedFolders(
-    { path: userPath, config: userConfig },
-    errors,
-  );
+  loadedTrustedFolders = new LoadedTrustedFolders({ path: userPath, config: userConfig }, errors);
   return loadedTrustedFolders;
 }
 
-export function saveTrustedFolders(
-  trustedFoldersFile: TrustedFoldersFile,
-): void {
+export function saveTrustedFolders(trustedFoldersFile: TrustedFoldersFile): void {
   // Ensure the directory exists
   const dirPath = path.dirname(trustedFoldersFile.path);
   if (!fs.existsSync(dirPath)) {
     fs.mkdirSync(dirPath, { recursive: true });
   }
 
-  fs.writeFileSync(
-    trustedFoldersFile.path,
-    JSON.stringify(trustedFoldersFile.config, null, 2),
-    { encoding: 'utf-8', mode: 0o600 },
-  );
+  fs.writeFileSync(trustedFoldersFile.path, JSON.stringify(trustedFoldersFile.config, null, 2), {
+    encoding: "utf-8",
+    mode: 0o600,
+  });
 }
 
 /** Is folder trust feature enabled per the current applied settings */
@@ -210,25 +198,21 @@ export function isFolderTrustEnabled(settings: Settings): boolean {
   return folderTrustSetting;
 }
 
-function getWorkspaceTrustFromLocalConfig(
-  trustConfig?: Record<string, TrustLevel>,
-): TrustResult {
+function getWorkspaceTrustFromLocalConfig(trustConfig?: Record<string, TrustLevel>): TrustResult {
   const folders = loadTrustedFolders();
   const configToUse = trustConfig ?? folders.user.config;
 
   if (folders.errors.length > 0) {
-    const errorMessages = folders.errors.map(
-      (error) => `Error in ${error.path}: ${error.message}`,
-    );
+    const errorMessages = folders.errors.map((error) => `Error in ${error.path}: ${error.message}`);
     throw new FatalConfigError(
-      `${errorMessages.join('\n')}\nPlease fix the configuration file and try again.`,
+      `${errorMessages.join("\n")}\nPlease fix the configuration file and try again.`,
     );
   }
 
   const isTrusted = folders.isPathTrusted(process.cwd(), configToUse);
   return {
     isTrusted,
-    source: isTrusted !== undefined ? 'file' : undefined,
+    source: isTrusted !== undefined ? "file" : undefined,
   };
 }
 
@@ -242,7 +226,7 @@ export function isWorkspaceTrusted(
 
   const ideTrust = ideContextStore.get()?.workspaceState?.isTrusted;
   if (ideTrust !== undefined) {
-    return { isTrusted: ideTrust, source: 'ide' };
+    return { isTrusted: ideTrust, source: "ide" };
   }
 
   // Fall back to the local user configuration

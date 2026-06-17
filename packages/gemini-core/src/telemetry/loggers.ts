@@ -4,78 +4,71 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import type { LogRecord } from '@opentelemetry/api-logs';
-import { logs } from '@opentelemetry/api-logs';
-import type { Config } from '../config/config.js';
-import { SERVICE_NAME } from './constants.js';
+import type { LogRecord } from "@opentelemetry/api-logs";
+import { logs } from "@opentelemetry/api-logs";
+import type { Config } from "../config/config.js";
+import { ClearcutLogger } from "./clearcut-logger/clearcut-logger.js";
+import { SERVICE_NAME } from "./constants.js";
 import {
-  EVENT_API_ERROR,
-  EVENT_API_RESPONSE,
-  EVENT_TOOL_CALL,
-} from './types.js';
+  getConventionAttributes,
+  recordAgentRunMetrics,
+  recordApiErrorMetrics,
+  recordApiResponseMetrics,
+  recordChatCompressionMetrics,
+  recordContentRetry,
+  recordContentRetryFailure,
+  recordFileOperationMetric,
+  recordInvalidChunk,
+  recordLinesChanged,
+  recordModelRoutingMetrics,
+  recordModelSlashCommand,
+  recordRecoveryAttemptMetrics,
+  recordTokenUsageMetrics,
+  recordToolCallMetrics,
+} from "./metrics.js";
+import { isTelemetrySdkInitialized } from "./sdk.js";
 import type {
+  AgentFinishEvent,
+  AgentStartEvent,
   ApiErrorEvent,
   ApiRequestEvent,
   ApiResponseEvent,
-  FileOperationEvent,
-  IdeConnectionEvent,
-  StartSessionEvent,
-  ToolCallEvent,
-  UserPromptEvent,
-  FlashFallbackEvent,
-  NextSpeakerCheckEvent,
-  LoopDetectedEvent,
-  LoopDetectionDisabledEvent,
-  SlashCommandEvent,
-  ConversationFinishedEvent,
   ChatCompressionEvent,
-  MalformedJsonResponseEvent,
-  InvalidChunkEvent,
   ContentRetryEvent,
   ContentRetryFailureEvent,
-  RipgrepFallbackEvent,
-  ToolOutputTruncatedEvent,
-  ModelRoutingEvent,
+  ConversationFinishedEvent,
   ExtensionDisableEvent,
   ExtensionEnableEvent,
-  ExtensionUninstallEvent,
   ExtensionInstallEvent,
-  ModelSlashCommandEvent,
-  SmartEditStrategyEvent,
-  SmartEditCorrectionEvent,
-  AgentStartEvent,
-  AgentFinishEvent,
-  RecoveryAttemptEvent,
-  WebFetchFallbackAttemptEvent,
+  ExtensionUninstallEvent,
   ExtensionUpdateEvent,
+  FileOperationEvent,
+  FlashFallbackEvent,
+  IdeConnectionEvent,
+  InvalidChunkEvent,
   LlmLoopCheckEvent,
-} from './types.js';
-import {
-  recordApiErrorMetrics,
-  recordToolCallMetrics,
-  recordChatCompressionMetrics,
-  recordFileOperationMetric,
-  recordInvalidChunk,
-  recordContentRetry,
-  recordContentRetryFailure,
-  recordModelRoutingMetrics,
-  recordModelSlashCommand,
-  getConventionAttributes,
-  recordTokenUsageMetrics,
-  recordApiResponseMetrics,
-  recordAgentRunMetrics,
-  recordRecoveryAttemptMetrics,
-  recordLinesChanged,
-} from './metrics.js';
-import { isTelemetrySdkInitialized } from './sdk.js';
-import type { UiEvent } from './uiTelemetry.js';
-import { uiTelemetryService } from './uiTelemetry.js';
-import { ClearcutLogger } from './clearcut-logger/clearcut-logger.js';
+  LoopDetectedEvent,
+  LoopDetectionDisabledEvent,
+  MalformedJsonResponseEvent,
+  ModelRoutingEvent,
+  ModelSlashCommandEvent,
+  NextSpeakerCheckEvent,
+  RecoveryAttemptEvent,
+  RipgrepFallbackEvent,
+  SlashCommandEvent,
+  SmartEditCorrectionEvent,
+  SmartEditStrategyEvent,
+  StartSessionEvent,
+  ToolCallEvent,
+  ToolOutputTruncatedEvent,
+  UserPromptEvent,
+  WebFetchFallbackAttemptEvent,
+} from "./types.js";
+import { EVENT_API_ERROR, EVENT_API_RESPONSE, EVENT_TOOL_CALL } from "./types.js";
+import type { UiEvent } from "./uiTelemetry.js";
+import { uiTelemetryService } from "./uiTelemetry.js";
 
-export function logCliConfiguration(
-  config: Config,
-  event: StartSessionEvent,
-): void {
+export function logCliConfiguration(config: Config, event: StartSessionEvent): void {
   ClearcutLogger.getInstance(config)?.logStartSessionEvent(event);
   if (!isTelemetrySdkInitialized()) return;
 
@@ -103,8 +96,8 @@ export function logUserPrompt(config: Config, event: UserPromptEvent): void {
 export function logToolCall(config: Config, event: ToolCallEvent): void {
   const uiEvent = {
     ...event,
-    'event.name': EVENT_TOOL_CALL,
-    'event.timestamp': new Date().toISOString(),
+    "event.name": EVENT_TOOL_CALL,
+    "event.timestamp": new Date().toISOString(),
   } as UiEvent;
   uiTelemetryService.addEvent(uiEvent);
   ClearcutLogger.getInstance(config)?.logToolCallEvent(event);
@@ -124,25 +117,22 @@ export function logToolCall(config: Config, event: ToolCallEvent): void {
   });
 
   if (event.metadata) {
-    const added = event.metadata['model_added_lines'];
-    if (typeof added === 'number' && added > 0) {
-      recordLinesChanged(config, added, 'added', {
+    const added = event.metadata["model_added_lines"];
+    if (typeof added === "number" && added > 0) {
+      recordLinesChanged(config, added, "added", {
         function_name: event.function_name,
       });
     }
-    const removed = event.metadata['model_removed_lines'];
-    if (typeof removed === 'number' && removed > 0) {
-      recordLinesChanged(config, removed, 'removed', {
+    const removed = event.metadata["model_removed_lines"];
+    if (typeof removed === "number" && removed > 0) {
+      recordLinesChanged(config, removed, "removed", {
         function_name: event.function_name,
       });
     }
   }
 }
 
-export function logToolOutputTruncated(
-  config: Config,
-  event: ToolOutputTruncatedEvent,
-): void {
+export function logToolOutputTruncated(config: Config, event: ToolOutputTruncatedEvent): void {
   ClearcutLogger.getInstance(config)?.logToolOutputTruncatedEvent(event);
   if (!isTelemetrySdkInitialized()) return;
 
@@ -154,10 +144,7 @@ export function logToolOutputTruncated(
   logger.emit(logRecord);
 }
 
-export function logFileOperation(
-  config: Config,
-  event: FileOperationEvent,
-): void {
+export function logFileOperation(config: Config, event: FileOperationEvent): void {
   ClearcutLogger.getInstance(config)?.logFileOperationEvent(event);
   if (!isTelemetrySdkInitialized()) return;
 
@@ -189,10 +176,7 @@ export function logApiRequest(config: Config, event: ApiRequestEvent): void {
   logger.emit(logRecord);
 }
 
-export function logFlashFallback(
-  config: Config,
-  event: FlashFallbackEvent,
-): void {
+export function logFlashFallback(config: Config, event: FlashFallbackEvent): void {
   ClearcutLogger.getInstance(config)?.logFlashFallbackEvent();
   if (!isTelemetrySdkInitialized()) return;
 
@@ -204,10 +188,7 @@ export function logFlashFallback(
   logger.emit(logRecord);
 }
 
-export function logRipgrepFallback(
-  config: Config,
-  event: RipgrepFallbackEvent,
-): void {
+export function logRipgrepFallback(config: Config, event: RipgrepFallbackEvent): void {
   ClearcutLogger.getInstance(config)?.logRipgrepFallbackEvent();
   if (!isTelemetrySdkInitialized()) return;
 
@@ -222,8 +203,8 @@ export function logRipgrepFallback(
 export function logApiError(config: Config, event: ApiErrorEvent): void {
   const uiEvent = {
     ...event,
-    'event.name': EVENT_API_ERROR,
-    'event.timestamp': new Date().toISOString(),
+    "event.name": EVENT_API_ERROR,
+    "event.timestamp": new Date().toISOString(),
   } as UiEvent;
   uiTelemetryService.addEvent(uiEvent);
   ClearcutLogger.getInstance(config)?.logApiErrorEvent(event);
@@ -245,7 +226,7 @@ export function logApiError(config: Config, event: ApiErrorEvent): void {
     status_code: event.status_code,
     genAiAttributes: {
       ...getConventionAttributes(event),
-      'error.type': event.error_type || 'unknown',
+      "error.type": event.error_type || "unknown",
     },
   });
 }
@@ -253,8 +234,8 @@ export function logApiError(config: Config, event: ApiErrorEvent): void {
 export function logApiResponse(config: Config, event: ApiResponseEvent): void {
   const uiEvent = {
     ...event,
-    'event.name': EVENT_API_RESPONSE,
-    'event.timestamp': new Date().toISOString(),
+    "event.name": EVENT_API_RESPONSE,
+    "event.timestamp": new Date().toISOString(),
   } as UiEvent;
   uiTelemetryService.addEvent(uiEvent);
   ClearcutLogger.getInstance(config)?.logApiResponseEvent(event);
@@ -273,11 +254,11 @@ export function logApiResponse(config: Config, event: ApiResponseEvent): void {
   });
 
   const tokenUsageData = [
-    { count: event.usage.input_token_count, type: 'input' as const },
-    { count: event.usage.output_token_count, type: 'output' as const },
-    { count: event.usage.cached_content_token_count, type: 'cache' as const },
-    { count: event.usage.thoughts_token_count, type: 'thought' as const },
-    { count: event.usage.tool_token_count, type: 'tool' as const },
+    { count: event.usage.input_token_count, type: "input" as const },
+    { count: event.usage.output_token_count, type: "output" as const },
+    { count: event.usage.cached_content_token_count, type: "cache" as const },
+    { count: event.usage.thoughts_token_count, type: "thought" as const },
+    { count: event.usage.tool_token_count, type: "tool" as const },
   ];
 
   for (const { count, type } of tokenUsageData) {
@@ -289,10 +270,7 @@ export function logApiResponse(config: Config, event: ApiResponseEvent): void {
   }
 }
 
-export function logLoopDetected(
-  config: Config,
-  event: LoopDetectedEvent,
-): void {
+export function logLoopDetected(config: Config, event: LoopDetectedEvent): void {
   ClearcutLogger.getInstance(config)?.logLoopDetectedEvent(event);
   if (!isTelemetrySdkInitialized()) return;
 
@@ -304,10 +282,7 @@ export function logLoopDetected(
   logger.emit(logRecord);
 }
 
-export function logLoopDetectionDisabled(
-  config: Config,
-  event: LoopDetectionDisabledEvent,
-): void {
+export function logLoopDetectionDisabled(config: Config, event: LoopDetectionDisabledEvent): void {
   ClearcutLogger.getInstance(config)?.logLoopDetectionDisabledEvent();
   if (!isTelemetrySdkInitialized()) return;
 
@@ -319,10 +294,7 @@ export function logLoopDetectionDisabled(
   logger.emit(logRecord);
 }
 
-export function logNextSpeakerCheck(
-  config: Config,
-  event: NextSpeakerCheckEvent,
-): void {
+export function logNextSpeakerCheck(config: Config, event: NextSpeakerCheckEvent): void {
   ClearcutLogger.getInstance(config)?.logNextSpeakerCheck(event);
   if (!isTelemetrySdkInitialized()) return;
 
@@ -334,10 +306,7 @@ export function logNextSpeakerCheck(
   logger.emit(logRecord);
 }
 
-export function logSlashCommand(
-  config: Config,
-  event: SlashCommandEvent,
-): void {
+export function logSlashCommand(config: Config, event: SlashCommandEvent): void {
   ClearcutLogger.getInstance(config)?.logSlashCommandEvent(event);
   if (!isTelemetrySdkInitialized()) return;
 
@@ -349,10 +318,7 @@ export function logSlashCommand(
   logger.emit(logRecord);
 }
 
-export function logIdeConnection(
-  config: Config,
-  event: IdeConnectionEvent,
-): void {
+export function logIdeConnection(config: Config, event: IdeConnectionEvent): void {
   ClearcutLogger.getInstance(config)?.logIdeConnectionEvent(event);
   if (!isTelemetrySdkInitialized()) return;
 
@@ -379,10 +345,7 @@ export function logConversationFinishedEvent(
   logger.emit(logRecord);
 }
 
-export function logChatCompression(
-  config: Config,
-  event: ChatCompressionEvent,
-): void {
+export function logChatCompression(config: Config, event: ChatCompressionEvent): void {
   ClearcutLogger.getInstance(config)?.logChatCompressionEvent(event);
 
   const logger = logs.getLogger(SERVICE_NAME);
@@ -398,10 +361,7 @@ export function logChatCompression(
   });
 }
 
-export function logMalformedJsonResponse(
-  config: Config,
-  event: MalformedJsonResponseEvent,
-): void {
+export function logMalformedJsonResponse(config: Config, event: MalformedJsonResponseEvent): void {
   ClearcutLogger.getInstance(config)?.logMalformedJsonResponseEvent(event);
   if (!isTelemetrySdkInitialized()) return;
 
@@ -413,10 +373,7 @@ export function logMalformedJsonResponse(
   logger.emit(logRecord);
 }
 
-export function logInvalidChunk(
-  config: Config,
-  event: InvalidChunkEvent,
-): void {
+export function logInvalidChunk(config: Config, event: InvalidChunkEvent): void {
   ClearcutLogger.getInstance(config)?.logInvalidChunkEvent(event);
   if (!isTelemetrySdkInitialized()) return;
 
@@ -429,10 +386,7 @@ export function logInvalidChunk(
   recordInvalidChunk(config);
 }
 
-export function logContentRetry(
-  config: Config,
-  event: ContentRetryEvent,
-): void {
+export function logContentRetry(config: Config, event: ContentRetryEvent): void {
   ClearcutLogger.getInstance(config)?.logContentRetryEvent(event);
   if (!isTelemetrySdkInitialized()) return;
 
@@ -445,10 +399,7 @@ export function logContentRetry(
   recordContentRetry(config);
 }
 
-export function logContentRetryFailure(
-  config: Config,
-  event: ContentRetryFailureEvent,
-): void {
+export function logContentRetryFailure(config: Config, event: ContentRetryFailureEvent): void {
   ClearcutLogger.getInstance(config)?.logContentRetryFailureEvent(event);
   if (!isTelemetrySdkInitialized()) return;
 
@@ -461,10 +412,7 @@ export function logContentRetryFailure(
   recordContentRetryFailure(config);
 }
 
-export function logModelRouting(
-  config: Config,
-  event: ModelRoutingEvent,
-): void {
+export function logModelRouting(config: Config, event: ModelRoutingEvent): void {
   ClearcutLogger.getInstance(config)?.logModelRoutingEvent(event);
   if (!isTelemetrySdkInitialized()) return;
 
@@ -477,10 +425,7 @@ export function logModelRouting(
   recordModelRoutingMetrics(config, event);
 }
 
-export function logModelSlashCommand(
-  config: Config,
-  event: ModelSlashCommandEvent,
-): void {
+export function logModelSlashCommand(config: Config, event: ModelSlashCommandEvent): void {
   ClearcutLogger.getInstance(config)?.logModelSlashCommandEvent(event);
   if (!isTelemetrySdkInitialized()) return;
 
@@ -568,10 +513,7 @@ export async function logExtensionDisable(
   logger.emit(logRecord);
 }
 
-export function logSmartEditStrategy(
-  config: Config,
-  event: SmartEditStrategyEvent,
-): void {
+export function logSmartEditStrategy(config: Config, event: SmartEditStrategyEvent): void {
   ClearcutLogger.getInstance(config)?.logSmartEditStrategyEvent(event);
   if (!isTelemetrySdkInitialized()) return;
 
@@ -583,10 +525,7 @@ export function logSmartEditStrategy(
   logger.emit(logRecord);
 }
 
-export function logSmartEditCorrectionEvent(
-  config: Config,
-  event: SmartEditCorrectionEvent,
-): void {
+export function logSmartEditCorrectionEvent(config: Config, event: SmartEditCorrectionEvent): void {
   ClearcutLogger.getInstance(config)?.logSmartEditCorrectionEvent(event);
   if (!isTelemetrySdkInitialized()) return;
 
@@ -624,10 +563,7 @@ export function logAgentFinish(config: Config, event: AgentFinishEvent): void {
   recordAgentRunMetrics(config, event);
 }
 
-export function logRecoveryAttempt(
-  config: Config,
-  event: RecoveryAttemptEvent,
-): void {
+export function logRecoveryAttempt(config: Config, event: RecoveryAttemptEvent): void {
   ClearcutLogger.getInstance(config)?.logRecoveryAttemptEvent(event);
   if (!isTelemetrySdkInitialized()) return;
 
@@ -656,10 +592,7 @@ export function logWebFetchFallbackAttempt(
   logger.emit(logRecord);
 }
 
-export function logLlmLoopCheck(
-  config: Config,
-  event: LlmLoopCheckEvent,
-): void {
+export function logLlmLoopCheck(config: Config, event: LlmLoopCheckEvent): void {
   ClearcutLogger.getInstance(config)?.logLlmLoopCheckEvent(event);
   if (!isTelemetrySdkInitialized()) return;
 

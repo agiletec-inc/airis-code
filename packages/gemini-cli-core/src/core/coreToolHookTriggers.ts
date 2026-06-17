@@ -4,33 +4,25 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import type { MessageBus } from '../confirmation-bus/message-bus.js';
+import type { MessageBus } from "../confirmation-bus/message-bus.js";
 import {
-  MessageBusType,
   type HookExecutionRequest,
   type HookExecutionResponse,
-} from '../confirmation-bus/types.js';
-import {
-  createHookOutput,
-  NotificationType,
-  type DefaultHookOutput,
-} from '../hooks/types.js';
-import type {
-  ToolCallConfirmationDetails,
-  ToolResult,
-} from '../tools/tools.js';
-import { ToolErrorType } from '../tools/tool-error.js';
-import { debugLogger } from '../utils/debugLogger.js';
-import type { AnsiOutput, ShellExecutionConfig } from '../index.js';
-import type { AnyToolInvocation } from '../tools/tools.js';
-import { ShellToolInvocation } from '../tools/shell.js';
+  MessageBusType,
+} from "../confirmation-bus/types.js";
+import { createHookOutput, type DefaultHookOutput, NotificationType } from "../hooks/types.js";
+import type { AnsiOutput, ShellExecutionConfig } from "../index.js";
+import { ShellToolInvocation } from "../tools/shell.js";
+import { ToolErrorType } from "../tools/tool-error.js";
+import type { AnyToolInvocation, ToolCallConfirmationDetails, ToolResult } from "../tools/tools.js";
+import { debugLogger } from "../utils/debugLogger.js";
 
 /**
  * Serializable representation of tool confirmation details for hooks.
  * Excludes function properties like onConfirm that can't be serialized.
  */
 interface SerializableConfirmationDetails {
-  type: 'edit' | 'exec' | 'mcp' | 'info';
+  type: "edit" | "exec" | "mcp" | "info";
   title: string;
   // Edit-specific fields
   fileName?: string;
@@ -64,7 +56,7 @@ function toSerializableDetails(
   };
 
   switch (details.type) {
-    case 'edit':
+    case "edit":
       return {
         ...base,
         fileName: details.fileName,
@@ -74,20 +66,20 @@ function toSerializableDetails(
         newContent: details.newContent,
         isModifying: details.isModifying,
       };
-    case 'exec':
+    case "exec":
       return {
         ...base,
         command: details.command,
         rootCommand: details.rootCommand,
       };
-    case 'mcp':
+    case "mcp":
       return {
         ...base,
         serverName: details.serverName,
         toolName: details.toolName,
         toolDisplayName: details.toolDisplayName,
       };
-    case 'info':
+    case "info":
       return {
         ...base,
         prompt: details.prompt,
@@ -101,17 +93,15 @@ function toSerializableDetails(
 /**
  * Gets the message to display in the notification hook for tool confirmation.
  */
-function getNotificationMessage(
-  confirmationDetails: ToolCallConfirmationDetails,
-): string {
+function getNotificationMessage(confirmationDetails: ToolCallConfirmationDetails): string {
   switch (confirmationDetails.type) {
-    case 'edit':
+    case "edit":
       return `Tool ${confirmationDetails.title} requires editing`;
-    case 'exec':
+    case "exec":
       return `Tool ${confirmationDetails.title} requires execution`;
-    case 'mcp':
+    case "mcp":
       return `Tool ${confirmationDetails.title} requires MCP`;
-    case 'info':
+    case "info":
       return `Tool ${confirmationDetails.title} requires information`;
     default:
       return `Tool requires confirmation`;
@@ -135,7 +125,7 @@ export async function fireToolNotificationHook(
     await messageBus.request<HookExecutionRequest, HookExecutionResponse>(
       {
         type: MessageBusType.HOOK_EXECUTION_REQUEST,
-        eventName: 'Notification',
+        eventName: "Notification",
         input: {
           notification_type: NotificationType.ToolPermission,
           message,
@@ -145,10 +135,7 @@ export async function fireToolNotificationHook(
       MessageBusType.HOOK_EXECUTION_RESPONSE,
     );
   } catch (error) {
-    debugLogger.warn(
-      `Notification hook failed for ${confirmationDetails.title}:`,
-      error,
-    );
+    debugLogger.warn(`Notification hook failed for ${confirmationDetails.title}:`, error);
   }
 }
 
@@ -166,13 +153,10 @@ export async function fireBeforeToolHook(
   toolInput: Record<string, unknown>,
 ): Promise<DefaultHookOutput | undefined> {
   try {
-    const response = await messageBus.request<
-      HookExecutionRequest,
-      HookExecutionResponse
-    >(
+    const response = await messageBus.request<HookExecutionRequest, HookExecutionResponse>(
       {
         type: MessageBusType.HOOK_EXECUTION_REQUEST,
-        eventName: 'BeforeTool',
+        eventName: "BeforeTool",
         input: {
           tool_name: toolName,
           tool_input: toolInput,
@@ -181,9 +165,7 @@ export async function fireBeforeToolHook(
       MessageBusType.HOOK_EXECUTION_RESPONSE,
     );
 
-    return response.output
-      ? createHookOutput('BeforeTool', response.output)
-      : undefined;
+    return response.output ? createHookOutput("BeforeTool", response.output) : undefined;
   } catch (error) {
     debugLogger.warn(`BeforeTool hook failed for ${toolName}:`, error);
     return undefined;
@@ -204,19 +186,16 @@ export async function fireAfterToolHook(
   toolName: string,
   toolInput: Record<string, unknown>,
   toolResponse: {
-    llmContent: ToolResult['llmContent'];
-    returnDisplay: ToolResult['returnDisplay'];
-    error: ToolResult['error'];
+    llmContent: ToolResult["llmContent"];
+    returnDisplay: ToolResult["returnDisplay"];
+    error: ToolResult["error"];
   },
 ): Promise<DefaultHookOutput | undefined> {
   try {
-    const response = await messageBus.request<
-      HookExecutionRequest,
-      HookExecutionResponse
-    >(
+    const response = await messageBus.request<HookExecutionRequest, HookExecutionResponse>(
       {
         type: MessageBusType.HOOK_EXECUTION_REQUEST,
-        eventName: 'AfterTool',
+        eventName: "AfterTool",
         input: {
           tool_name: toolName,
           tool_input: toolInput,
@@ -226,9 +205,7 @@ export async function fireAfterToolHook(
       MessageBusType.HOOK_EXECUTION_RESPONSE,
     );
 
-    return response.output
-      ? createHookOutput('AfterTool', response.output)
-      : undefined;
+    return response.output ? createHookOutput("AfterTool", response.output) : undefined;
   } catch (error) {
     debugLogger.warn(`AfterTool hook failed for ${toolName}:`, error);
     return undefined;
@@ -262,11 +239,7 @@ export async function executeToolWithHooks(
 
   // Fire BeforeTool hook through MessageBus (only if hooks are enabled)
   if (hooksEnabled && messageBus) {
-    const beforeOutput = await fireBeforeToolHook(
-      messageBus,
-      toolName,
-      toolInput,
-    );
+    const beforeOutput = await fireBeforeToolHook(messageBus, toolName, toolInput);
 
     // Check if hook blocked the tool execution
     const blockingError = beforeOutput?.getBlockingError();
@@ -305,25 +278,16 @@ export async function executeToolWithHooks(
       setPidCallback,
     );
   } else {
-    toolResult = await invocation.execute(
-      signal,
-      liveOutputCallback,
-      shellExecutionConfig,
-    );
+    toolResult = await invocation.execute(signal, liveOutputCallback, shellExecutionConfig);
   }
 
   // Fire AfterTool hook through MessageBus (only if hooks are enabled)
   if (hooksEnabled && messageBus) {
-    const afterOutput = await fireAfterToolHook(
-      messageBus,
-      toolName,
-      toolInput,
-      {
-        llmContent: toolResult.llmContent,
-        returnDisplay: toolResult.returnDisplay,
-        error: toolResult.error,
-      },
-    );
+    const afterOutput = await fireAfterToolHook(messageBus, toolName, toolInput, {
+      llmContent: toolResult.llmContent,
+      returnDisplay: toolResult.returnDisplay,
+      error: toolResult.error,
+    });
 
     // Check if hook requested to stop entire agent execution
     if (afterOutput?.shouldStopExecution()) {
@@ -341,16 +305,13 @@ export async function executeToolWithHooks(
     // Add additional context from hooks to the tool result
     const additionalContext = afterOutput?.getAdditionalContext();
     if (additionalContext) {
-      if (typeof toolResult.llmContent === 'string') {
-        toolResult.llmContent += '\n\n' + additionalContext;
+      if (typeof toolResult.llmContent === "string") {
+        toolResult.llmContent += "\n\n" + additionalContext;
       } else if (Array.isArray(toolResult.llmContent)) {
-        toolResult.llmContent.push({ text: '\n\n' + additionalContext });
+        toolResult.llmContent.push({ text: "\n\n" + additionalContext });
       } else if (toolResult.llmContent) {
         // Handle single Part case by converting to an array
-        toolResult.llmContent = [
-          toolResult.llmContent,
-          { text: '\n\n' + additionalContext },
-        ];
+        toolResult.llmContent = [toolResult.llmContent, { text: "\n\n" + additionalContext }];
       } else {
         toolResult.llmContent = additionalContext;
       }

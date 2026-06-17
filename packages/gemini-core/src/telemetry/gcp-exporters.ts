@@ -4,17 +4,13 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { TraceExporter } from '@google-cloud/opentelemetry-cloud-trace-exporter';
-import { MetricExporter } from '@google-cloud/opentelemetry-cloud-monitoring-exporter';
-import { Logging } from '@google-cloud/logging';
-import type { Log } from '@google-cloud/logging';
-import { hrTimeToMilliseconds } from '@opentelemetry/core';
-import type { ExportResult } from '@opentelemetry/core';
-import { ExportResultCode } from '@opentelemetry/core';
-import type {
-  ReadableLogRecord,
-  LogRecordExporter,
-} from '@opentelemetry/sdk-logs';
+import type { Log } from "@google-cloud/logging";
+import { Logging } from "@google-cloud/logging";
+import { MetricExporter } from "@google-cloud/opentelemetry-cloud-monitoring-exporter";
+import { TraceExporter } from "@google-cloud/opentelemetry-cloud-trace-exporter";
+import type { ExportResult } from "@opentelemetry/core";
+import { ExportResultCode, hrTimeToMilliseconds } from "@opentelemetry/core";
+import type { LogRecordExporter, ReadableLogRecord } from "@opentelemetry/sdk-logs";
 
 /**
  * Google Cloud Trace exporter that extends the official trace exporter
@@ -35,7 +31,7 @@ export class GcpMetricExporter extends MetricExporter {
   constructor(projectId?: string) {
     super({
       projectId,
-      prefix: 'custom.googleapis.com/gemini_cli',
+      prefix: "custom.googleapis.com/gemini_cli",
     });
   }
 }
@@ -50,13 +46,10 @@ export class GcpLogExporter implements LogRecordExporter {
 
   constructor(projectId?: string) {
     this.logging = new Logging({ projectId });
-    this.log = this.logging.log('gemini_cli');
+    this.log = this.logging.log("gemini_cli");
   }
 
-  export(
-    logs: ReadableLogRecord[],
-    resultCallback: (result: ExportResult) => void,
-  ): void {
+  export(logs: ReadableLogRecord[], resultCallback: (result: ExportResult) => void): void {
     try {
       const entries = logs.map((log) => {
         const entry = this.log.entry(
@@ -64,7 +57,7 @@ export class GcpLogExporter implements LogRecordExporter {
             severity: this.mapSeverityToCloudLogging(log.severityNumber),
             timestamp: new Date(hrTimeToMilliseconds(log.hrTime)),
             resource: {
-              type: 'global',
+              type: "global",
               labels: {
                 project_id: this.logging.projectId,
               },
@@ -117,15 +110,15 @@ export class GcpLogExporter implements LogRecordExporter {
   }
 
   private mapSeverityToCloudLogging(severityNumber?: number): string {
-    if (!severityNumber) return 'DEFAULT';
+    if (!severityNumber) return "DEFAULT";
 
     // Map OpenTelemetry severity numbers to Cloud Logging severity levels
     // https://opentelemetry.io/docs/specs/otel/logs/data-model/#field-severitynumber
-    if (severityNumber >= 21) return 'CRITICAL';
-    if (severityNumber >= 17) return 'ERROR';
-    if (severityNumber >= 13) return 'WARNING';
-    if (severityNumber >= 9) return 'INFO';
-    if (severityNumber >= 5) return 'DEBUG';
-    return 'DEFAULT';
+    if (severityNumber >= 21) return "CRITICAL";
+    if (severityNumber >= 17) return "ERROR";
+    if (severityNumber >= 13) return "WARNING";
+    if (severityNumber >= 9) return "INFO";
+    if (severityNumber >= 5) return "DEBUG";
+    return "DEFAULT";
   }
 }

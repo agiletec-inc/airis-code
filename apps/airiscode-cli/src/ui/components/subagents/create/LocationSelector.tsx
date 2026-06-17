@@ -4,28 +4,28 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { Box } from 'ink';
-import { RadioButtonSelect } from '../../shared/RadioButtonSelect.js';
-import type { WizardStepProps } from '../types.js';
-import { t } from '../../../../i18n/index.js';
+import { Box } from "ink";
+import { t } from "../../../../i18n/index.js";
+import { RadioButtonSelect } from "../../shared/RadioButtonSelect.js";
+import type { WizardStepProps } from "../types.js";
 
 interface LocationOption {
   label: string;
-  value: 'project' | 'user';
+  value: "project" | "user";
 }
 
 const locationOptions: LocationOption[] = [
   {
     get label() {
-      return t('Project Level (.airiscode/agents/)');
+      return t("Project Level (.airiscode/agents/)");
     },
-    value: 'project',
+    value: "project",
   },
   {
     get label() {
-      return t('User Level (~/.airiscode/agents/)');
+      return t("User Level (~/.airiscode/agents/)");
     },
-    value: 'user',
+    value: "user",
   },
 ];
 
@@ -34,8 +34,8 @@ const locationOptions: LocationOption[] = [
  */
 export function LocationSelector({ state, dispatch, onNext }: WizardStepProps) {
   const handleSelect = (selectedValue: string) => {
-    const location = selectedValue as 'project' | 'user';
-    dispatch({ type: 'SET_LOCATION', location });
+    const location = selectedValue as "project" | "user";
+    dispatch({ type: "SET_LOCATION", location });
     onNext();
   };
 
@@ -47,9 +47,7 @@ export function LocationSelector({ state, dispatch, onNext }: WizardStepProps) {
           label: option.label,
           value: option.value,
         }))}
-        initialIndex={locationOptions.findIndex(
-          (opt) => opt.value === state.location,
-        )}
+        initialIndex={locationOptions.findIndex((opt) => opt.value === state.location)}
         onSelect={handleSelect}
         isFocused={true}
       />

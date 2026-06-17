@@ -4,15 +4,15 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { useEffect, useState } from 'react';
-import { AppEvent, appEvents } from './../../utils/events.js';
-import { Box, Text } from 'ink';
-import { type McpClient, MCPServerStatus } from '@airiscode/gemini-cli-core';
-import { GeminiSpinner } from './GeminiRespondingSpinner.js';
-import { theme } from '../semantic-colors.js';
+import { MCPServerStatus, type McpClient } from "@airiscode/gemini-cli-core";
+import { Box, Text } from "ink";
+import { useEffect, useState } from "react";
+import { AppEvent, appEvents } from "./../../utils/events.js";
+import { theme } from "../semantic-colors.js";
+import { GeminiSpinner } from "./GeminiRespondingSpinner.js";
 
 export const ConfigInitDisplay = () => {
-  const [message, setMessage] = useState('Initializing...');
+  const [message, setMessage] = useState("Initializing...");
 
   useEffect(() => {
     const onChange = (clients?: Map<string, McpClient>) => {
@@ -32,16 +32,14 @@ export const ConfigInitDisplay = () => {
 
       if (connecting.length > 0) {
         const maxDisplay = 3;
-        const displayedServers = connecting.slice(0, maxDisplay).join(', ');
+        const displayedServers = connecting.slice(0, maxDisplay).join(", ");
         const remaining = connecting.length - maxDisplay;
-        const suffix = remaining > 0 ? `, +${remaining} more` : '';
+        const suffix = remaining > 0 ? `, +${remaining} more` : "";
         setMessage(
           `Connecting to MCP servers... (${connected}/${clients.size}) - Waiting for: ${displayedServers}${suffix}`,
         );
       } else {
-        setMessage(
-          `Connecting to MCP servers... (${connected}/${clients.size})`,
-        );
+        setMessage(`Connecting to MCP servers... (${connected}/${clients.size})`);
       }
     };
 

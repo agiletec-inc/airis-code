@@ -8,17 +8,17 @@ import type {
   ModelAvailabilityService,
   ModelHealthStatus,
   ModelId,
-} from './modelAvailabilityService.js';
+} from "./modelAvailabilityService.js";
 
 /**
  * Whether to prompt the user or fallback silently on a model API failure.
  */
-export type FallbackAction = 'silent' | 'prompt';
+export type FallbackAction = "silent" | "prompt";
 
 /**
  * Type of possible errors from model API failures.
  */
-export type FailureKind = 'terminal' | 'transient' | 'not_found' | 'unknown';
+export type FailureKind = "terminal" | "transient" | "not_found" | "unknown";
 
 /**
  * Map from model API failure reason to user interaction.
@@ -28,9 +28,7 @@ export type ModelPolicyActionMap = Partial<Record<FailureKind, FallbackAction>>;
 /**
  * What state (e.g. Terminal, Sticky Retry) to set a model after failed API call.
  */
-export type ModelPolicyStateMap = Partial<
-  Record<FailureKind, ModelHealthStatus>
->;
+export type ModelPolicyStateMap = Partial<Record<FailureKind, ModelHealthStatus>>;
 
 /**
  * Defines the policy for a single model in the availability chain.

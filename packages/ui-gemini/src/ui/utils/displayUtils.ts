@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { theme } from '../semantic-colors.js';
+import { theme } from "../semantic-colors.js";
 
 // --- Thresholds ---
 export const TOOL_SUCCESS_RATE_HIGH = 95;

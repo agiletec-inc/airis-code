@@ -4,16 +4,16 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+import type { HookExecutionResult, HookOutput } from "./types.js";
 import {
-  HookEventName,
   DefaultHookOutput,
-  PreToolUseHookOutput,
-  PostToolUseHookOutput,
-  PostToolUseFailureHookOutput,
-  StopHookOutput,
+  HookEventName,
   PermissionRequestHookOutput,
-} from './types.js';
-import type { HookOutput, HookExecutionResult } from './types.js';
+  PostToolUseFailureHookOutput,
+  PostToolUseHookOutput,
+  PreToolUseHookOutput,
+  StopHookOutput,
+} from "./types.js";
 
 /**
  * Aggregated result from multiple hook executions
@@ -36,10 +36,7 @@ export class HookAggregator {
   /**
    * Aggregate results from multiple hook executions
    */
-  aggregateResults(
-    results: HookExecutionResult[],
-    eventName: HookEventName,
-  ): AggregatedHookResult {
+  aggregateResults(results: HookExecutionResult[], eventName: HookEventName): AggregatedHookResult {
     const allOutputs: HookOutput[] = [];
     const errors: Error[] = [];
     let totalDuration = 0;
@@ -71,10 +68,7 @@ export class HookAggregator {
   /**
    * Merge multiple hook outputs based on event type
    */
-  private mergeOutputs(
-    outputs: HookOutput[],
-    eventName: HookEventName,
-  ): HookOutput | undefined {
+  private mergeOutputs(outputs: HookOutput[], eventName: HookEventName): HookOutput | undefined {
     if (outputs.length === 0) {
       return undefined;
     }
@@ -114,10 +108,7 @@ export class HookAggregator {
    * - Additional context is concatenated
    * - For PostToolUse, decision and reason are required fields
    */
-  private mergeWithOrLogic(
-    outputs: HookOutput[],
-    _eventName?: HookEventName,
-  ): HookOutput {
+  private mergeWithOrLogic(outputs: HookOutput[], _eventName?: HookEventName): HookOutput {
     const merged: HookOutput = {};
     const reasons: string[] = [];
     const additionalContexts: string[] = [];
@@ -128,7 +119,7 @@ export class HookAggregator {
 
     for (const output of outputs) {
       // Check for blocking decisions
-      if (output.decision === 'block' || output.decision === 'deny') {
+      if (output.decision === "block" || output.decision === "deny") {
         hasBlock = true;
       }
 
@@ -151,7 +142,7 @@ export class HookAggregator {
       // Collect other hookSpecificOutput fields (later values win)
       if (output.hookSpecificOutput) {
         for (const [key, value] of Object.entries(output.hookSpecificOutput)) {
-          if (key !== 'additionalContext') {
+          if (key !== "additionalContext") {
             otherHookSpecificFields[key] = value;
           }
         }
@@ -168,14 +159,14 @@ export class HookAggregator {
 
     // Set merged decision
     if (hasBlock) {
-      merged.decision = 'block';
-    } else if (outputs.some((o) => o.decision === 'allow')) {
-      merged.decision = 'allow';
+      merged.decision = "block";
+    } else if (outputs.some((o) => o.decision === "allow")) {
+      merged.decision = "allow";
     }
 
     // Set merged reason
     if (reasons.length > 0) {
-      merged.reason = reasons.join('\n');
+      merged.reason = reasons.join("\n");
     }
 
     // Set continue flag
@@ -191,7 +182,7 @@ export class HookAggregator {
       ...otherHookSpecificFields,
     };
     if (additionalContexts.length > 0) {
-      hookSpecificOutput['additionalContext'] = additionalContexts.join('\n');
+      hookSpecificOutput["additionalContext"] = additionalContexts.join("\n");
     }
 
     if (Object.keys(hookSpecificOutput).length > 0) {
@@ -224,7 +215,7 @@ export class HookAggregator {
       const specific = output.hookSpecificOutput;
       if (!specific) continue;
 
-      const decision = specific['decision'] as
+      const decision = specific["decision"] as
         | {
             behavior?: string;
             message?: string;
@@ -237,31 +228,31 @@ export class HookAggregator {
       if (!decision) continue;
 
       // Check behavior
-      if (decision['behavior'] === 'deny') {
+      if (decision["behavior"] === "deny") {
         hasDeny = true;
-      } else if (decision['behavior'] === 'allow') {
+      } else if (decision["behavior"] === "allow") {
         hasAllow = true;
       }
 
       // Collect message
-      if (decision['message']) {
-        messages.push(decision['message'] as string);
+      if (decision["message"]) {
+        messages.push(decision["message"] as string);
       }
 
       // Check interrupt - true wins
-      if (decision['interrupt'] === true) {
+      if (decision["interrupt"] === true) {
         interrupt = true;
       }
 
       // Collect updatedInput - use last non-empty
-      if (decision['updatedInput']) {
-        updatedInput = decision['updatedInput'] as Record<string, unknown>;
+      if (decision["updatedInput"]) {
+        updatedInput = decision["updatedInput"] as Record<string, unknown>;
       }
 
       // Collect updatedPermissions
-      if (decision['updatedPermissions']) {
+      if (decision["updatedPermissions"]) {
         allUpdatedPermissions.push(
-          ...(decision['updatedPermissions'] as Array<{
+          ...(decision["updatedPermissions"] as Array<{
             type: string;
             tool?: string;
           }>),
@@ -281,25 +272,25 @@ export class HookAggregator {
     const mergedDecision: Record<string, unknown> = {};
 
     if (hasDeny) {
-      mergedDecision['behavior'] = 'deny';
+      mergedDecision["behavior"] = "deny";
     } else if (hasAllow) {
-      mergedDecision['behavior'] = 'allow';
+      mergedDecision["behavior"] = "allow";
     }
 
     if (messages.length > 0) {
-      mergedDecision['message'] = messages.join('\n');
+      mergedDecision["message"] = messages.join("\n");
     }
 
     if (interrupt) {
-      mergedDecision['interrupt'] = true;
+      mergedDecision["interrupt"] = true;
     }
 
     if (updatedInput) {
-      mergedDecision['updatedInput'] = updatedInput;
+      mergedDecision["updatedInput"] = updatedInput;
     }
 
     if (allUpdatedPermissions.length > 0) {
-      mergedDecision['updatedPermissions'] = allUpdatedPermissions;
+      mergedDecision["updatedPermissions"] = allUpdatedPermissions;
     }
 
     merged.hookSpecificOutput = {
@@ -327,7 +318,7 @@ export class HookAggregator {
     if (additionalContexts.length > 0) {
       merged.hookSpecificOutput = {
         ...merged.hookSpecificOutput,
-        additionalContext: additionalContexts.join('\n'),
+        additionalContext: additionalContexts.join("\n"),
       };
     }
 
@@ -361,21 +352,15 @@ export class HookAggregator {
   /**
    * Extract additional context from hook-specific outputs
    */
-  private extractAdditionalContext(
-    output: HookOutput,
-    contexts: string[],
-  ): void {
+  private extractAdditionalContext(output: HookOutput, contexts: string[]): void {
     const specific = output.hookSpecificOutput;
     if (!specific) {
       return;
     }
 
     // Extract additionalContext from various hook types
-    if (
-      'additionalContext' in specific &&
-      typeof specific['additionalContext'] === 'string'
-    ) {
-      contexts.push(specific['additionalContext']);
+    if ("additionalContext" in specific && typeof specific["additionalContext"] === "string") {
+      contexts.push(specific["additionalContext"]);
     }
   }
 }

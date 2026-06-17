@@ -4,81 +4,74 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import type { LogRecord } from '@opentelemetry/api-logs';
-import { logs } from '@opentelemetry/api-logs';
-import type { Config } from '../config/config.js';
-import { SERVICE_NAME } from './constants.js';
+import type { LogRecord } from "@opentelemetry/api-logs";
+import { logs } from "@opentelemetry/api-logs";
+import type { Config } from "../config/config.js";
+import { ClearcutLogger } from "./clearcut-logger/clearcut-logger.js";
+import { SERVICE_NAME } from "./constants.js";
 import {
-  EVENT_API_ERROR,
-  EVENT_API_RESPONSE,
-  EVENT_TOOL_CALL,
-} from './types.js';
+  getConventionAttributes,
+  recordAgentRunMetrics,
+  recordApiErrorMetrics,
+  recordApiResponseMetrics,
+  recordChatCompressionMetrics,
+  recordContentRetry,
+  recordContentRetryFailure,
+  recordFileOperationMetric,
+  recordHookCallMetrics,
+  recordInvalidChunk,
+  recordLinesChanged,
+  recordModelRoutingMetrics,
+  recordModelSlashCommand,
+  recordRecoveryAttemptMetrics,
+  recordTokenUsageMetrics,
+  recordToolCallMetrics,
+} from "./metrics.js";
+import { bufferTelemetryEvent } from "./sdk.js";
 import type {
+  AgentFinishEvent,
+  AgentStartEvent,
   ApiErrorEvent,
   ApiRequestEvent,
   ApiResponseEvent,
-  FileOperationEvent,
-  IdeConnectionEvent,
-  StartSessionEvent,
-  ToolCallEvent,
-  UserPromptEvent,
-  FlashFallbackEvent,
-  NextSpeakerCheckEvent,
-  LoopDetectedEvent,
-  LoopDetectionDisabledEvent,
-  SlashCommandEvent,
-  ConversationFinishedEvent,
   ChatCompressionEvent,
-  MalformedJsonResponseEvent,
-  InvalidChunkEvent,
   ContentRetryEvent,
   ContentRetryFailureEvent,
-  RipgrepFallbackEvent,
-  ToolOutputTruncatedEvent,
-  ModelRoutingEvent,
+  ConversationFinishedEvent,
   ExtensionDisableEvent,
   ExtensionEnableEvent,
-  ExtensionUninstallEvent,
   ExtensionInstallEvent,
-  ModelSlashCommandEvent,
-  SmartEditStrategyEvent,
-  SmartEditCorrectionEvent,
-  AgentStartEvent,
-  AgentFinishEvent,
-  RecoveryAttemptEvent,
-  WebFetchFallbackAttemptEvent,
+  ExtensionUninstallEvent,
   ExtensionUpdateEvent,
-  LlmLoopCheckEvent,
+  FileOperationEvent,
+  FlashFallbackEvent,
   HookCallEvent,
+  IdeConnectionEvent,
+  InvalidChunkEvent,
+  LlmLoopCheckEvent,
+  LoopDetectedEvent,
+  LoopDetectionDisabledEvent,
+  MalformedJsonResponseEvent,
+  ModelRoutingEvent,
+  ModelSlashCommandEvent,
+  NextSpeakerCheckEvent,
+  RecoveryAttemptEvent,
+  RipgrepFallbackEvent,
+  SlashCommandEvent,
+  SmartEditCorrectionEvent,
+  SmartEditStrategyEvent,
+  StartSessionEvent,
   StartupStatsEvent,
-} from './types.js';
-import {
-  recordApiErrorMetrics,
-  recordToolCallMetrics,
-  recordChatCompressionMetrics,
-  recordFileOperationMetric,
-  recordInvalidChunk,
-  recordContentRetry,
-  recordContentRetryFailure,
-  recordModelRoutingMetrics,
-  recordModelSlashCommand,
-  getConventionAttributes,
-  recordTokenUsageMetrics,
-  recordApiResponseMetrics,
-  recordAgentRunMetrics,
-  recordRecoveryAttemptMetrics,
-  recordLinesChanged,
-  recordHookCallMetrics,
-} from './metrics.js';
-import { bufferTelemetryEvent } from './sdk.js';
-import type { UiEvent } from './uiTelemetry.js';
-import { uiTelemetryService } from './uiTelemetry.js';
-import { ClearcutLogger } from './clearcut-logger/clearcut-logger.js';
+  ToolCallEvent,
+  ToolOutputTruncatedEvent,
+  UserPromptEvent,
+  WebFetchFallbackAttemptEvent,
+} from "./types.js";
+import { EVENT_API_ERROR, EVENT_API_RESPONSE, EVENT_TOOL_CALL } from "./types.js";
+import type { UiEvent } from "./uiTelemetry.js";
+import { uiTelemetryService } from "./uiTelemetry.js";
 
-export function logCliConfiguration(
-  config: Config,
-  event: StartSessionEvent,
-): void {
+export function logCliConfiguration(config: Config, event: StartSessionEvent): void {
   ClearcutLogger.getInstance(config)?.logStartSessionEvent(event);
   bufferTelemetryEvent(() => {
     const logger = logs.getLogger(SERVICE_NAME);
@@ -106,8 +99,8 @@ export function logUserPrompt(config: Config, event: UserPromptEvent): void {
 export function logToolCall(config: Config, event: ToolCallEvent): void {
   const uiEvent = {
     ...event,
-    'event.name': EVENT_TOOL_CALL,
-    'event.timestamp': new Date().toISOString(),
+    "event.name": EVENT_TOOL_CALL,
+    "event.timestamp": new Date().toISOString(),
   } as UiEvent;
   uiTelemetryService.addEvent(uiEvent);
   ClearcutLogger.getInstance(config)?.logToolCallEvent(event);
@@ -126,15 +119,15 @@ export function logToolCall(config: Config, event: ToolCallEvent): void {
     });
 
     if (event.metadata) {
-      const added = event.metadata['model_added_lines'];
-      if (typeof added === 'number' && added > 0) {
-        recordLinesChanged(config, added, 'added', {
+      const added = event.metadata["model_added_lines"];
+      if (typeof added === "number" && added > 0) {
+        recordLinesChanged(config, added, "added", {
           function_name: event.function_name,
         });
       }
-      const removed = event.metadata['model_removed_lines'];
-      if (typeof removed === 'number' && removed > 0) {
-        recordLinesChanged(config, removed, 'removed', {
+      const removed = event.metadata["model_removed_lines"];
+      if (typeof removed === "number" && removed > 0) {
+        recordLinesChanged(config, removed, "removed", {
           function_name: event.function_name,
         });
       }
@@ -142,10 +135,7 @@ export function logToolCall(config: Config, event: ToolCallEvent): void {
   });
 }
 
-export function logToolOutputTruncated(
-  config: Config,
-  event: ToolOutputTruncatedEvent,
-): void {
+export function logToolOutputTruncated(config: Config, event: ToolOutputTruncatedEvent): void {
   ClearcutLogger.getInstance(config)?.logToolOutputTruncatedEvent(event);
   bufferTelemetryEvent(() => {
     const logger = logs.getLogger(SERVICE_NAME);
@@ -157,10 +147,7 @@ export function logToolOutputTruncated(
   });
 }
 
-export function logFileOperation(
-  config: Config,
-  event: FileOperationEvent,
-): void {
+export function logFileOperation(config: Config, event: FileOperationEvent): void {
   ClearcutLogger.getInstance(config)?.logFileOperationEvent(event);
   bufferTelemetryEvent(() => {
     const logger = logs.getLogger(SERVICE_NAME);
@@ -189,10 +176,7 @@ export function logApiRequest(config: Config, event: ApiRequestEvent): void {
   });
 }
 
-export function logFlashFallback(
-  config: Config,
-  event: FlashFallbackEvent,
-): void {
+export function logFlashFallback(config: Config, event: FlashFallbackEvent): void {
   ClearcutLogger.getInstance(config)?.logFlashFallbackEvent();
   bufferTelemetryEvent(() => {
     const logger = logs.getLogger(SERVICE_NAME);
@@ -204,10 +188,7 @@ export function logFlashFallback(
   });
 }
 
-export function logRipgrepFallback(
-  config: Config,
-  event: RipgrepFallbackEvent,
-): void {
+export function logRipgrepFallback(config: Config, event: RipgrepFallbackEvent): void {
   ClearcutLogger.getInstance(config)?.logRipgrepFallbackEvent();
   bufferTelemetryEvent(() => {
     const logger = logs.getLogger(SERVICE_NAME);
@@ -222,8 +203,8 @@ export function logRipgrepFallback(
 export function logApiError(config: Config, event: ApiErrorEvent): void {
   const uiEvent = {
     ...event,
-    'event.name': EVENT_API_ERROR,
-    'event.timestamp': new Date().toISOString(),
+    "event.name": EVENT_API_ERROR,
+    "event.timestamp": new Date().toISOString(),
   } as UiEvent;
   uiTelemetryService.addEvent(uiEvent);
   ClearcutLogger.getInstance(config)?.logApiErrorEvent(event);
@@ -244,7 +225,7 @@ export function logApiError(config: Config, event: ApiErrorEvent): void {
       status_code: event.status_code,
       genAiAttributes: {
         ...getConventionAttributes(event),
-        'error.type': event.error_type || 'unknown',
+        "error.type": event.error_type || "unknown",
       },
     });
   });
@@ -253,8 +234,8 @@ export function logApiError(config: Config, event: ApiErrorEvent): void {
 export function logApiResponse(config: Config, event: ApiResponseEvent): void {
   const uiEvent = {
     ...event,
-    'event.name': EVENT_API_RESPONSE,
-    'event.timestamp': new Date().toISOString(),
+    "event.name": EVENT_API_RESPONSE,
+    "event.timestamp": new Date().toISOString(),
   } as UiEvent;
   uiTelemetryService.addEvent(uiEvent);
   ClearcutLogger.getInstance(config)?.logApiResponseEvent(event);
@@ -272,11 +253,11 @@ export function logApiResponse(config: Config, event: ApiResponseEvent): void {
     });
 
     const tokenUsageData = [
-      { count: event.usage.input_token_count, type: 'input' as const },
-      { count: event.usage.output_token_count, type: 'output' as const },
-      { count: event.usage.cached_content_token_count, type: 'cache' as const },
-      { count: event.usage.thoughts_token_count, type: 'thought' as const },
-      { count: event.usage.tool_token_count, type: 'tool' as const },
+      { count: event.usage.input_token_count, type: "input" as const },
+      { count: event.usage.output_token_count, type: "output" as const },
+      { count: event.usage.cached_content_token_count, type: "cache" as const },
+      { count: event.usage.thoughts_token_count, type: "thought" as const },
+      { count: event.usage.tool_token_count, type: "tool" as const },
     ];
 
     for (const { count, type } of tokenUsageData) {
@@ -289,10 +270,7 @@ export function logApiResponse(config: Config, event: ApiResponseEvent): void {
   });
 }
 
-export function logLoopDetected(
-  config: Config,
-  event: LoopDetectedEvent,
-): void {
+export function logLoopDetected(config: Config, event: LoopDetectedEvent): void {
   ClearcutLogger.getInstance(config)?.logLoopDetectedEvent(event);
   bufferTelemetryEvent(() => {
     const logger = logs.getLogger(SERVICE_NAME);
@@ -304,10 +282,7 @@ export function logLoopDetected(
   });
 }
 
-export function logLoopDetectionDisabled(
-  config: Config,
-  event: LoopDetectionDisabledEvent,
-): void {
+export function logLoopDetectionDisabled(config: Config, event: LoopDetectionDisabledEvent): void {
   ClearcutLogger.getInstance(config)?.logLoopDetectionDisabledEvent();
   bufferTelemetryEvent(() => {
     const logger = logs.getLogger(SERVICE_NAME);
@@ -319,10 +294,7 @@ export function logLoopDetectionDisabled(
   });
 }
 
-export function logNextSpeakerCheck(
-  config: Config,
-  event: NextSpeakerCheckEvent,
-): void {
+export function logNextSpeakerCheck(config: Config, event: NextSpeakerCheckEvent): void {
   ClearcutLogger.getInstance(config)?.logNextSpeakerCheck(event);
   bufferTelemetryEvent(() => {
     const logger = logs.getLogger(SERVICE_NAME);
@@ -334,10 +306,7 @@ export function logNextSpeakerCheck(
   });
 }
 
-export function logSlashCommand(
-  config: Config,
-  event: SlashCommandEvent,
-): void {
+export function logSlashCommand(config: Config, event: SlashCommandEvent): void {
   ClearcutLogger.getInstance(config)?.logSlashCommandEvent(event);
   bufferTelemetryEvent(() => {
     const logger = logs.getLogger(SERVICE_NAME);
@@ -349,10 +318,7 @@ export function logSlashCommand(
   });
 }
 
-export function logIdeConnection(
-  config: Config,
-  event: IdeConnectionEvent,
-): void {
+export function logIdeConnection(config: Config, event: IdeConnectionEvent): void {
   ClearcutLogger.getInstance(config)?.logIdeConnectionEvent(event);
   bufferTelemetryEvent(() => {
     const logger = logs.getLogger(SERVICE_NAME);
@@ -379,10 +345,7 @@ export function logConversationFinishedEvent(
   });
 }
 
-export function logChatCompression(
-  config: Config,
-  event: ChatCompressionEvent,
-): void {
+export function logChatCompression(config: Config, event: ChatCompressionEvent): void {
   ClearcutLogger.getInstance(config)?.logChatCompressionEvent(event);
 
   const logger = logs.getLogger(SERVICE_NAME);
@@ -398,10 +361,7 @@ export function logChatCompression(
   });
 }
 
-export function logMalformedJsonResponse(
-  config: Config,
-  event: MalformedJsonResponseEvent,
-): void {
+export function logMalformedJsonResponse(config: Config, event: MalformedJsonResponseEvent): void {
   ClearcutLogger.getInstance(config)?.logMalformedJsonResponseEvent(event);
   bufferTelemetryEvent(() => {
     const logger = logs.getLogger(SERVICE_NAME);
@@ -413,10 +373,7 @@ export function logMalformedJsonResponse(
   });
 }
 
-export function logInvalidChunk(
-  config: Config,
-  event: InvalidChunkEvent,
-): void {
+export function logInvalidChunk(config: Config, event: InvalidChunkEvent): void {
   ClearcutLogger.getInstance(config)?.logInvalidChunkEvent(event);
   bufferTelemetryEvent(() => {
     const logger = logs.getLogger(SERVICE_NAME);
@@ -429,10 +386,7 @@ export function logInvalidChunk(
   });
 }
 
-export function logContentRetry(
-  config: Config,
-  event: ContentRetryEvent,
-): void {
+export function logContentRetry(config: Config, event: ContentRetryEvent): void {
   ClearcutLogger.getInstance(config)?.logContentRetryEvent(event);
   bufferTelemetryEvent(() => {
     const logger = logs.getLogger(SERVICE_NAME);
@@ -445,10 +399,7 @@ export function logContentRetry(
   });
 }
 
-export function logContentRetryFailure(
-  config: Config,
-  event: ContentRetryFailureEvent,
-): void {
+export function logContentRetryFailure(config: Config, event: ContentRetryFailureEvent): void {
   ClearcutLogger.getInstance(config)?.logContentRetryFailureEvent(event);
   bufferTelemetryEvent(() => {
     const logger = logs.getLogger(SERVICE_NAME);
@@ -461,10 +412,7 @@ export function logContentRetryFailure(
   });
 }
 
-export function logModelRouting(
-  config: Config,
-  event: ModelRoutingEvent,
-): void {
+export function logModelRouting(config: Config, event: ModelRoutingEvent): void {
   ClearcutLogger.getInstance(config)?.logModelRoutingEvent(event);
   bufferTelemetryEvent(() => {
     const logger = logs.getLogger(SERVICE_NAME);
@@ -477,10 +425,7 @@ export function logModelRouting(
   });
 }
 
-export function logModelSlashCommand(
-  config: Config,
-  event: ModelSlashCommandEvent,
-): void {
+export function logModelSlashCommand(config: Config, event: ModelSlashCommandEvent): void {
   ClearcutLogger.getInstance(config)?.logModelSlashCommandEvent(event);
   bufferTelemetryEvent(() => {
     const logger = logs.getLogger(SERVICE_NAME);
@@ -568,10 +513,7 @@ export async function logExtensionDisable(
   });
 }
 
-export function logSmartEditStrategy(
-  config: Config,
-  event: SmartEditStrategyEvent,
-): void {
+export function logSmartEditStrategy(config: Config, event: SmartEditStrategyEvent): void {
   ClearcutLogger.getInstance(config)?.logSmartEditStrategyEvent(event);
   bufferTelemetryEvent(() => {
     const logger = logs.getLogger(SERVICE_NAME);
@@ -583,10 +525,7 @@ export function logSmartEditStrategy(
   });
 }
 
-export function logSmartEditCorrectionEvent(
-  config: Config,
-  event: SmartEditCorrectionEvent,
-): void {
+export function logSmartEditCorrectionEvent(config: Config, event: SmartEditCorrectionEvent): void {
   ClearcutLogger.getInstance(config)?.logSmartEditCorrectionEvent(event);
   bufferTelemetryEvent(() => {
     const logger = logs.getLogger(SERVICE_NAME);
@@ -624,10 +563,7 @@ export function logAgentFinish(config: Config, event: AgentFinishEvent): void {
   });
 }
 
-export function logRecoveryAttempt(
-  config: Config,
-  event: RecoveryAttemptEvent,
-): void {
+export function logRecoveryAttempt(config: Config, event: RecoveryAttemptEvent): void {
   ClearcutLogger.getInstance(config)?.logRecoveryAttemptEvent(event);
   bufferTelemetryEvent(() => {
     const logger = logs.getLogger(SERVICE_NAME);
@@ -656,10 +592,7 @@ export function logWebFetchFallbackAttempt(
   });
 }
 
-export function logLlmLoopCheck(
-  config: Config,
-  event: LlmLoopCheckEvent,
-): void {
+export function logLlmLoopCheck(config: Config, event: LlmLoopCheckEvent): void {
   ClearcutLogger.getInstance(config)?.logLlmLoopCheckEvent(event);
   bufferTelemetryEvent(() => {
     const logger = logs.getLogger(SERVICE_NAME);
@@ -690,10 +623,7 @@ export function logHookCall(config: Config, event: HookCallEvent): void {
   });
 }
 
-export function logStartupStats(
-  config: Config,
-  event: StartupStatsEvent,
-): void {
+export function logStartupStats(config: Config, event: StartupStatsEvent): void {
   bufferTelemetryEvent(() => {
     const logger = logs.getLogger(SERVICE_NAME);
     const logRecord: LogRecord = {

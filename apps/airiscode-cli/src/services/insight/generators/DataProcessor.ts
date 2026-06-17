@@ -4,38 +4,36 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import fs from 'fs/promises';
-import path from 'path';
 import {
-  read as readJsonlFile,
+  type ChatRecord,
+  type Config,
   createDebugLogger,
-} from '@airiscode/core';
-import pLimit from 'p-limit';
+  getInsightPrompt,
+  read as readJsonlFile,
+} from "@airiscode/core";
+import fs from "fs/promises";
+import pLimit from "p-limit";
+import path from "path";
 import type {
-  InsightData,
-  HeatMapData,
-  StreakData,
-  SessionFacets,
-  InsightProgressCallback,
-} from '../types/StaticInsightTypes.js';
-import type {
-  QualitativeInsights,
-  InsightImpressiveWorkflows,
-  InsightProjectAreas,
-  InsightFutureOpportunities,
+  InsightAtAGlance,
   InsightFrictionPoints,
-  InsightMemorableMoment,
+  InsightFutureOpportunities,
+  InsightImpressiveWorkflows,
   InsightImprovements,
   InsightInteractionStyle,
-  InsightAtAGlance,
-} from '../types/QualitativeInsightTypes.js';
-import {
-  getInsightPrompt,
-  type Config,
-  type ChatRecord,
-} from '@airiscode/core';
+  InsightMemorableMoment,
+  InsightProjectAreas,
+  QualitativeInsights,
+} from "../types/QualitativeInsightTypes.js";
+import type {
+  HeatMapData,
+  InsightData,
+  InsightProgressCallback,
+  SessionFacets,
+  StreakData,
+} from "../types/StaticInsightTypes.js";
 
-const logger = createDebugLogger('DataProcessor');
+const logger = createDebugLogger("DataProcessor");
 
 const CONCURRENCY_LIMIT = 4;
 
@@ -44,32 +42,28 @@ export class DataProcessor {
 
   // Helper function to format date as YYYY-MM-DD
   private formatDate(date: Date): string {
-    return date.toISOString().split('T')[0];
+    return date.toISOString().split("T")[0];
   }
 
   // Format chat records for LLM analysis
   private formatRecordsForAnalysis(records: ChatRecord[]): string {
-    let output = '';
-    const sessionStart =
-      records.length > 0 ? new Date(records[0].timestamp) : new Date();
+    let output = "";
+    const sessionStart = records.length > 0 ? new Date(records[0].timestamp) : new Date();
 
-    output += `Session: ${records[0]?.sessionId || 'unknown'}\n`;
+    output += `Session: ${records[0]?.sessionId || "unknown"}\n`;
     output += `Date: ${sessionStart.toISOString()}\n`;
     output += `Duration: ${records.length} turns\n\n`;
 
     for (const record of records) {
-      if (record.type === 'user') {
-        const text =
-          record.message?.parts
-            ?.map((p) => ('text' in p ? p.text : ''))
-            .join('') || '';
+      if (record.type === "user") {
+        const text = record.message?.parts?.map((p) => ("text" in p ? p.text : "")).join("") || "";
         output += `[User]: ${text}\n`;
-      } else if (record.type === 'assistant') {
+      } else if (record.type === "assistant") {
         if (record.message?.parts) {
           for (const part of record.message.parts) {
-            if ('text' in part && part.text) {
+            if ("text" in part && part.text) {
               output += `[Assistant]: ${part.text}\n`;
-            } else if ('functionCall' in part) {
+            } else if ("functionCall" in part) {
               const call = part.functionCall;
               if (call) {
                 output += `[Tool: ${call.name}]\n`;
@@ -88,9 +82,9 @@ export class DataProcessor {
     let hasAssistant = false;
 
     for (const record of records) {
-      if (record.type === 'user') {
+      if (record.type === "user") {
         hasUser = true;
-      } else if (record.type === 'assistant') {
+      } else if (record.type === "assistant") {
         hasAssistant = true;
       }
 
@@ -103,103 +97,101 @@ export class DataProcessor {
   }
 
   // Analyze a single session using LLM
-  private async analyzeSession(
-    records: ChatRecord[],
-  ): Promise<SessionFacets | null> {
+  private async analyzeSession(records: ChatRecord[]): Promise<SessionFacets | null> {
     if (records.length === 0) return null;
 
     const INSIGHT_SCHEMA = {
-      type: 'object',
+      type: "object",
       properties: {
         underlying_goal: {
-          type: 'string',
-          description: 'What the user fundamentally wanted to achieve',
+          type: "string",
+          description: "What the user fundamentally wanted to achieve",
         },
         goal_categories: {
-          type: 'object',
-          additionalProperties: { type: 'number' },
+          type: "object",
+          additionalProperties: { type: "number" },
         },
         outcome: {
-          type: 'string',
+          type: "string",
           enum: [
-            'fully_achieved',
-            'mostly_achieved',
-            'partially_achieved',
-            'not_achieved',
-            'unclear_from_transcript',
+            "fully_achieved",
+            "mostly_achieved",
+            "partially_achieved",
+            "not_achieved",
+            "unclear_from_transcript",
           ],
         },
         user_satisfaction_counts: {
-          type: 'object',
-          additionalProperties: { type: 'number' },
+          type: "object",
+          additionalProperties: { type: "number" },
         },
         Qwen_helpfulness: {
-          type: 'string',
+          type: "string",
           enum: [
-            'unhelpful',
-            'slightly_helpful',
-            'moderately_helpful',
-            'very_helpful',
-            'essential',
+            "unhelpful",
+            "slightly_helpful",
+            "moderately_helpful",
+            "very_helpful",
+            "essential",
           ],
         },
         session_type: {
-          type: 'string',
+          type: "string",
           enum: [
-            'single_task',
-            'multi_task',
-            'iterative_refinement',
-            'exploration',
-            'quick_question',
+            "single_task",
+            "multi_task",
+            "iterative_refinement",
+            "exploration",
+            "quick_question",
           ],
         },
         friction_counts: {
-          type: 'object',
-          additionalProperties: { type: 'number' },
+          type: "object",
+          additionalProperties: { type: "number" },
         },
         friction_detail: {
-          type: 'string',
-          description: 'One sentence describing friction or empty',
+          type: "string",
+          description: "One sentence describing friction or empty",
         },
         primary_success: {
-          type: 'string',
+          type: "string",
           enum: [
-            'none',
-            'fast_accurate_search',
-            'correct_code_edits',
-            'good_explanations',
-            'proactive_help',
-            'multi_file_changes',
-            'good_debugging',
+            "none",
+            "fast_accurate_search",
+            "correct_code_edits",
+            "good_explanations",
+            "proactive_help",
+            "multi_file_changes",
+            "good_debugging",
           ],
         },
         brief_summary: {
-          type: 'string',
-          description: 'One sentence: what user wanted and whether they got it',
+          type: "string",
+          description: "One sentence: what user wanted and whether they got it",
         },
       },
       required: [
-        'underlying_goal',
-        'goal_categories',
-        'outcome',
-        'user_satisfaction_counts',
-        'Qwen_helpfulness',
-        'session_type',
-        'friction_counts',
-        'friction_detail',
-        'primary_success',
-        'brief_summary',
+        "underlying_goal",
+        "goal_categories",
+        "outcome",
+        "user_satisfaction_counts",
+        "Qwen_helpfulness",
+        "session_type",
+        "friction_counts",
+        "friction_detail",
+        "primary_success",
+        "brief_summary",
       ],
     };
 
     const sessionText = this.formatRecordsForAnalysis(records);
-    const prompt = `${getInsightPrompt('analysis')}\n\nSESSION:\n${sessionText}`;
+    const prompt = `${getInsightPrompt("analysis")}\n\nSESSION:\n${sessionText}`;
 
     try {
       const result = await this.config.getBaseLlmClient().generateJson({
         // Use the configured model
         model: this.config.getModel(),
-        contents: [{ role: 'user', parts: [{ text: prompt }] }],
+        contents: [{ role: "user", parts: [{ text: prompt }] }],
         schema: INSIGHT_SCHEMA,
         abortSignal: AbortSignal.timeout(600000), // 10 minute timeout per session
       });
@@ -213,10 +205,7 @@ export class DataProcessor {
         session_id: records[0].sessionId,
       };
     } catch (error) {
-      logger.error(
-        `Failed to analyze session ${records[0]?.sessionId}:`,
-        error,
-      );
+      logger.error(`Failed to analyze session ${records[0]?.sessionId}:`, error);
       return null;
     }
   }
@@ -284,32 +273,23 @@ export class DataProcessor {
     facetsOutputDir?: string,
     onProgress?: InsightProgressCallback,
   ): Promise<InsightData> {
-    if (onProgress) onProgress('Scanning chat history...', 0);
+    if (onProgress) onProgress("Scanning chat history...", 0);
     const allChatFiles = await this.scanChatFiles(baseDir);
 
-    if (onProgress) onProgress('Crunching the numbers', 10);
+    if (onProgress) onProgress("Crunching the numbers", 10);
     const metrics = await this.generateMetrics(allChatFiles, onProgress);
 
-    if (onProgress) onProgress('Preparing sessions...', 20);
-    const facets = await this.generateFacets(
-      allChatFiles,
-      facetsOutputDir,
-      onProgress,
-    );
+    if (onProgress) onProgress("Preparing sessions...", 20);
+    const facets = await this.generateFacets(allChatFiles, facetsOutputDir, onProgress);
 
-    if (onProgress) onProgress('Generating personalized insights...', 80);
+    if (onProgress) onProgress("Generating personalized insights...", 80);
     const qualitative = await this.generateQualitativeInsights(metrics, facets);
 
     // Aggregate satisfaction, friction, success and outcome data from facets
-    const {
-      satisfactionAgg,
-      frictionAgg,
-      primarySuccessAgg,
-      outcomesAgg,
-      goalsAgg,
-    } = this.aggregateFacetsData(facets);
+    const { satisfactionAgg, frictionAgg, primarySuccessAgg, outcomesAgg, goalsAgg } =
+      this.aggregateFacetsData(facets);
 
-    if (onProgress) onProgress('Assembling report...', 100);
+    if (onProgress) onProgress("Assembling report...", 100);
 
     return {
       ...metrics,
@@ -348,7 +328,7 @@ export class DataProcessor {
       });
 
       // Aggregate primary success
-      if (facet.primary_success && facet.primary_success !== 'none') {
+      if (facet.primary_success && facet.primary_success !== "none") {
         primarySuccessAgg[facet.primary_success] =
           (primarySuccessAgg[facet.primary_success] || 0) + 1;
       }
@@ -374,14 +354,14 @@ export class DataProcessor {
   }
 
   private async generateQualitativeInsights(
-    metrics: Omit<InsightData, 'facets' | 'qualitative'>,
+    metrics: Omit<InsightData, "facets" | "qualitative">,
     facets: SessionFacets[],
   ): Promise<QualitativeInsights | undefined> {
     if (facets.length === 0) {
       return undefined;
     }
 
-    logger.info('Generating qualitative insights...');
+    logger.info("Generating qualitative insights...");
 
     const commonData = this.prepareCommonPromptData(metrics, facets);
 
@@ -393,13 +373,13 @@ export class DataProcessor {
       try {
         const result = await this.config.getBaseLlmClient().generateJson({
           model: this.config.getModel(),
-          contents: [{ role: 'user', parts: [{ text: prompt }] }],
+          contents: [{ role: "user", parts: [{ text: prompt }] }],
           schema,
           abortSignal: AbortSignal.timeout(600000),
         });
         return result as T;
       } catch (error) {
-        logger.error('Failed to generate insight:', error);
+        logger.error("Failed to generate insight:", error);
         return undefined;
       }
     };
@@ -410,173 +390,163 @@ export class DataProcessor {
 
     // 1. Impressive Workflows
     const schemaImpressiveWorkflows = {
-      type: 'object',
+      type: "object",
       properties: {
-        intro: { type: 'string' },
+        intro: { type: "string" },
         impressive_workflows: {
-          type: 'array',
+          type: "array",
           items: {
-            type: 'object',
+            type: "object",
             properties: {
-              title: { type: 'string' },
-              description: { type: 'string' },
+              title: { type: "string" },
+              description: { type: "string" },
             },
-            required: ['title', 'description'],
+            required: ["title", "description"],
           },
         },
       },
-      required: ['intro', 'impressive_workflows'],
+      required: ["intro", "impressive_workflows"],
     };
 
     // 2. Project Areas
     const schemaProjectAreas = {
-      type: 'object',
+      type: "object",
       properties: {
         areas: {
-          type: 'array',
+          type: "array",
           items: {
-            type: 'object',
+            type: "object",
             properties: {
-              name: { type: 'string' },
-              session_count: { type: 'number' },
-              description: { type: 'string' },
+              name: { type: "string" },
+              session_count: { type: "number" },
+              description: { type: "string" },
             },
-            required: ['name', 'session_count', 'description'],
+            required: ["name", "session_count", "description"],
           },
         },
       },
-      required: ['areas'],
+      required: ["areas"],
     };
 
     // 3. Future Opportunities
     const schemaFutureOpportunities = {
-      type: 'object',
+      type: "object",
       properties: {
-        intro: { type: 'string' },
+        intro: { type: "string" },
         opportunities: {
-          type: 'array',
+          type: "array",
           items: {
-            type: 'object',
+            type: "object",
             properties: {
-              title: { type: 'string' },
-              whats_possible: { type: 'string' },
-              how_to_try: { type: 'string' },
-              copyable_prompt: { type: 'string' },
+              title: { type: "string" },
+              whats_possible: { type: "string" },
+              how_to_try: { type: "string" },
+              copyable_prompt: { type: "string" },
             },
-            required: [
-              'title',
-              'whats_possible',
-              'how_to_try',
-              'copyable_prompt',
-            ],
+            required: ["title", "whats_possible", "how_to_try", "copyable_prompt"],
           },
         },
       },
-      required: ['intro', 'opportunities'],
+      required: ["intro", "opportunities"],
     };
 
     // 4. Friction Points
     const schemaFrictionPoints = {
-      type: 'object',
+      type: "object",
       properties: {
-        intro: { type: 'string' },
+        intro: { type: "string" },
         categories: {
-          type: 'array',
+          type: "array",
           items: {
-            type: 'object',
+            type: "object",
             properties: {
-              category: { type: 'string' },
-              description: { type: 'string' },
-              examples: { type: 'array', items: { type: 'string' } },
+              category: { type: "string" },
+              description: { type: "string" },
+              examples: { type: "array", items: { type: "string" } },
             },
-            required: ['category', 'description', 'examples'],
+            required: ["category", "description", "examples"],
           },
         },
       },
-      required: ['intro', 'categories'],
+      required: ["intro", "categories"],
     };
 
     // 5. Memorable Moment
     const schemaMemorableMoment = {
-      type: 'object',
+      type: "object",
       properties: {
-        headline: { type: 'string' },
-        detail: { type: 'string' },
+        headline: { type: "string" },
+        detail: { type: "string" },
       },
-      required: ['headline', 'detail'],
+      required: ["headline", "detail"],
     };
 
     // 6. Improvements
     const schemaImprovements = {
-      type: 'object',
+      type: "object",
       properties: {
         Qwen_md_additions: {
-          type: 'array',
+          type: "array",
           items: {
-            type: 'object',
+            type: "object",
             properties: {
-              addition: { type: 'string' },
-              why: { type: 'string' },
-              prompt_scaffold: { type: 'string' },
+              addition: { type: "string" },
+              why: { type: "string" },
+              prompt_scaffold: { type: "string" },
             },
-            required: ['addition', 'why', 'prompt_scaffold'],
+            required: ["addition", "why", "prompt_scaffold"],
           },
         },
         features_to_try: {
-          type: 'array',
+          type: "array",
           items: {
-            type: 'object',
+            type: "object",
             properties: {
-              feature: { type: 'string' },
-              one_liner: { type: 'string' },
-              why_for_you: { type: 'string' },
-              example_code: { type: 'string' },
+              feature: { type: "string" },
+              one_liner: { type: "string" },
+              why_for_you: { type: "string" },
+              example_code: { type: "string" },
             },
-            required: ['feature', 'one_liner', 'why_for_you', 'example_code'],
+            required: ["feature", "one_liner", "why_for_you", "example_code"],
           },
         },
         usage_patterns: {
-          type: 'array',
+          type: "array",
           items: {
-            type: 'object',
+            type: "object",
             properties: {
-              title: { type: 'string' },
-              suggestion: { type: 'string' },
-              detail: { type: 'string' },
-              copyable_prompt: { type: 'string' },
+              title: { type: "string" },
+              suggestion: { type: "string" },
+              detail: { type: "string" },
+              copyable_prompt: { type: "string" },
             },
-            required: ['title', 'suggestion', 'detail', 'copyable_prompt'],
+            required: ["title", "suggestion", "detail", "copyable_prompt"],
           },
         },
       },
-      required: ['Qwen_md_additions', 'features_to_try', 'usage_patterns'],
+      required: ["Qwen_md_additions", "features_to_try", "usage_patterns"],
     };
 
     // 7. Interaction Style
     const schemaInteractionStyle = {
-      type: 'object',
+      type: "object",
       properties: {
-        narrative: { type: 'string' },
-        key_pattern: { type: 'string' },
+        narrative: { type: "string" },
+        key_pattern: { type: "string" },
       },
-      required: ['narrative', 'key_pattern'],
+      required: ["narrative", "key_pattern"],
     };
 
     // 8. At A Glance
     const schemaAtAGlance = {
-      type: 'object',
+      type: "object",
       properties: {
-        whats_working: { type: 'string' },
-        whats_hindering: { type: 'string' },
-        quick_wins: { type: 'string' },
-        ambitious_workflows: { type: 'string' },
+        whats_working: { type: "string" },
+        whats_hindering: { type: "string" },
+        quick_wins: { type: "string" },
+        ambitious_workflows: { type: "string" },
       },
-      required: [
-        'whats_working',
-        'whats_hindering',
-        'quick_wins',
-        'ambitious_workflows',
-      ],
+      required: ["whats_working", "whats_hindering", "quick_wins", "ambitious_workflows"],
     };
 
     const limit = pLimit(CONCURRENCY_LIMIT);
@@ -594,52 +564,41 @@ export class DataProcessor {
       ] = await Promise.all([
         limit(() =>
           generate<InsightImpressiveWorkflows>(
-            getInsightPrompt('impressive_workflows'),
+            getInsightPrompt("impressive_workflows"),
             schemaImpressiveWorkflows,
           ),
         ),
         limit(() =>
-          generate<InsightProjectAreas>(
-            getInsightPrompt('project_areas'),
-            schemaProjectAreas,
-          ),
+          generate<InsightProjectAreas>(getInsightPrompt("project_areas"), schemaProjectAreas),
         ),
         limit(() =>
           generate<InsightFutureOpportunities>(
-            getInsightPrompt('future_opportunities'),
+            getInsightPrompt("future_opportunities"),
             schemaFutureOpportunities,
           ),
         ),
         limit(() =>
           generate<InsightFrictionPoints>(
-            getInsightPrompt('friction_points'),
+            getInsightPrompt("friction_points"),
             schemaFrictionPoints,
           ),
         ),
         limit(() =>
           generate<InsightMemorableMoment>(
-            getInsightPrompt('memorable_moment'),
+            getInsightPrompt("memorable_moment"),
             schemaMemorableMoment,
           ),
         ),
         limit(() =>
-          generate<InsightImprovements>(
-            getInsightPrompt('improvements'),
-            schemaImprovements,
-          ),
+          generate<InsightImprovements>(getInsightPrompt("improvements"), schemaImprovements),
         ),
         limit(() =>
           generate<InsightInteractionStyle>(
-            getInsightPrompt('interaction_style'),
+            getInsightPrompt("interaction_style"),
             schemaInteractionStyle,
           ),
         ),
-        limit(() =>
-          generate<InsightAtAGlance>(
-            getInsightPrompt('at_a_glance'),
-            schemaAtAGlance,
-          ),
-        ),
+        limit(() => generate<InsightAtAGlance>(getInsightPrompt("at_a_glance"), schemaAtAGlance)),
       ]);
 
       logger.debug(
@@ -670,13 +629,13 @@ export class DataProcessor {
         atAGlance,
       };
     } catch (e) {
-      logger.error('Error generating qualitative insights:', e);
+      logger.error("Error generating qualitative insights:", e);
       return undefined;
     }
   }
 
   private prepareCommonPromptData(
-    metrics: Omit<InsightData, 'facets' | 'qualitative'>,
+    metrics: Omit<InsightData, "facets" | "qualitative">,
     facets: SessionFacets[],
   ): string {
     // 1. DATA section
@@ -706,9 +665,8 @@ export class DataProcessor {
       });
 
       // Aggregate success (primary_success)
-      if (facet.primary_success && facet.primary_success !== 'none') {
-        successAgg[facet.primary_success] =
-          (successAgg[facet.primary_success] || 0) + 1;
+      if (facet.primary_success && facet.primary_success !== "none") {
+        successAgg[facet.primary_success] = (successAgg[facet.primary_success] || 0) + 1;
       }
     });
 
@@ -720,8 +678,8 @@ export class DataProcessor {
       sessions: metrics.totalSessions || facets.length,
       analyzed: facets.length,
       date_range: {
-        start: Object.keys(metrics.heatmap).sort()[0] || 'N/A',
-        end: Object.keys(metrics.heatmap).sort().pop() || 'N/A',
+        start: Object.keys(metrics.heatmap).sort()[0] || "N/A",
+        end: Object.keys(metrics.heatmap).sort().pop() || "N/A",
       },
       messages: metrics.totalMessages || 0,
       hours: metrics.totalHours || 0,
@@ -735,15 +693,13 @@ export class DataProcessor {
     };
 
     // 2. SESSION SUMMARIES section
-    const sessionSummaries = facets
-      .map((f) => `- ${f.brief_summary}`)
-      .join('\n');
+    const sessionSummaries = facets.map((f) => `- ${f.brief_summary}`).join("\n");
 
     // 3. FRICTION DETAILS section
     const frictionDetails = facets
       .filter((f) => f.friction_detail && f.friction_detail.trim().length > 0)
       .map((f) => `- ${f.friction_detail}`)
-      .join('\n');
+      .join("\n");
 
     return `DATA:
 ${JSON.stringify(dataObj, null, 2)}
@@ -758,9 +714,7 @@ USER INSTRUCTIONS TO Qwen:
 None captured`;
   }
 
-  private async scanChatFiles(
-    baseDir: string,
-  ): Promise<Array<{ path: string; mtime: number }>> {
+  private async scanChatFiles(baseDir: string): Promise<Array<{ path: string; mtime: number }>> {
     const allChatFiles: Array<{ path: string; mtime: number }> = [];
 
     try {
@@ -774,12 +728,12 @@ None captured`;
 
         // Only process if it's a directory
         if (stats.isDirectory()) {
-          const chatsDir = path.join(projectPath, 'chats');
+          const chatsDir = path.join(projectPath, "chats");
 
           try {
             // Get all chat files in the chats directory
             const files = await fs.readdir(chatsDir);
-            const chatFiles = files.filter((file) => file.endsWith('.jsonl'));
+            const chatFiles = files.filter((file) => file.endsWith(".jsonl"));
 
             for (const file of chatFiles) {
               const filePath = path.join(chatsDir, file);
@@ -793,10 +747,8 @@ None captured`;
               }
             }
           } catch (error) {
-            if ((error as NodeJS.ErrnoException).code !== 'ENOENT') {
-              logger.error(
-                `Error reading chats directory for project ${projectDir}: ${error}`,
-              );
+            if ((error as NodeJS.ErrnoException).code !== "ENOENT") {
+              logger.error(`Error reading chats directory for project ${projectDir}: ${error}`);
             }
             // Continue to next project if chats directory doesn't exist
             continue;
@@ -804,7 +756,7 @@ None captured`;
         }
       }
     } catch (error) {
-      if ((error as NodeJS.ErrnoException).code === 'ENOENT') {
+      if ((error as NodeJS.ErrnoException).code === "ENOENT") {
         // Base directory doesn't exist, return empty
         logger.info(`Base directory does not exist: ${baseDir}`);
       } else {
@@ -818,7 +770,7 @@ None captured`;
   private async generateMetrics(
     files: Array<{ path: string; mtime: number }>,
     onProgress?: InsightProgressCallback,
-  ): Promise<Omit<InsightData, 'facets' | 'qualitative'>> {
+  ): Promise<Omit<InsightData, "facets" | "qualitative">> {
     // Initialize data structures
     const heatmap: HeatMapData = {};
     const activeHours: { [hour: number]: number } = {};
@@ -850,9 +802,8 @@ None captured`;
             const hour = timestamp.getHours();
 
             // Count user messages and slash commands (actual user interactions)
-            const isUserMessage = record.type === 'user';
-            const isSlashCommand =
-              record.type === 'system' && record.subtype === 'slash_command';
+            const isUserMessage = record.type === "user";
+            const isSlashCommand = record.type === "system" && record.subtype === "slash_command";
             if (isUserMessage || isSlashCommand) {
               totalMessages++;
 
@@ -870,9 +821,9 @@ None captured`;
             sessionEndTimes[record.sessionId] = timestamp;
 
             // Track tool usage
-            if (record.type === 'assistant' && record.message?.parts) {
+            if (record.type === "assistant" && record.message?.parts) {
               for (const part of record.message.parts) {
-                if ('functionCall' in part) {
+                if ("functionCall" in part) {
                   const name = part.functionCall!.name!;
                   toolUsage[name] = (toolUsage[name] || 0) + 1;
                 }
@@ -880,17 +831,10 @@ None captured`;
             }
 
             // Track lines and files from tool results
-            if (
-              record.type === 'tool_result' &&
-              record.toolCallResult?.resultDisplay
-            ) {
+            if (record.type === "tool_result" && record.toolCallResult?.resultDisplay) {
               const display = record.toolCallResult.resultDisplay;
               // Check if it matches FileDiff shape
-              if (
-                typeof display === 'object' &&
-                display !== null &&
-                'fileName' in display
-              ) {
+              if (typeof display === "object" && display !== null && "fileName" in display) {
                 // Cast to any to avoid importing FileDiff type which might not be available here
                 const diff = display as {
                   fileName: unknown;
@@ -899,7 +843,7 @@ None captured`;
                     model_removed_lines?: number;
                   };
                 };
-                if (typeof diff.fileName === 'string') {
+                if (typeof diff.fileName === "string") {
                   uniqueFiles.add(diff.fileName);
                 }
 
@@ -911,10 +855,7 @@ None captured`;
             }
           }
         } catch (error) {
-          logger.error(
-            `Failed to process metrics for file ${fileInfo.path}:`,
-            error,
-          );
+          logger.error(`Failed to process metrics for file ${fileInfo.path}:`, error);
           // Continue to next file
         }
       }
@@ -923,10 +864,7 @@ None captured`;
       if (onProgress) {
         const percentComplete = batchEnd / totalFiles;
         const overallProgress = 10 + Math.round(percentComplete * 10);
-        onProgress(
-          `Crunching the numbers (${batchEnd}/${totalFiles})`,
-          overallProgress,
-        );
+        onProgress(`Crunching the numbers (${batchEnd}/${totalFiles})`, overallProgress);
       }
 
       // Yield to event loop to allow GC and UI updates
@@ -968,8 +906,8 @@ None captured`;
       if (date > latestTimestamp) {
         latestTimestamp = date;
         latestActiveTime = date.toLocaleTimeString([], {
-          hour: '2-digit',
-          minute: '2-digit',
+          hour: "2-digit",
+          minute: "2-digit",
         });
       }
     }
@@ -1024,16 +962,11 @@ None captured`;
         }
         eligibleSessions.push({ fileInfo, records });
       } catch (e) {
-        logger.error(
-          `Error reading session file ${fileInfo.path} for facet eligibility:`,
-          e,
-        );
+        logger.error(`Error reading session file ${fileInfo.path} for facet eligibility:`, e);
       }
     }
 
-    logger.info(
-      `Analyzing ${eligibleSessions.length} eligible recent sessions with LLM...`,
-    );
+    logger.info(`Analyzing ${eligibleSessions.length} eligible recent sessions with LLM...`);
 
     // Create a limit function with concurrency of 4 to avoid 429 errors
     const limit = pLimit(CONCURRENCY_LIMIT);
@@ -1049,30 +982,20 @@ None captured`;
           if (records.length > 0 && facetsOutputDir) {
             const sessionId = records[0].sessionId;
             if (sessionId) {
-              const existingFacetPath = path.join(
-                facetsOutputDir,
-                `${sessionId}.json`,
-              );
+              const existingFacetPath = path.join(facetsOutputDir, `${sessionId}.json`);
               try {
                 // Check if file exists and is readable
-                const existingData = await fs.readFile(
-                  existingFacetPath,
-                  'utf-8',
-                );
+                const existingData = await fs.readFile(existingFacetPath, "utf-8");
                 const existingFacet = JSON.parse(existingData);
                 completed++;
                 if (onProgress) {
                   const percent = 20 + Math.round((completed / total) * 60);
-                  onProgress(
-                    'Analyzing sessions',
-                    percent,
-                    `${completed}/${total}`,
-                  );
+                  onProgress("Analyzing sessions", percent, `${completed}/${total}`);
                 }
                 return existingFacet;
               } catch (readError) {
                 // File doesn't exist or is invalid, proceed to analyze
-                if ((readError as NodeJS.ErrnoException).code !== 'ENOENT') {
+                if ((readError as NodeJS.ErrnoException).code !== "ENOENT") {
                   logger.warn(
                     `Failed to read existing facet for ${sessionId}, regenerating:`,
                     readError,
@@ -1086,15 +1009,8 @@ None captured`;
 
           if (facet && facetsOutputDir) {
             try {
-              const facetPath = path.join(
-                facetsOutputDir,
-                `${facet.session_id}.json`,
-              );
-              await fs.writeFile(
-                facetPath,
-                JSON.stringify(facet, null, 2),
-                'utf-8',
-              );
+              const facetPath = path.join(facetsOutputDir, `${facet.session_id}.json`);
+              await fs.writeFile(facetPath, JSON.stringify(facet, null, 2), "utf-8");
             } catch (writeError) {
               logger.error(
                 `Failed to write facet file for session ${facet.session_id}:`,
@@ -1106,7 +1022,7 @@ None captured`;
           completed++;
           if (onProgress) {
             const percent = 20 + Math.round((completed / total) * 60);
-            onProgress('Analyzing sessions', percent, `${completed}/${total}`);
+            onProgress("Analyzing sessions", percent, `${completed}/${total}`);
           }
 
           return facet;
@@ -1115,7 +1031,7 @@ None captured`;
           completed++;
           if (onProgress) {
             const percent = 20 + Math.round((completed / total) * 60);
-            onProgress('Analyzing sessions', percent, `${completed}/${total}`);
+            onProgress("Analyzing sessions", percent, `${completed}/${total}`);
           }
           return null;
         }
@@ -1123,9 +1039,7 @@ None captured`;
     );
 
     const sessionFacetsWithNulls = await Promise.all(analysisPromises);
-    const facets = sessionFacetsWithNulls.filter(
-      (f): f is SessionFacets => f !== null,
-    );
+    const facets = sessionFacetsWithNulls.filter((f): f is SessionFacets => f !== null);
     return facets;
   }
 }

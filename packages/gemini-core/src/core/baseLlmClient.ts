@@ -6,20 +6,20 @@
 
 import type {
   Content,
-  GenerateContentConfig,
-  Part,
   EmbedContentParameters,
+  GenerateContentConfig,
   GenerateContentResponse,
-} from '@google/genai';
-import type { Config } from '../config/config.js';
-import type { ContentGenerator } from './contentGenerator.js';
-import { getResponseText } from '../utils/partUtils.js';
-import { reportError } from '../utils/errorReporting.js';
-import { getErrorMessage } from '../utils/errors.js';
-import { logMalformedJsonResponse } from '../telemetry/loggers.js';
-import { MalformedJsonResponseEvent } from '../telemetry/types.js';
-import { retryWithBackoff } from '../utils/retry.js';
-import type { ModelConfigKey } from '../services/modelConfigService.js';
+  Part,
+} from "@google/genai";
+import type { Config } from "../config/config.js";
+import type { ModelConfigKey } from "../services/modelConfigService.js";
+import { logMalformedJsonResponse } from "../telemetry/loggers.js";
+import { MalformedJsonResponseEvent } from "../telemetry/types.js";
+import { reportError } from "../utils/errorReporting.js";
+import { getErrorMessage } from "../utils/errors.js";
+import { getResponseText } from "../utils/partUtils.js";
+import { retryWithBackoff } from "../utils/retry.js";
+import type { ContentGenerator } from "./contentGenerator.js";
 
 const DEFAULT_MAX_ATTEMPTS = 5;
 
@@ -59,9 +59,7 @@ export class BaseLlmClient {
     private readonly config: Config,
   ) {}
 
-  async generateJson(
-    options: GenerateJsonOptions,
-  ): Promise<Record<string, unknown>> {
+  async generateJson(options: GenerateJsonOptions): Promise<Record<string, unknown>> {
     const {
       modelConfigKey,
       contents,
@@ -79,7 +77,7 @@ export class BaseLlmClient {
       ...generateContentConfig,
       ...(systemInstruction && { systemInstruction }),
       responseJsonSchema: schema,
-      responseMimeType: 'application/json',
+      responseMimeType: "application/json",
     };
 
     try {
@@ -112,37 +110,30 @@ export class BaseLlmClient {
       });
 
       // If we are here, the content is valid (not empty and parsable).
-      return JSON.parse(
-        this.cleanJsonResponse(getResponseText(result)!.trim(), model),
-      );
+      return JSON.parse(this.cleanJsonResponse(getResponseText(result)!.trim(), model));
     } catch (error) {
       if (abortSignal.aborted) {
         throw error;
       }
 
       // Check if the error is from exhausting retries, and report accordingly.
-      if (
-        error instanceof Error &&
-        error.message.includes('Retry attempts exhausted')
-      ) {
+      if (error instanceof Error && error.message.includes("Retry attempts exhausted")) {
         await reportError(
           error,
-          'API returned invalid content (empty or unparsable JSON) after all retries.',
+          "API returned invalid content (empty or unparsable JSON) after all retries.",
           contents,
-          'generateJson-invalid-content',
+          "generateJson-invalid-content",
         );
       } else {
         await reportError(
           error,
-          'Error generating JSON content via API.',
+          "Error generating JSON content via API.",
           contents,
-          'generateJson-api',
+          "generateJson-api",
         );
       }
 
-      throw new Error(
-        `Failed to generate JSON content: ${getErrorMessage(error)}`,
-      );
+      throw new Error(`Failed to generate JSON content: ${getErrorMessage(error)}`);
     }
   }
 
@@ -155,13 +146,9 @@ export class BaseLlmClient {
       contents: texts,
     };
 
-    const embedContentResponse =
-      await this.contentGenerator.embedContent(embedModelParams);
-    if (
-      !embedContentResponse.embeddings ||
-      embedContentResponse.embeddings.length === 0
-    ) {
-      throw new Error('No embeddings found in API response.');
+    const embedContentResponse = await this.contentGenerator.embedContent(embedModelParams);
+    if (!embedContentResponse.embeddings || embedContentResponse.embeddings.length === 0) {
+      throw new Error("No embeddings found in API response.");
     }
 
     if (embedContentResponse.embeddings.length !== texts.length) {
@@ -182,13 +169,10 @@ export class BaseLlmClient {
   }
 
   private cleanJsonResponse(text: string, model: string): string {
-    const prefix = '```json';
-    const suffix = '```';
+    const prefix = "```json";
+    const suffix = "```";
     if (text.startsWith(prefix) && text.endsWith(suffix)) {
-      logMalformedJsonResponse(
-        this.config,
-        new MalformedJsonResponseEvent(model),
-      );
+      logMalformedJsonResponse(this.config, new MalformedJsonResponseEvent(model));
       return text.substring(prefix.length, text.length - suffix.length).trim();
     }
     return text;

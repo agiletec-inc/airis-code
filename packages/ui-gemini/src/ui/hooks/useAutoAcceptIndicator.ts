@@ -4,11 +4,11 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { useState, useEffect } from 'react';
-import { ApprovalMode, type Config } from '@airiscode/gemini-cli-core';
-import { useKeypress } from './useKeypress.js';
-import type { HistoryItemWithoutId } from '../types.js';
-import { MessageType } from '../types.js';
+import { ApprovalMode, type Config } from "@airiscode/gemini-cli-core";
+import { useEffect, useState } from "react";
+import type { HistoryItemWithoutId } from "../types.js";
+import { MessageType } from "../types.js";
+import { useKeypress } from "./useKeypress.js";
 
 export interface UseAutoAcceptIndicatorArgs {
   config: Config;
@@ -22,8 +22,7 @@ export function useAutoAcceptIndicator({
   onApprovalModeChange,
 }: UseAutoAcceptIndicatorArgs): ApprovalMode {
   const currentConfigValue = config.getApprovalMode();
-  const [showAutoAcceptIndicator, setShowAutoAcceptIndicator] =
-    useState(currentConfigValue);
+  const [showAutoAcceptIndicator, setShowAutoAcceptIndicator] = useState(currentConfigValue);
 
   useEffect(() => {
     setShowAutoAcceptIndicator(currentConfigValue);
@@ -33,16 +32,13 @@ export function useAutoAcceptIndicator({
     (key) => {
       let nextApprovalMode: ApprovalMode | undefined;
 
-      if (key.ctrl && key.name === 'y') {
-        if (
-          config.isYoloModeDisabled() &&
-          config.getApprovalMode() !== ApprovalMode.YOLO
-        ) {
+      if (key.ctrl && key.name === "y") {
+        if (config.isYoloModeDisabled() && config.getApprovalMode() !== ApprovalMode.YOLO) {
           if (addItem) {
             addItem(
               {
                 type: MessageType.WARNING,
-                text: 'You cannot enter YOLO mode since it is disabled in your settings.',
+                text: "You cannot enter YOLO mode since it is disabled in your settings.",
               },
               Date.now(),
             );
@@ -50,10 +46,8 @@ export function useAutoAcceptIndicator({
           return;
         }
         nextApprovalMode =
-          config.getApprovalMode() === ApprovalMode.YOLO
-            ? ApprovalMode.DEFAULT
-            : ApprovalMode.YOLO;
-      } else if (key.shift && key.name === 'tab') {
+          config.getApprovalMode() === ApprovalMode.YOLO ? ApprovalMode.DEFAULT : ApprovalMode.YOLO;
+      } else if (key.shift && key.name === "tab") {
         nextApprovalMode =
           config.getApprovalMode() === ApprovalMode.AUTO_EDIT
             ? ApprovalMode.DEFAULT

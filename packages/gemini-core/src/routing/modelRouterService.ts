@@ -4,20 +4,15 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import type { Config } from '../config/config.js';
-import type {
-  RoutingContext,
-  RoutingDecision,
-  TerminalStrategy,
-} from './routingStrategy.js';
-import { DefaultStrategy } from './strategies/defaultStrategy.js';
-import { ClassifierStrategy } from './strategies/classifierStrategy.js';
-import { CompositeStrategy } from './strategies/compositeStrategy.js';
-import { FallbackStrategy } from './strategies/fallbackStrategy.js';
-import { OverrideStrategy } from './strategies/overrideStrategy.js';
-
-import { logModelRouting } from '../telemetry/loggers.js';
-import { ModelRoutingEvent } from '../telemetry/types.js';
+import type { Config } from "../config/config.js";
+import { logModelRouting } from "../telemetry/loggers.js";
+import { ModelRoutingEvent } from "../telemetry/types.js";
+import type { RoutingContext, RoutingDecision, TerminalStrategy } from "./routingStrategy.js";
+import { ClassifierStrategy } from "./strategies/classifierStrategy.js";
+import { CompositeStrategy } from "./strategies/compositeStrategy.js";
+import { DefaultStrategy } from "./strategies/defaultStrategy.js";
+import { FallbackStrategy } from "./strategies/fallbackStrategy.js";
+import { OverrideStrategy } from "./strategies/overrideStrategy.js";
 
 /**
  * A centralized service for making model routing decisions.
@@ -41,7 +36,7 @@ export class ModelRouterService {
         new ClassifierStrategy(),
         new DefaultStrategy(),
       ],
-      'agent-router',
+      "agent-router",
     );
   }
 
@@ -56,11 +51,7 @@ export class ModelRouterService {
     let decision: RoutingDecision;
 
     try {
-      decision = await this.strategy.route(
-        context,
-        this.config,
-        this.config.getBaseLlmClient(),
-      );
+      decision = await this.strategy.route(context, this.config, this.config.getBaseLlmClient());
 
       const event = new ModelRoutingEvent(
         decision.model,
@@ -82,9 +73,9 @@ export class ModelRouterService {
       decision = {
         model: this.config.getModel(),
         metadata: {
-          source: 'router-exception',
+          source: "router-exception",
           latencyMs: Date.now() - startTime,
-          reasoning: 'An exception occurred during routing.',
+          reasoning: "An exception occurred during routing.",
           error: error_message,
         },
       };

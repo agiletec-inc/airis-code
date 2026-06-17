@@ -4,10 +4,10 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import type { SlashCommand } from './types.js';
-import { CommandKind } from './types.js';
-import { terminalSetup } from '../utils/terminalSetup.js';
-import { type MessageActionReturn } from '@airiscode/gemini-cli-core';
+import { type MessageActionReturn } from "@airiscode/gemini-cli-core";
+import { terminalSetup } from "../utils/terminalSetup.js";
+import type { SlashCommand } from "./types.js";
+import { CommandKind } from "./types.js";
 
 /**
  * Command to configure terminal keybindings for multiline input support.
@@ -16,9 +16,8 @@ import { type MessageActionReturn } from '@airiscode/gemini-cli-core';
  * to support Shift+Enter and Ctrl+Enter for multiline input.
  */
 export const terminalSetupCommand: SlashCommand = {
-  name: 'terminal-setup',
-  description:
-    'Configure terminal keybindings for multiline input (VS Code, Cursor, Windsurf)',
+  name: "terminal-setup",
+  description: "Configure terminal keybindings for multiline input (VS Code, Cursor, Windsurf)",
   kind: CommandKind.BUILT_IN,
   autoExecute: true,
   action: async (): Promise<MessageActionReturn> => {
@@ -27,20 +26,19 @@ export const terminalSetupCommand: SlashCommand = {
 
       let content = result.message;
       if (result.requiresRestart) {
-        content +=
-          '\n\nPlease restart your terminal for the changes to take effect.';
+        content += "\n\nPlease restart your terminal for the changes to take effect.";
       }
 
       return {
-        type: 'message',
+        type: "message",
         content,
-        messageType: result.success ? 'info' : 'error',
+        messageType: result.success ? "info" : "error",
       };
     } catch (error) {
       return {
-        type: 'message',
+        type: "message",
         content: `Failed to configure terminal: ${error}`,
-        messageType: 'error',
+        messageType: "error",
       };
     }
   },

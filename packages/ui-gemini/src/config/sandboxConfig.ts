@@ -4,16 +4,12 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import {
-  getPackageJson,
-  type SandboxConfig,
-  FatalSandboxError,
-} from '@airiscode/gemini-cli-core';
-import commandExists from 'command-exists';
-import * as os from 'node:os';
-import type { Settings } from './settings.js';
-import { fileURLToPath } from 'node:url';
-import path from 'node:path';
+import * as os from "node:os";
+import path from "node:path";
+import { fileURLToPath } from "node:url";
+import { FatalSandboxError, getPackageJson, type SandboxConfig } from "@airiscode/gemini-cli-core";
+import commandExists from "command-exists";
+import type { Settings } from "./settings.js";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -23,74 +19,64 @@ const __dirname = path.dirname(__filename);
 interface SandboxCliArgs {
   sandbox?: boolean | string | null;
 }
-const VALID_SANDBOX_COMMANDS: ReadonlyArray<SandboxConfig['command']> = [
-  'docker',
-  'podman',
-  'sandbox-exec',
+const VALID_SANDBOX_COMMANDS: ReadonlyArray<SandboxConfig["command"]> = [
+  "docker",
+  "podman",
+  "sandbox-exec",
 ];
 
-function isSandboxCommand(value: string): value is SandboxConfig['command'] {
+function isSandboxCommand(value: string): value is SandboxConfig["command"] {
   return (VALID_SANDBOX_COMMANDS as readonly string[]).includes(value);
 }
 
-function getSandboxCommand(
-  sandbox?: boolean | string | null,
-): SandboxConfig['command'] | '' {
+function getSandboxCommand(sandbox?: boolean | string | null): SandboxConfig["command"] | "" {
   // If the SANDBOX env var is set, we're already inside the sandbox.
-  if (process.env['SANDBOX']) {
-    return '';
+  if (process.env["SANDBOX"]) {
+    return "";
   }
 
   // note environment variable takes precedence over argument (from command line or settings)
-  const environmentConfiguredSandbox =
-    process.env['GEMINI_SANDBOX']?.toLowerCase().trim() ?? '';
-  sandbox =
-    environmentConfiguredSandbox?.length > 0
-      ? environmentConfiguredSandbox
-      : sandbox;
-  if (sandbox === '1' || sandbox === 'true') sandbox = true;
-  else if (sandbox === '0' || sandbox === 'false' || !sandbox) sandbox = false;
+  const environmentConfiguredSandbox = process.env["GEMINI_SANDBOX"]?.toLowerCase().trim() ?? "";
+  sandbox = environmentConfiguredSandbox?.length > 0 ? environmentConfiguredSandbox : sandbox;
+  if (sandbox === "1" || sandbox === "true") sandbox = true;
+  else if (sandbox === "0" || sandbox === "false" || !sandbox) sandbox = false;
 
   if (sandbox === false) {
-    return '';
+    return "";
   }
 
-  if (typeof sandbox === 'string' && sandbox) {
+  if (typeof sandbox === "string" && sandbox) {
     if (!isSandboxCommand(sandbox)) {
       throw new FatalSandboxError(
-        `Invalid sandbox command '${sandbox}'. Must be one of ${VALID_SANDBOX_COMMANDS.join(
-          ', ',
-        )}`,
+        `Invalid sandbox command '${sandbox}'. Must be one of ${VALID_SANDBOX_COMMANDS.join(", ")}`,
       );
     }
     // confirm that specified command exists
     if (commandExists.sync(sandbox)) {
       return sandbox;
     }
-    throw new FatalSandboxError(
-      `Missing sandbox command '${sandbox}' (from GEMINI_SANDBOX)`,
-    );
+    throw new FatalSandboxError(`Missing sandbox command '${sandbox}' (from GEMINI_SANDBOX)`);
   }
 
   // look for seatbelt, docker, or podman, in that order
   // for container-based sandboxing, require sandbox to be enabled explicitly
-  if (os.platform() === 'darwin' && commandExists.sync('sandbox-exec')) {
-    return 'sandbox-exec';
-  } else if (commandExists.sync('docker') && sandbox === true) {
-    return 'docker';
-  } else if (commandExists.sync('podman') && sandbox === true) {
-    return 'podman';
+  if (os.platform() === "darwin" && commandExists.sync("sandbox-exec")) {
+    return "sandbox-exec";
+  } else if (commandExists.sync("docker") && sandbox === true) {
+    return "docker";
+  } else if (commandExists.sync("podman") && sandbox === true) {
+    return "podman";
   }
 
   // throw an error if user requested sandbox but no command was found
   if (sandbox === true) {
     throw new FatalSandboxError(
-      'GEMINI_SANDBOX is true but failed to determine command for sandbox; ' +
-        'install docker or podman or specify command in GEMINI_SANDBOX',
+      "GEMINI_SANDBOX is true but failed to determine command for sandbox; " +
+        "install docker or podman or specify command in GEMINI_SANDBOX",
     );
   }
 
-  return '';
+  return "";
 }
 
 export async function loadSandboxConfig(
@@ -101,8 +87,7 @@ export async function loadSandboxConfig(
   const command = getSandboxCommand(sandboxOption);
 
   const packageJson = await getPackageJson(__dirname);
-  const image =
-    process.env['GEMINI_SANDBOX_IMAGE'] ?? packageJson?.config?.sandboxImageUri;
+  const image = process.env["GEMINI_SANDBOX_IMAGE"] ?? packageJson?.config?.sandboxImageUri;
 
   return command && image ? { command, image } : undefined;
 }

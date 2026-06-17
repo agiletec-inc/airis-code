@@ -2,19 +2,16 @@
  * cron_delete tool — deletes an in-session cron job by ID.
  */
 
-import type { ToolInvocation, ToolResult } from './tools.js';
-import { BaseDeclarativeTool, BaseToolInvocation, Kind } from './tools.js';
-import { ToolNames, ToolDisplayNames } from './tool-names.js';
-import type { Config } from '../config/config.js';
+import type { Config } from "../config/config.js";
+import { ToolDisplayNames, ToolNames } from "./tool-names.js";
+import type { ToolInvocation, ToolResult } from "./tools.js";
+import { BaseDeclarativeTool, BaseToolInvocation, Kind } from "./tools.js";
 
 export interface CronDeleteParams {
   id: string;
 }
 
-class CronDeleteInvocation extends BaseToolInvocation<
-  CronDeleteParams,
-  ToolResult
-> {
+class CronDeleteInvocation extends BaseToolInvocation<CronDeleteParams, ToolResult> {
   constructor(
     private config: Config,
     params: CronDeleteParams,
@@ -45,27 +42,24 @@ class CronDeleteInvocation extends BaseToolInvocation<
   }
 }
 
-export class CronDeleteTool extends BaseDeclarativeTool<
-  CronDeleteParams,
-  ToolResult
-> {
+export class CronDeleteTool extends BaseDeclarativeTool<CronDeleteParams, ToolResult> {
   static readonly Name = ToolNames.CRON_DELETE;
 
   constructor(private config: Config) {
     super(
       CronDeleteTool.Name,
       ToolDisplayNames.CRON_DELETE,
-      'Cancel a cron job previously scheduled with CronCreate. Removes it from the in-memory session store.',
+      "Cancel a cron job previously scheduled with CronCreate. Removes it from the in-memory session store.",
       Kind.Other,
       {
-        type: 'object',
+        type: "object",
         properties: {
           id: {
-            type: 'string',
-            description: 'Job ID returned by CronCreate.',
+            type: "string",
+            description: "Job ID returned by CronCreate.",
           },
         },
-        required: ['id'],
+        required: ["id"],
         additionalProperties: false,
       },
     );

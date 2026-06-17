@@ -1,44 +1,37 @@
-import OpenAI from 'openai';
-import type { GenerateContentConfig } from '../../../types/llm.js';
-import type { Config } from '../../../config/config.js';
-import type { ContentGeneratorConfig } from '../../contentGenerator.js';
-import { DEFAULT_TIMEOUT, DEFAULT_MAX_RETRIES } from '../constants.js';
-import type { OpenAICompatibleProvider } from './types.js';
-import { buildRuntimeFetchOptions } from '../../../utils/runtimeFetchOptions.js';
+import OpenAI from "openai";
+import type { Config } from "../../../config/config.js";
+import type { GenerateContentConfig } from "../../../types/llm.js";
+import { buildRuntimeFetchOptions } from "../../../utils/runtimeFetchOptions.js";
+import type { ContentGeneratorConfig } from "../../contentGenerator.js";
 import {
-  tokenLimit,
   CAPPED_DEFAULT_MAX_TOKENS,
   hasExplicitOutputLimit,
-} from '../../tokenLimits.js';
+  tokenLimit,
+} from "../../tokenLimits.js";
+import { DEFAULT_MAX_RETRIES, DEFAULT_TIMEOUT } from "../constants.js";
+import type { OpenAICompatibleProvider } from "./types.js";
 
 /**
  * Default provider for standard OpenAI-compatible APIs
  */
-export class DefaultOpenAICompatibleProvider
-  implements OpenAICompatibleProvider
-{
+export class DefaultOpenAICompatibleProvider implements OpenAICompatibleProvider {
   protected contentGeneratorConfig: ContentGeneratorConfig;
   protected cliConfig: Config;
 
-  constructor(
-    contentGeneratorConfig: ContentGeneratorConfig,
-    cliConfig: Config,
-  ) {
+  constructor(contentGeneratorConfig: ContentGeneratorConfig, cliConfig: Config) {
     this.cliConfig = cliConfig;
     this.contentGeneratorConfig = contentGeneratorConfig;
   }
 
   buildHeaders(): Record<string, string | undefined> {
-    const version = this.cliConfig.getCliVersion() || 'unknown';
+    const version = this.cliConfig.getCliVersion() || "unknown";
     const userAgent = `AirisCode/${version} (${process.platform}; ${process.arch})`;
     const { customHeaders } = this.contentGeneratorConfig;
     const defaultHeaders = {
-      'User-Agent': userAgent,
+      "User-Agent": userAgent,
     };
 
-    return customHeaders
-      ? { ...defaultHeaders, ...customHeaders }
-      : defaultHeaders;
+    return customHeaders ? { ...defaultHeaders, ...customHeaders } : defaultHeaders;
   }
 
   buildClient(): OpenAI {
@@ -51,10 +44,7 @@ export class DefaultOpenAICompatibleProvider
     const defaultHeaders = this.buildHeaders();
     // Configure fetch options to ensure user-configured timeout works as expected
     // bodyTimeout is always disabled (0) to let OpenAI SDK timeout control the request
-    const runtimeOptions = buildRuntimeFetchOptions(
-      'openai',
-      this.cliConfig.getProxy(),
-    );
+    const runtimeOptions = buildRuntimeFetchOptions("openai", this.cliConfig.getProxy());
     return new OpenAI({
       apiKey,
       baseURL: baseUrl,
@@ -118,13 +108,13 @@ export class DefaultOpenAICompatibleProvider
    * @param request - The chat completion request parameters
    * @returns The request with max_tokens adjusted according to the logic
    */
-  protected applyOutputTokenLimit<
-    T extends { max_tokens?: number | null; model: string },
-  >(request: T): T {
+  protected applyOutputTokenLimit<T extends { max_tokens?: number | null; model: string }>(
+    request: T,
+  ): T {
     const userMaxTokens = request.max_tokens;
 
     // Get model-specific output limit and check if model is known
-    const modelLimit = tokenLimit(request.model, 'output');
+    const modelLimit = tokenLimit(request.model, "output");
     const isKnownModel = hasExplicitOutputLimit(request.model);
 
     // Determine the effective max_tokens
@@ -144,12 +134,10 @@ export class DefaultOpenAICompatibleProvider
       // No explicit user config — check env var, then use capped default.
       // Capped default (8K) reduces GPU slot over-reservation by ~4×.
       // Requests hitting the cap get one clean retry at 64K (geminiChat.ts).
-      const envVal = process.env['AIRISCODE_MAX_OUTPUT_TOKENS'];
+      const envVal = process.env["AIRISCODE_MAX_OUTPUT_TOKENS"];
       const envMaxTokens = envVal ? parseInt(envVal, 10) : NaN;
       if (!isNaN(envMaxTokens) && envMaxTokens > 0) {
-        effectiveMaxTokens = isKnownModel
-          ? Math.min(envMaxTokens, modelLimit)
-          : envMaxTokens;
+        effectiveMaxTokens = isKnownModel ? Math.min(envMaxTokens, modelLimit) : envMaxTokens;
       } else {
         effectiveMaxTokens = Math.min(modelLimit, CAPPED_DEFAULT_MAX_TOKENS);
       }

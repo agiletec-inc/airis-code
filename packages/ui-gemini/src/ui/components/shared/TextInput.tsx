@@ -4,15 +4,15 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import type React from 'react';
-import { useCallback } from 'react';
-import type { Key } from '../../hooks/useKeypress.js';
-import { Text, Box } from 'ink';
-import { useKeypress } from '../../hooks/useKeypress.js';
-import chalk from 'chalk';
-import { theme } from '../../semantic-colors.js';
-import type { TextBuffer } from './text-buffer.js';
-import { cpSlice } from '../../utils/textUtils.js';
+import chalk from "chalk";
+import { Box, Text } from "ink";
+import type React from "react";
+import { useCallback } from "react";
+import type { Key } from "../../hooks/useKeypress.js";
+import { useKeypress } from "../../hooks/useKeypress.js";
+import { theme } from "../../semantic-colors.js";
+import { cpSlice } from "../../utils/textUtils.js";
+import type { TextBuffer } from "./text-buffer.js";
 
 export interface TextInputProps {
   buffer: TextBuffer;
@@ -24,28 +24,22 @@ export interface TextInputProps {
 
 export function TextInput({
   buffer,
-  placeholder = '',
+  placeholder = "",
   onSubmit,
   onCancel,
   focus = true,
 }: TextInputProps): React.JSX.Element {
-  const {
-    text,
-    handleInput,
-    visualCursor,
-    viewportVisualLines,
-    visualScrollRow,
-  } = buffer;
+  const { text, handleInput, visualCursor, viewportVisualLines, visualScrollRow } = buffer;
   const [cursorVisualRowAbsolute, cursorVisualColAbsolute] = visualCursor;
 
   const handleKeyPress = useCallback(
     (key: Key) => {
-      if (key.name === 'escape') {
+      if (key.name === "escape") {
         onCancel?.();
         return;
       }
 
-      if (key.name === 'return') {
+      if (key.name === "return") {
         onSubmit?.(text);
         return;
       }
@@ -64,7 +58,7 @@ export function TextInput({
       <Box>
         {focus ? (
           <Text>
-            {chalk.inverse(placeholder[0] || ' ')}
+            {chalk.inverse(placeholder[0] || " ")}
             <Text color={theme.text.secondary}>{placeholder.slice(1)}</Text>
           </Text>
         ) : (
@@ -78,17 +72,12 @@ export function TextInput({
     <Box flexDirection="column">
       {viewportVisualLines.map((lineText, idx) => {
         const currentVisualRow = visualScrollRow + idx;
-        const isCursorLine =
-          focus && currentVisualRow === cursorVisualRowAbsolute;
+        const isCursorLine = focus && currentVisualRow === cursorVisualRowAbsolute;
 
         const lineDisplay = isCursorLine
           ? cpSlice(lineText, 0, cursorVisualColAbsolute) +
             chalk.inverse(
-              cpSlice(
-                lineText,
-                cursorVisualColAbsolute,
-                cursorVisualColAbsolute + 1,
-              ) || ' ',
+              cpSlice(lineText, cursorVisualColAbsolute, cursorVisualColAbsolute + 1) || " ",
             ) +
             cpSlice(lineText, cursorVisualColAbsolute + 1)
           : lineText;

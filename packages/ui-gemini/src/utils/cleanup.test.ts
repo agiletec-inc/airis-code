@@ -4,23 +4,23 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { vi, describe, it, expect, beforeEach } from 'vitest';
-import { promises as fs } from 'node:fs';
-import * as path from 'node:path';
+import { promises as fs } from "node:fs";
+import * as path from "node:path";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 
-vi.mock('@airiscode/gemini-cli-core', () => ({
+vi.mock("@airiscode/gemini-cli-core", () => ({
   Storage: vi.fn().mockImplementation(() => ({
-    getProjectTempDir: vi.fn().mockReturnValue('/tmp/project'),
+    getProjectTempDir: vi.fn().mockReturnValue("/tmp/project"),
   })),
 }));
 
-vi.mock('node:fs', () => ({
+vi.mock("node:fs", () => ({
   promises: {
     rm: vi.fn(),
   },
 }));
 
-describe('cleanup', () => {
+describe("cleanup", () => {
   beforeEach(async () => {
     vi.resetModules();
     vi.clearAllMocks();
@@ -31,8 +31,8 @@ describe('cleanup', () => {
     // So we DO need to re-import it to get fresh state.
   });
 
-  it('should run a registered synchronous function', async () => {
-    const cleanupModule = await import('./cleanup.js');
+  it("should run a registered synchronous function", async () => {
+    const cleanupModule = await import("./cleanup.js");
     const cleanupFn = vi.fn();
     cleanupModule.registerCleanup(cleanupFn);
 
@@ -41,8 +41,8 @@ describe('cleanup', () => {
     expect(cleanupFn).toHaveBeenCalledTimes(1);
   });
 
-  it('should run a registered asynchronous function', async () => {
-    const cleanupModule = await import('./cleanup.js');
+  it("should run a registered asynchronous function", async () => {
+    const cleanupModule = await import("./cleanup.js");
     const cleanupFn = vi.fn().mockResolvedValue(undefined);
     cleanupModule.registerCleanup(cleanupFn);
 
@@ -51,8 +51,8 @@ describe('cleanup', () => {
     expect(cleanupFn).toHaveBeenCalledTimes(1);
   });
 
-  it('should run multiple registered functions', async () => {
-    const cleanupModule = await import('./cleanup.js');
+  it("should run multiple registered functions", async () => {
+    const cleanupModule = await import("./cleanup.js");
     const syncFn = vi.fn();
     const asyncFn = vi.fn().mockResolvedValue(undefined);
 
@@ -65,10 +65,10 @@ describe('cleanup', () => {
     expect(asyncFn).toHaveBeenCalledTimes(1);
   });
 
-  it('should continue running cleanup functions even if one throws an error', async () => {
-    const cleanupModule = await import('./cleanup.js');
+  it("should continue running cleanup functions even if one throws an error", async () => {
+    const cleanupModule = await import("./cleanup.js");
     const errorFn = vi.fn().mockImplementation(() => {
-      throw new Error('test error');
+      throw new Error("test error");
     });
     const successFn = vi.fn();
     cleanupModule.registerCleanup(errorFn);
@@ -80,19 +80,19 @@ describe('cleanup', () => {
     expect(successFn).toHaveBeenCalledTimes(1);
   });
 
-  describe('sync cleanup', () => {
-    it('should run registered sync functions', async () => {
-      const cleanupModule = await import('./cleanup.js');
+  describe("sync cleanup", () => {
+    it("should run registered sync functions", async () => {
+      const cleanupModule = await import("./cleanup.js");
       const syncFn = vi.fn();
       cleanupModule.registerSyncCleanup(syncFn);
       cleanupModule.runSyncCleanup();
       expect(syncFn).toHaveBeenCalledTimes(1);
     });
 
-    it('should continue running sync cleanup functions even if one throws', async () => {
-      const cleanupModule = await import('./cleanup.js');
+    it("should continue running sync cleanup functions even if one throws", async () => {
+      const cleanupModule = await import("./cleanup.js");
       const errorFn = vi.fn().mockImplementation(() => {
-        throw new Error('test error');
+        throw new Error("test error");
       });
       const successFn = vi.fn();
       cleanupModule.registerSyncCleanup(errorFn);
@@ -104,22 +104,19 @@ describe('cleanup', () => {
     });
   });
 
-  describe('cleanupCheckpoints', () => {
-    it('should remove checkpoints directory', async () => {
-      const cleanupModule = await import('./cleanup.js');
+  describe("cleanupCheckpoints", () => {
+    it("should remove checkpoints directory", async () => {
+      const cleanupModule = await import("./cleanup.js");
       await cleanupModule.cleanupCheckpoints();
-      expect(fs.rm).toHaveBeenCalledWith(
-        path.join('/tmp/project', 'checkpoints'),
-        {
-          recursive: true,
-          force: true,
-        },
-      );
+      expect(fs.rm).toHaveBeenCalledWith(path.join("/tmp/project", "checkpoints"), {
+        recursive: true,
+        force: true,
+      });
     });
 
-    it('should ignore errors during checkpoint removal', async () => {
-      const cleanupModule = await import('./cleanup.js');
-      vi.mocked(fs.rm).mockRejectedValue(new Error('Failed to remove'));
+    it("should ignore errors during checkpoint removal", async () => {
+      const cleanupModule = await import("./cleanup.js");
+      vi.mocked(fs.rm).mockRejectedValue(new Error("Failed to remove"));
       await expect(cleanupModule.cleanupCheckpoints()).resolves.not.toThrow();
     });
   });

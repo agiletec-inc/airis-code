@@ -4,40 +4,36 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import type { ToolConfirmationOutcome } from '../tools.js';
+import type { Config } from "../../config/config.js";
+import type { PermissionDecision } from "../../permissions/types.js";
+import { createDebugLogger } from "../../utils/debugLogger.js";
+import { getErrorMessage } from "../../utils/errors.js";
+import { ToolErrorType } from "../tool-error.js";
+import { ToolDisplayNames, ToolNames } from "../tool-names.js";
+import type { ToolConfirmationOutcome } from "../tools.js";
 import {
   BaseDeclarativeTool,
   BaseToolInvocation,
   Kind,
-  type ToolInvocation,
   type ToolCallConfirmationDetails,
-  type ToolInfoConfirmationDetails,
   type ToolConfirmationPayload,
-} from '../tools.js';
-import type { PermissionDecision } from '../../permissions/types.js';
-import { ToolErrorType } from '../tool-error.js';
-
-import type { Config } from '../../config/config.js';
-import { getErrorMessage } from '../../utils/errors.js';
-import { createDebugLogger } from '../../utils/debugLogger.js';
-import { buildContentWithSources } from './utils.js';
-import { TavilyProvider } from './providers/tavily-provider.js';
-import { GoogleProvider } from './providers/google-provider.js';
+  type ToolInfoConfirmationDetails,
+  type ToolInvocation,
+} from "../tools.js";
+import { GoogleProvider } from "./providers/google-provider.js";
+import { TavilyProvider } from "./providers/tavily-provider.js";
 import type {
+  WebSearchProvider,
+  WebSearchProviderConfig,
+  WebSearchResultItem,
   WebSearchToolParams,
   WebSearchToolResult,
-  WebSearchProvider,
-  WebSearchResultItem,
-  WebSearchProviderConfig,
-} from './types.js';
-import { ToolNames, ToolDisplayNames } from '../tool-names.js';
+} from "./types.js";
+import { buildContentWithSources } from "./utils.js";
 
-const debugLogger = createDebugLogger('WEB_SEARCH');
+const debugLogger = createDebugLogger("WEB_SEARCH");
 
-class WebSearchToolInvocation extends BaseToolInvocation<
-  WebSearchToolParams,
-  WebSearchToolResult
-> {
+class WebSearchToolInvocation extends BaseToolInvocation<WebSearchToolParams, WebSearchToolResult> {
   constructor(
     private readonly config: Config,
     params: WebSearchToolParams,
@@ -48,7 +44,7 @@ class WebSearchToolInvocation extends BaseToolInvocation<
   override getDescription(): string {
     const webSearchConfig = this.config.getWebSearchConfig();
     if (!webSearchConfig) {
-      return ' (Web search is disabled - configure a provider in settings.json)';
+      return " (Web search is disabled - configure a provider in settings.json)";
     }
     const provider = this.params.provider || webSearchConfig.default;
     return ` (Searching the web via ${provider})`;
@@ -58,7 +54,7 @@ class WebSearchToolInvocation extends BaseToolInvocation<
    * WebSearch requires confirmation for external network requests.
    */
   override async getDefaultPermission(): Promise<PermissionDecision> {
-    return 'ask';
+    return "ask";
   }
 
   /**
@@ -71,14 +67,11 @@ class WebSearchToolInvocation extends BaseToolInvocation<
     const permissionRules = [`WebSearch`];
 
     const confirmationDetails: ToolInfoConfirmationDetails = {
-      type: 'info',
-      title: 'Confirm Web Search',
+      type: "info",
+      title: "Confirm Web Search",
       prompt: `Search the web for: "${this.params.query}"`,
       permissionRules,
-      onConfirm: async (
-        _outcome: ToolConfirmationOutcome,
-        _payload?: ToolConfirmationPayload,
-      ) => {
+      onConfirm: async (_outcome: ToolConfirmationOutcome, _payload?: ToolConfirmationPayload) => {
         // No-op: persistence is handled by coreToolScheduler via PM rules
       },
     };
@@ -90,21 +83,19 @@ class WebSearchToolInvocation extends BaseToolInvocation<
    */
   private createProvider(config: WebSearchProviderConfig): WebSearchProvider {
     switch (config.type) {
-      case 'tavily':
+      case "tavily":
         return new TavilyProvider(config);
-      case 'google':
+      case "google":
         return new GoogleProvider(config);
       default:
-        throw new Error('Unknown provider type');
+        throw new Error("Unknown provider type");
     }
   }
 
   /**
    * Create all configured providers.
    */
-  private createProviders(
-    configs: WebSearchProviderConfig[],
-  ): Map<string, WebSearchProvider> {
+  private createProviders(configs: WebSearchProviderConfig[]): Map<string, WebSearchProvider> {
     const providers = new Map<string, WebSearchProvider>();
 
     for (const config of configs) {
@@ -134,7 +125,7 @@ class WebSearchToolInvocation extends BaseToolInvocation<
     if (requestedProvider) {
       const provider = providers.get(requestedProvider);
       if (!provider) {
-        const available = Array.from(providers.keys()).join(', ');
+        const available = Array.from(providers.keys()).join(", ");
         throw new Error(
           `The specified provider "${requestedProvider}" is not available. Available: ${available}`,
         );
@@ -150,7 +141,7 @@ class WebSearchToolInvocation extends BaseToolInvocation<
     // Fallback to first available provider
     const firstProvider = providers.values().next().value;
     if (!firstProvider) {
-      throw new Error('No web search providers are available.');
+      throw new Error("No web search providers are available.");
     }
     return firstProvider;
   }
@@ -158,10 +149,7 @@ class WebSearchToolInvocation extends BaseToolInvocation<
   /**
    * Format search results into a content string.
    */
-  private formatSearchResults(searchResult: {
-    answer?: string;
-    results: WebSearchResultItem[];
-  }): {
+  private formatSearchResults(searchResult: { answer?: string; results: WebSearchResultItem[] }): {
     content: string;
     sources: Array<{ title: string; url: string }>;
   } {
@@ -170,7 +158,7 @@ class WebSearchToolInvocation extends BaseToolInvocation<
       url: r.url,
     }));
 
-    let content = searchResult.answer?.trim() || '';
+    let content = searchResult.answer?.trim() || "";
 
     if (!content) {
       // Fallback: Build an informative summary with title + snippet + source link
@@ -198,14 +186,14 @@ class WebSearchToolInvocation extends BaseToolInvocation<
             parts.push(`   Published: ${r.publishedDate}`);
           }
 
-          return parts.join('\n');
+          return parts.join("\n");
         })
-        .join('\n\n');
+        .join("\n\n");
 
       // Add a note about using web_fetch for detailed content
       if (content) {
         content +=
-          '\n\n*Note: For detailed content from any source above, use the web_fetch tool with the URL.*';
+          "\n\n*Note: For detailed content from any source above, use the web_fetch tool with the URL.*";
       }
     } else {
       // When answer is available, append sources section
@@ -221,10 +209,10 @@ class WebSearchToolInvocation extends BaseToolInvocation<
     if (!webSearchConfig) {
       return {
         llmContent:
-          'Web search is disabled. Please configure a web search provider in your settings.',
-        returnDisplay: 'Web search is disabled.',
+          "Web search is disabled. Please configure a web search provider in your settings.",
+        returnDisplay: "Web search is disabled.",
         error: {
-          message: 'Web search is disabled',
+          message: "Web search is disabled",
           type: ToolErrorType.EXECUTION_FAILED,
         },
       };
@@ -262,7 +250,7 @@ class WebSearchToolInvocation extends BaseToolInvocation<
       debugLogger.error(errorMessage, error);
       return {
         llmContent: errorMessage,
-        returnDisplay: 'Error performing web search.',
+        returnDisplay: "Error performing web search.",
         error: {
           message: errorMessage,
           type: ToolErrorType.EXECUTION_FAILED,
@@ -275,32 +263,29 @@ class WebSearchToolInvocation extends BaseToolInvocation<
 /**
  * A tool to perform web searches using configurable providers.
  */
-export class WebSearchTool extends BaseDeclarativeTool<
-  WebSearchToolParams,
-  WebSearchToolResult
-> {
+export class WebSearchTool extends BaseDeclarativeTool<WebSearchToolParams, WebSearchToolResult> {
   static readonly Name: string = ToolNames.WEB_SEARCH;
 
   constructor(private readonly config: Config) {
     super(
       WebSearchTool.Name,
       ToolDisplayNames.WEB_SEARCH,
-      'Allows searching the web and using results to inform responses. Provides up-to-date information for current events and recent data beyond the training data cutoff. Returns search results formatted with concise answers and source links. Use this tool when accessing information that may be outdated or beyond the knowledge cutoff.',
+      "Allows searching the web and using results to inform responses. Provides up-to-date information for current events and recent data beyond the training data cutoff. Returns search results formatted with concise answers and source links. Use this tool when accessing information that may be outdated or beyond the knowledge cutoff.",
       Kind.Search,
       {
-        type: 'object',
+        type: "object",
         properties: {
           query: {
-            type: 'string',
-            description: 'The search query to find information on the web.',
+            type: "string",
+            description: "The search query to find information on the web.",
           },
           provider: {
-            type: 'string',
+            type: "string",
             description:
               'Optional provider to use for the search (e.g., "tavily", "google"). IMPORTANT: Only specify this parameter if you explicitly know which provider to use. Otherwise, omit this parameter entirely and let the system automatically select the appropriate provider based on availability and configuration. The system will choose the best available provider automatically.',
           },
         },
-        required: ['query'],
+        required: ["query"],
       },
     );
   }
@@ -310,15 +295,13 @@ export class WebSearchTool extends BaseDeclarativeTool<
    * @param params The parameters to validate
    * @returns An error message string if validation fails, null if valid
    */
-  protected override validateToolParamValues(
-    params: WebSearchToolParams,
-  ): string | null {
-    if (!params.query || params.query.trim() === '') {
+  protected override validateToolParamValues(params: WebSearchToolParams): string | null {
+    if (!params.query || params.query.trim() === "") {
       return "The 'query' parameter cannot be empty.";
     }
 
     // Validate provider parameter if provided
-    if (params.provider !== undefined && params.provider.trim() === '') {
+    if (params.provider !== undefined && params.provider.trim() === "") {
       return "The 'provider' parameter cannot be empty if specified.";
     }
 
@@ -334,8 +317,8 @@ export class WebSearchTool extends BaseDeclarativeTool<
 
 // Re-export types for external use
 export type {
-  WebSearchToolParams,
-  WebSearchToolResult,
   WebSearchConfig,
   WebSearchProviderConfig,
-} from './types.js';
+  WebSearchToolParams,
+  WebSearchToolResult,
+} from "./types.js";

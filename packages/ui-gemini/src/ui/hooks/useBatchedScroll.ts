@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { useRef, useEffect, useCallback } from 'react';
+import { useCallback, useEffect, useRef } from "react";
 
 /**
  * A hook to manage batched scroll state updates.

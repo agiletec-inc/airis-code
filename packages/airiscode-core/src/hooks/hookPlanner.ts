@@ -4,12 +4,12 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import type { HookRegistry, HookRegistryEntry } from './hookRegistry.js';
-import type { HookExecutionPlan } from './types.js';
-import { getHookKey, HookEventName } from './types.js';
-import { createDebugLogger } from '../utils/debugLogger.js';
+import { createDebugLogger } from "../utils/debugLogger.js";
+import type { HookRegistry, HookRegistryEntry } from "./hookRegistry.js";
+import type { HookExecutionPlan } from "./types.js";
+import { getHookKey, HookEventName } from "./types.js";
 
-const debugLogger = createDebugLogger('TRUSTED_HOOKS');
+const debugLogger = createDebugLogger("TRUSTED_HOOKS");
 
 /**
  * Hook planner that selects matching hooks and creates execution plans
@@ -50,9 +50,7 @@ export class HookPlanner {
     const hookConfigs = deduplicatedEntries.map((entry) => entry.config);
 
     // Determine execution strategy - if ANY hook definition has sequential=true, run all sequentially
-    const sequential = deduplicatedEntries.some(
-      (entry) => entry.sequential === true,
-    );
+    const sequential = deduplicatedEntries.some((entry) => entry.sequential === true);
 
     const plan: HookExecutionPlan = {
       eventName,
@@ -80,7 +78,7 @@ export class HookPlanner {
 
     const matcher = entry.matcher.trim();
 
-    if (matcher === '' || matcher === '*') {
+    if (matcher === "" || matcher === "*") {
       return true; // Empty string or wildcard matches all
     }
 
@@ -91,22 +89,16 @@ export class HookPlanner {
       case HookEventName.PostToolUse:
       case HookEventName.PostToolUseFailure:
       case HookEventName.PermissionRequest:
-        return context.toolName
-          ? this.matchesToolName(matcher, context.toolName)
-          : true;
+        return context.toolName ? this.matchesToolName(matcher, context.toolName) : true;
 
       // Subagent events: match against agent type
       case HookEventName.SubagentStart:
       case HookEventName.SubagentStop:
-        return context.agentType
-          ? this.matchesAgentType(matcher, context.agentType)
-          : true;
+        return context.agentType ? this.matchesAgentType(matcher, context.agentType) : true;
 
       // PreCompact: match against trigger
       case HookEventName.PreCompact:
-        return context.trigger
-          ? this.matchesTrigger(matcher, context.trigger)
-          : true;
+        return context.trigger ? this.matchesTrigger(matcher, context.trigger) : true;
 
       // Notification: match against notification type
       case HookEventName.Notification:
@@ -116,14 +108,10 @@ export class HookPlanner {
 
       // SessionStart/SessionEnd: match against source/reason
       case HookEventName.SessionStart:
-        return context.trigger
-          ? this.matchesSessionTrigger(matcher, context.trigger)
-          : true;
+        return context.trigger ? this.matchesSessionTrigger(matcher, context.trigger) : true;
 
       case HookEventName.SessionEnd:
-        return context.trigger
-          ? this.matchesSessionTrigger(matcher, context.trigger)
-          : true;
+        return context.trigger ? this.matchesSessionTrigger(matcher, context.trigger) : true;
 
       // Events that don't support matchers: always match
       case HookEventName.UserPromptSubmit:
@@ -136,10 +124,7 @@ export class HookPlanner {
   /**
    * Match notification type against matcher pattern
    */
-  private matchesNotificationType(
-    matcher: string,
-    notificationType: string,
-  ): boolean {
+  private matchesNotificationType(matcher: string, notificationType: string): boolean {
     return matcher === notificationType;
   }
 

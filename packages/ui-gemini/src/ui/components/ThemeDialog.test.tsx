@@ -4,13 +4,13 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { renderWithProviders } from '../../test-utils/render.js';
-import { waitFor } from '../../test-utils/async.js';
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { ThemeDialog } from './ThemeDialog.js';
-import { LoadedSettings } from '../../config/settings.js';
-import { DEFAULT_THEME, themeManager } from '../themes/theme-manager.js';
-import { act } from 'react';
+import { act } from "react";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { LoadedSettings } from "../../config/settings.js";
+import { waitFor } from "../../test-utils/async.js";
+import { renderWithProviders } from "../../test-utils/render.js";
+import { DEFAULT_THEME, themeManager } from "../themes/theme-manager.js";
+import { ThemeDialog } from "./ThemeDialog.js";
 
 const createMockSettings = (
   userSettings = {},
@@ -21,12 +21,12 @@ const createMockSettings = (
     {
       settings: { ui: { customThemes: {} }, ...systemSettings },
       originalSettings: { ui: { customThemes: {} }, ...systemSettings },
-      path: '/system/settings.json',
+      path: "/system/settings.json",
     },
     {
       settings: {},
       originalSettings: {},
-      path: '/system/system-defaults.json',
+      path: "/system/system-defaults.json",
     },
     {
       settings: {
@@ -37,7 +37,7 @@ const createMockSettings = (
         ui: { customThemes: {} },
         ...userSettings,
       },
-      path: '/user/settings.json',
+      path: "/user/settings.json",
     },
     {
       settings: {
@@ -48,13 +48,13 @@ const createMockSettings = (
         ui: { customThemes: {} },
         ...workspaceSettings,
       },
-      path: '/workspace/settings.json',
+      path: "/workspace/settings.json",
     },
     true,
     new Set(),
   );
 
-describe('ThemeDialog Snapshots', () => {
+describe("ThemeDialog Snapshots", () => {
   const baseProps = {
     onSelect: vi.fn(),
     onCancel: vi.fn(),
@@ -72,17 +72,16 @@ describe('ThemeDialog Snapshots', () => {
     vi.restoreAllMocks();
   });
 
-  it('should render correctly in theme selection mode', () => {
+  it("should render correctly in theme selection mode", () => {
     const settings = createMockSettings();
-    const { lastFrame } = renderWithProviders(
-      <ThemeDialog {...baseProps} settings={settings} />,
-      { settings },
-    );
+    const { lastFrame } = renderWithProviders(<ThemeDialog {...baseProps} settings={settings} />, {
+      settings,
+    });
 
     expect(lastFrame()).toMatchSnapshot();
   });
 
-  it('should render correctly in scope selector mode', async () => {
+  it("should render correctly in scope selector mode", async () => {
     const settings = createMockSettings();
     const { lastFrame, stdin } = renderWithProviders(
       <ThemeDialog {...baseProps} settings={settings} />,
@@ -91,7 +90,7 @@ describe('ThemeDialog Snapshots', () => {
 
     // Press Tab to switch to scope selector mode
     act(() => {
-      stdin.write('\t');
+      stdin.write("\t");
     });
 
     // Need to wait for the state update to propagate
@@ -100,20 +99,16 @@ describe('ThemeDialog Snapshots', () => {
     expect(lastFrame()).toMatchSnapshot();
   });
 
-  it('should call onCancel when ESC is pressed', async () => {
+  it("should call onCancel when ESC is pressed", async () => {
     const mockOnCancel = vi.fn();
     const settings = createMockSettings();
     const { stdin } = renderWithProviders(
-      <ThemeDialog
-        {...baseProps}
-        onCancel={mockOnCancel}
-        settings={settings}
-      />,
+      <ThemeDialog {...baseProps} onCancel={mockOnCancel} settings={settings} />,
       { settings },
     );
 
     act(() => {
-      stdin.write('\x1b');
+      stdin.write("\x1b");
     });
 
     await waitFor(() => {
@@ -121,20 +116,17 @@ describe('ThemeDialog Snapshots', () => {
     });
   });
 
-  it('should call refreshStatic when a theme is selected', async () => {
+  it("should call refreshStatic when a theme is selected", async () => {
     const mockRefreshStatic = vi.fn();
     const settings = createMockSettings();
-    const { stdin } = renderWithProviders(
-      <ThemeDialog {...baseProps} settings={settings} />,
-      {
-        settings,
-        uiActions: { refreshStatic: mockRefreshStatic },
-      },
-    );
+    const { stdin } = renderWithProviders(<ThemeDialog {...baseProps} settings={settings} />, {
+      settings,
+      uiActions: { refreshStatic: mockRefreshStatic },
+    });
 
     // Press Enter to select the theme
     act(() => {
-      stdin.write('\r');
+      stdin.write("\r");
     });
 
     await waitFor(() => {

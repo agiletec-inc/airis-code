@@ -4,14 +4,13 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { useCallback } from 'react';
-import { Box, Text } from 'ink';
-import type { WizardStepProps } from '../types.js';
-import { theme } from '../../../semantic-colors.js';
-import { TextInput } from '../../shared/TextInput.js';
+import { Box, Text } from "ink";
+import { useCallback } from "react";
+import { theme } from "../../../semantic-colors.js";
+import { TextInput } from "../../shared/TextInput.js";
+import type { WizardStepProps } from "../types.js";
 
-interface TextEntryStepProps
-  extends Pick<WizardStepProps, 'dispatch' | 'onNext' | 'state'> {
+interface TextEntryStepProps extends Pick<WizardStepProps, "dispatch" | "onNext" | "state"> {
   description: string;
   placeholder?: string;
   /**
@@ -37,22 +36,18 @@ export function TextEntryStep({
   description,
   placeholder,
   height = 1,
-  initialText = '',
+  initialText = "",
   onChange,
   validate,
 }: TextEntryStepProps) {
   const submit = useCallback(() => {
-    const value = initialText ? initialText.trim() : '';
-    const error = validate
-      ? validate(value)
-      : value.length === 0
-        ? 'Please enter a value.'
-        : null;
+    const value = initialText ? initialText.trim() : "";
+    const error = validate ? validate(value) : value.length === 0 ? "Please enter a value." : null;
     if (error) {
-      dispatch({ type: 'SET_VALIDATION_ERRORS', errors: [error] });
+      dispatch({ type: "SET_VALIDATION_ERRORS", errors: [error] });
       return;
     }
-    dispatch({ type: 'SET_VALIDATION_ERRORS', errors: [] });
+    dispatch({ type: "SET_VALIDATION_ERRORS", errors: [] });
     onNext();
   }, [dispatch, onNext, validate, initialText]);
 

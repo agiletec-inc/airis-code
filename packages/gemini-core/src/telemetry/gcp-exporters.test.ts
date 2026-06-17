@@ -4,27 +4,23 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { ExportResultCode } from '@opentelemetry/core';
-import type { ReadableLogRecord } from '@opentelemetry/sdk-logs';
-import {
-  GcpTraceExporter,
-  GcpMetricExporter,
-  GcpLogExporter,
-} from './gcp-exporters.js';
+import { ExportResultCode } from "@opentelemetry/core";
+import type { ReadableLogRecord } from "@opentelemetry/sdk-logs";
+import { beforeEach, describe, expect, it, vi } from "vitest";
+import { GcpLogExporter, GcpMetricExporter, GcpTraceExporter } from "./gcp-exporters.js";
 
-const mockLogEntry = { test: 'entry' };
+const mockLogEntry = { test: "entry" };
 const mockLogWrite = vi.fn().mockResolvedValue(undefined);
 const mockLog = {
   entry: vi.fn().mockReturnValue(mockLogEntry),
   write: mockLogWrite,
 };
 const mockLogging = {
-  projectId: 'test-project',
+  projectId: "test-project",
   log: vi.fn().mockReturnValue(mockLog),
 };
 
-vi.mock('@google-cloud/opentelemetry-cloud-trace-exporter', () => ({
+vi.mock("@google-cloud/opentelemetry-cloud-trace-exporter", () => ({
   TraceExporter: vi.fn().mockImplementation(() => ({
     export: vi.fn(),
     shutdown: vi.fn(),
@@ -32,7 +28,7 @@ vi.mock('@google-cloud/opentelemetry-cloud-trace-exporter', () => ({
   })),
 }));
 
-vi.mock('@google-cloud/opentelemetry-cloud-monitoring-exporter', () => ({
+vi.mock("@google-cloud/opentelemetry-cloud-monitoring-exporter", () => ({
   MetricExporter: vi.fn().mockImplementation(() => ({
     export: vi.fn(),
     shutdown: vi.fn(),
@@ -40,73 +36,73 @@ vi.mock('@google-cloud/opentelemetry-cloud-monitoring-exporter', () => ({
   })),
 }));
 
-vi.mock('@google-cloud/logging', () => ({
+vi.mock("@google-cloud/logging", () => ({
   Logging: vi.fn().mockImplementation(() => mockLogging),
 }));
 
-describe('GCP Exporters', () => {
-  describe('GcpTraceExporter', () => {
-    it('should create a trace exporter with correct configuration', () => {
-      const exporter = new GcpTraceExporter('test-project');
+describe("GCP Exporters", () => {
+  describe("GcpTraceExporter", () => {
+    it("should create a trace exporter with correct configuration", () => {
+      const exporter = new GcpTraceExporter("test-project");
       expect(exporter).toBeDefined();
     });
 
-    it('should create a trace exporter without project ID', () => {
+    it("should create a trace exporter without project ID", () => {
       const exporter = new GcpTraceExporter();
       expect(exporter).toBeDefined();
     });
   });
 
-  describe('GcpMetricExporter', () => {
-    it('should create a metric exporter with correct configuration', () => {
-      const exporter = new GcpMetricExporter('test-project');
+  describe("GcpMetricExporter", () => {
+    it("should create a metric exporter with correct configuration", () => {
+      const exporter = new GcpMetricExporter("test-project");
       expect(exporter).toBeDefined();
     });
 
-    it('should create a metric exporter without project ID', () => {
+    it("should create a metric exporter without project ID", () => {
       const exporter = new GcpMetricExporter();
       expect(exporter).toBeDefined();
     });
   });
 
-  describe('GcpLogExporter', () => {
+  describe("GcpLogExporter", () => {
     let exporter: GcpLogExporter;
 
     beforeEach(() => {
       vi.clearAllMocks();
       mockLogWrite.mockResolvedValue(undefined);
       mockLog.entry.mockReturnValue(mockLogEntry);
-      exporter = new GcpLogExporter('test-project');
+      exporter = new GcpLogExporter("test-project");
     });
 
-    describe('constructor', () => {
-      it('should create a log exporter with project ID', () => {
+    describe("constructor", () => {
+      it("should create a log exporter with project ID", () => {
         expect(exporter).toBeDefined();
-        expect(mockLogging.log).toHaveBeenCalledWith('gemini_cli');
+        expect(mockLogging.log).toHaveBeenCalledWith("gemini_cli");
       });
 
-      it('should create a log exporter without project ID', () => {
+      it("should create a log exporter without project ID", () => {
         const exporterNoProject = new GcpLogExporter();
         expect(exporterNoProject).toBeDefined();
       });
     });
 
-    describe('export', () => {
-      it('should export logs successfully', async () => {
+    describe("export", () => {
+      it("should export logs successfully", async () => {
         const mockLogRecords: ReadableLogRecord[] = [
           {
             hrTime: [1234567890, 123456789],
             hrTimeObserved: [1234567890, 123456789],
             severityNumber: 9,
-            severityText: 'INFO',
-            body: 'Test log message',
+            severityText: "INFO",
+            body: "Test log message",
             attributes: {
-              'session.id': 'test-session',
-              'custom.attribute': 'value',
+              "session.id": "test-session",
+              "custom.attribute": "value",
             },
             resource: {
               attributes: {
-                'service.name': 'test-service',
+                "service.name": "test-service",
               },
             },
           } as unknown as ReadableLogRecord,
@@ -120,20 +116,20 @@ describe('GCP Exporters', () => {
 
         expect(mockLog.entry).toHaveBeenCalledWith(
           expect.objectContaining({
-            severity: 'INFO',
+            severity: "INFO",
             timestamp: expect.any(Date),
             resource: {
-              type: 'global',
+              type: "global",
               labels: {
-                project_id: 'test-project',
+                project_id: "test-project",
               },
             },
           }),
           expect.objectContaining({
-            message: 'Test log message',
-            'session.id': 'test-session',
-            'custom.attribute': 'value',
-            'service.name': 'test-service',
+            message: "Test log message",
+            "session.id": "test-session",
+            "custom.attribute": "value",
+            "service.name": "test-service",
           }),
         );
 
@@ -143,16 +139,16 @@ describe('GCP Exporters', () => {
         });
       });
 
-      it('should handle export failures', async () => {
+      it("should handle export failures", async () => {
         const mockLogRecords: ReadableLogRecord[] = [
           {
             hrTime: [1234567890, 123456789],
             hrTimeObserved: [1234567890, 123456789],
-            body: 'Test log message',
+            body: "Test log message",
           } as unknown as ReadableLogRecord,
         ];
 
-        const error = new Error('Write failed');
+        const error = new Error("Write failed");
         mockLogWrite.mockRejectedValueOnce(error);
 
         const callback = vi.fn();
@@ -167,17 +163,17 @@ describe('GCP Exporters', () => {
         });
       });
 
-      it('should handle synchronous errors', () => {
+      it("should handle synchronous errors", () => {
         const mockLogRecords: ReadableLogRecord[] = [
           {
             hrTime: [1234567890, 123456789],
             hrTimeObserved: [1234567890, 123456789],
-            body: 'Test log message',
+            body: "Test log message",
           } as unknown as ReadableLogRecord,
         ];
 
         mockLog.entry.mockImplementation(() => {
-          throw new Error('Entry creation failed');
+          throw new Error("Entry creation failed");
         });
 
         const callback = vi.fn();
@@ -191,17 +187,17 @@ describe('GCP Exporters', () => {
       });
     });
 
-    describe('severity mapping', () => {
-      it('should map OpenTelemetry severity numbers to Cloud Logging levels', () => {
+    describe("severity mapping", () => {
+      it("should map OpenTelemetry severity numbers to Cloud Logging levels", () => {
         const testCases = [
-          { severityNumber: undefined, expected: 'DEFAULT' },
-          { severityNumber: 1, expected: 'DEFAULT' },
-          { severityNumber: 5, expected: 'DEBUG' },
-          { severityNumber: 9, expected: 'INFO' },
-          { severityNumber: 13, expected: 'WARNING' },
-          { severityNumber: 17, expected: 'ERROR' },
-          { severityNumber: 21, expected: 'CRITICAL' },
-          { severityNumber: 25, expected: 'CRITICAL' },
+          { severityNumber: undefined, expected: "DEFAULT" },
+          { severityNumber: 1, expected: "DEFAULT" },
+          { severityNumber: 5, expected: "DEBUG" },
+          { severityNumber: 9, expected: "INFO" },
+          { severityNumber: 13, expected: "WARNING" },
+          { severityNumber: 17, expected: "ERROR" },
+          { severityNumber: 21, expected: "CRITICAL" },
+          { severityNumber: 25, expected: "CRITICAL" },
         ];
 
         testCases.forEach(({ severityNumber, expected }) => {
@@ -210,7 +206,7 @@ describe('GCP Exporters', () => {
               hrTime: [1234567890, 123456789],
               hrTimeObserved: [1234567890, 123456789],
               severityNumber,
-              body: 'Test message',
+              body: "Test message",
             } as unknown as ReadableLogRecord,
           ];
 
@@ -229,17 +225,17 @@ describe('GCP Exporters', () => {
       });
     });
 
-    describe('forceFlush', () => {
-      it('should resolve immediately when no pending writes exist', async () => {
+    describe("forceFlush", () => {
+      it("should resolve immediately when no pending writes exist", async () => {
         await expect(exporter.forceFlush()).resolves.toBeUndefined();
       });
 
-      it('should wait for pending writes to complete', async () => {
+      it("should wait for pending writes to complete", async () => {
         const mockLogRecords: ReadableLogRecord[] = [
           {
             hrTime: [1234567890, 123456789],
             hrTimeObserved: [1234567890, 123456789],
-            body: 'Test log message',
+            body: "Test log message",
           } as unknown as ReadableLogRecord,
         ];
 
@@ -262,12 +258,12 @@ describe('GCP Exporters', () => {
         await expect(flushPromise).resolves.toBeUndefined();
       });
 
-      it('should handle multiple pending writes', async () => {
+      it("should handle multiple pending writes", async () => {
         const mockLogRecords1: ReadableLogRecord[] = [
           {
             hrTime: [1234567890, 123456789],
             hrTimeObserved: [1234567890, 123456789],
-            body: 'Test log message 1',
+            body: "Test log message 1",
           } as unknown as ReadableLogRecord,
         ];
 
@@ -275,7 +271,7 @@ describe('GCP Exporters', () => {
           {
             hrTime: [1234567890, 123456789],
             hrTimeObserved: [1234567890, 123456789],
-            body: 'Test log message 2',
+            body: "Test log message 2",
           } as unknown as ReadableLogRecord,
         ];
 
@@ -288,9 +284,7 @@ describe('GCP Exporters', () => {
           resolveWrite2 = resolve;
         });
 
-        mockLogWrite
-          .mockReturnValueOnce(writePromise1)
-          .mockReturnValueOnce(writePromise2);
+        mockLogWrite.mockReturnValueOnce(writePromise1).mockReturnValueOnce(writePromise2);
 
         const callback = vi.fn();
 
@@ -308,16 +302,16 @@ describe('GCP Exporters', () => {
         await expect(flushPromise).resolves.toBeUndefined();
       });
 
-      it('should handle write failures gracefully', async () => {
+      it("should handle write failures gracefully", async () => {
         const mockLogRecords: ReadableLogRecord[] = [
           {
             hrTime: [1234567890, 123456789],
             hrTimeObserved: [1234567890, 123456789],
-            body: 'Test log message',
+            body: "Test log message",
           } as unknown as ReadableLogRecord,
         ];
 
-        const error = new Error('Write failed');
+        const error = new Error("Write failed");
         mockLogWrite.mockRejectedValueOnce(error);
 
         const callback = vi.fn();
@@ -334,27 +328,27 @@ describe('GCP Exporters', () => {
       });
     });
 
-    describe('shutdown', () => {
-      it('should call forceFlush', async () => {
-        const forceFlushSpy = vi.spyOn(exporter, 'forceFlush');
+    describe("shutdown", () => {
+      it("should call forceFlush", async () => {
+        const forceFlushSpy = vi.spyOn(exporter, "forceFlush");
 
         await exporter.shutdown();
 
         expect(forceFlushSpy).toHaveBeenCalled();
       });
 
-      it('should handle shutdown gracefully', async () => {
-        const forceFlushSpy = vi.spyOn(exporter, 'forceFlush');
+      it("should handle shutdown gracefully", async () => {
+        const forceFlushSpy = vi.spyOn(exporter, "forceFlush");
 
         await expect(exporter.shutdown()).resolves.toBeUndefined();
         expect(forceFlushSpy).toHaveBeenCalled();
       });
-      it('should wait for pending writes before shutting down', async () => {
+      it("should wait for pending writes before shutting down", async () => {
         const mockLogRecords: ReadableLogRecord[] = [
           {
             hrTime: [1234567890, 123456789],
             hrTimeObserved: [1234567890, 123456789],
-            body: 'Test log message',
+            body: "Test log message",
           } as unknown as ReadableLogRecord,
         ];
 
@@ -377,12 +371,12 @@ describe('GCP Exporters', () => {
         await expect(shutdownPromise).resolves.toBeUndefined();
       });
 
-      it('should clear pending writes array after shutdown', async () => {
+      it("should clear pending writes array after shutdown", async () => {
         const mockLogRecords: ReadableLogRecord[] = [
           {
             hrTime: [1234567890, 123456789],
             hrTimeObserved: [1234567890, 123456789],
-            body: 'Test log message',
+            body: "Test log message",
           } as unknown as ReadableLogRecord,
         ];
 

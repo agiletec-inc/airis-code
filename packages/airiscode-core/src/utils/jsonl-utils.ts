@@ -21,13 +21,13 @@
  * - exists() - Checks if file exists and is non-empty
  */
 
-import fs from 'node:fs';
-import path from 'node:path';
-import readline from 'node:readline';
-import { Mutex } from 'async-mutex';
-import { createDebugLogger } from './debugLogger.js';
+import fs from "node:fs";
+import path from "node:path";
+import readline from "node:readline";
+import { Mutex } from "async-mutex";
+import { createDebugLogger } from "./debugLogger.js";
 
-const debugLogger = createDebugLogger('JSONL');
+const debugLogger = createDebugLogger("JSONL");
 
 /**
  * A map of file paths to mutexes for preventing concurrent writes.
@@ -48,10 +48,7 @@ function getFileLock(filePath: string): Mutex {
  * Reads the first N lines from a JSONL file efficiently.
  * Returns an array of parsed objects.
  */
-export async function readLines<T = unknown>(
-  filePath: string,
-  count: number,
-): Promise<T[]> {
+export async function readLines<T = unknown>(filePath: string, count: number): Promise<T[]> {
   try {
     const fileStream = fs.createReadStream(filePath);
     const rl = readline.createInterface({
@@ -70,11 +67,8 @@ export async function readLines<T = unknown>(
 
     return results;
   } catch (error) {
-    if ((error as NodeJS.ErrnoException).code !== 'ENOENT') {
-      debugLogger.error(
-        `Error reading first ${count} lines from ${filePath}:`,
-        error,
-      );
+    if ((error as NodeJS.ErrnoException).code !== "ENOENT") {
+      debugLogger.error(`Error reading first ${count} lines from ${filePath}:`, error);
     }
     return [];
   }
@@ -102,7 +96,7 @@ export async function read<T = unknown>(filePath: string): Promise<T[]> {
 
     return results;
   } catch (error) {
-    if ((error as NodeJS.ErrnoException).code !== 'ENOENT') {
+    if ((error as NodeJS.ErrnoException).code !== "ENOENT") {
       debugLogger.error(`Error reading ${filePath}:`, error);
     }
     return [];
@@ -113,10 +107,7 @@ export async function read<T = unknown>(filePath: string): Promise<T[]> {
  * Appends a line to a JSONL file with concurrency control.
  * This method uses a mutex to ensure only one write happens at a time per file.
  */
-export async function writeLine(
-  filePath: string,
-  data: unknown,
-): Promise<void> {
+export async function writeLine(filePath: string, data: unknown): Promise<void> {
   const lock = getFileLock(filePath);
   await lock.runExclusive(() => {
     const line = `${JSON.stringify(data)}\n`;
@@ -125,7 +116,7 @@ export async function writeLine(
     if (!fs.existsSync(dir)) {
       fs.mkdirSync(dir, { recursive: true });
     }
-    fs.appendFileSync(filePath, line, 'utf8');
+    fs.appendFileSync(filePath, line, "utf8");
   });
 }
 
@@ -140,7 +131,7 @@ export function writeLineSync(filePath: string, data: unknown): void {
   if (!fs.existsSync(dir)) {
     fs.mkdirSync(dir, { recursive: true });
   }
-  fs.appendFileSync(filePath, line, 'utf8');
+  fs.appendFileSync(filePath, line, "utf8");
 }
 
 /**
@@ -148,13 +139,13 @@ export function writeLineSync(filePath: string, data: unknown): void {
  * Each object will be written as a separate line.
  */
 export function write(filePath: string, data: unknown[]): void {
-  const lines = data.map((item) => JSON.stringify(item)).join('\n');
+  const lines = data.map((item) => JSON.stringify(item)).join("\n");
   // Ensure directory exists before writing
   const dir = path.dirname(filePath);
   if (!fs.existsSync(dir)) {
     fs.mkdirSync(dir, { recursive: true });
   }
-  fs.writeFileSync(filePath, `${lines}\n`, 'utf8');
+  fs.writeFileSync(filePath, `${lines}\n`, "utf8");
 }
 
 /**
@@ -176,7 +167,7 @@ export async function countLines(filePath: string): Promise<number> {
     }
     return count;
   } catch (error) {
-    if ((error as NodeJS.ErrnoException).code !== 'ENOENT') {
+    if ((error as NodeJS.ErrnoException).code !== "ENOENT") {
       debugLogger.error(`Error counting lines in ${filePath}:`, error);
     }
     return 0;

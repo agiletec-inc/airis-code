@@ -4,12 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { BaseWebSearchProvider } from '../base-provider.js';
-import type {
-  WebSearchResult,
-  WebSearchResultItem,
-  GoogleProviderConfig,
-} from '../types.js';
+import { BaseWebSearchProvider } from "../base-provider.js";
+import type { GoogleProviderConfig, WebSearchResult, WebSearchResultItem } from "../types.js";
 
 interface GoogleSearchItem {
   title: string;
@@ -31,7 +27,7 @@ interface GoogleSearchResponse {
  * Web search provider using Google Custom Search API.
  */
 export class GoogleProvider extends BaseWebSearchProvider {
-  readonly name = 'Google';
+  readonly name = "Google";
 
   constructor(private readonly config: GoogleProviderConfig) {
     super();
@@ -41,37 +37,34 @@ export class GoogleProvider extends BaseWebSearchProvider {
     return !!(this.config.apiKey && this.config.searchEngineId);
   }
 
-  protected async performSearch(
-    query: string,
-    signal: AbortSignal,
-  ): Promise<WebSearchResult> {
+  protected async performSearch(query: string, signal: AbortSignal): Promise<WebSearchResult> {
     const params = new URLSearchParams({
       key: this.config.apiKey!,
       cx: this.config.searchEngineId!,
       q: query,
       num: String(this.config.maxResults || 10),
-      safe: this.config.safeSearch || 'medium',
+      safe: this.config.safeSearch || "medium",
     });
 
     if (this.config.language) {
-      params.append('lr', `lang_${this.config.language}`);
+      params.append("lr", `lang_${this.config.language}`);
     }
 
     if (this.config.country) {
-      params.append('cr', `country${this.config.country}`);
+      params.append("cr", `country${this.config.country}`);
     }
 
     const url = `https://www.googleapis.com/customsearch/v1?${params.toString()}`;
 
     const response = await fetch(url, {
-      method: 'GET',
+      method: "GET",
       signal,
     });
 
     if (!response.ok) {
-      const text = await response.text().catch(() => '');
+      const text = await response.text().catch(() => "");
       throw new Error(
-        `API error: ${response.status} ${response.statusText}${text ? ` - ${text}` : ''}`,
+        `API error: ${response.status} ${response.statusText}${text ? ` - ${text}` : ""}`,
       );
     }
 

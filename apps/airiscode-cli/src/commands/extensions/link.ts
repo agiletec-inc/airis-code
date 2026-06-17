@@ -4,16 +4,13 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import type { CommandModule } from 'yargs';
-import { type ExtensionInstallMetadata } from '@airiscode/core';
-import { getErrorMessage } from '../../utils/errors.js';
-import { writeStdoutLine, writeStderrLine } from '../../utils/stdioHelpers.js';
-import {
-  requestConsentNonInteractive,
-  requestConsentOrFail,
-} from './consent.js';
-import { getExtensionManager } from './utils.js';
-import { t } from '../../i18n/index.js';
+import { type ExtensionInstallMetadata } from "@airiscode/core";
+import type { CommandModule } from "yargs";
+import { t } from "../../i18n/index.js";
+import { getErrorMessage } from "../../utils/errors.js";
+import { writeStderrLine, writeStdoutLine } from "../../utils/stdioHelpers.js";
+import { requestConsentNonInteractive, requestConsentOrFail } from "./consent.js";
+import { getExtensionManager } from "./utils.js";
 
 interface InstallArgs {
   path: string;
@@ -23,7 +20,7 @@ export async function handleLink(args: InstallArgs) {
   try {
     const installMetadata: ExtensionInstallMetadata = {
       source: args.path,
-      type: 'link',
+      type: "link",
     };
     const extensionManager = await getExtensionManager();
 
@@ -32,7 +29,7 @@ export async function handleLink(args: InstallArgs) {
       requestConsentOrFail.bind(null, requestConsentNonInteractive),
     );
     if (!extension) {
-      writeStdoutLine(t('Link extension failed to install.'));
+      writeStdoutLine(t("Link extension failed to install."));
       return;
     }
     writeStdoutLine(
@@ -47,20 +44,20 @@ export async function handleLink(args: InstallArgs) {
 }
 
 export const linkCommand: CommandModule = {
-  command: 'link <path>',
+  command: "link <path>",
   describe: t(
-    'Links an extension from a local path. Updates made to the local path will always be reflected.',
+    "Links an extension from a local path. Updates made to the local path will always be reflected.",
   ),
   builder: (yargs) =>
     yargs
-      .positional('path', {
-        describe: t('The name of the extension to link.'),
-        type: 'string',
+      .positional("path", {
+        describe: t("The name of the extension to link."),
+        type: "string",
       })
       .check((_) => true),
   handler: async (argv) => {
     await handleLink({
-      path: argv['path'] as string,
+      path: argv["path"] as string,
     });
   },
 };

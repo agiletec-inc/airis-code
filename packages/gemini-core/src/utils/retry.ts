@@ -4,19 +4,18 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import type { GenerateContentResponse } from '@google/genai';
-import { ApiError } from '@google/genai';
-import { AuthType } from '../core/contentGenerator.js';
+import type { GenerateContentResponse } from "@google/genai";
+import { ApiError } from "@google/genai";
+import { AuthType } from "../core/contentGenerator.js";
+import { debugLogger } from "./debugLogger.js";
+import { createAbortError, delay } from "./delay.js";
 import {
   classifyGoogleError,
   RetryableQuotaError,
   TerminalQuotaError,
-} from './googleQuotaErrors.js';
-import { delay, createAbortError } from './delay.js';
-import { debugLogger } from './debugLogger.js';
+} from "./googleQuotaErrors.js";
 
-const FETCH_FAILED_MESSAGE =
-  'exception TypeError: fetch failed sending request';
+const FETCH_FAILED_MESSAGE = "exception TypeError: fetch failed sending request";
 
 export interface HttpError extends Error {
   status?: number;
@@ -28,10 +27,7 @@ export interface RetryOptions {
   maxDelayMs: number;
   shouldRetryOnError: (error: Error, retryFetchErrors?: boolean) => boolean;
   shouldRetryOnContent?: (content: GenerateContentResponse) => boolean;
-  onPersistent429?: (
-    authType?: string,
-    error?: unknown,
-  ) => Promise<string | boolean | null>;
+  onPersistent429?: (authType?: string, error?: unknown) => Promise<string | boolean | null>;
   authType?: string;
   retryFetchErrors?: boolean;
   signal?: AbortSignal;
@@ -51,15 +47,8 @@ const DEFAULT_RETRY_OPTIONS: RetryOptions = {
  * @param retryFetchErrors Whether to retry on specific fetch errors.
  * @returns True if the error is a transient error, false otherwise.
  */
-function defaultShouldRetry(
-  error: Error | unknown,
-  retryFetchErrors?: boolean,
-): boolean {
-  if (
-    retryFetchErrors &&
-    error instanceof Error &&
-    error.message.includes(FETCH_FAILED_MESSAGE)
-  ) {
+function defaultShouldRetry(error: Error | unknown, retryFetchErrors?: boolean): boolean {
+  if (retryFetchErrors && error instanceof Error && error.message.includes(FETCH_FAILED_MESSAGE)) {
     return true;
   }
 
@@ -95,7 +84,7 @@ export async function retryWithBackoff<T>(
   }
 
   if (options?.maxAttempts !== undefined && options.maxAttempts <= 0) {
-    throw new Error('maxAttempts must be a positive number.');
+    throw new Error("maxAttempts must be a positive number.");
   }
 
   const cleanOptions = options
@@ -128,10 +117,7 @@ export async function retryWithBackoff<T>(
     try {
       const result = await fn();
 
-      if (
-        shouldRetryOnContent &&
-        shouldRetryOnContent(result as GenerateContentResponse)
-      ) {
+      if (shouldRetryOnContent && shouldRetryOnContent(result as GenerateContentResponse)) {
         const jitter = currentDelay * 0.3 * (Math.random() * 2 - 1);
         const delayWithJitter = Math.max(0, currentDelay + jitter);
         await delay(delayWithJitter, signal);
@@ -141,7 +127,7 @@ export async function retryWithBackoff<T>(
 
       return result;
     } catch (error) {
-      if (error instanceof Error && error.name === 'AbortError') {
+      if (error instanceof Error && error.name === "AbortError") {
         throw error;
       }
 
@@ -150,17 +136,14 @@ export async function retryWithBackoff<T>(
       if (classifiedError instanceof TerminalQuotaError) {
         if (onPersistent429 && authType === AuthType.LOGIN_WITH_GOOGLE) {
           try {
-            const fallbackModel = await onPersistent429(
-              authType,
-              classifiedError,
-            );
+            const fallbackModel = await onPersistent429(authType, classifiedError);
             if (fallbackModel) {
               attempt = 0; // Reset attempts and retry with the new model.
               currentDelay = initialDelayMs;
               continue;
             }
           } catch (fallbackError) {
-            debugLogger.warn('Fallback to Flash model failed:', fallbackError);
+            debugLogger.warn("Fallback to Flash model failed:", fallbackError);
           }
         }
         throw classifiedError; // Throw if no fallback or fallback failed.
@@ -170,17 +153,14 @@ export async function retryWithBackoff<T>(
         if (attempt >= maxAttempts) {
           if (onPersistent429 && authType === AuthType.LOGIN_WITH_GOOGLE) {
             try {
-              const fallbackModel = await onPersistent429(
-                authType,
-                classifiedError,
-              );
+              const fallbackModel = await onPersistent429(authType, classifiedError);
               if (fallbackModel) {
                 attempt = 0; // Reset attempts and retry with the new model.
                 currentDelay = initialDelayMs;
                 continue;
               }
             } catch (fallbackError) {
-              console.warn('Model fallback failed:', fallbackError);
+              console.warn("Model fallback failed:", fallbackError);
             }
           }
           throw classifiedError;
@@ -193,10 +173,7 @@ export async function retryWithBackoff<T>(
       }
 
       // Generic retry logic for other errors
-      if (
-        attempt >= maxAttempts ||
-        !shouldRetryOnError(error as Error, retryFetchErrors)
-      ) {
+      if (attempt >= maxAttempts || !shouldRetryOnError(error as Error, retryFetchErrors)) {
         throw error;
       }
 
@@ -211,7 +188,7 @@ export async function retryWithBackoff<T>(
     }
   }
 
-  throw new Error('Retry attempts exhausted');
+  throw new Error("Retry attempts exhausted");
 }
 
 /**
@@ -220,20 +197,18 @@ export async function retryWithBackoff<T>(
  * @returns The HTTP status code, or undefined if not found.
  */
 export function getErrorStatus(error: unknown): number | undefined {
-  if (typeof error === 'object' && error !== null) {
-    if ('status' in error && typeof error.status === 'number') {
+  if (typeof error === "object" && error !== null) {
+    if ("status" in error && typeof error.status === "number") {
       return error.status;
     }
     // Check for error.response.status (common in axios errors)
     if (
-      'response' in error &&
-      typeof (error as { response?: unknown }).response === 'object' &&
+      "response" in error &&
+      typeof (error as { response?: unknown }).response === "object" &&
       (error as { response?: unknown }).response !== null
     ) {
-      const response = (
-        error as { response: { status?: unknown; headers?: unknown } }
-      ).response;
-      if ('status' in response && typeof response.status === 'number') {
+      const response = (error as { response: { status?: unknown; headers?: unknown } }).response;
+      if ("status" in response && typeof response.status === "number") {
         return response.status;
       }
     }
@@ -247,11 +222,7 @@ export function getErrorStatus(error: unknown): number | undefined {
  * @param error The error that caused the retry.
  * @param errorStatus The HTTP status code of the error, if available.
  */
-function logRetryAttempt(
-  attempt: number,
-  error: unknown,
-  errorStatus?: number,
-): void {
+function logRetryAttempt(attempt: number, error: unknown, errorStatus?: number): void {
   let message = `Attempt ${attempt} failed. Retrying with backoff...`;
   if (errorStatus) {
     message = `Attempt ${attempt} failed with status ${errorStatus}. Retrying with backoff...`;
@@ -263,16 +234,13 @@ function logRetryAttempt(
     console.error(message, error);
   } else if (error instanceof Error) {
     // Fallback for errors that might not have a status but have a message
-    if (error.message.includes('429')) {
+    if (error.message.includes("429")) {
       debugLogger.warn(
         `Attempt ${attempt} failed with 429 error (no Retry-After header). Retrying with backoff...`,
         error,
       );
     } else if (error.message.match(/5\d{2}/)) {
-      console.error(
-        `Attempt ${attempt} failed with 5xx error. Retrying with backoff...`,
-        error,
-      );
+      console.error(`Attempt ${attempt} failed with 5xx error. Retrying with backoff...`, error);
     } else {
       debugLogger.warn(message, error); // Default to warn for other errors
     }

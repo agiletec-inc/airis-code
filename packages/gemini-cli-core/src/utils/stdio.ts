@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { coreEvents } from './events.js';
+import { coreEvents } from "./events.js";
 
 // Capture the original stdout and stderr write methods before any monkey patching occurs.
 const originalStdoutWrite = process.stdout.write.bind(process.stdout);
@@ -13,18 +13,14 @@ const originalStderrWrite = process.stderr.write.bind(process.stderr);
 /**
  * Writes to the real stdout, bypassing any monkey patching on process.stdout.write.
  */
-export function writeToStdout(
-  ...args: Parameters<typeof process.stdout.write>
-): boolean {
+export function writeToStdout(...args: Parameters<typeof process.stdout.write>): boolean {
   return originalStdoutWrite(...args);
 }
 
 /**
  * Writes to the real stderr, bypassing any monkey patching on process.stderr.write.
  */
-export function writeToStderr(
-  ...args: Parameters<typeof process.stderr.write>
-): boolean {
+export function writeToStderr(...args: Parameters<typeof process.stderr.write>): boolean {
   return originalStderrWrite(...args);
 }
 
@@ -39,15 +35,12 @@ export function patchStdio(): () => void {
 
   process.stdout.write = (
     chunk: Uint8Array | string,
-    encodingOrCb?:
-      | BufferEncoding
-      | ((err?: NodeJS.ErrnoException | null) => void),
+    encodingOrCb?: BufferEncoding | ((err?: NodeJS.ErrnoException | null) => void),
     cb?: (err?: NodeJS.ErrnoException | null) => void,
   ) => {
-    const encoding =
-      typeof encodingOrCb === 'string' ? encodingOrCb : undefined;
+    const encoding = typeof encodingOrCb === "string" ? encodingOrCb : undefined;
     coreEvents.emitOutput(false, chunk, encoding);
-    const callback = typeof encodingOrCb === 'function' ? encodingOrCb : cb;
+    const callback = typeof encodingOrCb === "function" ? encodingOrCb : cb;
     if (callback) {
       callback();
     }
@@ -56,15 +49,12 @@ export function patchStdio(): () => void {
 
   process.stderr.write = (
     chunk: Uint8Array | string,
-    encodingOrCb?:
-      | BufferEncoding
-      | ((err?: NodeJS.ErrnoException | null) => void),
+    encodingOrCb?: BufferEncoding | ((err?: NodeJS.ErrnoException | null) => void),
     cb?: (err?: NodeJS.ErrnoException | null) => void,
   ) => {
-    const encoding =
-      typeof encodingOrCb === 'string' ? encodingOrCb : undefined;
+    const encoding = typeof encodingOrCb === "string" ? encodingOrCb : undefined;
     coreEvents.emitOutput(true, chunk, encoding);
-    const callback = typeof encodingOrCb === 'function' ? encodingOrCb : cb;
+    const callback = typeof encodingOrCb === "function" ? encodingOrCb : cb;
     if (callback) {
       callback();
     }
@@ -85,11 +75,11 @@ export function patchStdio(): () => void {
 export function createWorkingStdio() {
   const inkStdout = new Proxy(process.stdout, {
     get(target, prop, receiver) {
-      if (prop === 'write') {
+      if (prop === "write") {
         return writeToStdout;
       }
       const value = Reflect.get(target, prop, receiver);
-      if (typeof value === 'function') {
+      if (typeof value === "function") {
         return value.bind(target);
       }
       return value;
@@ -98,11 +88,11 @@ export function createWorkingStdio() {
 
   const inkStderr = new Proxy(process.stderr, {
     get(target, prop, receiver) {
-      if (prop === 'write') {
+      if (prop === "write") {
         return writeToStderr;
       }
       const value = Reflect.get(target, prop, receiver);
-      if (typeof value === 'function') {
+      if (typeof value === "function") {
         return value.bind(target);
       }
       return value;

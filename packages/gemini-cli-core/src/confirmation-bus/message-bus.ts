@@ -4,17 +4,17 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { randomUUID } from 'node:crypto';
-import { EventEmitter } from 'node:events';
-import type { PolicyEngine } from '../policy/policy-engine.js';
-import { PolicyDecision, getHookSource } from '../policy/types.js';
+import { randomUUID } from "node:crypto";
+import { EventEmitter } from "node:events";
+import type { PolicyEngine } from "../policy/policy-engine.js";
+import { getHookSource, PolicyDecision } from "../policy/types.js";
+import { safeJsonStringify } from "../utils/safeJsonStringify.js";
 import {
-  MessageBusType,
-  type Message,
   type HookExecutionRequest,
   type HookPolicyDecision,
-} from './types.js';
-import { safeJsonStringify } from '../utils/safeJsonStringify.js';
+  type Message,
+  MessageBusType,
+} from "./types.js";
 
 export class MessageBus extends EventEmitter {
   constructor(
@@ -32,7 +32,7 @@ export class MessageBus extends EventEmitter {
 
     if (
       message.type === MessageBusType.TOOL_CONFIRMATION_REQUEST &&
-      !('correlationId' in message)
+      !("correlationId" in message)
     ) {
       return false;
     }
@@ -50,16 +50,11 @@ export class MessageBus extends EventEmitter {
     }
     try {
       if (!this.isValidMessage(message)) {
-        throw new Error(
-          `Invalid message structure: ${safeJsonStringify(message)}`,
-        );
+        throw new Error(`Invalid message structure: ${safeJsonStringify(message)}`);
       }
 
       if (message.type === MessageBusType.TOOL_CONFIRMATION_REQUEST) {
-        const { decision } = await this.policyEngine.check(
-          message.toolCall,
-          message.serverName,
-        );
+        const { decision } = await this.policyEngine.check(message.toolCall, message.serverName);
 
         switch (decision) {
           case PolicyDecision.ALLOW:
@@ -95,8 +90,7 @@ export class MessageBus extends EventEmitter {
         const decision = await this.policyEngine.checkHook(hookRequest);
 
         // Map decision to allow/deny for observability (ASK_USER treated as deny for hooks)
-        const effectiveDecision =
-          decision === PolicyDecision.ALLOW ? 'allow' : 'deny';
+        const effectiveDecision = decision === PolicyDecision.ALLOW ? "allow" : "deny";
 
         // Emit policy decision for observability
         this.emitMessage({
@@ -104,10 +98,7 @@ export class MessageBus extends EventEmitter {
           eventName: hookRequest.eventName,
           hookSource: getHookSource(hookRequest.input),
           decision: effectiveDecision,
-          reason:
-            decision !== PolicyDecision.ALLOW
-              ? 'Hook execution denied by policy'
-              : undefined,
+          reason: decision !== PolicyDecision.ALLOW ? "Hook execution denied by policy" : undefined,
         } as HookPolicyDecision);
 
         // If allowed, emit the request for hook system to handle
@@ -119,7 +110,7 @@ export class MessageBus extends EventEmitter {
             type: MessageBusType.HOOK_EXECUTION_RESPONSE,
             correlationId: hookRequest.correlationId,
             success: false,
-            error: new Error('Hook execution denied by policy'),
+            error: new Error("Hook execution denied by policy"),
           });
         }
       } else {
@@ -127,21 +118,15 @@ export class MessageBus extends EventEmitter {
         this.emitMessage(message);
       }
     } catch (error) {
-      this.emit('error', error);
+      this.emit("error", error);
     }
   }
 
-  subscribe<T extends Message>(
-    type: T['type'],
-    listener: (message: T) => void,
-  ): void {
+  subscribe<T extends Message>(type: T["type"], listener: (message: T) => void): void {
     this.on(type, listener);
   }
 
-  unsubscribe<T extends Message>(
-    type: T['type'],
-    listener: (message: T) => void,
-  ): void {
+  unsubscribe<T extends Message>(type: T["type"], listener: (message: T) => void): void {
     this.off(type, listener);
   }
 
@@ -151,8 +136,8 @@ export class MessageBus extends EventEmitter {
    * The correlation ID is generated internally and added to the request
    */
   async request<TRequest extends Message, TResponse extends Message>(
-    request: Omit<TRequest, 'correlationId'>,
-    responseType: TResponse['type'],
+    request: Omit<TRequest, "correlationId">,
+    responseType: TResponse["type"],
     timeoutMs: number = 60000,
   ): Promise<TResponse> {
     const correlationId = randomUUID();
@@ -170,10 +155,7 @@ export class MessageBus extends EventEmitter {
 
       const responseHandler = (response: TResponse) => {
         // Check if this response matches our request
-        if (
-          'correlationId' in response &&
-          response.correlationId === correlationId
-        ) {
+        if ("correlationId" in response && response.correlationId === correlationId) {
           cleanup();
           resolve(response);
         }

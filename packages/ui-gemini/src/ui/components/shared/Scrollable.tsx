@@ -4,19 +4,12 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import React, {
-  useState,
-  useEffect,
-  useRef,
-  useLayoutEffect,
-  useCallback,
-  useMemo,
-} from 'react';
-import { Box, getInnerHeight, getScrollHeight, type DOMElement } from 'ink';
-import { useKeypress, type Key } from '../../hooks/useKeypress.js';
-import { useScrollable } from '../../contexts/ScrollProvider.js';
-import { useAnimatedScrollbar } from '../../hooks/useAnimatedScrollbar.js';
-import { useBatchedScroll } from '../../hooks/useBatchedScroll.js';
+import { Box, type DOMElement, getInnerHeight, getScrollHeight } from "ink";
+import React, { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
+import { useScrollable } from "../../contexts/ScrollProvider.js";
+import { useAnimatedScrollbar } from "../../hooks/useAnimatedScrollbar.js";
+import { useBatchedScroll } from "../../hooks/useBatchedScroll.js";
+import { type Key, useKeypress } from "../../hooks/useKeypress.js";
 
 interface ScrollableProps {
   children?: React.ReactNode;
@@ -65,10 +58,7 @@ export const Scrollable: React.FC<ScrollableProps> = ({
 
     const isAtBottom = scrollTop >= size.scrollHeight - size.innerHeight - 1;
 
-    if (
-      size.innerHeight !== innerHeight ||
-      size.scrollHeight !== scrollHeight
-    ) {
+    if (size.innerHeight !== innerHeight || size.scrollHeight !== scrollHeight) {
       setSize({ innerHeight, scrollHeight });
       if (isAtBottom) {
         setScrollTop(Math.max(0, scrollHeight - innerHeight));
@@ -88,26 +78,25 @@ export const Scrollable: React.FC<ScrollableProps> = ({
     (delta: number) => {
       const { scrollHeight, innerHeight } = sizeRef.current;
       const current = getScrollTop();
-      const next = Math.min(
-        Math.max(0, current + delta),
-        Math.max(0, scrollHeight - innerHeight),
-      );
+      const next = Math.min(Math.max(0, current + delta), Math.max(0, scrollHeight - innerHeight));
       setPendingScrollTop(next);
       setScrollTop(next);
     },
     [sizeRef, getScrollTop, setPendingScrollTop],
   );
 
-  const { scrollbarColor, flashScrollbar, scrollByWithAnimation } =
-    useAnimatedScrollbar(hasFocus, scrollBy);
+  const { scrollbarColor, flashScrollbar, scrollByWithAnimation } = useAnimatedScrollbar(
+    hasFocus,
+    scrollBy,
+  );
 
   useKeypress(
     (key: Key) => {
       if (key.shift) {
-        if (key.name === 'up') {
+        if (key.name === "up") {
           scrollByWithAnimation(-1);
         }
-        if (key.name === 'down') {
+        if (key.name === "down") {
           scrollByWithAnimation(1);
         }
       }

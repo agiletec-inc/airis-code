@@ -4,11 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { vi } from 'vitest';
-import type {
-  ModelAvailabilityService,
-  ModelSelectionResult,
-} from './modelAvailabilityService.js';
+import { vi } from "vitest";
+import type { ModelAvailabilityService, ModelSelectionResult } from "./modelAvailabilityService.js";
 
 /**
  * Test helper to create a fully mocked ModelAvailabilityService.

@@ -3,15 +3,15 @@
  * Copyright 2026 Qwen Team
  * SPDX-License-Identifier: Apache-2.0
  */
-import { createDebugLogger } from '../utils/debugLogger.js';
+import { createDebugLogger } from "../utils/debugLogger.js";
 
-const debugLogger = createDebugLogger('TRUSTED_HOOKS');
+const debugLogger = createDebugLogger("TRUSTED_HOOKS");
 
 export enum HooksConfigSource {
-  Project = 'project',
-  User = 'user',
-  System = 'system',
-  Extensions = 'extensions',
+  Project = "project",
+  User = "user",
+  System = "system",
+  Extensions = "extensions",
 }
 
 /**
@@ -19,35 +19,35 @@ export enum HooksConfigSource {
  */
 export enum HookEventName {
   // PreToolUse - Before tool execution
-  PreToolUse = 'PreToolUse',
+  PreToolUse = "PreToolUse",
   // PostToolUse - After tool execution
-  PostToolUse = 'PostToolUse',
+  PostToolUse = "PostToolUse",
   // PostToolUseFailure - After tool execution fails
-  PostToolUseFailure = 'PostToolUseFailure',
+  PostToolUseFailure = "PostToolUseFailure",
   // Notification - When notifications are sent
-  Notification = 'Notification',
+  Notification = "Notification",
   // UserPromptSubmit - When the user submits a prompt
-  UserPromptSubmit = 'UserPromptSubmit',
+  UserPromptSubmit = "UserPromptSubmit",
   // SessionStart - When a new session is started
-  SessionStart = 'SessionStart',
+  SessionStart = "SessionStart",
   // Stop - Right before Claude concludes its response
-  Stop = 'Stop',
+  Stop = "Stop",
   // SubagentStart - When a subagent (Task tool call) is started
-  SubagentStart = 'SubagentStart',
+  SubagentStart = "SubagentStart",
   // SubagentStop - Right before a subagent (Task tool call) concludes its response
-  SubagentStop = 'SubagentStop',
+  SubagentStop = "SubagentStop",
   // PreCompact - Before conversation compaction
-  PreCompact = 'PreCompact',
+  PreCompact = "PreCompact",
   // SessionEnd - When a session is ending
-  SessionEnd = 'SessionEnd',
+  SessionEnd = "SessionEnd",
   // When a permission dialog is displayed
-  PermissionRequest = 'PermissionRequest',
+  PermissionRequest = "PermissionRequest",
 }
 
 /**
  * Fields in the hooks configuration that are not hook event names
  */
-export const HOOKS_CONFIG_FIELDS = ['enabled', 'disabled', 'notifications'];
+export const HOOKS_CONFIG_FIELDS = ["enabled", "disabled", "notifications"];
 
 /**
  * Hook configuration entry
@@ -73,7 +73,7 @@ export interface InjectHookConfig {
   name?: string;
   description?: string;
   /** Where to inject: main agent, subagent, or both */
-  target?: 'main' | 'subagent' | 'both';
+  target?: "main" | "subagent" | "both";
   source?: HooksConfigSource;
 }
 
@@ -92,16 +92,16 @@ export interface HookDefinition {
  * Hook implementation types
  */
 export enum HookType {
-  Command = 'command',
+  Command = "command",
   /** Context injection hook - AIRIS Code extension */
-  Inject = 'inject',
+  Inject = "inject",
 }
 
 /**
  * Generate a unique key for a hook configuration
  */
 export function getHookKey(hook: HookConfig): string {
-  const name = hook.name ?? '';
+  const name = hook.name ?? "";
   if (hook.type === HookType.Inject) {
     return name ? `inject:${name}` : `inject:${hook.content.slice(0, 50)}`;
   }
@@ -111,7 +111,7 @@ export function getHookKey(hook: HookConfig): string {
 /**
  * Decision types for hook outputs
  */
-export type HookDecision = 'ask' | 'block' | 'deny' | 'approve' | 'allow';
+export type HookDecision = "ask" | "block" | "deny" | "approve" | "allow";
 
 /**
  * Base hook input - common fields for all events
@@ -141,10 +141,7 @@ export interface HookOutput {
  * Factory function to create the appropriate hook output class based on event name
  * Returns specialized HookOutput subclasses for events with specific methods
  */
-export function createHookOutput(
-  eventName: string,
-  data: Partial<HookOutput>,
-): DefaultHookOutput {
+export function createHookOutput(eventName: string, data: Partial<HookOutput>): DefaultHookOutput {
   switch (eventName) {
     case HookEventName.PreToolUse:
       return new PreToolUseHookOutput(data);
@@ -188,7 +185,7 @@ export class DefaultHookOutput implements HookOutput {
    * Check if this output represents a blocking decision
    */
   isBlockingDecision(): boolean {
-    return this.decision === 'block' || this.decision === 'deny';
+    return this.decision === "block" || this.decision === "deny";
   }
 
   /**
@@ -202,24 +199,21 @@ export class DefaultHookOutput implements HookOutput {
    * Get the effective reason for blocking or stopping
    */
   getEffectiveReason(): string {
-    return this.stopReason || this.reason || 'No reason provided';
+    return this.stopReason || this.reason || "No reason provided";
   }
 
   /**
    * Get sanitized additional context for adding to responses.
    */
   getAdditionalContext(): string | undefined {
-    if (
-      this.hookSpecificOutput &&
-      'additionalContext' in this.hookSpecificOutput
-    ) {
-      const context = this.hookSpecificOutput['additionalContext'];
-      if (typeof context !== 'string') {
+    if (this.hookSpecificOutput && "additionalContext" in this.hookSpecificOutput) {
+      const context = this.hookSpecificOutput["additionalContext"];
+      if (typeof context !== "string") {
         return undefined;
       }
 
       // Sanitize by escaping < and > to prevent tag injection
-      return context.replace(/</g, '&lt;').replace(/>/g, '&gt;');
+      return context.replace(/</g, "&lt;").replace(/>/g, "&gt;");
     }
     return undefined;
   }
@@ -234,7 +228,7 @@ export class DefaultHookOutput implements HookOutput {
         reason: this.getEffectiveReason(),
       };
     }
-    return { blocked: false, reason: '' };
+    return { blocked: false, reason: "" };
   }
 
   /**
@@ -253,25 +247,22 @@ export class PreToolUseHookOutput extends DefaultHookOutput {
    * Get permission decision from hook output
    * @returns 'allow' | 'deny' | 'ask' | undefined
    */
-  getPermissionDecision(): 'allow' | 'deny' | 'ask' | undefined {
-    if (
-      this.hookSpecificOutput &&
-      'permissionDecision' in this.hookSpecificOutput
-    ) {
-      const decision = this.hookSpecificOutput['permissionDecision'];
-      if (decision === 'allow' || decision === 'deny' || decision === 'ask') {
+  getPermissionDecision(): "allow" | "deny" | "ask" | undefined {
+    if (this.hookSpecificOutput && "permissionDecision" in this.hookSpecificOutput) {
+      const decision = this.hookSpecificOutput["permissionDecision"];
+      if (decision === "allow" || decision === "deny" || decision === "ask") {
         return decision;
       }
     }
     // Fall back to base decision field
-    if (this.decision === 'allow' || this.decision === 'approve') {
-      return 'allow';
+    if (this.decision === "allow" || this.decision === "approve") {
+      return "allow";
     }
-    if (this.decision === 'deny' || this.decision === 'block') {
-      return 'deny';
+    if (this.decision === "deny" || this.decision === "block") {
+      return "deny";
     }
-    if (this.decision === 'ask') {
-      return 'ask';
+    if (this.decision === "ask") {
+      return "ask";
     }
     return undefined;
   }
@@ -280,12 +271,9 @@ export class PreToolUseHookOutput extends DefaultHookOutput {
    * Get permission decision reason
    */
   getPermissionDecisionReason(): string | undefined {
-    if (
-      this.hookSpecificOutput &&
-      'permissionDecisionReason' in this.hookSpecificOutput
-    ) {
-      const reason = this.hookSpecificOutput['permissionDecisionReason'];
-      if (typeof reason === 'string') {
+    if (this.hookSpecificOutput && "permissionDecisionReason" in this.hookSpecificOutput) {
+      const reason = this.hookSpecificOutput["permissionDecisionReason"];
+      if (typeof reason === "string") {
         return reason;
       }
     }
@@ -296,21 +284,21 @@ export class PreToolUseHookOutput extends DefaultHookOutput {
    * Check if permission was denied
    */
   isDenied(): boolean {
-    return this.getPermissionDecision() === 'deny';
+    return this.getPermissionDecision() === "deny";
   }
 
   /**
    * Check if user confirmation is required
    */
   isAsk(): boolean {
-    return this.getPermissionDecision() === 'ask';
+    return this.getPermissionDecision() === "ask";
   }
 
   /**
    * Check if permission was allowed
    */
   isAllowed(): boolean {
-    return this.getPermissionDecision() === 'allow';
+    return this.getPermissionDecision() === "allow";
   }
 }
 
@@ -327,14 +315,12 @@ export class PostToolUseHookOutput extends DefaultHookOutput {
     super(data);
     // Default to allowing tool usage if hook does not provide explicit decision
     // This maintains backward compatibility and follows security model of allowing by default
-    this.decision = data.decision ?? 'allow';
-    this.reason = data.reason ?? 'No reason provided';
+    this.decision = data.decision ?? "allow";
+    this.reason = data.reason ?? "No reason provided";
 
     // Log when default values are used to help with debugging
     if (data.decision === undefined) {
-      debugLogger.debug(
-        'PostToolUseHookOutput: No explicit decision set, defaulting to "allow"',
-      );
+      debugLogger.debug('PostToolUseHookOutput: No explicit decision set, defaulting to "allow"');
     }
     if (data.reason === undefined) {
       debugLogger.debug(
@@ -400,7 +386,7 @@ export interface PermissionRequestInput extends HookInput {
  * Decision object for PermissionRequest hooks
  */
 export interface PermissionRequestDecision {
-  behavior: 'allow' | 'deny';
+  behavior: "allow" | "deny";
   updatedInput?: Record<string, unknown>;
   updatedPermissions?: PermissionSuggestion[];
   message?: string;
@@ -415,13 +401,9 @@ export class PermissionRequestHookOutput extends DefaultHookOutput {
    * Get the permission decision if provided by hook
    */
   getPermissionDecision(): PermissionRequestDecision | undefined {
-    if (this.hookSpecificOutput && 'decision' in this.hookSpecificOutput) {
-      const decision = this.hookSpecificOutput['decision'];
-      if (
-        typeof decision === 'object' &&
-        decision !== null &&
-        !Array.isArray(decision)
-      ) {
+    if (this.hookSpecificOutput && "decision" in this.hookSpecificOutput) {
+      const decision = this.hookSpecificOutput["decision"];
+      if (typeof decision === "object" && decision !== null && !Array.isArray(decision)) {
         return decision as PermissionRequestDecision;
       }
     }
@@ -433,7 +415,7 @@ export class PermissionRequestHookOutput extends DefaultHookOutput {
    */
   isPermissionDenied(): boolean {
     const decision = this.getPermissionDecision();
-    return decision?.behavior === 'deny';
+    return decision?.behavior === "deny";
   }
 
   /**
@@ -484,8 +466,8 @@ export interface PreToolUseInput extends HookInput {
  */
 export interface PreToolUseOutput extends HookOutput {
   hookSpecificOutput: {
-    hookEventName: 'PreToolUse';
-    permissionDecision: 'allow' | 'deny' | 'ask';
+    hookEventName: "PreToolUse";
+    permissionDecision: "allow" | "deny" | "ask";
     permissionDecisionReason: string;
   };
 }
@@ -508,7 +490,7 @@ export interface PostToolUseOutput extends HookOutput {
   decision: HookDecision;
   reason: string;
   hookSpecificOutput?: {
-    hookEventName: 'PostToolUse';
+    hookEventName: "PostToolUse";
     additionalContext?: string;
   };
   updatedMCPToolOutput?: Record<string, unknown>;
@@ -533,7 +515,7 @@ export interface PostToolUseFailureInput extends HookInput {
  */
 export interface PostToolUseFailureOutput extends HookOutput {
   hookSpecificOutput?: {
-    hookEventName: 'PostToolUseFailure';
+    hookEventName: "PostToolUseFailure";
     additionalContext?: string;
   };
 }
@@ -550,7 +532,7 @@ export interface UserPromptSubmitInput extends HookInput {
  */
 export interface UserPromptSubmitOutput extends HookOutput {
   hookSpecificOutput?: {
-    hookEventName: 'UserPromptSubmit';
+    hookEventName: "UserPromptSubmit";
     additionalContext?: string;
   };
 }
@@ -559,10 +541,10 @@ export interface UserPromptSubmitOutput extends HookOutput {
  * Notification types
  */
 export enum NotificationType {
-  PermissionPrompt = 'permission_prompt',
-  IdlePrompt = 'idle_prompt',
-  AuthSuccess = 'auth_success',
-  ElicitationDialog = 'elicitation_dialog',
+  PermissionPrompt = "permission_prompt",
+  IdlePrompt = "idle_prompt",
+  AuthSuccess = "auth_success",
+  ElicitationDialog = "elicitation_dialog",
 }
 
 /**
@@ -579,7 +561,7 @@ export interface NotificationInput extends HookInput {
  */
 export interface NotificationOutput extends HookOutput {
   hookSpecificOutput?: {
-    hookEventName: 'Notification';
+    hookEventName: "Notification";
     additionalContext?: string;
   };
 }
@@ -597,7 +579,7 @@ export interface StopInput extends HookInput {
  */
 export interface StopOutput extends HookOutput {
   hookSpecificOutput?: {
-    hookEventName: 'Stop';
+    hookEventName: "Stop";
     additionalContext?: string;
   };
 }
@@ -606,17 +588,17 @@ export interface StopOutput extends HookOutput {
  * SessionStart source types
  */
 export enum SessionStartSource {
-  Startup = 'startup',
-  Resume = 'resume',
-  Clear = 'clear',
-  Compact = 'compact',
+  Startup = "startup",
+  Resume = "resume",
+  Clear = "clear",
+  Compact = "compact",
 }
 
 export enum PermissionMode {
-  Default = 'default',
-  Plan = 'plan',
-  AutoEdit = 'auto_edit',
-  Yolo = 'yolo',
+  Default = "default",
+  Plan = "plan",
+  AutoEdit = "auto_edit",
+  Yolo = "yolo",
 }
 
 /**
@@ -634,7 +616,7 @@ export interface SessionStartInput extends HookInput {
  */
 export interface SessionStartOutput extends HookOutput {
   hookSpecificOutput?: {
-    hookEventName: 'SessionStart';
+    hookEventName: "SessionStart";
     additionalContext?: string;
   };
 }
@@ -643,11 +625,11 @@ export interface SessionStartOutput extends HookOutput {
  * SessionEnd reason types
  */
 export enum SessionEndReason {
-  Clear = 'clear',
-  Logout = 'logout',
-  PromptInputExit = 'prompt_input_exit',
-  Bypass_permissions_disabled = 'bypass_permissions_disabled',
-  Other = 'other',
+  Clear = "clear",
+  Logout = "logout",
+  PromptInputExit = "prompt_input_exit",
+  Bypass_permissions_disabled = "bypass_permissions_disabled",
+  Other = "other",
 }
 
 /**
@@ -662,7 +644,7 @@ export interface SessionEndInput extends HookInput {
  */
 export interface SessionEndOutput extends HookOutput {
   hookSpecificOutput?: {
-    hookEventName: 'SessionEnd';
+    hookEventName: "SessionEnd";
     additionalContext?: string;
   };
 }
@@ -671,8 +653,8 @@ export interface SessionEndOutput extends HookOutput {
  * PreCompress trigger types
  */
 export enum PreCompactTrigger {
-  Manual = 'manual',
-  Auto = 'auto',
+  Manual = "manual",
+  Auto = "auto",
 }
 
 /**
@@ -688,16 +670,16 @@ export interface PreCompactInput extends HookInput {
  */
 export interface PreCompactOutput extends HookOutput {
   hookSpecificOutput?: {
-    hookEventName: 'PreCompact';
+    hookEventName: "PreCompact";
     additionalContext: string;
   };
 }
 
 export enum AgentType {
-  Bash = 'Bash',
-  Explorer = 'Explorer',
-  Plan = 'Plan',
-  Custom = 'Custom',
+  Bash = "Bash",
+  Explorer = "Explorer",
+  Plan = "Plan",
+  Custom = "Custom",
 }
 
 /**
@@ -715,7 +697,7 @@ export interface SubagentStartInput extends HookInput {
  */
 export interface SubagentStartOutput extends HookOutput {
   hookSpecificOutput?: {
-    hookEventName: 'SubagentStart';
+    hookEventName: "SubagentStart";
     additionalContext?: string;
   };
 }
@@ -739,7 +721,7 @@ export interface SubagentStopInput extends HookInput {
  */
 export interface SubagentStopOutput extends HookOutput {
   hookSpecificOutput?: {
-    hookEventName: 'SubagentStop';
+    hookEventName: "SubagentStop";
     additionalContext?: string;
   };
 }

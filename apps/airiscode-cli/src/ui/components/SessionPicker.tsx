@@ -4,20 +4,14 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { Box, Text } from 'ink';
-import type {
-  SessionListItem as SessionData,
-  SessionService,
-} from '@airiscode/core';
-import { theme } from '../semantic-colors.js';
-import { useSessionPicker } from '../hooks/useSessionPicker.js';
-import { formatRelativeTime } from '../utils/formatters.js';
-import {
-  formatMessageCount,
-  truncateText,
-} from '../utils/sessionPickerUtils.js';
-import { useTerminalSize } from '../hooks/useTerminalSize.js';
-import { t } from '../../i18n/index.js';
+import type { SessionListItem as SessionData, SessionService } from "@airiscode/core";
+import { Box, Text } from "ink";
+import { t } from "../../i18n/index.js";
+import { useSessionPicker } from "../hooks/useSessionPicker.js";
+import { useTerminalSize } from "../hooks/useTerminalSize.js";
+import { theme } from "../semantic-colors.js";
+import { formatRelativeTime } from "../utils/formatters.js";
+import { formatMessageCount, truncateText } from "../utils/sessionPickerUtils.js";
 
 export interface SessionPickerProps {
   sessionService: SessionService | null;
@@ -33,10 +27,10 @@ export interface SessionPickerProps {
 }
 
 const PREFIX_CHARS = {
-  selected: '› ',
-  scrollUp: '↑ ',
-  scrollDown: '↓ ',
-  normal: '  ',
+  selected: "› ",
+  scrollUp: "↑ ",
+  scrollDown: "↓ ",
+  normal: "  ",
 };
 
 interface SessionListItemViewProps {
@@ -81,7 +75,7 @@ function SessionListItemView({
         ? prefixChars.scrollDown
         : prefixChars.normal;
 
-  const promptText = session.prompt || '(empty prompt)';
+  const promptText = session.prompt || "(empty prompt)";
   const truncatedPrompt = truncateText(promptText, maxPromptWidth);
 
   return (
@@ -99,10 +93,7 @@ function SessionListItemView({
         >
           {prefix}
         </Text>
-        <Text
-          color={isSelected ? theme.text.accent : theme.text.primary}
-          bold={isSelected}
-        >
+        <Text color={isSelected ? theme.text.accent : theme.text.primary} bold={isSelected}>
           {truncatedPrompt}
         </Text>
       </Box>
@@ -117,13 +108,7 @@ function SessionListItemView({
 }
 
 export function SessionPicker(props: SessionPickerProps) {
-  const {
-    sessionService,
-    onSelect,
-    onCancel,
-    currentBranch,
-    centerSelection = true,
-  } = props;
+  const { sessionService, onSelect, onCancel, currentBranch, centerSelection = true } = props;
 
   const { columns: width, rows: height } = useTerminalSize();
 
@@ -134,10 +119,7 @@ export function SessionPicker(props: SessionPickerProps) {
   const reservedLines = 6;
   // Each item takes 2 lines (prompt + metadata) + 1 line margin between items
   const itemHeight = 3;
-  const maxVisibleItems = Math.max(
-    1,
-    Math.floor((height - reservedLines) / itemHeight),
-  );
+  const maxVisibleItems = Math.max(1, Math.floor((height - reservedLines) / itemHeight));
 
   const picker = useSessionPicker({
     sessionService,
@@ -150,12 +132,7 @@ export function SessionPicker(props: SessionPickerProps) {
   });
 
   return (
-    <Box
-      flexDirection="column"
-      width={boxWidth}
-      height={height - 1}
-      overflow="hidden"
-    >
+    <Box flexDirection="column" width={boxWidth} height={height - 1} overflow="hidden">
       <Box
         flexDirection="column"
         borderStyle="round"
@@ -167,37 +144,35 @@ export function SessionPicker(props: SessionPickerProps) {
         {/* Header row */}
         <Box paddingX={1}>
           <Text bold color={theme.text.primary}>
-            {t('Resume Session')}
+            {t("Resume Session")}
           </Text>
           {picker.filterByBranch && currentBranch && (
             <Text color={theme.text.secondary}>
-              {' '}
-              {t('(branch: {{branch}})', { branch: currentBranch })}
+              {" "}
+              {t("(branch: {{branch}})", { branch: currentBranch })}
             </Text>
           )}
         </Box>
 
         {/* Separator */}
         <Box>
-          <Text color={theme.border.default}>{'─'.repeat(boxWidth - 2)}</Text>
+          <Text color={theme.border.default}>{"─".repeat(boxWidth - 2)}</Text>
         </Box>
 
         {/* Session list */}
         <Box flexDirection="column" flexGrow={1} paddingX={1} overflow="hidden">
           {!sessionService || picker.isLoading ? (
             <Box paddingY={1} justifyContent="center">
-              <Text color={theme.text.secondary}>
-                {t('Loading sessions...')}
-              </Text>
+              <Text color={theme.text.secondary}>{t("Loading sessions...")}</Text>
             </Box>
           ) : picker.filteredSessions.length === 0 ? (
             <Box paddingY={1} justifyContent="center">
               <Text color={theme.text.secondary}>
                 {picker.filterByBranch
                   ? t('No sessions found for branch "{{branch}}"', {
-                      branch: currentBranch ?? '',
+                      branch: currentBranch ?? "",
                     })
-                  : t('No sessions found')}
+                  : t("No sessions found")}
               </Text>
             </Box>
           ) : (
@@ -223,7 +198,7 @@ export function SessionPicker(props: SessionPickerProps) {
 
         {/* Separator */}
         <Box>
-          <Text color={theme.border.default}>{'─'.repeat(boxWidth - 2)}</Text>
+          <Text color={theme.border.default}>{"─".repeat(boxWidth - 2)}</Text>
         </Box>
 
         {/* Footer */}
@@ -237,12 +212,10 @@ export function SessionPicker(props: SessionPickerProps) {
                 >
                   B
                 </Text>
-                {t(' to toggle branch')} ·
+                {t(" to toggle branch")} ·
               </Text>
             )}
-            <Text color={theme.text.secondary}>
-              {t('↑↓ to navigate · Esc to cancel')}
-            </Text>
+            <Text color={theme.text.secondary}>{t("↑↓ to navigate · Esc to cancel")}</Text>
           </Box>
         </Box>
       </Box>

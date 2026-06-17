@@ -4,25 +4,13 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import type { ReactNode } from 'react';
-import type {
-  HistoryItemWithoutId,
-  HistoryItem,
-  ConfirmationRequest,
-} from '../types.js';
-import type {
-  Config,
-  GitService,
-  Logger,
-  CommandActionReturn,
-} from '@airiscode/gemini-cli-core';
-import type { LoadedSettings } from '../../config/settings.js';
-import type { UseHistoryManagerReturn } from '../hooks/useHistoryManager.js';
-import type { SessionStatsState } from '../contexts/SessionContext.js';
-import type {
-  ExtensionUpdateAction,
-  ExtensionUpdateStatus,
-} from '../state/extensions.js';
+import type { CommandActionReturn, Config, GitService, Logger } from "@airiscode/gemini-cli-core";
+import type { ReactNode } from "react";
+import type { LoadedSettings } from "../../config/settings.js";
+import type { SessionStatsState } from "../contexts/SessionContext.js";
+import type { UseHistoryManagerReturn } from "../hooks/useHistoryManager.js";
+import type { ExtensionUpdateAction, ExtensionUpdateStatus } from "../state/extensions.js";
+import type { ConfirmationRequest, HistoryItem, HistoryItemWithoutId } from "../types.js";
 
 // Grouped dependencies for clarity and easier mocking
 export interface CommandContext {
@@ -46,7 +34,7 @@ export interface CommandContext {
   // UI state and history management
   ui: {
     /** Adds a new item to the history display. */
-    addItem: UseHistoryManagerReturn['addItem'];
+    addItem: UseHistoryManagerReturn["addItem"];
     /** Clears all history items and the console screen. */
     clear: () => void;
     /**
@@ -67,7 +55,7 @@ export interface CommandContext {
      *
      * @param history The array of history items to load.
      */
-    loadHistory: UseHistoryManagerReturn['loadHistory'];
+    loadHistory: UseHistoryManagerReturn["loadHistory"];
     /** Toggles a special display mode. */
     toggleCorgiMode: () => void;
     toggleDebugProfiler: () => void;
@@ -90,7 +78,7 @@ export interface CommandContext {
 
 /** The return type for a command action that results in the app quitting. */
 export interface QuitActionReturn {
-  type: 'quit';
+  type: "quit";
   messages: HistoryItem[];
 }
 
@@ -98,19 +86,19 @@ export interface QuitActionReturn {
  * The return type for a command action that needs to open a dialog.
  */
 export interface OpenDialogActionReturn {
-  type: 'dialog';
+  type: "dialog";
   props?: Record<string, unknown>;
 
   dialog:
-    | 'help'
-    | 'auth'
-    | 'theme'
-    | 'editor'
-    | 'privacy'
-    | 'settings'
-    | 'sessionBrowser'
-    | 'model'
-    | 'permissions';
+    | "help"
+    | "auth"
+    | "theme"
+    | "editor"
+    | "privacy"
+    | "settings"
+    | "sessionBrowser"
+    | "model"
+    | "permissions";
 }
 
 /**
@@ -118,7 +106,7 @@ export interface OpenDialogActionReturn {
  * confirmation for a set of shell commands before proceeding.
  */
 export interface ConfirmShellCommandsActionReturn {
-  type: 'confirm_shell_commands';
+  type: "confirm_shell_commands";
   /** The list of shell commands that require user confirmation. */
   commandsToConfirm: string[];
   /** The original invocation context to be re-run after confirmation. */
@@ -128,7 +116,7 @@ export interface ConfirmShellCommandsActionReturn {
 }
 
 export interface ConfirmActionReturn {
-  type: 'confirm_action';
+  type: "confirm_action";
   /** The React node to display as the confirmation prompt. */
   prompt: ReactNode;
   /** The original invocation context to be re-run after confirmation. */
@@ -138,7 +126,7 @@ export interface ConfirmActionReturn {
 }
 
 export interface OpenCustomDialogActionReturn {
-  type: 'custom_dialog';
+  type: "custom_dialog";
   component: ReactNode;
 }
 
@@ -151,9 +139,9 @@ export type SlashCommandActionReturn =
   | OpenCustomDialogActionReturn;
 
 export enum CommandKind {
-  BUILT_IN = 'built-in',
-  FILE = 'file',
-  MCP_PROMPT = 'mcp-prompt',
+  BUILT_IN = "built-in",
+  FILE = "file",
+  MCP_PROMPT = "mcp-prompt",
 }
 
 // The standardized contract for any command in the system.
@@ -181,16 +169,10 @@ export interface SlashCommand {
   action?: (
     context: CommandContext,
     args: string, // TODO: Remove args. CommandContext now contains the complete invocation.
-  ) =>
-    | void
-    | SlashCommandActionReturn
-    | Promise<void | SlashCommandActionReturn>;
+  ) => void | SlashCommandActionReturn | Promise<void | SlashCommandActionReturn>;
 
   // Provides argument completion (e.g., completing a tag for `/chat resume <tag>`).
-  completion?: (
-    context: CommandContext,
-    partialArg: string,
-  ) => Promise<string[]> | string[];
+  completion?: (context: CommandContext, partialArg: string) => Promise<string[]> | string[];
 
   subCommands?: SlashCommand[];
 }

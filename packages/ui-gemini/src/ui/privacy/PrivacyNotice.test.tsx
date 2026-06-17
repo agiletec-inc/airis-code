@@ -4,38 +4,34 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { render } from '../../test-utils/render.js';
-import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { PrivacyNotice } from './PrivacyNotice.js';
-import type {
-  AuthType,
-  Config,
-  ContentGeneratorConfig,
-} from '@airiscode/gemini-cli-core';
+import type { AuthType, Config, ContentGeneratorConfig } from "@airiscode/gemini-cli-core";
+import { beforeEach, describe, expect, it, vi } from "vitest";
+import { render } from "../../test-utils/render.js";
+import { PrivacyNotice } from "./PrivacyNotice.js";
 
 // Mock child components
-vi.mock('./GeminiPrivacyNotice.js', async () => {
-  const { Text } = await import('ink');
+vi.mock("./GeminiPrivacyNotice.js", async () => {
+  const { Text } = await import("ink");
   return {
     GeminiPrivacyNotice: () => <Text>GeminiPrivacyNotice</Text>,
   };
 });
 
-vi.mock('./CloudPaidPrivacyNotice.js', async () => {
-  const { Text } = await import('ink');
+vi.mock("./CloudPaidPrivacyNotice.js", async () => {
+  const { Text } = await import("ink");
   return {
     CloudPaidPrivacyNotice: () => <Text>CloudPaidPrivacyNotice</Text>,
   };
 });
 
-vi.mock('./CloudFreePrivacyNotice.js', async () => {
-  const { Text } = await import('ink');
+vi.mock("./CloudFreePrivacyNotice.js", async () => {
+  const { Text } = await import("ink");
   return {
     CloudFreePrivacyNotice: () => <Text>CloudFreePrivacyNotice</Text>,
   };
 });
 
-describe('PrivacyNotice', () => {
+describe("PrivacyNotice", () => {
   const onExit = vi.fn();
   const mockConfig = {
     getContentGeneratorConfig: vi.fn(),
@@ -47,33 +43,28 @@ describe('PrivacyNotice', () => {
 
   it.each([
     {
-      authType: 'gemini-api-key' as AuthType,
-      expectedComponent: 'GeminiPrivacyNotice',
+      authType: "gemini-api-key" as AuthType,
+      expectedComponent: "GeminiPrivacyNotice",
     },
     {
-      authType: 'vertex-ai' as AuthType,
-      expectedComponent: 'CloudPaidPrivacyNotice',
+      authType: "vertex-ai" as AuthType,
+      expectedComponent: "CloudPaidPrivacyNotice",
     },
     {
-      authType: 'oauth-personal' as AuthType,
-      expectedComponent: 'CloudFreePrivacyNotice',
+      authType: "oauth-personal" as AuthType,
+      expectedComponent: "CloudFreePrivacyNotice",
     },
     {
-      authType: 'UNKNOWN' as AuthType,
-      expectedComponent: 'CloudFreePrivacyNotice',
+      authType: "UNKNOWN" as AuthType,
+      expectedComponent: "CloudFreePrivacyNotice",
     },
-  ])(
-    'renders $expectedComponent when authType is $authType',
-    ({ authType, expectedComponent }) => {
-      vi.mocked(mockConfig.getContentGeneratorConfig).mockReturnValue({
-        authType,
-      } as unknown as ContentGeneratorConfig);
+  ])("renders $expectedComponent when authType is $authType", ({ authType, expectedComponent }) => {
+    vi.mocked(mockConfig.getContentGeneratorConfig).mockReturnValue({
+      authType,
+    } as unknown as ContentGeneratorConfig);
 
-      const { lastFrame } = render(
-        <PrivacyNotice config={mockConfig} onExit={onExit} />,
-      );
+    const { lastFrame } = render(<PrivacyNotice config={mockConfig} onExit={onExit} />);
 
-      expect(lastFrame()).toContain(expectedComponent);
-    },
-  );
+    expect(lastFrame()).toContain(expectedComponent);
+  });
 });

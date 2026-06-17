@@ -4,24 +4,17 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import type {
-  Config,
-  ConversationRecord,
-  MessageRecord,
-} from '@airiscode/gemini-cli-core';
-import {
-  partListUnionToString,
-  SESSION_FILE_PREFIX,
-} from '@airiscode/gemini-cli-core';
-import * as fs from 'node:fs/promises';
-import path from 'node:path';
-import { stripUnsafeCharacters } from '../ui/utils/textUtils.js';
+import * as fs from "node:fs/promises";
+import path from "node:path";
+import type { Config, ConversationRecord, MessageRecord } from "@airiscode/gemini-cli-core";
+import { partListUnionToString, SESSION_FILE_PREFIX } from "@airiscode/gemini-cli-core";
+import { stripUnsafeCharacters } from "../ui/utils/textUtils.js";
 
 /**
  * Constant for the resume "latest" identifier.
  * Used when --resume is passed without a value to select the most recent session.
  */
-export const RESUME_LATEST = 'latest';
+export const RESUME_LATEST = "latest";
 
 /**
  * Represents a text match found during search with surrounding context.
@@ -34,7 +27,7 @@ export interface TextMatch {
   /** Text content after the match (with ellipsis if truncated) */
   after: string;
   /** Role of the message author where the match was found */
-  role: 'user' | 'assistant';
+  role: "user" | "assistant";
 }
 
 /**
@@ -66,7 +59,7 @@ export interface SessionInfo {
   /** Full concatenated content (only loaded when needed for search) */
   fullContent?: string;
   /** Processed messages with normalized roles (only loaded when needed) */
-  messages?: Array<{ role: 'user' | 'assistant'; content: string }>;
+  messages?: Array<{ role: "user" | "assistant"; content: string }>;
   /** Search result snippets when filtering */
   matchSnippets?: TextMatch[];
   /** Total number of matches found in this session */
@@ -99,7 +92,7 @@ export interface SessionSelectionResult {
  * @returns true if the session has meaningful content
  */
 export const hasUserOrAssistantMessage = (messages: MessageRecord[]): boolean =>
-  messages.some((msg) => msg.type === 'user' || msg.type === 'gemini');
+  messages.some((msg) => msg.type === "user" || msg.type === "gemini");
 
 /**
  * Cleans and sanitizes message content for display by:
@@ -112,9 +105,9 @@ export const hasUserOrAssistantMessage = (messages: MessageRecord[]): boolean =>
  */
 export const cleanMessage = (message: string): string =>
   message
-    .replace(/\n+/g, ' ')
-    .replace(/\s+/g, ' ')
-    .replace(/[^\x20-\x7E]+/g, '') // Non-printable.
+    .replace(/\n+/g, " ")
+    .replace(/\s+/g, " ")
+    .replace(/[^\x20-\x7E]+/g, "") // Non-printable.
     .trim();
 
 /**
@@ -125,20 +118,16 @@ export const extractFirstUserMessage = (messages: MessageRecord[]): string => {
     // First try filtering out slash commands.
     .filter((msg) => {
       const content = partListUnionToString(msg.content);
-      return (
-        !content.startsWith('/') &&
-        !content.startsWith('?') &&
-        content.trim().length > 0
-      );
+      return !content.startsWith("/") && !content.startsWith("?") && content.trim().length > 0;
     })
-    .find((msg) => msg.type === 'user');
+    .find((msg) => msg.type === "user");
 
   let content: string;
 
   if (!userMessage) {
     // Fallback to first user message even if it's a slash command
-    const firstMsg = messages.find((msg) => msg.type === 'user');
-    if (!firstMsg) return 'Empty conversation';
+    const firstMsg = messages.find((msg) => msg.type === "user");
+    if (!firstMsg) return "Empty conversation";
     content = cleanMessage(partListUnionToString(firstMsg.content));
   } else {
     content = cleanMessage(partListUnionToString(userMessage.content));
@@ -152,10 +141,7 @@ export const extractFirstUserMessage = (messages: MessageRecord[]): string => {
  * @param timestamp - The timestamp to format
  * @param style - 'long' (e.g. "2 hours ago") or 'short' (e.g. "2h")
  */
-export const formatRelativeTime = (
-  timestamp: string,
-  style: 'long' | 'short' = 'long',
-): string => {
+export const formatRelativeTime = (timestamp: string, style: "long" | "short" = "long"): string => {
   const now = new Date();
   const time = new Date(timestamp);
   const diffMs = now.getTime() - time.getTime();
@@ -164,25 +150,23 @@ export const formatRelativeTime = (
   const diffHours = Math.floor(diffMinutes / 60);
   const diffDays = Math.floor(diffHours / 24);
 
-  if (style === 'short') {
-    if (diffSeconds < 1) return 'now';
+  if (style === "short") {
+    if (diffSeconds < 1) return "now";
     if (diffSeconds < 60) return `${diffSeconds}s`;
     if (diffMinutes < 60) return `${diffMinutes}m`;
     if (diffHours < 24) return `${diffHours}h`;
     if (diffDays < 30) return `${diffDays}d`;
     const diffMonths = Math.floor(diffDays / 30);
-    return diffMonths < 12
-      ? `${diffMonths}mo`
-      : `${Math.floor(diffMonths / 12)}y`;
+    return diffMonths < 12 ? `${diffMonths}mo` : `${Math.floor(diffMonths / 12)}y`;
   } else {
     if (diffDays > 0) {
-      return `${diffDays} day${diffDays === 1 ? '' : 's'} ago`;
+      return `${diffDays} day${diffDays === 1 ? "" : "s"} ago`;
     } else if (diffHours > 0) {
-      return `${diffHours} hour${diffHours === 1 ? '' : 's'} ago`;
+      return `${diffHours} hour${diffHours === 1 ? "" : "s"} ago`;
     } else if (diffMinutes > 0) {
-      return `${diffMinutes} minute${diffMinutes === 1 ? '' : 's'} ago`;
+      return `${diffMinutes} minute${diffMinutes === 1 ? "" : "s"} ago`;
     } else {
-      return 'Just now';
+      return "Just now";
     }
   }
 };
@@ -204,87 +188,74 @@ export const getAllSessionFiles = async (
   try {
     const files = await fs.readdir(chatsDir);
     const sessionFiles = files
-      .filter((f) => f.startsWith(SESSION_FILE_PREFIX) && f.endsWith('.json'))
+      .filter((f) => f.startsWith(SESSION_FILE_PREFIX) && f.endsWith(".json"))
       .sort(); // Sort by filename, which includes timestamp
 
-    const sessionPromises = sessionFiles.map(
-      async (file): Promise<SessionFileEntry> => {
-        const filePath = path.join(chatsDir, file);
-        try {
-          const content: ConversationRecord = JSON.parse(
-            await fs.readFile(filePath, 'utf8'),
-          );
+    const sessionPromises = sessionFiles.map(async (file): Promise<SessionFileEntry> => {
+      const filePath = path.join(chatsDir, file);
+      try {
+        const content: ConversationRecord = JSON.parse(await fs.readFile(filePath, "utf8"));
 
-          // Validate required fields
-          if (
-            !content.sessionId ||
-            !content.messages ||
-            !Array.isArray(content.messages) ||
-            !content.startTime ||
-            !content.lastUpdated
-          ) {
-            // Missing required fields - treat as corrupted
-            return { fileName: file, sessionInfo: null };
-          }
-
-          // Skip sessions that only contain system messages (info, error, warning)
-          if (!hasUserOrAssistantMessage(content.messages)) {
-            return { fileName: file, sessionInfo: null };
-          }
-
-          const firstUserMessage = extractFirstUserMessage(content.messages);
-          const isCurrentSession = currentSessionId
-            ? file.includes(currentSessionId.slice(0, 8))
-            : false;
-
-          let fullContent: string | undefined;
-          let messages:
-            | Array<{ role: 'user' | 'assistant'; content: string }>
-            | undefined;
-
-          if (options.includeFullContent) {
-            fullContent = content.messages
-              .map((msg) => partListUnionToString(msg.content))
-              .join(' ');
-            messages = content.messages.map((msg) => ({
-              role:
-                msg.type === 'user'
-                  ? ('user' as const)
-                  : ('assistant' as const),
-              content: partListUnionToString(msg.content),
-            }));
-          }
-
-          const sessionInfo: SessionInfo = {
-            id: content.sessionId,
-            file: file.replace('.json', ''),
-            fileName: file,
-            startTime: content.startTime,
-            lastUpdated: content.lastUpdated,
-            messageCount: content.messages.length,
-            displayName: content.summary
-              ? stripUnsafeCharacters(content.summary)
-              : firstUserMessage,
-            firstUserMessage,
-            isCurrentSession,
-            index: 0, // Will be set after sorting valid sessions
-            summary: content.summary,
-            fullContent,
-            messages,
-          };
-
-          return { fileName: file, sessionInfo };
-        } catch {
-          // File is corrupted (can't read or parse JSON)
+        // Validate required fields
+        if (
+          !content.sessionId ||
+          !content.messages ||
+          !Array.isArray(content.messages) ||
+          !content.startTime ||
+          !content.lastUpdated
+        ) {
+          // Missing required fields - treat as corrupted
           return { fileName: file, sessionInfo: null };
         }
-      },
-    );
+
+        // Skip sessions that only contain system messages (info, error, warning)
+        if (!hasUserOrAssistantMessage(content.messages)) {
+          return { fileName: file, sessionInfo: null };
+        }
+
+        const firstUserMessage = extractFirstUserMessage(content.messages);
+        const isCurrentSession = currentSessionId
+          ? file.includes(currentSessionId.slice(0, 8))
+          : false;
+
+        let fullContent: string | undefined;
+        let messages: Array<{ role: "user" | "assistant"; content: string }> | undefined;
+
+        if (options.includeFullContent) {
+          fullContent = content.messages.map((msg) => partListUnionToString(msg.content)).join(" ");
+          messages = content.messages.map((msg) => ({
+            role: msg.type === "user" ? ("user" as const) : ("assistant" as const),
+            content: partListUnionToString(msg.content),
+          }));
+        }
+
+        const sessionInfo: SessionInfo = {
+          id: content.sessionId,
+          file: file.replace(".json", ""),
+          fileName: file,
+          startTime: content.startTime,
+          lastUpdated: content.lastUpdated,
+          messageCount: content.messages.length,
+          displayName: content.summary ? stripUnsafeCharacters(content.summary) : firstUserMessage,
+          firstUserMessage,
+          isCurrentSession,
+          index: 0, // Will be set after sorting valid sessions
+          summary: content.summary,
+          fullContent,
+          messages,
+        };
+
+        return { fileName: file, sessionInfo };
+      } catch {
+        // File is corrupted (can't read or parse JSON)
+        return { fileName: file, sessionInfo: null };
+      }
+    });
 
     return await Promise.all(sessionPromises);
   } catch (error) {
     // It's expected that the directory might not exist, which is not an error.
-    if (error instanceof Error && 'code' in error && error.code === 'ENOENT') {
+    if (error instanceof Error && "code" in error && error.code === "ENOENT") {
       return [];
     }
     // For other errors (e.g., permissions), re-throw to be handled by the caller.
@@ -301,11 +272,7 @@ export const getSessionFiles = async (
   currentSessionId?: string,
   options: GetSessionOptions = {},
 ): Promise<SessionInfo[]> => {
-  const allFiles = await getAllSessionFiles(
-    chatsDir,
-    currentSessionId,
-    options,
-  );
+  const allFiles = await getAllSessionFiles(chatsDir, currentSessionId, options);
 
   // Filter out corrupted files and extract SessionInfo
   const validSessions = allFiles
@@ -330,9 +297,7 @@ export const getSessionFiles = async (
   const uniqueSessions = Array.from(uniqueSessionsMap.values());
 
   // Sort by startTime (oldest first) for stable session numbering
-  uniqueSessions.sort(
-    (a, b) => new Date(a.startTime).getTime() - new Date(b.startTime).getTime(),
-  );
+  uniqueSessions.sort((a, b) => new Date(a.startTime).getTime() - new Date(b.startTime).getTime());
 
   // Set the correct 1-based indexes after sorting
   uniqueSessions.forEach((session, index) => {
@@ -352,10 +317,7 @@ export class SessionSelector {
    * Lists all available sessions for the current project.
    */
   async listSessions(): Promise<SessionInfo[]> {
-    const chatsDir = path.join(
-      this.config.storage.getProjectTempDir(),
-      'chats',
-    );
+    const chatsDir = path.join(this.config.storage.getProjectTempDir(), "chats");
     return getSessionFiles(chatsDir, this.config.getSessionId());
   }
 
@@ -370,19 +332,16 @@ export class SessionSelector {
     const sessions = await this.listSessions();
 
     if (sessions.length === 0) {
-      throw new Error('No previous sessions found for this project.');
+      throw new Error("No previous sessions found for this project.");
     }
 
     // Sort by startTime (oldest first, so newest sessions get highest numbers)
     const sortedSessions = sessions.sort(
-      (a, b) =>
-        new Date(a.startTime).getTime() - new Date(b.startTime).getTime(),
+      (a, b) => new Date(a.startTime).getTime() - new Date(b.startTime).getTime(),
     );
 
     // Try to find by UUID first
-    const sessionByUuid = sortedSessions.find(
-      (session) => session.id === identifier,
-    );
+    const sessionByUuid = sortedSessions.find((session) => session.id === identifier);
     if (sessionByUuid) {
       return sessionByUuid;
     }
@@ -416,14 +375,11 @@ export class SessionSelector {
       const sessions = await this.listSessions();
 
       if (sessions.length === 0) {
-        throw new Error('No previous sessions found for this project.');
+        throw new Error("No previous sessions found for this project.");
       }
 
       // Sort by startTime (oldest first, so newest sessions get highest numbers)
-      sessions.sort(
-        (a, b) =>
-          new Date(a.startTime).getTime() - new Date(b.startTime).getTime(),
-      );
+      sessions.sort((a, b) => new Date(a.startTime).getTime() - new Date(b.startTime).getTime());
 
       selectedSession = sessions[sessions.length - 1];
     } else {
@@ -443,19 +399,12 @@ export class SessionSelector {
   /**
    * Loads session data for a selected session.
    */
-  private async selectSession(
-    sessionInfo: SessionInfo,
-  ): Promise<SessionSelectionResult> {
-    const chatsDir = path.join(
-      this.config.storage.getProjectTempDir(),
-      'chats',
-    );
+  private async selectSession(sessionInfo: SessionInfo): Promise<SessionSelectionResult> {
+    const chatsDir = path.join(this.config.storage.getProjectTempDir(), "chats");
     const sessionPath = path.join(chatsDir, sessionInfo.fileName);
 
     try {
-      const sessionData: ConversationRecord = JSON.parse(
-        await fs.readFile(sessionPath, 'utf8'),
-      );
+      const sessionData: ConversationRecord = JSON.parse(await fs.readFile(sessionPath, "utf8"));
 
       const displayInfo = `Session ${sessionInfo.index}: ${sessionInfo.firstUserMessage} (${sessionInfo.messageCount} messages, ${formatRelativeTime(sessionInfo.lastUpdated)})`;
 
@@ -466,7 +415,7 @@ export class SessionSelector {
       };
     } catch (error) {
       throw new Error(
-        `Failed to load session ${sessionInfo.id}: ${error instanceof Error ? error.message : 'Unknown error'}`,
+        `Failed to load session ${sessionInfo.id}: ${error instanceof Error ? error.message : "Unknown error"}`,
       );
     }
   }

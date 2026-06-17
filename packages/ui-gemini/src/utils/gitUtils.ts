@@ -4,9 +4,9 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { debugLogger } from '@airiscode/gemini-cli-core';
-import { execSync } from 'node:child_process';
-import { ProxyAgent } from 'undici';
+import { execSync } from "node:child_process";
+import { debugLogger } from "@airiscode/gemini-cli-core";
+import { ProxyAgent } from "undici";
 
 /**
  * Checks if a directory is within a git repository hosted on GitHub.
@@ -15,9 +15,9 @@ import { ProxyAgent } from 'undici';
 export const isGitHubRepository = (): boolean => {
   try {
     const remotes = (
-      execSync('git remote -v', {
-        encoding: 'utf-8',
-      }) || ''
+      execSync("git remote -v", {
+        encoding: "utf-8",
+      }) || ""
     ).trim();
 
     const pattern = /github\.com/;
@@ -37,9 +37,9 @@ export const isGitHubRepository = (): boolean => {
  */
 export const getGitRepoRoot = (): string => {
   const gitRepoRoot = (
-    execSync('git rev-parse --show-toplevel', {
-      encoding: 'utf-8',
-    }) || ''
+    execSync("git rev-parse --show-toplevel", {
+      encoding: "utf-8",
+    }) || ""
   ).trim();
 
   if (!gitRepoRoot) {
@@ -53,29 +53,25 @@ export const getGitRepoRoot = (): string => {
  * getLatestGitHubRelease returns the release tag as a string.
  * @returns string of the release tag (e.g. "v1.2.3").
  */
-export const getLatestGitHubRelease = async (
-  proxy?: string,
-): Promise<string> => {
+export const getLatestGitHubRelease = async (proxy?: string): Promise<string> => {
   try {
     const controller = new AbortController();
 
     const endpoint = `https://api.github.com/repos/google-github-actions/run-gemini-cli/releases/latest`;
 
     const response = await fetch(endpoint, {
-      method: 'GET',
+      method: "GET",
       headers: {
-        Accept: 'application/vnd.github+json',
-        'Content-Type': 'application/json',
-        'X-GitHub-Api-Version': '2022-11-28',
+        Accept: "application/vnd.github+json",
+        "Content-Type": "application/json",
+        "X-GitHub-Api-Version": "2022-11-28",
       },
       dispatcher: proxy ? new ProxyAgent(proxy) : undefined,
       signal: AbortSignal.any([AbortSignal.timeout(30_000), controller.signal]),
     } as RequestInit);
 
     if (!response.ok) {
-      throw new Error(
-        `Invalid response code: ${response.status} - ${response.statusText}`,
-      );
+      throw new Error(`Invalid response code: ${response.status} - ${response.statusText}`);
     }
 
     const releaseTag = (await response.json()).tag_name;
@@ -84,13 +80,8 @@ export const getLatestGitHubRelease = async (
     }
     return releaseTag;
   } catch (_error) {
-    debugLogger.debug(
-      `Failed to determine latest run-gemini-cli release:`,
-      _error,
-    );
-    throw new Error(
-      `Unable to determine the latest run-gemini-cli release on GitHub.`,
-    );
+    debugLogger.debug(`Failed to determine latest run-gemini-cli release:`, _error);
+    throw new Error(`Unable to determine the latest run-gemini-cli release on GitHub.`);
   }
 };
 
@@ -100,8 +91,8 @@ export const getLatestGitHubRelease = async (
  * @throws error if the exec command fails.
  */
 export function getGitHubRepoInfo(): { owner: string; repo: string } {
-  const remoteUrl = execSync('git remote get-url origin', {
-    encoding: 'utf-8',
+  const remoteUrl = execSync("git remote get-url origin", {
+    encoding: "utf-8",
   }).trim();
 
   // Matches either https://github.com/owner/repo.git or git@github.com:owner/repo.git
@@ -111,9 +102,7 @@ export function getGitHubRepoInfo(): { owner: string; repo: string } {
 
   // If the regex fails match, throw an error.
   if (!match || !match[1] || !match[2]) {
-    throw new Error(
-      `Owner & repo could not be extracted from remote URL: ${remoteUrl}`,
-    );
+    throw new Error(`Owner & repo could not be extracted from remote URL: ${remoteUrl}`);
   }
 
   return { owner: match[1], repo: match[2] };

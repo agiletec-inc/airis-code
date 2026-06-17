@@ -4,15 +4,12 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { useState, useEffect, useRef, useCallback } from 'react';
-import { theme } from '../semantic-colors.js';
-import { interpolateColor } from '../themes/color-utils.js';
-import { debugState } from '../debug.js';
+import { useCallback, useEffect, useRef, useState } from "react";
+import { debugState } from "../debug.js";
+import { theme } from "../semantic-colors.js";
+import { interpolateColor } from "../themes/color-utils.js";
 
-export function useAnimatedScrollbar(
-  isFocused: boolean,
-  scrollBy: (delta: number) => void,
-) {
+export function useAnimatedScrollbar(isFocused: boolean, scrollBy: (delta: number) => void) {
   const [scrollbarColor, setScrollbarColor] = useState(theme.ui.dark);
   const colorRef = useRef(scrollbarColor);
   colorRef.current = scrollbarColor;
@@ -73,13 +70,8 @@ export function useAnimatedScrollbar(
           start = Date.now();
           const animateFadeOut = () => {
             const elapsed = Date.now() - start;
-            const progress = Math.max(
-              0,
-              Math.min(elapsed / fadeOutDuration, 1),
-            );
-            setScrollbarColor(
-              interpolateColor(focusedColor, unfocusedColor, progress),
-            );
+            const progress = Math.max(0, Math.min(elapsed / fadeOutDuration, 1));
+            setScrollbarColor(interpolateColor(focusedColor, unfocusedColor, progress));
 
             if (progress === 1) {
               cleanup();

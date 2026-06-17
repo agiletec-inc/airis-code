@@ -4,24 +4,24 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { vi, describe, it, expect, beforeEach, type Mock } from 'vitest';
-import { renderHook } from '../../test-utils/render.js';
-import { useMouseClick } from './useMouseClick.js';
-import { getBoundingBox, type DOMElement } from 'ink';
-import type React from 'react';
+import { type DOMElement, getBoundingBox } from "ink";
+import type React from "react";
+import { beforeEach, describe, expect, it, type Mock, vi } from "vitest";
+import { renderHook } from "../../test-utils/render.js";
+import { useMouseClick } from "./useMouseClick.js";
 
 // Mock ink
-vi.mock('ink', async () => ({
+vi.mock("ink", async () => ({
   getBoundingBox: vi.fn(),
 }));
 
 // Mock MouseContext
 const mockUseMouse = vi.fn();
-vi.mock('../contexts/MouseContext.js', async () => ({
+vi.mock("../contexts/MouseContext.js", async () => ({
   useMouse: (cb: unknown, opts: unknown) => mockUseMouse(cb, opts),
 }));
 
-describe('useMouseClick', () => {
+describe("useMouseClick", () => {
   let handler: Mock;
   let containerRef: React.RefObject<DOMElement | null>;
 
@@ -31,7 +31,7 @@ describe('useMouseClick', () => {
     containerRef = { current: {} as DOMElement };
   });
 
-  it('should call handler with relative coordinates when click is inside bounds', () => {
+  it("should call handler with relative coordinates when click is inside bounds", () => {
     vi.mocked(getBoundingBox).mockReturnValue({
       x: 10,
       y: 5,
@@ -49,16 +49,12 @@ describe('useMouseClick', () => {
     // Terminal events are 1-based. col 16 -> mouseX 15. row 8 -> mouseY 7.
     // relativeX = 15 - 10 = 5
     // relativeY = 7 - 5 = 2
-    callback({ name: 'left-press', col: 16, row: 8 });
+    callback({ name: "left-press", col: 16, row: 8 });
 
-    expect(handler).toHaveBeenCalledWith(
-      expect.objectContaining({ name: 'left-press' }),
-      5,
-      2,
-    );
+    expect(handler).toHaveBeenCalledWith(expect.objectContaining({ name: "left-press" }), 5, 2);
   });
 
-  it('should not call handler when click is outside bounds', () => {
+  it("should not call handler when click is outside bounds", () => {
     vi.mocked(getBoundingBox).mockReturnValue({
       x: 10,
       y: 5,
@@ -70,7 +66,7 @@ describe('useMouseClick', () => {
     const callback = mockUseMouse.mock.calls[0][0];
 
     // Click outside: x=5 (col 6), y=7 (row 8) -> left of box
-    callback({ name: 'left-press', col: 6, row: 8 });
+    callback({ name: "left-press", col: 6, row: 8 });
     expect(handler).not.toHaveBeenCalled();
   });
 });

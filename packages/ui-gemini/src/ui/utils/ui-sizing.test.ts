@@ -4,20 +4,20 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { describe, it, expect, vi } from 'vitest';
-import { calculateMainAreaWidth } from './ui-sizing.js';
-import { type LoadedSettings } from '../../config/settings.js';
+import { describe, expect, it, vi } from "vitest";
+import { type LoadedSettings } from "../../config/settings.js";
+import { calculateMainAreaWidth } from "./ui-sizing.js";
 
 // Mock dependencies
 const mocks = vi.hoisted(() => ({
   isAlternateBufferEnabled: vi.fn(),
 }));
 
-vi.mock('../hooks/useAlternateBuffer.js', () => ({
+vi.mock("../hooks/useAlternateBuffer.js", () => ({
   isAlternateBufferEnabled: mocks.isAlternateBufferEnabled,
 }));
 
-describe('ui-sizing', () => {
+describe("ui-sizing", () => {
   const createSettings = (useFullWidth?: boolean): LoadedSettings =>
     ({
       merged: {
@@ -27,7 +27,7 @@ describe('ui-sizing', () => {
       },
     }) as unknown as LoadedSettings;
 
-  describe('calculateMainAreaWidth', () => {
+  describe("calculateMainAreaWidth", () => {
     it.each([
       // width, useFullWidth, alternateBuffer, expected
       [80, true, false, 80],
@@ -45,17 +45,14 @@ describe('ui-sizing', () => {
 
       // Interpolation check
       [106, false, false, 100], // Approx middle
-    ])(
-      'should return %i when width=%i, useFullWidth=%s, altBuffer=%s',
-      (width, useFullWidth, altBuffer, expected) => {
-        mocks.isAlternateBufferEnabled.mockReturnValue(altBuffer);
-        const settings = createSettings(useFullWidth);
+    ])("should return %i when width=%i, useFullWidth=%s, altBuffer=%s", (width, useFullWidth, altBuffer, expected) => {
+      mocks.isAlternateBufferEnabled.mockReturnValue(altBuffer);
+      const settings = createSettings(useFullWidth);
 
-        expect(calculateMainAreaWidth(width, settings)).toBe(expected);
-      },
-    );
+      expect(calculateMainAreaWidth(width, settings)).toBe(expected);
+    });
 
-    it('should match snapshot for interpolation range', () => {
+    it("should match snapshot for interpolation range", () => {
       mocks.isAlternateBufferEnabled.mockReturnValue(false);
       const settings = createSettings(false);
 

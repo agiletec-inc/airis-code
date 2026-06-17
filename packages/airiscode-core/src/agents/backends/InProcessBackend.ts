@@ -11,33 +11,33 @@
  * This enables Arena to work without tmux or any external terminal multiplexer.
  */
 
-import { createDebugLogger } from '../../utils/debugLogger.js';
-import type { Config } from '../../config/config.js';
+import type { Config } from "../../config/config.js";
 import {
   type AuthType,
   type ContentGenerator,
   type ContentGeneratorConfig,
   createContentGenerator,
-} from '../../core/contentGenerator.js';
-import type { ToolRegistry } from '../../tools/tool-registry.js';
-import { WorkspaceContext } from '../../utils/workspaceContext.js';
-import { FileDiscoveryService } from '../../services/fileDiscoveryService.js';
-import { buildAgentContentGeneratorConfig } from '../../models/content-generator-config.js';
-import { AgentStatus, isTerminalStatus } from '../runtime/agent-types.js';
-import { AgentCore } from '../runtime/agent-core.js';
-import { AgentEventEmitter } from '../runtime/agent-events.js';
-import { ContextState } from '../runtime/agent-headless.js';
-import { AgentInteractive } from '../runtime/agent-interactive.js';
+} from "../../core/contentGenerator.js";
+import { buildAgentContentGeneratorConfig } from "../../models/content-generator-config.js";
+import { FileDiscoveryService } from "../../services/fileDiscoveryService.js";
+import type { ToolRegistry } from "../../tools/tool-registry.js";
+import { createDebugLogger } from "../../utils/debugLogger.js";
+import type { AnsiOutput } from "../../utils/terminalSerializer.js";
+import { WorkspaceContext } from "../../utils/workspaceContext.js";
+import { AgentCore } from "../runtime/agent-core.js";
+import { AgentEventEmitter } from "../runtime/agent-events.js";
+import { ContextState } from "../runtime/agent-headless.js";
+import { AgentInteractive } from "../runtime/agent-interactive.js";
+import { AgentStatus, isTerminalStatus } from "../runtime/agent-types.js";
 import type {
-  Backend,
-  AgentSpawnConfig,
   AgentExitCallback,
+  AgentSpawnConfig,
+  Backend,
   InProcessSpawnConfig,
-} from './types.js';
-import { DISPLAY_MODE } from './types.js';
-import type { AnsiOutput } from '../../utils/terminalSerializer.js';
+} from "./types.js";
+import { DISPLAY_MODE } from "./types.js";
 
-const debugLogger = createDebugLogger('IN_PROCESS_BACKEND');
+const debugLogger = createDebugLogger("IN_PROCESS_BACKEND");
 
 /**
  * InProcessBackend runs agents in the current Node.js process.
@@ -65,23 +65,20 @@ export class InProcessBackend implements Backend {
   // ─── Backend Interface ─────────────────────────────────────
 
   async init(): Promise<void> {
-    debugLogger.info('InProcessBackend initialized');
+    debugLogger.info("InProcessBackend initialized");
   }
 
   async spawnAgent(config: AgentSpawnConfig): Promise<void> {
     const inProcessConfig = config.inProcess;
     if (!inProcessConfig) {
-      throw new Error(
-        `InProcessBackend requires inProcess config for agent ${config.agentId}`,
-      );
+      throw new Error(`InProcessBackend requires inProcess config for agent ${config.agentId}`);
     }
 
     if (this.agents.has(config.agentId)) {
       throw new Error(`Agent "${config.agentId}" already exists.`);
     }
 
-    const { promptConfig, modelConfig, runConfig, toolConfig } =
-      inProcessConfig.runtimeConfig;
+    const { promptConfig, modelConfig, runConfig, toolConfig } = inProcessConfig.runtimeConfig;
 
     const eventEmitter = new AgentEventEmitter();
 
@@ -140,20 +137,13 @@ export class InProcessBackend implements Backend {
           return;
         }
         const exitCode =
-          status === AgentStatus.COMPLETED
-            ? 0
-            : status === AgentStatus.FAILED
-              ? 1
-              : null;
+          status === AgentStatus.COMPLETED ? 0 : status === AgentStatus.FAILED ? 1 : null;
         this.exitCallback?.(config.agentId, exitCode, null);
       });
 
       debugLogger.info(`Spawned in-process agent: ${config.agentId}`);
     } catch (error) {
-      debugLogger.error(
-        `Failed to start in-process agent "${config.agentId}":`,
-        error,
-      );
+      debugLogger.error(`Failed to start in-process agent "${config.agentId}":`, error);
       this.exitCallback?.(config.agentId, 1, null);
     }
   }
@@ -170,7 +160,7 @@ export class InProcessBackend implements Backend {
     for (const agent of this.agents.values()) {
       agent.abort();
     }
-    debugLogger.info('Stopped all in-process agents');
+    debugLogger.info("Stopped all in-process agents");
   }
 
   async cleanup(): Promise<void> {
@@ -202,7 +192,7 @@ export class InProcessBackend implements Backend {
     this.agents.clear();
     this.agentOrder.length = 0;
     this.activeAgentId = null;
-    debugLogger.info('InProcessBackend cleaned up');
+    debugLogger.info("InProcessBackend cleaned up");
   }
 
   setOnAgentExit(callback: AgentExitCallback): void {
@@ -212,9 +202,7 @@ export class InProcessBackend implements Backend {
   async waitForAll(timeoutMs?: number): Promise<boolean> {
     if (this.cleanedUp) return true;
 
-    const promises = Array.from(this.agents.values()).map((a) =>
-      a.waitForCompletion(),
-    );
+    const promises = Array.from(this.agents.values()).map((a) => a.waitForCompletion());
 
     if (timeoutMs === undefined) {
       await Promise.allSettled(promises);
@@ -222,17 +210,17 @@ export class InProcessBackend implements Backend {
     }
 
     let timerId: ReturnType<typeof setTimeout>;
-    const timeout = new Promise<'timeout'>((resolve) => {
-      timerId = setTimeout(() => resolve('timeout'), timeoutMs);
+    const timeout = new Promise<"timeout">((resolve) => {
+      timerId = setTimeout(() => resolve("timeout"), timeoutMs);
     });
 
     const result = await Promise.race([
-      Promise.allSettled(promises).then(() => 'done' as const),
+      Promise.allSettled(promises).then(() => "done" as const),
       timeout,
     ]);
 
     clearTimeout(timerId!);
-    return result === 'done';
+    return result === "done";
   }
 
   // ─── Navigation ────────────────────────────────────────────
@@ -261,10 +249,7 @@ export class InProcessBackend implements Backend {
     return null;
   }
 
-  getAgentSnapshot(
-    _agentId: string,
-    _scrollOffset?: number,
-  ): AnsiOutput | null {
+  getAgentSnapshot(_agentId: string, _scrollOffset?: number): AnsiOutput | null {
     return null;
   }
 
@@ -318,9 +303,7 @@ export class InProcessBackend implements Backend {
     const currentIndex = this.agentOrder.indexOf(this.activeAgentId);
     if (currentIndex === -1) return this.agentOrder[0] ?? null;
 
-    const nextIndex =
-      (currentIndex + direction + this.agentOrder.length) %
-      this.agentOrder.length;
+    const nextIndex = (currentIndex + direction + this.agentOrder.length) % this.agentOrder.length;
     return this.agentOrder[nextIndex] ?? null;
   }
 }
@@ -341,7 +324,7 @@ async function createPerAgentConfig(
   base: Config,
   cwd: string,
   modelId?: string,
-  authOverrides?: InProcessSpawnConfig['authOverrides'],
+  authOverrides?: InProcessSpawnConfig["authOverrides"],
 ): Promise<Config> {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const override = Object.create(base) as any;
@@ -356,29 +339,19 @@ async function createPerAgentConfig(
   const agentFileService = new FileDiscoveryService(cwd);
   override.getFileService = () => agentFileService;
 
-  const agentRegistry: ToolRegistry = await override.createToolRegistry(
-    undefined,
-    { skipDiscovery: true },
-  );
+  const agentRegistry: ToolRegistry = await override.createToolRegistry(undefined, {
+    skipDiscovery: true,
+  });
   agentRegistry.copyDiscoveredToolsFrom(base.getToolRegistry());
   override.getToolRegistry = () => agentRegistry;
 
   if (authOverrides?.authType) {
     try {
-      const agentGeneratorConfig = buildAgentContentGeneratorConfig(
-        base,
-        modelId,
-        authOverrides,
-      );
-      const agentGenerator = await createContentGenerator(
-        agentGeneratorConfig,
-        override as Config,
-      );
+      const agentGeneratorConfig = buildAgentContentGeneratorConfig(base, modelId, authOverrides);
+      const agentGenerator = await createContentGenerator(agentGeneratorConfig, override as Config);
       override.getContentGenerator = (): ContentGenerator => agentGenerator;
-      override.getContentGeneratorConfig = (): ContentGeneratorConfig =>
-        agentGeneratorConfig;
-      override.getAuthType = (): AuthType | undefined =>
-        agentGeneratorConfig.authType;
+      override.getContentGeneratorConfig = (): ContentGeneratorConfig => agentGeneratorConfig;
+      override.getAuthType = (): AuthType | undefined => agentGeneratorConfig.authType;
       override.getModel = (): string => agentGeneratorConfig.model;
 
       debugLogger.info(
@@ -386,7 +359,7 @@ async function createPerAgentConfig(
       );
     } catch (error) {
       debugLogger.error(
-        'Failed to create per-agent ContentGenerator, falling back to parent:',
+        "Failed to create per-agent ContentGenerator, falling back to parent:",
         error,
       );
     }

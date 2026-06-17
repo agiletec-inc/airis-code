@@ -22,64 +22,64 @@
  * Consumers can still reference FinishReason.STOP for well-known values.
  */
 export const FinishReason = {
-  FINISH_REASON_UNSPECIFIED: 'FINISH_REASON_UNSPECIFIED',
-  STOP: 'STOP',
-  MAX_TOKENS: 'MAX_TOKENS',
-  SAFETY: 'SAFETY',
-  RECITATION: 'RECITATION',
-  LANGUAGE: 'LANGUAGE',
-  OTHER: 'OTHER',
-  BLOCKLIST: 'BLOCKLIST',
-  PROHIBITED_CONTENT: 'PROHIBITED_CONTENT',
-  SPII: 'SPII',
-  MALFORMED_FUNCTION_CALL: 'MALFORMED_FUNCTION_CALL',
-  IMAGE_SAFETY: 'IMAGE_SAFETY',
-  UNEXPECTED_TOOL_CALL: 'UNEXPECTED_TOOL_CALL',
-  IMAGE_PROHIBITED_CONTENT: 'IMAGE_PROHIBITED_CONTENT',
-  NO_IMAGE: 'NO_IMAGE',
+  FINISH_REASON_UNSPECIFIED: "FINISH_REASON_UNSPECIFIED",
+  STOP: "STOP",
+  MAX_TOKENS: "MAX_TOKENS",
+  SAFETY: "SAFETY",
+  RECITATION: "RECITATION",
+  LANGUAGE: "LANGUAGE",
+  OTHER: "OTHER",
+  BLOCKLIST: "BLOCKLIST",
+  PROHIBITED_CONTENT: "PROHIBITED_CONTENT",
+  SPII: "SPII",
+  MALFORMED_FUNCTION_CALL: "MALFORMED_FUNCTION_CALL",
+  IMAGE_SAFETY: "IMAGE_SAFETY",
+  UNEXPECTED_TOOL_CALL: "UNEXPECTED_TOOL_CALL",
+  IMAGE_PROHIBITED_CONTENT: "IMAGE_PROHIBITED_CONTENT",
+  NO_IMAGE: "NO_IMAGE",
 } as const;
 export type FinishReason = string;
 
 export enum Type {
-  TYPE_UNSPECIFIED = 'TYPE_UNSPECIFIED',
-  STRING = 'STRING',
-  NUMBER = 'NUMBER',
-  INTEGER = 'INTEGER',
-  BOOLEAN = 'BOOLEAN',
-  ARRAY = 'ARRAY',
-  OBJECT = 'OBJECT',
-  NULL = 'NULL',
+  TYPE_UNSPECIFIED = "TYPE_UNSPECIFIED",
+  STRING = "STRING",
+  NUMBER = "NUMBER",
+  INTEGER = "INTEGER",
+  BOOLEAN = "BOOLEAN",
+  ARRAY = "ARRAY",
+  OBJECT = "OBJECT",
+  NULL = "NULL",
 }
 
 export enum HarmCategory {
-  HARM_CATEGORY_UNSPECIFIED = 'HARM_CATEGORY_UNSPECIFIED',
-  HARM_CATEGORY_HATE_SPEECH = 'HARM_CATEGORY_HATE_SPEECH',
-  HARM_CATEGORY_SEXUALLY_EXPLICIT = 'HARM_CATEGORY_SEXUALLY_EXPLICIT',
-  HARM_CATEGORY_HARASSMENT = 'HARM_CATEGORY_HARASSMENT',
-  HARM_CATEGORY_DANGEROUS_CONTENT = 'HARM_CATEGORY_DANGEROUS_CONTENT',
+  HARM_CATEGORY_UNSPECIFIED = "HARM_CATEGORY_UNSPECIFIED",
+  HARM_CATEGORY_HATE_SPEECH = "HARM_CATEGORY_HATE_SPEECH",
+  HARM_CATEGORY_SEXUALLY_EXPLICIT = "HARM_CATEGORY_SEXUALLY_EXPLICIT",
+  HARM_CATEGORY_HARASSMENT = "HARM_CATEGORY_HARASSMENT",
+  HARM_CATEGORY_DANGEROUS_CONTENT = "HARM_CATEGORY_DANGEROUS_CONTENT",
 }
 
 export enum HarmBlockThreshold {
-  HARM_BLOCK_THRESHOLD_UNSPECIFIED = 'HARM_BLOCK_THRESHOLD_UNSPECIFIED',
-  BLOCK_LOW_AND_ABOVE = 'BLOCK_LOW_AND_ABOVE',
-  BLOCK_MEDIUM_AND_ABOVE = 'BLOCK_MEDIUM_AND_ABOVE',
-  BLOCK_ONLY_HIGH = 'BLOCK_ONLY_HIGH',
-  BLOCK_NONE = 'BLOCK_NONE',
+  HARM_BLOCK_THRESHOLD_UNSPECIFIED = "HARM_BLOCK_THRESHOLD_UNSPECIFIED",
+  BLOCK_LOW_AND_ABOVE = "BLOCK_LOW_AND_ABOVE",
+  BLOCK_MEDIUM_AND_ABOVE = "BLOCK_MEDIUM_AND_ABOVE",
+  BLOCK_ONLY_HIGH = "BLOCK_ONLY_HIGH",
+  BLOCK_NONE = "BLOCK_NONE",
 }
 
 export enum BlockedReason {
-  BLOCKED_REASON_UNSPECIFIED = 'BLOCKED_REASON_UNSPECIFIED',
-  SAFETY = 'SAFETY',
-  OTHER = 'OTHER',
+  BLOCKED_REASON_UNSPECIFIED = "BLOCKED_REASON_UNSPECIFIED",
+  SAFETY = "SAFETY",
+  OTHER = "OTHER",
 }
 
 export enum Modality {
-  MODALITY_UNSPECIFIED = 'MODALITY_UNSPECIFIED',
-  TEXT = 'TEXT',
-  IMAGE = 'IMAGE',
-  AUDIO = 'AUDIO',
-  VIDEO = 'VIDEO',
-  DOCUMENT = 'DOCUMENT',
+  MODALITY_UNSPECIFIED = "MODALITY_UNSPECIFIED",
+  TEXT = "TEXT",
+  IMAGE = "IMAGE",
+  AUDIO = "AUDIO",
+  VIDEO = "VIDEO",
+  DOCUMENT = "DOCUMENT",
 }
 
 // ---------------------------------------------------------------------------
@@ -385,39 +385,35 @@ export class GenerateContentResponse {
     const parts = this.candidates?.[0]?.content?.parts;
     if (!parts || parts.length === 0) return undefined;
     const texts = parts
-      .filter((p) => typeof p.text === 'string' && !p.thought)
+      .filter((p) => typeof p.text === "string" && !p.thought)
       .map((p) => p.text as string);
     if (texts.length === 0) return undefined;
-    return texts.join('');
+    return texts.join("");
   }
 
   /** Convenience getter matching @google/genai: function calls from first candidate. */
   get functionCalls(): FunctionCall[] | undefined {
     const parts = this.candidates?.[0]?.content?.parts;
     if (!parts) return undefined;
-    const calls = parts
-      .filter((p) => p.functionCall)
-      .map((p) => p.functionCall as FunctionCall);
+    const calls = parts.filter((p) => p.functionCall).map((p) => p.functionCall as FunctionCall);
     return calls.length > 0 ? calls : undefined;
   }
 
   /** Convenience getter: executable code from first candidate. */
   get executableCode(): string | undefined {
-    return this.candidates?.[0]?.content?.parts?.find((p) => p.executableCode)
-      ?.executableCode?.code;
+    return this.candidates?.[0]?.content?.parts?.find((p) => p.executableCode)?.executableCode
+      ?.code;
   }
 
   /** Convenience getter: code execution result from first candidate. */
   get codeExecutionResult(): string | undefined {
-    return this.candidates?.[0]?.content?.parts?.find(
-      (p) => p.codeExecutionResult,
-    )?.codeExecutionResult?.output;
+    return this.candidates?.[0]?.content?.parts?.find((p) => p.codeExecutionResult)
+      ?.codeExecutionResult?.output;
   }
 
   /** Convenience getter: inline data (e.g. generated image) from first candidate. */
   get data(): string | undefined {
-    return this.candidates?.[0]?.content?.parts?.find((p) => p.inlineData)
-      ?.inlineData?.data;
+    return this.candidates?.[0]?.content?.parts?.find((p) => p.inlineData)?.inlineData?.data;
   }
 }
 
@@ -435,7 +431,7 @@ export class ApiError extends Error {
 
   constructor(init: ApiErrorInit) {
     super(init.message);
-    this.name = 'ApiError';
+    this.name = "ApiError";
     this.status = init.status;
   }
 }
@@ -445,9 +441,9 @@ export class ApiError extends Error {
 // ---------------------------------------------------------------------------
 
 function partsFromPartListUnion(parts: PartListUnion): Part[] {
-  if (typeof parts === 'string') return [{ text: parts }];
+  if (typeof parts === "string") return [{ text: parts }];
   if (Array.isArray(parts)) {
-    return parts.map((p) => (typeof p === 'string' ? { text: p } : p));
+    return parts.map((p) => (typeof p === "string" ? { text: p } : p));
   }
   return [parts];
 }
@@ -458,14 +454,14 @@ function partsFromPartListUnion(parts: PartListUnion): Part[] {
  * for our consumers. Proper handling lives in driver implementations.
  */
 export function createUserContent(parts: PartListUnion): Content {
-  return { role: 'user', parts: partsFromPartListUnion(parts) };
+  return { role: "user", parts: partsFromPartListUnion(parts) };
 }
 
 /**
  * Build a model-role Content from loose parts input.
  */
 export function createModelContent(parts: PartListUnion): Content {
-  return { role: 'model', parts: partsFromPartListUnion(parts) };
+  return { role: "model", parts: partsFromPartListUnion(parts) };
 }
 
 /**
@@ -475,18 +471,13 @@ export function createModelContent(parts: PartListUnion): Content {
  * layer, so this shim only needs to satisfy the type and not break existing
  * callers that pass the result through to driver adapters.
  */
-export function mcpToTool(
-  mcpClient: unknown,
-  _options?: unknown,
-): CallableTool {
+export function mcpToTool(mcpClient: unknown, _options?: unknown): CallableTool {
   return {
     tool: async (): Promise<Tool> => ({ functionDeclarations: [] }),
     callTool: async (_functionCalls: FunctionCall[]): Promise<Part[]> => {
-      throw new Error(
-        'mcpToTool runtime shim is not wired up; use the MCP session layer instead.',
-      );
+      throw new Error("mcpToTool runtime shim is not wired up; use the MCP session layer instead.");
     },
     // Preserve reference for downstream shims that may inspect it.
-    ...(mcpClient && typeof mcpClient === 'object' ? { __mcpClient: mcpClient } : {}),
+    ...(mcpClient && typeof mcpClient === "object" ? { __mcpClient: mcpClient } : {}),
   } as CallableTool;
 }

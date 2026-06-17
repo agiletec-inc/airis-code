@@ -4,16 +4,15 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import type { MessageBus } from '../confirmation-bus/message-bus.js';
-import { WEB_SEARCH_TOOL_NAME } from './tool-names.js';
-import type { GroundingMetadata } from '@google/genai';
-import type { ToolInvocation, ToolResult } from './tools.js';
-import { BaseDeclarativeTool, BaseToolInvocation, Kind } from './tools.js';
-import { ToolErrorType } from './tool-error.js';
-
-import { getErrorMessage } from '../utils/errors.js';
-import { type Config } from '../config/config.js';
-import { getResponseText } from '../utils/partUtils.js';
+import type { GroundingMetadata } from "@google/genai";
+import { type Config } from "../config/config.js";
+import type { MessageBus } from "../confirmation-bus/message-bus.js";
+import { getErrorMessage } from "../utils/errors.js";
+import { getResponseText } from "../utils/partUtils.js";
+import { ToolErrorType } from "./tool-error.js";
+import { WEB_SEARCH_TOOL_NAME } from "./tool-names.js";
+import type { ToolInvocation, ToolResult } from "./tools.js";
+import { BaseDeclarativeTool, BaseToolInvocation, Kind } from "./tools.js";
 
 interface GroundingChunkWeb {
   uri?: string;
@@ -53,14 +52,11 @@ export interface WebSearchToolParams {
  */
 export interface WebSearchToolResult extends ToolResult {
   sources?: GroundingMetadata extends { groundingChunks: GroundingChunkItem[] }
-    ? GroundingMetadata['groundingChunks']
+    ? GroundingMetadata["groundingChunks"]
     : GroundingChunkItem[];
 }
 
-class WebSearchToolInvocation extends BaseToolInvocation<
-  WebSearchToolParams,
-  WebSearchToolResult
-> {
+class WebSearchToolInvocation extends BaseToolInvocation<WebSearchToolParams, WebSearchToolResult> {
   constructor(
     private readonly config: Config,
     params: WebSearchToolParams,
@@ -80,16 +76,14 @@ class WebSearchToolInvocation extends BaseToolInvocation<
 
     try {
       const response = await geminiClient.generateContent(
-        { model: 'web-search' },
-        [{ role: 'user', parts: [{ text: this.params.query }] }],
+        { model: "web-search" },
+        [{ role: "user", parts: [{ text: this.params.query }] }],
         signal,
       );
 
       const responseText = getResponseText(response);
       const groundingMetadata = response.candidates?.[0]?.groundingMetadata;
-      const sources = groundingMetadata?.groundingChunks as
-        | GroundingChunkItem[]
-        | undefined;
+      const sources = groundingMetadata?.groundingChunks as GroundingChunkItem[] | undefined;
       const groundingSupports = groundingMetadata?.groundingSupports as
         | GroundingSupportItem[]
         | undefined;
@@ -97,7 +91,7 @@ class WebSearchToolInvocation extends BaseToolInvocation<
       if (!responseText || !responseText.trim()) {
         return {
           llmContent: `No search results or information found for query: "${this.params.query}"`,
-          returnDisplay: 'No information found.',
+          returnDisplay: "No information found.",
         };
       }
 
@@ -106,8 +100,8 @@ class WebSearchToolInvocation extends BaseToolInvocation<
 
       if (sources && sources.length > 0) {
         sources.forEach((source: GroundingChunkItem, index: number) => {
-          const title = source.web?.title || 'Untitled';
-          const uri = source.web?.uri || 'No URI';
+          const title = source.web?.title || "Untitled";
+          const uri = source.web?.uri || "No URI";
           sourceListFormatted.push(`[${index + 1}] ${title} (${uri})`);
         });
 
@@ -117,7 +111,7 @@ class WebSearchToolInvocation extends BaseToolInvocation<
             if (support.segment && support.groundingChunkIndices) {
               const citationMarker = support.groundingChunkIndices
                 .map((chunkIndex: number) => `[${chunkIndex + 1}]`)
-                .join('');
+                .join("");
               insertions.push({
                 index: support.segment.endIndex,
                 marker: citationMarker,
@@ -153,8 +147,7 @@ class WebSearchToolInvocation extends BaseToolInvocation<
         }
 
         if (sourceListFormatted.length > 0) {
-          modifiedResponseText +=
-            '\n\nSources:\n' + sourceListFormatted.join('\n');
+          modifiedResponseText += "\n\nSources:\n" + sourceListFormatted.join("\n");
         }
       }
 
@@ -183,10 +176,7 @@ class WebSearchToolInvocation extends BaseToolInvocation<
 /**
  * A tool to perform web searches using Google Search via the Gemini API.
  */
-export class WebSearchTool extends BaseDeclarativeTool<
-  WebSearchToolParams,
-  WebSearchToolResult
-> {
+export class WebSearchTool extends BaseDeclarativeTool<WebSearchToolParams, WebSearchToolResult> {
   static readonly Name = WEB_SEARCH_TOOL_NAME;
 
   constructor(
@@ -195,18 +185,18 @@ export class WebSearchTool extends BaseDeclarativeTool<
   ) {
     super(
       WebSearchTool.Name,
-      'GoogleSearch',
-      'Performs a web search using Google Search (via the Gemini API) and returns the results. This tool is useful for finding information on the internet based on a query.',
+      "GoogleSearch",
+      "Performs a web search using Google Search (via the Gemini API) and returns the results. This tool is useful for finding information on the internet based on a query.",
       Kind.Search,
       {
-        type: 'object',
+        type: "object",
         properties: {
           query: {
-            type: 'string',
-            description: 'The search query to find information on the web.',
+            type: "string",
+            description: "The search query to find information on the web.",
           },
         },
-        required: ['query'],
+        required: ["query"],
       },
       true, // isOutputMarkdown
       false, // canUpdateOutput
@@ -219,10 +209,8 @@ export class WebSearchTool extends BaseDeclarativeTool<
    * @param params The parameters to validate
    * @returns An error message string if validation fails, null if valid
    */
-  protected override validateToolParamValues(
-    params: WebSearchToolParams,
-  ): string | null {
-    if (!params.query || params.query.trim() === '') {
+  protected override validateToolParamValues(params: WebSearchToolParams): string | null {
+    if (!params.query || params.query.trim() === "") {
       return "The 'query' parameter cannot be empty.";
     }
     return null;

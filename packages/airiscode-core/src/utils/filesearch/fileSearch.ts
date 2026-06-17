@@ -4,15 +4,15 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import path from 'node:path';
-import picomatch from 'picomatch';
-import type { Ignore } from './ignore.js';
-import { loadIgnoreRules } from './ignore.js';
-import { ResultCache } from './result-cache.js';
-import { crawl } from './crawler.js';
-import type { FzfResultItem } from 'fzf';
-import { AsyncFzf } from 'fzf';
-import { unescapePath } from '../paths.js';
+import path from "node:path";
+import type { FzfResultItem } from "fzf";
+import { AsyncFzf } from "fzf";
+import picomatch from "picomatch";
+import { unescapePath } from "../paths.js";
+import { crawl } from "./crawler.js";
+import type { Ignore } from "./ignore.js";
+import { loadIgnoreRules } from "./ignore.js";
+import { ResultCache } from "./result-cache.js";
 
 export interface FileSearchOptions {
   projectRoot: string;
@@ -27,9 +27,9 @@ export interface FileSearchOptions {
 }
 
 export class AbortError extends Error {
-  constructor(message = 'Search aborted') {
+  constructor(message = "Search aborted") {
     super(message);
-    this.name = 'AbortError';
+    this.name = "AbortError";
   }
 }
 
@@ -67,8 +67,8 @@ export async function filter(
   }
 
   results.sort((a, b) => {
-    const aIsDir = a.endsWith('/');
-    const bIsDir = b.endsWith('/');
+    const aIsDir = a.endsWith("/");
+    const bIsDir = b.endsWith("/");
 
     if (aIsDir && !bIsDir) return -1;
     if (!aIsDir && bIsDir) return 1;
@@ -112,10 +112,7 @@ class RecursiveFileSearch implements FileSearch {
     this.buildResultCache();
   }
 
-  async search(
-    pattern: string,
-    options: SearchOptions = {},
-  ): Promise<string[]> {
+  async search(pattern: string, options: SearchOptions = {}): Promise<string[]> {
     // Check if engine is properly initialized.
     // If fuzzy search is enabled (or undefined, default true), fzf must be initialized.
     if (
@@ -123,21 +120,20 @@ class RecursiveFileSearch implements FileSearch {
       (!this.fzf && this.options.enableFuzzySearch !== false) ||
       !this.ignore
     ) {
-      throw new Error('Engine not initialized. Call initialize() first.');
+      throw new Error("Engine not initialized. Call initialize() first.");
     }
 
-    pattern = unescapePath(pattern) || '*';
+    pattern = unescapePath(pattern) || "*";
 
     let filteredCandidates;
-    const { files: candidates, isExactMatch } =
-      await this.resultCache!.get(pattern);
+    const { files: candidates, isExactMatch } = await this.resultCache!.get(pattern);
 
     if (isExactMatch) {
       // Use the cached result.
       filteredCandidates = candidates;
     } else {
       let shouldCache = true;
-      if (pattern.includes('*') || !this.fzf) {
+      if (pattern.includes("*") || !this.fzf) {
         filteredCandidates = await filter(candidates, pattern, options.signal);
       } else {
         filteredCandidates = await this.fzf
@@ -169,7 +165,7 @@ class RecursiveFileSearch implements FileSearch {
       if (results.length >= (options.maxResults ?? Infinity)) {
         break;
       }
-      if (candidate === '.') {
+      if (candidate === ".") {
         continue;
       }
       if (!fileFilter(candidate)) {
@@ -187,7 +183,7 @@ class RecursiveFileSearch implements FileSearch {
       // occurence of the pattern. We use it for search spaces that have >20k
       // files, because the v2 algorithm is just too slow in those cases.
       this.fzf = new AsyncFzf(this.allFiles, {
-        fuzzy: this.allFiles.length > 20000 ? 'v1' : 'v2',
+        fuzzy: this.allFiles.length > 20000 ? "v1" : "v2",
       });
     }
   }
@@ -202,16 +198,13 @@ class DirectoryFileSearch implements FileSearch {
     this.ignore = loadIgnoreRules(this.options);
   }
 
-  async search(
-    pattern: string,
-    options: SearchOptions = {},
-  ): Promise<string[]> {
+  async search(pattern: string, options: SearchOptions = {}): Promise<string[]> {
     if (!this.ignore) {
-      throw new Error('Engine not initialized. Call initialize() first.');
+      throw new Error("Engine not initialized. Call initialize() first.");
     }
-    pattern = pattern || '*';
+    pattern = pattern || "*";
 
-    const dir = pattern.endsWith('/') ? pattern : path.dirname(pattern);
+    const dir = pattern.endsWith("/") ? pattern : path.dirname(pattern);
     const results = await crawl({
       crawlDirectory: path.join(this.options.projectRoot, dir),
       cwd: this.options.projectRoot,
@@ -229,7 +222,7 @@ class DirectoryFileSearch implements FileSearch {
       if (finalResults.length >= (options.maxResults ?? Infinity)) {
         break;
       }
-      if (candidate === '.') {
+      if (candidate === ".") {
         continue;
       }
       if (!fileFilter(candidate)) {

@@ -4,44 +4,34 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import {
-  describe,
-  it,
-  expect,
-  vi,
-  beforeEach,
-  afterEach,
-  type Mocked,
-  type Mock,
-} from 'vitest';
+import type { GenerateContentResponse } from "@google/genai";
+import { afterEach, beforeEach, describe, expect, it, type Mock, type Mocked, vi } from "vitest";
+import type { ModelAvailabilityService } from "../availability/modelAvailabilityService.js";
+import { createAvailabilityServiceMock } from "../availability/testUtils.js";
+import type { Config } from "../config/config.js";
+import type { ModelConfigService } from "../services/modelConfigService.js";
+import { makeResolvedModelConfig } from "../services/modelConfigServiceTestUtils.js";
+import { logMalformedJsonResponse } from "../telemetry/loggers.js";
+import { MalformedJsonResponseEvent } from "../telemetry/types.js";
+import { reportError } from "../utils/errorReporting.js";
+import { getErrorMessage } from "../utils/errors.js";
+import { retryWithBackoff } from "../utils/retry.js";
+import type { GenerateContentOptions } from "./baseLlmClient.js";
+import { BaseLlmClient, type GenerateJsonOptions } from "./baseLlmClient.js";
+import type { ContentGenerator } from "./contentGenerator.js";
+import { AuthType } from "./contentGenerator.js";
 
-import { BaseLlmClient, type GenerateJsonOptions } from './baseLlmClient.js';
-import type { ContentGenerator } from './contentGenerator.js';
-import type { ModelAvailabilityService } from '../availability/modelAvailabilityService.js';
-import { createAvailabilityServiceMock } from '../availability/testUtils.js';
-import type { GenerateContentOptions } from './baseLlmClient.js';
-import type { GenerateContentResponse } from '@google/genai';
-import type { Config } from '../config/config.js';
-import { AuthType } from './contentGenerator.js';
-import { reportError } from '../utils/errorReporting.js';
-import { logMalformedJsonResponse } from '../telemetry/loggers.js';
-import { retryWithBackoff } from '../utils/retry.js';
-import { MalformedJsonResponseEvent } from '../telemetry/types.js';
-import { getErrorMessage } from '../utils/errors.js';
-import type { ModelConfigService } from '../services/modelConfigService.js';
-import { makeResolvedModelConfig } from '../services/modelConfigServiceTestUtils.js';
-
-vi.mock('../utils/errorReporting.js');
-vi.mock('../telemetry/loggers.js');
-vi.mock('../utils/errors.js', async (importOriginal) => {
-  const actual = await importOriginal<typeof import('../utils/errors.js')>();
+vi.mock("../utils/errorReporting.js");
+vi.mock("../telemetry/loggers.js");
+vi.mock("../utils/errors.js", async (importOriginal) => {
+  const actual = await importOriginal<typeof import("../utils/errors.js")>();
   return {
     ...actual,
     getErrorMessage: vi.fn((e) => (e instanceof Error ? e.message : String(e))),
   };
 });
 
-vi.mock('../utils/retry.js', () => ({
+vi.mock("../utils/retry.js", () => ({
   retryWithBackoff: vi.fn(async (fn, options) => {
     // Default implementation - just call the function
     const result = await fn();
@@ -55,10 +45,10 @@ vi.mock('../utils/retry.js', () => ({
         const responseText = result?.candidates?.[0]?.content?.parts?.[0]?.text;
         if (
           !responseText ||
-          responseText.trim() === '' ||
+          responseText.trim() === "" ||
           responseText.includes('{"color": "blue"')
         ) {
-          throw new Error('Retry attempts exhausted for invalid content');
+          throw new Error("Retry attempts exhausted for invalid content");
         }
       }
     }
@@ -83,10 +73,10 @@ const mockContentGenerator = {
 // Helper to create a mock GenerateContentResponse
 const createMockResponse = (text: string): GenerateContentResponse =>
   ({
-    candidates: [{ content: { role: 'model', parts: [{ text }] }, index: 0 }],
+    candidates: [{ content: { role: "model", parts: [{ text }] }, index: 0 }],
   }) as GenerateContentResponse;
 
-describe('BaseLlmClient', () => {
+describe("BaseLlmClient", () => {
   let client: BaseLlmClient;
   let abortController: AbortController;
   let defaultOptions: GenerateJsonOptions;
@@ -100,11 +90,9 @@ describe('BaseLlmClient', () => {
     );
 
     mockConfig = {
-      getSessionId: vi.fn().mockReturnValue('test-session-id'),
-      getContentGeneratorConfig: vi
-        .fn()
-        .mockReturnValue({ authType: AuthType.USE_GEMINI }),
-      getEmbeddingModel: vi.fn().mockReturnValue('test-embedding-model'),
+      getSessionId: vi.fn().mockReturnValue("test-session-id"),
+      getContentGeneratorConfig: vi.fn().mockReturnValue({ authType: AuthType.USE_GEMINI }),
+      getEmbeddingModel: vi.fn().mockReturnValue("test-embedding-model"),
       isInteractive: vi.fn().mockReturnValue(false),
       modelConfigService: {
         getResolvedConfig: vi
@@ -117,18 +105,18 @@ describe('BaseLlmClient', () => {
       getPreviewFeatures: vi.fn().mockReturnValue(false),
       getUserTier: vi.fn().mockReturnValue(undefined),
       isInFallbackMode: vi.fn().mockReturnValue(false),
-      getModel: vi.fn().mockReturnValue('test-model'),
-      getActiveModel: vi.fn().mockReturnValue('test-model'),
+      getModel: vi.fn().mockReturnValue("test-model"),
+      getActiveModel: vi.fn().mockReturnValue("test-model"),
     } as unknown as Mocked<Config>;
 
     client = new BaseLlmClient(mockContentGenerator, mockConfig);
     abortController = new AbortController();
     defaultOptions = {
-      modelConfigKey: { model: 'test-model' },
-      contents: [{ role: 'user', parts: [{ text: 'Give me a color.' }] }],
-      schema: { type: 'object', properties: { color: { type: 'string' } } },
+      modelConfigKey: { model: "test-model" },
+      contents: [{ role: "user", parts: [{ text: "Give me a color." }] }],
+      schema: { type: "object", properties: { color: { type: "string" } } },
       abortSignal: abortController.signal,
-      promptId: 'test-prompt-id',
+      promptId: "test-prompt-id",
     };
   });
 
@@ -136,14 +124,14 @@ describe('BaseLlmClient', () => {
     abortController.abort();
   });
 
-  describe('generateJson - Success Scenarios', () => {
-    it('should call generateContent with correct parameters, defaults, and utilize retry mechanism', async () => {
+  describe("generateJson - Success Scenarios", () => {
+    it("should call generateContent with correct parameters, defaults, and utilize retry mechanism", async () => {
       const mockResponse = createMockResponse('{"color": "blue"}');
       mockGenerateContent.mockResolvedValue(mockResponse);
 
       const result = await client.generateJson(defaultOptions);
 
-      expect(result).toEqual({ color: 'blue' });
+      expect(result).toEqual({ color: "blue" });
 
       // Ensure the retry mechanism was engaged with shouldRetryOnContent
       expect(retryWithBackoff).toHaveBeenCalledTimes(1);
@@ -158,25 +146,25 @@ describe('BaseLlmClient', () => {
       expect(mockGenerateContent).toHaveBeenCalledTimes(1);
       expect(mockGenerateContent).toHaveBeenCalledWith(
         {
-          model: 'test-model',
+          model: "test-model",
           contents: defaultOptions.contents,
           config: {
             abortSignal: defaultOptions.abortSignal,
             responseJsonSchema: defaultOptions.schema,
-            responseMimeType: 'application/json',
+            responseMimeType: "application/json",
             temperature: 0,
             topP: 1,
             // Crucial: systemInstruction should NOT be in the config object if not provided
           },
         },
-        'test-prompt-id',
+        "test-prompt-id",
       );
     });
 
-    it('should include system instructions when provided', async () => {
+    it("should include system instructions when provided", async () => {
       const mockResponse = createMockResponse('{"color": "green"}');
       mockGenerateContent.mockResolvedValue(mockResponse);
-      const systemInstruction = 'You are a helpful assistant.';
+      const systemInstruction = "You are a helpful assistant.";
 
       const options: GenerateJsonOptions = {
         ...defaultOptions,
@@ -195,10 +183,10 @@ describe('BaseLlmClient', () => {
       );
     });
 
-    it('should use the provided promptId', async () => {
+    it("should use the provided promptId", async () => {
       const mockResponse = createMockResponse('{"color": "yellow"}');
       mockGenerateContent.mockResolvedValue(mockResponse);
-      const customPromptId = 'custom-id-123';
+      const customPromptId = "custom-id-123";
 
       const options: GenerateJsonOptions = {
         ...defaultOptions,
@@ -207,13 +195,10 @@ describe('BaseLlmClient', () => {
 
       await client.generateJson(options);
 
-      expect(mockGenerateContent).toHaveBeenCalledWith(
-        expect.any(Object),
-        customPromptId,
-      );
+      expect(mockGenerateContent).toHaveBeenCalledWith(expect.any(Object), customPromptId);
     });
 
-    it('should pass maxAttempts to retryWithBackoff when provided', async () => {
+    it("should pass maxAttempts to retryWithBackoff when provided", async () => {
       const mockResponse = createMockResponse('{"color": "cyan"}');
       mockGenerateContent.mockResolvedValue(mockResponse);
       const customMaxAttempts = 3;
@@ -234,7 +219,7 @@ describe('BaseLlmClient', () => {
       );
     });
 
-    it('should call retryWithBackoff without maxAttempts when not provided', async () => {
+    it("should call retryWithBackoff without maxAttempts when not provided", async () => {
       const mockResponse = createMockResponse('{"color": "indigo"}');
       mockGenerateContent.mockResolvedValue(mockResponse);
 
@@ -250,8 +235,8 @@ describe('BaseLlmClient', () => {
     });
   });
 
-  describe('generateJson - Content Validation and Retries', () => {
-    it('should validate content using shouldRetryOnContent function', async () => {
+  describe("generateJson - Content Validation and Retries", () => {
+    it("should validate content using shouldRetryOnContent function", async () => {
       const mockResponse = createMockResponse('{"color": "blue"}');
       mockGenerateContent.mockResolvedValue(mockResponse);
 
@@ -273,25 +258,21 @@ describe('BaseLlmClient', () => {
       expect(shouldRetryOnContent!(mockResponse)).toBe(false);
 
       // Empty response should trigger retry
-      expect(shouldRetryOnContent!(createMockResponse(''))).toBe(true);
+      expect(shouldRetryOnContent!(createMockResponse(""))).toBe(true);
 
       // Invalid JSON should trigger retry
-      expect(
-        shouldRetryOnContent!(createMockResponse('{"color": "blue"')),
-      ).toBe(true);
+      expect(shouldRetryOnContent!(createMockResponse('{"color": "blue"'))).toBe(true);
     });
   });
 
-  describe('generateJson - Response Cleaning', () => {
-    it('should clean JSON wrapped in markdown backticks and log telemetry', async () => {
+  describe("generateJson - Response Cleaning", () => {
+    it("should clean JSON wrapped in markdown backticks and log telemetry", async () => {
       const malformedResponse = '```json\n{"color": "purple"}\n```';
-      mockGenerateContent.mockResolvedValue(
-        createMockResponse(malformedResponse),
-      );
+      mockGenerateContent.mockResolvedValue(createMockResponse(malformedResponse));
 
       const result = await client.generateJson(defaultOptions);
 
-      expect(result).toEqual({ color: 'purple' });
+      expect(result).toEqual({ color: "purple" });
       expect(logMalformedJsonResponse).toHaveBeenCalledWith(
         mockConfig,
         expect.any(MalformedJsonResponseEvent),
@@ -303,26 +284,22 @@ describe('BaseLlmClient', () => {
       expect(event.model).toBe(defaultOptions.modelConfigKey.model);
     });
 
-    it('should handle extra whitespace correctly without logging malformed telemetry', async () => {
+    it("should handle extra whitespace correctly without logging malformed telemetry", async () => {
       const responseWithWhitespace = '  \n  {"color": "orange"}  \n';
-      mockGenerateContent.mockResolvedValue(
-        createMockResponse(responseWithWhitespace),
-      );
+      mockGenerateContent.mockResolvedValue(createMockResponse(responseWithWhitespace));
 
       const result = await client.generateJson(defaultOptions);
 
-      expect(result).toEqual({ color: 'orange' });
+      expect(result).toEqual({ color: "orange" });
       expect(logMalformedJsonResponse).not.toHaveBeenCalled();
     });
 
-    it('should use the resolved model name when logging malformed JSON telemetry', async () => {
-      const aliasModel = 'fast-alias';
-      const resolvedModel = 'gemini-1.5-flash';
+    it("should use the resolved model name when logging malformed JSON telemetry", async () => {
+      const aliasModel = "fast-alias";
+      const resolvedModel = "gemini-1.5-flash";
 
       // Override the mock for this specific test to simulate resolution
-      (
-        mockConfig.modelConfigService.getResolvedConfig as unknown as Mock
-      ).mockReturnValue({
+      (mockConfig.modelConfigService.getResolvedConfig as unknown as Mock).mockReturnValue({
         model: resolvedModel,
         generateContentConfig: {
           temperature: 0,
@@ -331,9 +308,7 @@ describe('BaseLlmClient', () => {
       });
 
       const malformedResponse = '```json\n{"color": "red"}\n```';
-      mockGenerateContent.mockResolvedValue(
-        createMockResponse(malformedResponse),
-      );
+      mockGenerateContent.mockResolvedValue(createMockResponse(malformedResponse));
 
       const options = {
         ...defaultOptions,
@@ -342,7 +317,7 @@ describe('BaseLlmClient', () => {
 
       const result = await client.generateJson(options);
 
-      expect(result).toEqual({ color: 'red' });
+      expect(result).toEqual({ color: "red" });
 
       expect(logMalformedJsonResponse).toHaveBeenCalled();
       const calls = vi.mocked(logMalformedJsonResponse).mock.calls;
@@ -355,62 +330,62 @@ describe('BaseLlmClient', () => {
     });
   });
 
-  describe('generateJson - Error Handling', () => {
-    it('should throw and report error for empty response after retry exhaustion', async () => {
-      mockGenerateContent.mockResolvedValue(createMockResponse(''));
+  describe("generateJson - Error Handling", () => {
+    it("should throw and report error for empty response after retry exhaustion", async () => {
+      mockGenerateContent.mockResolvedValue(createMockResponse(""));
 
       await expect(client.generateJson(defaultOptions)).rejects.toThrow(
-        'Failed to generate content: Retry attempts exhausted for invalid content',
+        "Failed to generate content: Retry attempts exhausted for invalid content",
       );
 
       // Verify error reporting details
       expect(reportError).toHaveBeenCalledTimes(1);
       expect(reportError).toHaveBeenCalledWith(
         expect.any(Error),
-        'API returned invalid content after all retries.',
+        "API returned invalid content after all retries.",
         defaultOptions.contents,
-        'generateJson-invalid-content',
+        "generateJson-invalid-content",
       );
     });
 
-    it('should throw and report error for invalid JSON syntax after retry exhaustion', async () => {
+    it("should throw and report error for invalid JSON syntax after retry exhaustion", async () => {
       const invalidJson = '{"color": "blue"'; // missing closing brace
       mockGenerateContent.mockResolvedValue(createMockResponse(invalidJson));
 
       await expect(client.generateJson(defaultOptions)).rejects.toThrow(
-        'Failed to generate content: Retry attempts exhausted for invalid content',
+        "Failed to generate content: Retry attempts exhausted for invalid content",
       );
 
       expect(reportError).toHaveBeenCalledTimes(1);
       expect(reportError).toHaveBeenCalledWith(
         expect.any(Error),
-        'API returned invalid content after all retries.',
+        "API returned invalid content after all retries.",
         defaultOptions.contents,
-        'generateJson-invalid-content',
+        "generateJson-invalid-content",
       );
     });
 
-    it('should throw and report generic API errors', async () => {
-      const apiError = new Error('Service Unavailable (503)');
+    it("should throw and report generic API errors", async () => {
+      const apiError = new Error("Service Unavailable (503)");
       // Simulate the generator failing
       mockGenerateContent.mockRejectedValue(apiError);
 
       await expect(client.generateJson(defaultOptions)).rejects.toThrow(
-        'Failed to generate content: Service Unavailable (503)',
+        "Failed to generate content: Service Unavailable (503)",
       );
 
       // Verify generic error reporting
       expect(reportError).toHaveBeenCalledTimes(1);
       expect(reportError).toHaveBeenCalledWith(
         apiError,
-        'Error generating content via API.',
+        "Error generating content via API.",
         defaultOptions.contents,
-        'generateJson-api',
+        "generateJson-api",
       );
     });
 
-    it('should throw immediately without reporting if aborted', async () => {
-      const abortError = new DOMException('Aborted', 'AbortError');
+    it("should throw immediately without reporting if aborted", async () => {
+      const abortError = new DOMException("Aborted", "AbortError");
 
       // Simulate abortion happening during the API call
       mockGenerateContent.mockImplementation(() => {
@@ -430,20 +405,17 @@ describe('BaseLlmClient', () => {
     });
   });
 
-  describe('generateEmbedding', () => {
-    const texts = ['hello world', 'goodbye world'];
-    const testEmbeddingModel = 'test-embedding-model';
+  describe("generateEmbedding", () => {
+    const texts = ["hello world", "goodbye world"];
+    const testEmbeddingModel = "test-embedding-model";
 
-    it('should call embedContent with correct parameters and return embeddings', async () => {
+    it("should call embedContent with correct parameters and return embeddings", async () => {
       const mockEmbeddings = [
         [0.1, 0.2, 0.3],
         [0.4, 0.5, 0.6],
       ];
       mockEmbedContent.mockResolvedValue({
-        embeddings: [
-          { values: mockEmbeddings[0] },
-          { values: mockEmbeddings[1] },
-        ],
+        embeddings: [{ values: mockEmbeddings[0] }, { values: mockEmbeddings[1] }],
       });
 
       const result = await client.generateEmbedding(texts);
@@ -456,41 +428,41 @@ describe('BaseLlmClient', () => {
       expect(result).toEqual(mockEmbeddings);
     });
 
-    it('should return an empty array if an empty array is passed', async () => {
+    it("should return an empty array if an empty array is passed", async () => {
       const result = await client.generateEmbedding([]);
       expect(result).toEqual([]);
       expect(mockEmbedContent).not.toHaveBeenCalled();
     });
 
-    it('should throw an error if API response has no embeddings array', async () => {
+    it("should throw an error if API response has no embeddings array", async () => {
       mockEmbedContent.mockResolvedValue({});
 
       await expect(client.generateEmbedding(texts)).rejects.toThrow(
-        'No embeddings found in API response.',
+        "No embeddings found in API response.",
       );
     });
 
-    it('should throw an error if API response has an empty embeddings array', async () => {
+    it("should throw an error if API response has an empty embeddings array", async () => {
       mockEmbedContent.mockResolvedValue({
         embeddings: [],
       });
 
       await expect(client.generateEmbedding(texts)).rejects.toThrow(
-        'No embeddings found in API response.',
+        "No embeddings found in API response.",
       );
     });
 
-    it('should throw an error if API returns a mismatched number of embeddings', async () => {
+    it("should throw an error if API returns a mismatched number of embeddings", async () => {
       mockEmbedContent.mockResolvedValue({
         embeddings: [{ values: [1, 2, 3] }], // Only one for two texts
       });
 
       await expect(client.generateEmbedding(texts)).rejects.toThrow(
-        'API returned a mismatched number of embeddings. Expected 2, got 1.',
+        "API returned a mismatched number of embeddings. Expected 2, got 1.",
       );
     });
 
-    it('should throw an error if any embedding has nullish values', async () => {
+    it("should throw an error if any embedding has nullish values", async () => {
       mockEmbedContent.mockResolvedValue({
         embeddings: [{ values: [1, 2, 3] }, { values: undefined }], // Second one is bad
       });
@@ -500,7 +472,7 @@ describe('BaseLlmClient', () => {
       );
     });
 
-    it('should throw an error if any embedding has an empty values array', async () => {
+    it("should throw an error if any embedding has an empty values array", async () => {
       mockEmbedContent.mockResolvedValue({
         embeddings: [{ values: [] }, { values: [1, 2, 3] }], // First one is bad
       });
@@ -510,25 +482,23 @@ describe('BaseLlmClient', () => {
       );
     });
 
-    it('should propagate errors from the API call', async () => {
-      mockEmbedContent.mockRejectedValue(new Error('API Failure'));
+    it("should propagate errors from the API call", async () => {
+      mockEmbedContent.mockRejectedValue(new Error("API Failure"));
 
-      await expect(client.generateEmbedding(texts)).rejects.toThrow(
-        'API Failure',
-      );
+      await expect(client.generateEmbedding(texts)).rejects.toThrow("API Failure");
     });
   });
 
-  describe('generateContent', () => {
-    it('should call generateContent with correct parameters and utilize retry mechanism', async () => {
-      const mockResponse = createMockResponse('This is the content.');
+  describe("generateContent", () => {
+    it("should call generateContent with correct parameters and utilize retry mechanism", async () => {
+      const mockResponse = createMockResponse("This is the content.");
       mockGenerateContent.mockResolvedValue(mockResponse);
 
       const options = {
-        modelConfigKey: { model: 'test-model' },
-        contents: [{ role: 'user', parts: [{ text: 'Give me content.' }] }],
+        modelConfigKey: { model: "test-model" },
+        contents: [{ role: "user", parts: [{ text: "Give me content." }] }],
         abortSignal: abortController.signal,
-        promptId: 'content-prompt-id',
+        promptId: "content-prompt-id",
       };
 
       const result = await client.generateContent(options);
@@ -548,7 +518,7 @@ describe('BaseLlmClient', () => {
       expect(mockGenerateContent).toHaveBeenCalledTimes(1);
       expect(mockGenerateContent).toHaveBeenCalledWith(
         {
-          model: 'test-model',
+          model: "test-model",
           contents: options.contents,
           config: {
             abortSignal: options.abortSignal,
@@ -556,19 +526,19 @@ describe('BaseLlmClient', () => {
             topP: 1,
           },
         },
-        'content-prompt-id',
+        "content-prompt-id",
       );
     });
 
-    it('should validate content using shouldRetryOnContent function', async () => {
-      const mockResponse = createMockResponse('Some valid content.');
+    it("should validate content using shouldRetryOnContent function", async () => {
+      const mockResponse = createMockResponse("Some valid content.");
       mockGenerateContent.mockResolvedValue(mockResponse);
 
       const options = {
-        modelConfigKey: { model: 'test-model' },
-        contents: [{ role: 'user', parts: [{ text: 'Give me content.' }] }],
+        modelConfigKey: { model: "test-model" },
+        contents: [{ role: "user", parts: [{ text: "Give me content." }] }],
         abortSignal: abortController.signal,
-        promptId: 'content-prompt-id',
+        promptId: "content-prompt-id",
       };
 
       await client.generateContent(options);
@@ -580,120 +550,106 @@ describe('BaseLlmClient', () => {
       expect(shouldRetryOnContent!(mockResponse)).toBe(false);
 
       // Empty response should trigger retry
-      expect(shouldRetryOnContent!(createMockResponse(''))).toBe(true);
-      expect(shouldRetryOnContent!(createMockResponse('   '))).toBe(true);
+      expect(shouldRetryOnContent!(createMockResponse(""))).toBe(true);
+      expect(shouldRetryOnContent!(createMockResponse("   "))).toBe(true);
     });
 
-    it('should throw and report error for empty response after retry exhaustion', async () => {
-      mockGenerateContent.mockResolvedValue(createMockResponse(''));
+    it("should throw and report error for empty response after retry exhaustion", async () => {
+      mockGenerateContent.mockResolvedValue(createMockResponse(""));
       const options = {
-        modelConfigKey: { model: 'test-model' },
-        contents: [{ role: 'user', parts: [{ text: 'Give me content.' }] }],
+        modelConfigKey: { model: "test-model" },
+        contents: [{ role: "user", parts: [{ text: "Give me content." }] }],
         abortSignal: abortController.signal,
-        promptId: 'content-prompt-id',
+        promptId: "content-prompt-id",
       };
 
       await expect(client.generateContent(options)).rejects.toThrow(
-        'Failed to generate content: Retry attempts exhausted for invalid content',
+        "Failed to generate content: Retry attempts exhausted for invalid content",
       );
 
       // Verify error reporting details
       expect(reportError).toHaveBeenCalledTimes(1);
       expect(reportError).toHaveBeenCalledWith(
         expect.any(Error),
-        'API returned invalid content after all retries.',
+        "API returned invalid content after all retries.",
         options.contents,
-        'generateContent-invalid-content',
+        "generateContent-invalid-content",
       );
     });
   });
 
-  describe('Availability Service Integration', () => {
+  describe("Availability Service Integration", () => {
     let mockAvailabilityService: ModelAvailabilityService;
     let contentOptions: GenerateContentOptions;
     let jsonOptions: GenerateJsonOptions;
 
     beforeEach(() => {
-      mockConfig.isModelAvailabilityServiceEnabled = vi
-        .fn()
-        .mockReturnValue(true);
+      mockConfig.isModelAvailabilityServiceEnabled = vi.fn().mockReturnValue(true);
 
       mockAvailabilityService = createAvailabilityServiceMock({
-        selectedModel: 'test-model',
+        selectedModel: "test-model",
         skipped: [],
       });
 
       // Reflect setActiveModel into getActiveModel so availability-driven updates
       // are visible to the client under test.
-      mockConfig.getActiveModel = vi.fn().mockReturnValue('test-model');
+      mockConfig.getActiveModel = vi.fn().mockReturnValue("test-model");
       mockConfig.setActiveModel = vi.fn((model: string) => {
         vi.mocked(mockConfig.getActiveModel).mockReturnValue(model);
       });
 
-      vi.spyOn(mockConfig, 'getModelAvailabilityService').mockReturnValue(
-        mockAvailabilityService,
-      );
+      vi.spyOn(mockConfig, "getModelAvailabilityService").mockReturnValue(mockAvailabilityService);
 
       contentOptions = {
-        modelConfigKey: { model: 'test-model' },
-        contents: [{ role: 'user', parts: [{ text: 'Give me a color.' }] }],
+        modelConfigKey: { model: "test-model" },
+        contents: [{ role: "user", parts: [{ text: "Give me a color." }] }],
         abortSignal: abortController.signal,
-        promptId: 'content-prompt-id',
+        promptId: "content-prompt-id",
       };
 
       jsonOptions = {
         ...defaultOptions,
-        promptId: 'json-prompt-id',
+        promptId: "json-prompt-id",
       };
     });
 
-    it('should preserve legacy behavior when availability is disabled', async () => {
-      mockConfig.isModelAvailabilityServiceEnabled = vi
-        .fn()
-        .mockReturnValue(false);
-      mockGenerateContent.mockResolvedValue(
-        createMockResponse('Some text response'),
-      );
+    it("should preserve legacy behavior when availability is disabled", async () => {
+      mockConfig.isModelAvailabilityServiceEnabled = vi.fn().mockReturnValue(false);
+      mockGenerateContent.mockResolvedValue(createMockResponse("Some text response"));
 
       await client.generateContent(contentOptions);
 
-      expect(
-        mockAvailabilityService.selectFirstAvailable,
-      ).not.toHaveBeenCalled();
+      expect(mockAvailabilityService.selectFirstAvailable).not.toHaveBeenCalled();
       expect(mockConfig.setActiveModel).not.toHaveBeenCalled();
       expect(mockAvailabilityService.markHealthy).not.toHaveBeenCalled();
     });
 
-    it('should mark model as healthy on success', async () => {
-      const successfulModel = 'gemini-pro';
+    it("should mark model as healthy on success", async () => {
+      const successfulModel = "gemini-pro";
       vi.mocked(mockAvailabilityService.selectFirstAvailable).mockReturnValue({
         selectedModel: successfulModel,
         skipped: [],
       });
-      mockGenerateContent.mockResolvedValue(
-        createMockResponse('Some text response'),
-      );
+      mockGenerateContent.mockResolvedValue(createMockResponse("Some text response"));
 
       await client.generateContent({
         ...contentOptions,
         modelConfigKey: { model: successfulModel },
       });
 
-      expect(mockAvailabilityService.markHealthy).toHaveBeenCalledWith(
-        successfulModel,
-      );
+      expect(mockAvailabilityService.markHealthy).toHaveBeenCalledWith(successfulModel);
     });
 
-    it('marks the final attempted model healthy after a retry with availability enabled', async () => {
-      const firstModel = 'gemini-pro';
-      const fallbackModel = 'gemini-flash';
+    it("marks the final attempted model healthy after a retry with availability enabled", async () => {
+      const firstModel = "gemini-pro";
+      const fallbackModel = "gemini-flash";
       vi.mocked(mockAvailabilityService.selectFirstAvailable)
         .mockReturnValueOnce({ selectedModel: firstModel, skipped: [] })
         .mockReturnValueOnce({ selectedModel: fallbackModel, skipped: [] });
 
       mockGenerateContent
-        .mockResolvedValueOnce(createMockResponse('retry-me'))
-        .mockResolvedValueOnce(createMockResponse('final-response'));
+        .mockResolvedValueOnce(createMockResponse("retry-me"))
+        .mockResolvedValueOnce(createMockResponse("final-response"));
 
       // Run the real retryWithBackoff (with fake timers) to exercise the retry path
       vi.useFakeTimers();
@@ -715,25 +671,21 @@ describe('BaseLlmClient', () => {
 
       expect(mockConfig.setActiveModel).toHaveBeenCalledWith(firstModel);
       expect(mockConfig.setActiveModel).toHaveBeenCalledWith(fallbackModel);
-      expect(mockAvailabilityService.markHealthy).toHaveBeenCalledWith(
-        fallbackModel,
-      );
+      expect(mockAvailabilityService.markHealthy).toHaveBeenCalledWith(fallbackModel);
       expect(mockGenerateContent).toHaveBeenLastCalledWith(
         expect.objectContaining({ model: fallbackModel }),
         expect.any(String),
       );
     });
 
-    it('should consume sticky attempt if selection has attempts', async () => {
-      const stickyModel = 'gemini-pro-sticky';
+    it("should consume sticky attempt if selection has attempts", async () => {
+      const stickyModel = "gemini-pro-sticky";
       vi.mocked(mockAvailabilityService.selectFirstAvailable).mockReturnValue({
         selectedModel: stickyModel,
         attempts: 1,
         skipped: [],
       });
-      mockGenerateContent.mockResolvedValue(
-        createMockResponse('Some text response'),
-      );
+      mockGenerateContent.mockResolvedValue(createMockResponse("Some text response"));
       vi.mocked(retryWithBackoff).mockImplementation(async (fn, options) => {
         const result = await fn();
         const context = options?.getAvailabilityContext?.();
@@ -748,24 +700,20 @@ describe('BaseLlmClient', () => {
         modelConfigKey: { model: stickyModel },
       });
 
-      expect(mockAvailabilityService.consumeStickyAttempt).toHaveBeenCalledWith(
-        stickyModel,
-      );
+      expect(mockAvailabilityService.consumeStickyAttempt).toHaveBeenCalledWith(stickyModel);
       expect(retryWithBackoff).toHaveBeenCalledWith(
         expect.any(Function),
         expect.objectContaining({ maxAttempts: 1 }),
       );
     });
 
-    it('should mark healthy and honor availability selection when using generateJson', async () => {
-      const availableModel = 'gemini-json-pro';
+    it("should mark healthy and honor availability selection when using generateJson", async () => {
+      const availableModel = "gemini-json-pro";
       vi.mocked(mockAvailabilityService.selectFirstAvailable).mockReturnValue({
         selectedModel: availableModel,
         skipped: [],
       });
-      mockGenerateContent.mockResolvedValue(
-        createMockResponse('{"color":"violet"}'),
-      );
+      mockGenerateContent.mockResolvedValue(createMockResponse('{"color":"violet"}'));
       vi.mocked(retryWithBackoff).mockImplementation(async (fn, options) => {
         const result = await fn();
         const context = options?.getAvailabilityContext?.();
@@ -777,32 +725,24 @@ describe('BaseLlmClient', () => {
 
       const result = await client.generateJson(jsonOptions);
 
-      expect(result).toEqual({ color: 'violet' });
+      expect(result).toEqual({ color: "violet" });
       expect(mockConfig.setActiveModel).toHaveBeenCalledWith(availableModel);
-      expect(mockAvailabilityService.markHealthy).toHaveBeenCalledWith(
-        availableModel,
-      );
+      expect(mockAvailabilityService.markHealthy).toHaveBeenCalledWith(availableModel);
       expect(mockGenerateContent).toHaveBeenLastCalledWith(
         expect.objectContaining({ model: availableModel }),
         jsonOptions.promptId,
       );
     });
 
-    it('should refresh configuration when model changes mid-retry', async () => {
-      const firstModel = 'gemini-pro';
-      const fallbackModel = 'gemini-flash';
+    it("should refresh configuration when model changes mid-retry", async () => {
+      const firstModel = "gemini-pro";
+      const fallbackModel = "gemini-flash";
 
       // Provide distinct configs per model
-      const getResolvedConfigMock = vi.mocked(
-        mockConfig.modelConfigService.getResolvedConfig,
-      );
+      const getResolvedConfigMock = vi.mocked(mockConfig.modelConfigService.getResolvedConfig);
       getResolvedConfigMock
-        .mockReturnValueOnce(
-          makeResolvedModelConfig(firstModel, { temperature: 0.1 }),
-        )
-        .mockReturnValueOnce(
-          makeResolvedModelConfig(fallbackModel, { temperature: 0.9 }),
-        );
+        .mockReturnValueOnce(makeResolvedModelConfig(firstModel, { temperature: 0.1 }))
+        .mockReturnValueOnce(makeResolvedModelConfig(fallbackModel, { temperature: 0.9 }));
 
       // Availability selects the first model initially
       vi.mocked(mockAvailabilityService.selectFirstAvailable).mockReturnValue({
@@ -817,8 +757,8 @@ describe('BaseLlmClient', () => {
 
       // First response empty -> triggers retry; second response valid
       mockGenerateContent
-        .mockResolvedValueOnce(createMockResponse(''))
-        .mockResolvedValueOnce(createMockResponse('final-response'));
+        .mockResolvedValueOnce(createMockResponse(""))
+        .mockResolvedValueOnce(createMockResponse("final-response"));
 
       // Custom retry to force two attempts
       vi.mocked(retryWithBackoff).mockImplementation(async (fn, options) => {
@@ -839,9 +779,9 @@ describe('BaseLlmClient', () => {
       expect(mockGenerateContent).toHaveBeenCalledTimes(2);
       const secondCall = mockGenerateContent.mock.calls[1]?.[0];
 
-      expect(
-        mockConfig.modelConfigService.getResolvedConfig,
-      ).toHaveBeenCalledWith({ model: fallbackModel });
+      expect(mockConfig.modelConfigService.getResolvedConfig).toHaveBeenCalledWith({
+        model: fallbackModel,
+      });
       expect(secondCall?.model).toBe(fallbackModel);
       expect(secondCall?.config?.temperature).toBe(0.9);
     });

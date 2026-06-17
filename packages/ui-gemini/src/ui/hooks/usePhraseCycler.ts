@@ -4,15 +4,15 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { useState, useEffect, useRef } from 'react';
-import { SHELL_FOCUS_HINT_DELAY_MS } from '../constants.js';
-import { INFORMATIVE_TIPS } from '../constants/tips.js';
-import { WITTY_LOADING_PHRASES } from '../constants/wittyPhrases.js';
-import { useInactivityTimer } from './useInactivityTimer.js';
+import { useEffect, useRef, useState } from "react";
+import { INFORMATIVE_TIPS } from "../constants/tips.js";
+import { WITTY_LOADING_PHRASES } from "../constants/wittyPhrases.js";
+import { SHELL_FOCUS_HINT_DELAY_MS } from "../constants.js";
+import { useInactivityTimer } from "./useInactivityTimer.js";
 
 export const PHRASE_CHANGE_INTERVAL_MS = 15000;
 export const INTERACTIVE_SHELL_WAITING_PHRASE =
-  'Interactive shell awaiting input... press Ctrl+f to focus shell';
+  "Interactive shell awaiting input... press Ctrl+f to focus shell";
 
 /**
  * Custom hook to manage cycling through loading phrases.
@@ -30,13 +30,9 @@ export const usePhraseCycler = (
   customPhrases?: string[],
 ) => {
   const loadingPhrases =
-    customPhrases && customPhrases.length > 0
-      ? customPhrases
-      : WITTY_LOADING_PHRASES;
+    customPhrases && customPhrases.length > 0 ? customPhrases : WITTY_LOADING_PHRASES;
 
-  const [currentLoadingPhrase, setCurrentLoadingPhrase] = useState(
-    loadingPhrases[0],
-  );
+  const [currentLoadingPhrase, setCurrentLoadingPhrase] = useState(loadingPhrases[0]);
   const showShellFocusHint = useInactivityTimer(
     isInteractiveShellWaiting && lastOutputTime > 0,
     lastOutputTime,
@@ -58,7 +54,7 @@ export const usePhraseCycler = (
     }
 
     if (isWaiting) {
-      setCurrentLoadingPhrase('Waiting for user confirmation...');
+      setCurrentLoadingPhrase("Waiting for user confirmation...");
       return;
     }
 

@@ -4,23 +4,18 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { Text } from 'ink';
-import { describe, it, expect } from 'vitest';
-import { StickyHeader } from './StickyHeader.js';
-import { renderWithProviders } from '../../test-utils/render.js';
+import { Text } from "ink";
+import { describe, expect, it } from "vitest";
+import { renderWithProviders } from "../../test-utils/render.js";
+import { StickyHeader } from "./StickyHeader.js";
 
-describe('StickyHeader', () => {
-  it.each([true, false])('renders children with isFirst=%s', (isFirst) => {
+describe("StickyHeader", () => {
+  it.each([true, false])("renders children with isFirst=%s", (isFirst) => {
     const { lastFrame } = renderWithProviders(
-      <StickyHeader
-        isFirst={isFirst}
-        width={80}
-        borderColor="green"
-        borderDimColor={false}
-      >
+      <StickyHeader isFirst={isFirst} width={80} borderColor="green" borderDimColor={false}>
         <Text>Hello Sticky</Text>
       </StickyHeader>,
     );
-    expect(lastFrame()).toContain('Hello Sticky');
+    expect(lastFrame()).toContain("Hello Sticky");
   });
 });

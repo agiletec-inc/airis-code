@@ -5,28 +5,24 @@
  */
 
 import {
-  type CommandContext,
-  type SlashCommand,
-  CommandKind,
-} from './types.js';
+  buildSkillLlmContent,
+  DEFAULT_TOKEN_LIMIT,
+  DiscoveredMCPTool,
+  getCoreSystemPrompt,
+  SkillTool,
+  ToolNames,
+  uiTelemetryService,
+} from "@airiscode/core";
+import { t } from "../../i18n/index.js";
 import {
-  MessageType,
-  type HistoryItemContextUsage,
   type ContextCategoryBreakdown,
-  type ContextToolDetail,
   type ContextMemoryDetail,
   type ContextSkillDetail,
-} from '../types.js';
-import {
-  DiscoveredMCPTool,
-  uiTelemetryService,
-  getCoreSystemPrompt,
-  DEFAULT_TOKEN_LIMIT,
-  ToolNames,
-  SkillTool,
-  buildSkillLlmContent,
-} from '@airiscode/core';
-import { t } from '../../i18n/index.js';
+  type ContextToolDetail,
+  type HistoryItemContextUsage,
+  MessageType,
+} from "../types.js";
+import { type CommandContext, CommandKind, type SlashCommand } from "./types.js";
 
 /**
  * Default compression token threshold (triggers compression at 70% usage).
@@ -63,8 +59,7 @@ function parseMemoryFiles(memoryContent: string): ContextMemoryDetail[] {
 
   const results: ContextMemoryDetail[] = [];
   // Use backreference (\1) to ensure start/end path markers match
-  const regex =
-    /--- Context from: (.+?) ---\n([\s\S]*?)--- End of Context from: \1 ---/g;
+  const regex = /--- Context from: (.+?) ---\n([\s\S]*?)--- End of Context from: \1 ---/g;
   let match: RegExpExecArray | null;
 
   while ((match = regex.exec(memoryContent)) !== null) {
@@ -79,7 +74,7 @@ function parseMemoryFiles(memoryContent: string): ContextMemoryDetail[] {
   // If no structured markers found, treat as a single memory block
   if (results.length === 0 && memoryContent.trim().length > 0) {
     results.push({
-      path: t('memory'),
+      path: t("memory"),
       tokens: estimateTokens(memoryContent),
     });
   }
@@ -88,23 +83,20 @@ function parseMemoryFiles(memoryContent: string): ContextMemoryDetail[] {
 }
 
 export const contextCommand: SlashCommand = {
-  name: 'context',
+  name: "context",
   get description() {
-    return t(
-      'Show context window usage breakdown. Use "/context detail" for per-item breakdown.',
-    );
+    return t('Show context window usage breakdown. Use "/context detail" for per-item breakdown.');
   },
   kind: CommandKind.BUILT_IN,
   action: async (context: CommandContext, args?: string) => {
     const showDetails =
-      args?.trim().toLowerCase() === 'detail' ||
-      args?.trim().toLowerCase() === '-d';
+      args?.trim().toLowerCase() === "detail" || args?.trim().toLowerCase() === "-d";
     const { config } = context.services;
     if (!config) {
       context.ui.addItem(
         {
           type: MessageType.ERROR,
-          text: t('Config not loaded.'),
+          text: t("Config not loaded."),
         },
         Date.now(),
       );
@@ -113,10 +105,9 @@ export const contextCommand: SlashCommand = {
 
     // --- Gather data ---
 
-    const modelName = config.getModel() || 'unknown';
+    const modelName = config.getModel() || "unknown";
     const contentGeneratorConfig = config.getContentGeneratorConfig();
-    const contextWindowSize =
-      contentGeneratorConfig.contextWindowSize ?? DEFAULT_TOKEN_LIMIT;
+    const contextWindowSize = contentGeneratorConfig.contextWindowSize ?? DEFAULT_TOKEN_LIMIT;
 
     // Total prompt token count from API (most accurate)
     const apiTotalTokens = uiTelemetryService.getLastPromptTokenCount();
@@ -132,9 +123,7 @@ export const contextCommand: SlashCommand = {
     // 2. Tool declarations tokens (includes ALL tools: built-in, MCP, skill tool)
     const toolRegistry = config.getToolRegistry();
     const allTools = toolRegistry ? toolRegistry.getAllTools() : [];
-    const toolDeclarations = toolRegistry
-      ? toolRegistry.getFunctionDeclarations()
-      : [];
+    const toolDeclarations = toolRegistry ? toolRegistry.getFunctionDeclarations() : [];
     const toolsJsonStr = JSON.stringify(toolDeclarations);
     const allToolsTokens = estimateTokens(toolsJsonStr);
 
@@ -178,9 +167,7 @@ export const contextCommand: SlashCommand = {
 
     // Determine which skills have been loaded in this session
     const loadedSkillNames: ReadonlySet<string> =
-      skillTool instanceof SkillTool
-        ? skillTool.getLoadedSkillNames()
-        : new Set();
+      skillTool instanceof SkillTool ? skillTool.getLoadedSkillNames() : new Set();
 
     // Per-skill breakdown: listing cost + body cost for loaded skills
     const skillManager = config.getSkillManager();
@@ -193,9 +180,7 @@ export const contextCommand: SlashCommand = {
       const isLoaded = loadedSkillNames.has(skill.name);
       let bodyTokens: number | undefined;
       if (isLoaded && skill.body) {
-        const baseDir = skill.filePath
-          ? skill.filePath.replace(/\/[^/]+$/, '')
-          : '';
+        const baseDir = skill.filePath ? skill.filePath.replace(/\/[^/]+$/, "") : "";
         bodyTokens = estimateTokens(buildSkillLlmContent(baseDir, skill.body));
         loadedBodiesTokens += bodyTokens;
       }
@@ -212,30 +197,21 @@ export const contextCommand: SlashCommand = {
 
     // 6. Autocompact buffer
     const compressionThreshold =
-      config.getChatCompression()?.contextPercentageThreshold ??
-      DEFAULT_COMPRESSION_THRESHOLD;
+      config.getChatCompression()?.contextPercentageThreshold ?? DEFAULT_COMPRESSION_THRESHOLD;
     const autocompactBuffer =
-      compressionThreshold > 0
-        ? Math.round((1 - compressionThreshold) * contextWindowSize)
-        : 0;
+      compressionThreshold > 0 ? Math.round((1 - compressionThreshold) * contextWindowSize) : 0;
 
     // 7. Calculate raw overhead
     //    allToolsTokens includes the skill tool definition; loadedBodiesTokens
     //    covers the on-demand skill bodies now attributed to Skills.
     const rawOverhead =
-      systemPromptTokens +
-      allToolsTokens +
-      memoryFilesTokens +
-      loadedBodiesTokens;
+      systemPromptTokens + allToolsTokens + memoryFilesTokens + loadedBodiesTokens;
 
     // 8. Determine total tokens and build breakdown
     const isEstimated = apiTotalTokens === 0;
 
     // Sum of MCP tool tokens for category-level display
-    const mcpToolsTotalTokens = mcpTools.reduce(
-      (sum, tool) => sum + tool.tokens,
-      0,
-    );
+    const mcpToolsTotalTokens = mcpTools.reduce((sum, tool) => sum + tool.tokens, 0);
 
     let totalTokens: number;
     let displaySystemPrompt: number;
@@ -268,10 +244,7 @@ export const contextCommand: SlashCommand = {
       displayMemoryFiles = memoryFilesTokens;
       messagesTokens = 0;
       // Free space accounts for the estimated overhead
-      freeSpace = Math.max(
-        0,
-        contextWindowSize - rawOverhead - autocompactBuffer,
-      );
+      freeSpace = Math.max(0, contextWindowSize - rawOverhead - autocompactBuffer);
       detailBuiltinTools = builtinTools;
       detailMcpTools = mcpTools;
       detailMemoryFiles = memoryFiles;
@@ -282,8 +255,7 @@ export const contextCommand: SlashCommand = {
 
       // When estimates overshoot API total, scale down proportionally
       // so the breakdown categories add up to totalTokens.
-      const overheadScale =
-        rawOverhead > totalTokens ? totalTokens / rawOverhead : 1;
+      const overheadScale = rawOverhead > totalTokens ? totalTokens / rawOverhead : 1;
 
       displaySystemPrompt = Math.round(systemPromptTokens * overheadScale);
       const scaledAllTools = Math.round(allToolsTokens * overheadScale);
@@ -293,13 +265,8 @@ export const contextCommand: SlashCommand = {
       const scaledMcpTotal = Math.round(mcpToolsTotalTokens * overheadScale);
       displayMcpTools = scaledMcpTotal;
       // builtinTools = allTools minus skill-definition minus mcpTools
-      const scaledSkillDefinition = Math.round(
-        skillToolDefinitionTokens * overheadScale,
-      );
-      displayBuiltinTools = Math.max(
-        0,
-        scaledAllTools - scaledSkillDefinition - scaledMcpTotal,
-      );
+      const scaledSkillDefinition = Math.round(skillToolDefinitionTokens * overheadScale);
+      displayBuiltinTools = Math.max(0, scaledAllTools - scaledSkillDefinition - scaledMcpTotal);
 
       const scaledOverhead =
         displaySystemPrompt +
@@ -317,10 +284,7 @@ export const contextCommand: SlashCommand = {
         messagesTokens = Math.max(0, totalTokens - scaledOverhead);
       }
 
-      freeSpace = Math.max(
-        0,
-        contextWindowSize - totalTokens - autocompactBuffer,
-      );
+      freeSpace = Math.max(0, contextWindowSize - totalTokens - autocompactBuffer);
 
       // Scale detail items to match their parent categories
       const scaleDetail = <T extends { tokens: number }>(items: T[]): T[] =>
@@ -339,9 +303,7 @@ export const contextCommand: SlashCommand = {
           ? skills.map((item) => ({
               ...item,
               tokens: Math.round(item.tokens * overheadScale),
-              bodyTokens: item.bodyTokens
-                ? Math.round(item.bodyTokens * overheadScale)
-                : undefined,
+              bodyTokens: item.bodyTokens ? Math.round(item.bodyTokens * overheadScale) : undefined,
             }))
           : skills;
     }

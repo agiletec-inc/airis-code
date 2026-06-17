@@ -4,27 +4,27 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import type { Config } from "../config/config.js";
+import { debugLogger } from "../utils/debugLogger.js";
+import type { ActivityEvent } from "./activity-monitor.js";
 import {
   ActivityMonitor,
   DEFAULT_ACTIVITY_CONFIG,
-  initializeActivityMonitor,
   getActivityMonitor,
+  initializeActivityMonitor,
   recordGlobalActivity,
   startGlobalActivityMonitoring,
   stopGlobalActivityMonitoring,
-} from './activity-monitor.js';
-import { ActivityType } from './activity-types.js';
-import type { ActivityEvent } from './activity-monitor.js';
-import type { Config } from '../config/config.js';
-import { debugLogger } from '../utils/debugLogger.js';
+} from "./activity-monitor.js";
+import { ActivityType } from "./activity-types.js";
 
 // Mock the dependencies
-vi.mock('./metrics.js', () => ({
+vi.mock("./metrics.js", () => ({
   isPerformanceMonitoringActive: vi.fn(() => true),
 }));
 
-vi.mock('./memory-monitor.js', () => ({
+vi.mock("./memory-monitor.js", () => ({
   getMemoryMonitor: vi.fn(() => ({
     takeSnapshot: vi.fn(() => ({
       timestamp: Date.now(),
@@ -38,14 +38,14 @@ vi.mock('./memory-monitor.js', () => ({
   })),
 }));
 
-describe('ActivityMonitor', () => {
+describe("ActivityMonitor", () => {
   let activityMonitor: ActivityMonitor;
   let mockConfig: Config;
 
   beforeEach(() => {
     vi.clearAllMocks();
     mockConfig = {
-      getSessionId: () => 'test-session-123',
+      getSessionId: () => "test-session-123",
     } as Config;
     activityMonitor = new ActivityMonitor();
   });
@@ -54,14 +54,14 @@ describe('ActivityMonitor', () => {
     activityMonitor.stop();
   });
 
-  describe('constructor', () => {
-    it('should initialize with default config', () => {
+  describe("constructor", () => {
+    it("should initialize with default config", () => {
       const monitor = new ActivityMonitor();
       expect(monitor).toBeDefined();
       expect(monitor.isMonitoringActive()).toBe(false);
     });
 
-    it('should initialize with custom config', () => {
+    it("should initialize with custom config", () => {
       const customConfig = {
         ...DEFAULT_ACTIVITY_CONFIG,
         snapshotThrottleMs: 2000,
@@ -71,8 +71,8 @@ describe('ActivityMonitor', () => {
     });
   });
 
-  describe('start and stop', () => {
-    it('should start and stop monitoring', () => {
+  describe("start and stop", () => {
+    it("should start and stop monitoring", () => {
       expect(activityMonitor.isMonitoringActive()).toBe(false);
 
       activityMonitor.start(mockConfig);
@@ -82,7 +82,7 @@ describe('ActivityMonitor', () => {
       expect(activityMonitor.isMonitoringActive()).toBe(false);
     });
 
-    it('should not start monitoring when already active', () => {
+    it("should not start monitoring when already active", () => {
       activityMonitor.start(mockConfig);
       expect(activityMonitor.isMonitoringActive()).toBe(true);
 
@@ -92,35 +92,28 @@ describe('ActivityMonitor', () => {
     });
   });
 
-  describe('recordActivity', () => {
+  describe("recordActivity", () => {
     beforeEach(() => {
       activityMonitor.start(mockConfig);
     });
 
-    it('should record activity events', () => {
-      activityMonitor.recordActivity(
-        ActivityType.USER_INPUT_START,
-        'test-context',
-      );
+    it("should record activity events", () => {
+      activityMonitor.recordActivity(ActivityType.USER_INPUT_START, "test-context");
 
       const stats = activityMonitor.getActivityStats();
       expect(stats.totalEvents).toBe(2); // includes the start event
       expect(stats.eventTypes[ActivityType.USER_INPUT_START]).toBe(1);
     });
 
-    it('should include metadata in activity events', () => {
-      const metadata = { key: 'value', count: 42 };
-      activityMonitor.recordActivity(
-        ActivityType.MESSAGE_ADDED,
-        'test-context',
-        metadata,
-      );
+    it("should include metadata in activity events", () => {
+      const metadata = { key: "value", count: 42 };
+      activityMonitor.recordActivity(ActivityType.MESSAGE_ADDED, "test-context", metadata);
 
       const recentActivity = activityMonitor.getRecentActivity(1);
       expect(recentActivity[0].metadata).toEqual(metadata);
     });
 
-    it('should not record activity when monitoring is disabled', () => {
+    it("should not record activity when monitoring is disabled", () => {
       activityMonitor.updateConfig({ enabled: false });
 
       activityMonitor.recordActivity(ActivityType.USER_INPUT_START);
@@ -129,15 +122,12 @@ describe('ActivityMonitor', () => {
       expect(stats.totalEvents).toBe(1); // only the start event
     });
 
-    it('should limit event buffer size', () => {
+    it("should limit event buffer size", () => {
       activityMonitor.updateConfig({ maxEventBuffer: 3 });
 
       // Record more events than buffer size
       for (let i = 0; i < 5; i++) {
-        activityMonitor.recordActivity(
-          ActivityType.USER_INPUT_START,
-          `event-${i}`,
-        );
+        activityMonitor.recordActivity(ActivityType.USER_INPUT_START, `event-${i}`);
       }
 
       const stats = activityMonitor.getActivityStats();
@@ -145,7 +135,7 @@ describe('ActivityMonitor', () => {
     });
   });
 
-  describe('listeners', () => {
+  describe("listeners", () => {
     let listenerCallCount: number;
     let lastEvent: ActivityEvent | null;
 
@@ -155,21 +145,21 @@ describe('ActivityMonitor', () => {
       activityMonitor.start(mockConfig);
     });
 
-    it('should notify listeners of activity events', () => {
+    it("should notify listeners of activity events", () => {
       const listener = (event: ActivityEvent) => {
         listenerCallCount++;
         lastEvent = event;
       };
 
       activityMonitor.addListener(listener);
-      activityMonitor.recordActivity(ActivityType.MESSAGE_ADDED, 'test');
+      activityMonitor.recordActivity(ActivityType.MESSAGE_ADDED, "test");
 
       expect(listenerCallCount).toBe(1);
       expect(lastEvent?.type).toBe(ActivityType.MESSAGE_ADDED);
-      expect(lastEvent?.context).toBe('test');
+      expect(lastEvent?.context).toBe("test");
     });
 
-    it('should remove listeners correctly', () => {
+    it("should remove listeners correctly", () => {
       const listener = () => {
         listenerCallCount++;
       };
@@ -183,18 +173,16 @@ describe('ActivityMonitor', () => {
       expect(listenerCallCount).toBe(1); // Should not increase
     });
 
-    it('should handle listener errors gracefully', () => {
+    it("should handle listener errors gracefully", () => {
       const faultyListener = () => {
-        throw new Error('Listener error');
+        throw new Error("Listener error");
       };
       const goodListener = () => {
         listenerCallCount++;
       };
 
       // Spy on console.debug to check error handling
-      const debugSpy = vi
-        .spyOn(debugLogger, 'debug')
-        .mockImplementation(() => {});
+      const debugSpy = vi.spyOn(debugLogger, "debug").mockImplementation(() => {});
 
       activityMonitor.addListener(faultyListener);
       activityMonitor.addListener(goodListener);
@@ -208,12 +196,12 @@ describe('ActivityMonitor', () => {
     });
   });
 
-  describe('getActivityStats', () => {
+  describe("getActivityStats", () => {
     beforeEach(() => {
       activityMonitor.start(mockConfig);
     });
 
-    it('should return correct activity statistics', () => {
+    it("should return correct activity statistics", () => {
       activityMonitor.recordActivity(ActivityType.USER_INPUT_START);
       activityMonitor.recordActivity(ActivityType.MESSAGE_ADDED);
       activityMonitor.recordActivity(ActivityType.USER_INPUT_START);
@@ -225,7 +213,7 @@ describe('ActivityMonitor', () => {
       expect(stats.timeRange).toBeDefined();
     });
 
-    it('should return null time range for empty buffer', () => {
+    it("should return null time range for empty buffer", () => {
       const emptyMonitor = new ActivityMonitor();
       const stats = emptyMonitor.getActivityStats();
       expect(stats.totalEvents).toBe(0);
@@ -233,8 +221,8 @@ describe('ActivityMonitor', () => {
     });
   });
 
-  describe('updateConfig', () => {
-    it('should update configuration correctly', () => {
+  describe("updateConfig", () => {
+    it("should update configuration correctly", () => {
       const newConfig = { snapshotThrottleMs: 2000 };
       activityMonitor.updateConfig(newConfig);
 
@@ -244,12 +232,12 @@ describe('ActivityMonitor', () => {
   });
 });
 
-describe('Global activity monitoring functions', () => {
+describe("Global activity monitoring functions", () => {
   let mockConfig: Config;
 
   beforeEach(() => {
     mockConfig = {
-      getSessionId: () => 'test-session-456',
+      getSessionId: () => "test-session-456",
     } as Config;
     vi.clearAllMocks();
   });
@@ -258,32 +246,32 @@ describe('Global activity monitoring functions', () => {
     stopGlobalActivityMonitoring();
   });
 
-  describe('initializeActivityMonitor', () => {
-    it('should create global monitor instance', () => {
+  describe("initializeActivityMonitor", () => {
+    it("should create global monitor instance", () => {
       const monitor = initializeActivityMonitor();
       expect(monitor).toBeDefined();
       expect(getActivityMonitor()).toBe(monitor);
     });
 
-    it('should return same instance on subsequent calls', () => {
+    it("should return same instance on subsequent calls", () => {
       const monitor1 = initializeActivityMonitor();
       const monitor2 = initializeActivityMonitor();
       expect(monitor1).toBe(monitor2);
     });
   });
 
-  describe('recordGlobalActivity', () => {
-    it('should record activity through global monitor', () => {
+  describe("recordGlobalActivity", () => {
+    it("should record activity through global monitor", () => {
       startGlobalActivityMonitoring(mockConfig);
 
-      recordGlobalActivity(ActivityType.TOOL_CALL_SCHEDULED, 'global-test');
+      recordGlobalActivity(ActivityType.TOOL_CALL_SCHEDULED, "global-test");
 
       const monitor = getActivityMonitor();
       const stats = monitor?.getActivityStats();
       expect(stats?.totalEvents).toBeGreaterThan(0);
     });
 
-    it('should handle missing global monitor gracefully', () => {
+    it("should handle missing global monitor gracefully", () => {
       stopGlobalActivityMonitoring();
 
       // Should not throw error
@@ -293,15 +281,15 @@ describe('Global activity monitoring functions', () => {
     });
   });
 
-  describe('startGlobalActivityMonitoring', () => {
-    it('should start global monitoring with default config', () => {
+  describe("startGlobalActivityMonitoring", () => {
+    it("should start global monitoring with default config", () => {
       startGlobalActivityMonitoring(mockConfig);
 
       const monitor = getActivityMonitor();
       expect(monitor?.isMonitoringActive()).toBe(true);
     });
 
-    it('should start global monitoring with custom config', () => {
+    it("should start global monitoring with custom config", () => {
       const customConfig = {
         ...DEFAULT_ACTIVITY_CONFIG,
         snapshotThrottleMs: 3000,
@@ -314,8 +302,8 @@ describe('Global activity monitoring functions', () => {
     });
   });
 
-  describe('stopGlobalActivityMonitoring', () => {
-    it('should stop global monitoring', () => {
+  describe("stopGlobalActivityMonitoring", () => {
+    it("should stop global monitoring", () => {
       startGlobalActivityMonitoring(mockConfig);
       expect(getActivityMonitor()?.isMonitoringActive()).toBe(true);
 
@@ -323,7 +311,7 @@ describe('Global activity monitoring functions', () => {
       expect(getActivityMonitor()?.isMonitoringActive()).toBe(false);
     });
 
-    it('should handle missing global monitor gracefully', () => {
+    it("should handle missing global monitor gracefully", () => {
       expect(() => {
         stopGlobalActivityMonitoring();
       }).not.toThrow();

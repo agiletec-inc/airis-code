@@ -4,10 +4,10 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import type { GenerateContentParameters } from '../../types/llm.js';
-import { createDebugLogger } from '../../utils/debugLogger.js';
+import type { GenerateContentParameters } from "../../types/llm.js";
+import { createDebugLogger } from "../../utils/debugLogger.js";
 
-const debugLogger = createDebugLogger('OPENAI_ERROR');
+const debugLogger = createDebugLogger("OPENAI_ERROR");
 
 export interface RequestContext {
   userPromptId: string;
@@ -19,15 +19,8 @@ export interface RequestContext {
 }
 
 export interface ErrorHandler {
-  handle(
-    error: unknown,
-    context: RequestContext,
-    request: GenerateContentParameters,
-  ): never;
-  shouldSuppressErrorLogging(
-    error: unknown,
-    request: GenerateContentParameters,
-  ): boolean;
+  handle(error: unknown, context: RequestContext, request: GenerateContentParameters): never;
+  shouldSuppressErrorLogging(error: unknown, request: GenerateContentParameters): boolean;
 }
 
 export class EnhancedErrorHandler implements ErrorHandler {
@@ -38,36 +31,25 @@ export class EnhancedErrorHandler implements ErrorHandler {
     ) => boolean = () => false,
   ) {}
 
-  handle(
-    error: unknown,
-    context: RequestContext,
-    request: GenerateContentParameters,
-  ): never {
+  handle(error: unknown, context: RequestContext, request: GenerateContentParameters): never {
     const isTimeoutError = this.isTimeoutError(error);
     const errorMessage = this.buildErrorMessage(error, context, isTimeoutError);
 
     // Allow subclasses to suppress error logging for specific scenarios
     if (!this.shouldSuppressErrorLogging(error, request)) {
-      const logPrefix = context.isStreaming
-        ? 'OpenAI API Streaming Error:'
-        : 'OpenAI API Error:';
+      const logPrefix = context.isStreaming ? "OpenAI API Streaming Error:" : "OpenAI API Error:";
       debugLogger.error(logPrefix, errorMessage);
     }
 
     // Provide helpful timeout-specific error message
     if (isTimeoutError) {
-      throw new Error(
-        `${errorMessage}\n\n${this.getTimeoutTroubleshootingTips(context)}`,
-      );
+      throw new Error(`${errorMessage}\n\n${this.getTimeoutTroubleshootingTips(context)}`);
     }
 
     throw error;
   }
 
-  shouldSuppressErrorLogging(
-    error: unknown,
-    request: GenerateContentParameters,
-  ): boolean {
+  shouldSuppressErrorLogging(error: unknown, request: GenerateContentParameters): boolean {
     return this.shouldSuppressLogging(error, request);
   }
 
@@ -75,9 +57,7 @@ export class EnhancedErrorHandler implements ErrorHandler {
     if (!error) return false;
 
     const errorMessage =
-      error instanceof Error
-        ? error.message.toLowerCase()
-        : String(error).toLowerCase();
+      error instanceof Error ? error.message.toLowerCase() : String(error).toLowerCase();
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const errorCode = (error as any)?.code;
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -85,18 +65,18 @@ export class EnhancedErrorHandler implements ErrorHandler {
 
     // Check for common timeout indicators
     return (
-      errorMessage.includes('timeout') ||
-      errorMessage.includes('timed out') ||
-      errorMessage.includes('connection timeout') ||
-      errorMessage.includes('request timeout') ||
-      errorMessage.includes('read timeout') ||
-      errorMessage.includes('etimedout') ||
-      errorMessage.includes('esockettimedout') ||
-      errorCode === 'ETIMEDOUT' ||
-      errorCode === 'ESOCKETTIMEDOUT' ||
-      errorType === 'timeout' ||
-      errorMessage.includes('request timed out') ||
-      errorMessage.includes('deadline exceeded')
+      errorMessage.includes("timeout") ||
+      errorMessage.includes("timed out") ||
+      errorMessage.includes("connection timeout") ||
+      errorMessage.includes("request timeout") ||
+      errorMessage.includes("read timeout") ||
+      errorMessage.includes("etimedout") ||
+      errorMessage.includes("esockettimedout") ||
+      errorCode === "ETIMEDOUT" ||
+      errorCode === "ESOCKETTIMEDOUT" ||
+      errorType === "timeout" ||
+      errorMessage.includes("request timed out") ||
+      errorMessage.includes("deadline exceeded")
     );
   }
 
@@ -108,9 +88,7 @@ export class EnhancedErrorHandler implements ErrorHandler {
     const durationSeconds = Math.round(context.duration / 1000);
 
     if (isTimeoutError) {
-      const prefix = context.isStreaming
-        ? 'Streaming request timeout'
-        : 'Request timeout';
+      const prefix = context.isStreaming ? "Streaming request timeout" : "Request timeout";
       return `${prefix} after ${durationSeconds}s. Try reducing input length or increasing timeout in config.`;
     }
 
@@ -119,22 +97,22 @@ export class EnhancedErrorHandler implements ErrorHandler {
 
   private getTimeoutTroubleshootingTips(context: RequestContext): string {
     const baseTitle = context.isStreaming
-      ? 'Streaming timeout troubleshooting:'
-      : 'Troubleshooting tips:';
+      ? "Streaming timeout troubleshooting:"
+      : "Troubleshooting tips:";
 
     const baseTips = [
-      '- Reduce input length or complexity',
-      '- Increase timeout in config: contentGenerator.timeout',
-      '- Check network connectivity',
+      "- Reduce input length or complexity",
+      "- Increase timeout in config: contentGenerator.timeout",
+      "- Check network connectivity",
     ];
 
     const streamingSpecificTips = context.isStreaming
       ? [
-          '- Check network stability for streaming connections',
-          '- Consider using non-streaming mode for very long inputs',
+          "- Check network stability for streaming connections",
+          "- Consider using non-streaming mode for very long inputs",
         ]
-      : ['- Consider using streaming mode for long responses'];
+      : ["- Consider using streaming mode for long responses"];
 
-    return `${baseTitle}\n${[...baseTips, ...streamingSpecificTips].join('\n')}`;
+    return `${baseTitle}\n${[...baseTips, ...streamingSpecificTips].join("\n")}`;
   }
 }

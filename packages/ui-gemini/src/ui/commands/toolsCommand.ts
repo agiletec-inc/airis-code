@@ -4,16 +4,12 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import {
-  type CommandContext,
-  type SlashCommand,
-  CommandKind,
-} from './types.js';
-import { MessageType, type HistoryItemToolsList } from '../types.js';
+import { type HistoryItemToolsList, MessageType } from "../types.js";
+import { type CommandContext, CommandKind, type SlashCommand } from "./types.js";
 
 export const toolsCommand: SlashCommand = {
-  name: 'tools',
-  description: 'List available Gemini CLI tools. Usage: /tools [desc]',
+  name: "tools",
+  description: "List available Gemini CLI tools. Usage: /tools [desc]",
   kind: CommandKind.BUILT_IN,
   autoExecute: false,
   action: async (context: CommandContext, args?: string): Promise<void> => {
@@ -21,7 +17,7 @@ export const toolsCommand: SlashCommand = {
 
     // Default to NOT showing descriptions. The user must opt in with an argument.
     let useShowDescriptions = false;
-    if (subCommand === 'desc' || subCommand === 'descriptions') {
+    if (subCommand === "desc" || subCommand === "descriptions") {
       useShowDescriptions = true;
     }
 
@@ -30,7 +26,7 @@ export const toolsCommand: SlashCommand = {
       context.ui.addItem(
         {
           type: MessageType.ERROR,
-          text: 'Could not retrieve tool registry.',
+          text: "Could not retrieve tool registry.",
         },
         Date.now(),
       );
@@ -39,7 +35,7 @@ export const toolsCommand: SlashCommand = {
 
     const tools = toolRegistry.getAllTools();
     // Filter out MCP tools by checking for the absence of a serverName property
-    const geminiTools = tools.filter((tool) => !('serverName' in tool));
+    const geminiTools = tools.filter((tool) => !("serverName" in tool));
 
     const toolsListItem: HistoryItemToolsList = {
       type: MessageType.TOOLS_LIST,

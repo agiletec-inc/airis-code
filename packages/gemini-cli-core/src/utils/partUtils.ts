@@ -4,29 +4,21 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import type {
-  GenerateContentResponse,
-  PartListUnion,
-  Part,
-  PartUnion,
-} from '@google/genai';
+import type { GenerateContentResponse, Part, PartListUnion, PartUnion } from "@google/genai";
 
 /**
  * Converts a PartListUnion into a string.
  * If verbose is true, includes summary representations of non-text parts.
  */
-export function partToString(
-  value: PartListUnion,
-  options?: { verbose?: boolean },
-): string {
+export function partToString(value: PartListUnion, options?: { verbose?: boolean }): string {
   if (!value) {
-    return '';
+    return "";
   }
-  if (typeof value === 'string') {
+  if (typeof value === "string") {
     return value;
   }
   if (Array.isArray(value)) {
-    return value.map((part) => partToString(part, options)).join('');
+    return value.map((part) => partToString(part, options)).join("");
   }
 
   // Cast to Part, assuming it might contain project-specific fields
@@ -66,24 +58,18 @@ export function partToString(
     }
   }
 
-  return part.text ?? '';
+  return part.text ?? "";
 }
 
-export function getResponseText(
-  response: GenerateContentResponse,
-): string | null {
+export function getResponseText(response: GenerateContentResponse): string | null {
   if (response.candidates && response.candidates.length > 0) {
     const candidate = response.candidates[0];
 
-    if (
-      candidate.content &&
-      candidate.content.parts &&
-      candidate.content.parts.length > 0
-    ) {
+    if (candidate.content && candidate.content.parts && candidate.content.parts.length > 0) {
       return candidate.content.parts
         .filter((part) => part.text)
         .map((part) => part.text)
-        .join('');
+        .join("");
     }
   }
   return null;
@@ -106,15 +92,15 @@ export async function flatMapTextParts(
   const result: PartUnion[] = [];
   const partArray = Array.isArray(parts)
     ? parts
-    : typeof parts === 'string'
+    : typeof parts === "string"
       ? [{ text: parts }]
       : [parts];
 
   for (const part of partArray) {
     let textToProcess: string | undefined;
-    if (typeof part === 'string') {
+    if (typeof part === "string") {
       textToProcess = part;
-    } else if ('text' in part) {
+    } else if ("text" in part) {
       textToProcess = part.text;
     }
 
@@ -141,7 +127,7 @@ export async function flatMapTextParts(
 export function appendToLastTextPart(
   prompt: PartUnion[],
   textToAppend: string,
-  separator = '\n\n',
+  separator = "\n\n",
 ): PartUnion[] {
   if (!textToAppend) {
     return prompt;
@@ -154,9 +140,9 @@ export function appendToLastTextPart(
   const newPrompt = [...prompt];
   const lastPart = newPrompt.at(-1);
 
-  if (typeof lastPart === 'string') {
+  if (typeof lastPart === "string") {
     newPrompt[newPrompt.length - 1] = `${lastPart}${separator}${textToAppend}`;
-  } else if (lastPart && 'text' in lastPart) {
+  } else if (lastPart && "text" in lastPart) {
     newPrompt[newPrompt.length - 1] = {
       ...lastPart,
       text: `${lastPart.text}${separator}${textToAppend}`,

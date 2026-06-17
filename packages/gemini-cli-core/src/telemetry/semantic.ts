@@ -11,14 +11,8 @@
  * @see https://github.com/open-telemetry/semantic-conventions/blob/8b4f210f43136e57c1f6f47292eb6d38e3bf30bb/docs/gen-ai/gen-ai-events.md
  */
 
-import { FinishReason } from '@google/genai';
-import type {
-  Candidate,
-  Content,
-  ContentUnion,
-  Part,
-  PartUnion,
-} from '@google/genai';
+import type { Candidate, Content, ContentUnion, Part, PartUnion } from "@google/genai";
+import { FinishReason } from "@google/genai";
 
 export function toInputMessages(contents: Content[]): InputMessages {
   const messages: ChatMessage[] = [];
@@ -30,22 +24,19 @@ export function toInputMessages(contents: Content[]): InputMessages {
 
 function isPart(value: unknown): value is Part {
   return (
-    typeof value === 'object' &&
-    value !== null &&
-    !Array.isArray(value) &&
-    !('parts' in value)
+    typeof value === "object" && value !== null && !Array.isArray(value) && !("parts" in value)
   );
 }
 
 function toPart(part: PartUnion): Part {
-  if (typeof part === 'string') {
+  if (typeof part === "string") {
     return { text: part };
   }
   return part;
 }
 
 function toContent(content: ContentUnion): Content | undefined {
-  if (typeof content === 'string') {
+  if (typeof content === "string") {
     // 1. It's a string
     return {
       parts: [toPart(content)],
@@ -55,7 +46,7 @@ function toContent(content: ContentUnion): Content | undefined {
     return {
       parts: content.map(toPart),
     };
-  } else if ('parts' in content) {
+  } else if ("parts" in content) {
     // 3. It's a Content object
     return content;
   } else if (isPart(content)) {
@@ -110,9 +101,9 @@ export function toFinishReasons(candidates?: Candidate[]): OTelFinishReason[] {
 export function toOutputType(requested_mime?: string): string | undefined {
   switch (requested_mime) {
     // explicitly support the known good values of responseMimeType
-    case 'text/plain':
+    case "text/plain":
       return OTelOutputType.TEXT;
-    case 'application/json':
+    case "application/json":
       return OTelOutputType.JSON;
     default:
       // if none of the well-known values applies, a custom value may be used
@@ -139,7 +130,7 @@ export function toOTelPart(part: Part): AnyPart {
     if (part.text) {
       return new ReasoningPart(part.text);
     } else {
-      return new ReasoningPart('');
+      return new ReasoningPart("");
     }
   } else if (part.text) {
     return new TextPart(part.text);
@@ -156,14 +147,14 @@ export function toOTelPart(part: Part): AnyPart {
     );
   } else if (part.executableCode) {
     const { executableCode, ...unexpectedData } = part;
-    return new GenericPart('executableCode', {
+    return new GenericPart("executableCode", {
       code: executableCode.code,
       language: executableCode.language,
       ...unexpectedData,
     });
   } else if (part.codeExecutionResult) {
     const { codeExecutionResult, ...unexpectedData } = part;
-    return new GenericPart('codeExecutionResult', {
+    return new GenericPart("codeExecutionResult", {
       outcome: codeExecutionResult.outcome,
       output: codeExecutionResult.output,
       ...unexpectedData,
@@ -171,28 +162,28 @@ export function toOTelPart(part: Part): AnyPart {
   }
   // Assuming the above cases capture all the expected parts
   // but adding a fallthrough just in case.
-  return new GenericPart('unknown', { ...part });
+  return new GenericPart("unknown", { ...part });
 }
 
 export enum OTelRole {
-  SYSTEM = 'system',
-  USER = 'user',
-  ASSISTANT = 'assistant',
-  TOOL = 'tool',
+  SYSTEM = "system",
+  USER = "user",
+  ASSISTANT = "assistant",
+  TOOL = "tool",
 }
 
 export function toOTelRole(role?: string): OTelRole {
   switch (role?.toLowerCase()) {
-    case 'system':
+    case "system":
       return OTelRole.SYSTEM;
     // Our APIs seem to frequently use 'model'
-    case 'model':
+    case "model":
       return OTelRole.SYSTEM;
-    case 'user':
+    case "user":
       return OTelRole.USER;
-    case 'assistant':
+    case "assistant":
       return OTelRole.ASSISTANT;
-    case 'tool':
+    case "tool":
       return OTelRole.TOOL;
     default:
       return OTelRole.SYSTEM;
@@ -202,18 +193,18 @@ export function toOTelRole(role?: string): OTelRole {
 export type InputMessages = ChatMessage[];
 
 export enum OTelOutputType {
-  IMAGE = 'image',
-  JSON = 'json',
-  SPEECH = 'speech',
-  TEXT = 'text',
+  IMAGE = "image",
+  JSON = "json",
+  SPEECH = "speech",
+  TEXT = "text",
 }
 
 export enum OTelFinishReason {
-  STOP = 'stop',
-  LENGTH = 'length',
-  CONTENT_FILTER = 'content_filter',
-  TOOL_CALL = 'tool_call',
-  ERROR = 'error',
+  STOP = "stop",
+  LENGTH = "length",
+  CONTENT_FILTER = "content_filter",
+  TOOL_CALL = "tool_call",
+  ERROR = "error",
 }
 
 export function toOTelFinishReason(finishReason?: string): OTelFinishReason {
@@ -271,7 +262,7 @@ export interface ChatMessage {
 }
 
 export class TextPart {
-  readonly type = 'text';
+  readonly type = "text";
   content: string;
 
   constructor(content: string) {
@@ -280,7 +271,7 @@ export class TextPart {
 }
 
 export class ToolCallRequestPart {
-  readonly type = 'tool_call';
+  readonly type = "tool_call";
   name?: string;
   id?: string;
   arguments?: string;
@@ -293,7 +284,7 @@ export class ToolCallRequestPart {
 }
 
 export class ToolCallResponsePart {
-  readonly type = 'tool_call_response';
+  readonly type = "tool_call_response";
   response?: string;
   id?: string;
 
@@ -304,7 +295,7 @@ export class ToolCallResponsePart {
 }
 
 export class ReasoningPart {
-  readonly type = 'reasoning';
+  readonly type = "reasoning";
   content: string;
 
   constructor(content: string) {

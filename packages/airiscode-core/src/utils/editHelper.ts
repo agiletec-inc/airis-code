@@ -19,45 +19,45 @@
 
 const UNICODE_EQUIVALENT_MAP: Record<string, string> = {
   // Hyphen variations → ASCII hyphen-minus.
-  '\u2010': '-',
-  '\u2011': '-',
-  '\u2012': '-',
-  '\u2013': '-',
-  '\u2014': '-',
-  '\u2015': '-',
-  '\u2212': '-',
+  "\u2010": "-",
+  "\u2011": "-",
+  "\u2012": "-",
+  "\u2013": "-",
+  "\u2014": "-",
+  "\u2015": "-",
+  "\u2212": "-",
   // Curly single quotes → straight apostrophe.
-  '\u2018': "'",
-  '\u2019': "'",
-  '\u201A': "'",
-  '\u201B': "'",
+  "\u2018": "'",
+  "\u2019": "'",
+  "\u201A": "'",
+  "\u201B": "'",
   // Curly double quotes → straight double quote.
-  '\u201C': '"',
-  '\u201D': '"',
-  '\u201E': '"',
-  '\u201F': '"',
+  "\u201C": '"',
+  "\u201D": '"',
+  "\u201E": '"',
+  "\u201F": '"',
   // Whitespace variants → normal space.
-  '\u00A0': ' ',
-  '\u2002': ' ',
-  '\u2003': ' ',
-  '\u2004': ' ',
-  '\u2005': ' ',
-  '\u2006': ' ',
-  '\u2007': ' ',
-  '\u2008': ' ',
-  '\u2009': ' ',
-  '\u200A': ' ',
-  '\u202F': ' ',
-  '\u205F': ' ',
-  '\u3000': ' ',
+  "\u00A0": " ",
+  "\u2002": " ",
+  "\u2003": " ",
+  "\u2004": " ",
+  "\u2005": " ",
+  "\u2006": " ",
+  "\u2007": " ",
+  "\u2008": " ",
+  "\u2009": " ",
+  "\u200A": " ",
+  "\u202F": " ",
+  "\u205F": " ",
+  "\u3000": " ",
 };
 
 function normalizeBasicCharacters(text: string): string {
-  if (text === '') {
+  if (text === "") {
     return text;
   }
 
-  let normalized = '';
+  let normalized = "";
   for (const char of text) {
     normalized += UNICODE_EQUIVALENT_MAP[char] ?? char;
   }
@@ -120,7 +120,7 @@ function buildLineIndex(text: string): {
   lines: string[];
   offsets: number[];
 } {
-  const lines = text.split('\n');
+  const lines = text.split("\n");
   const offsets = new Array<number>(lines.length + 1);
   let cursor = 0;
 
@@ -149,7 +149,7 @@ function sliceFromLines(
   includeTrailingNewline: boolean,
 ): string {
   if (lineCount === 0) {
-    return includeTrailingNewline ? '\n' : '';
+    return includeTrailingNewline ? "\n" : "";
   }
 
   const startIndex = offsets[startLine] ?? 0;
@@ -161,7 +161,7 @@ function sliceFromLines(
     const nextLineStart = offsets[startLine + lineCount];
     if (nextLineStart !== undefined) {
       endIndex = nextLineStart;
-    } else if (text.endsWith('\n')) {
+    } else if (text.endsWith("\n")) {
       endIndex = text.length;
     }
   }
@@ -169,13 +169,10 @@ function sliceFromLines(
   return text.slice(startIndex, endIndex);
 }
 
-function findLineBasedMatch(
-  haystack: string,
-  needle: string,
-): MatchedSliceResult | null {
+function findLineBasedMatch(haystack: string, needle: string): MatchedSliceResult | null {
   const { lines, offsets } = buildLineIndex(haystack);
-  const patternLines = needle.split('\n');
-  const endsWithNewline = needle.endsWith('\n');
+  const patternLines = needle.split("\n");
+  const endsWithNewline = needle.endsWith("\n");
 
   if (patternLines.length === 0) {
     return null;
@@ -188,11 +185,7 @@ function findLineBasedMatch(
         return idx;
       }
     }
-    return seekSequenceWithTransform(
-      lines,
-      candidate,
-      normalizeLineForComparison,
-    );
+    return seekSequenceWithTransform(lines, candidate, normalizeLineForComparison);
   };
 
   let matchIndex = attemptMatch(patternLines);
@@ -210,7 +203,7 @@ function findLineBasedMatch(
     };
   }
 
-  if (patternLines.at(-1) === '') {
+  if (patternLines.at(-1) === "") {
     const trimmedPattern = patternLines.slice(0, -1);
     if (trimmedPattern.length === 0) {
       return null;
@@ -218,14 +211,7 @@ function findLineBasedMatch(
     matchIndex = attemptMatch(trimmedPattern);
     if (matchIndex !== null) {
       return {
-        slice: sliceFromLines(
-          haystack,
-          offsets,
-          lines,
-          matchIndex,
-          trimmedPattern.length,
-          false,
-        ),
+        slice: sliceFromLines(haystack, offsets, lines, matchIndex, trimmedPattern.length, false),
         removedTrailingFinalEmptyLine: true,
       };
     }
@@ -238,11 +224,8 @@ function findLineBasedMatch(
 /* Slice discovery                                                           */
 /* -------------------------------------------------------------------------- */
 
-function findMatchedSlice(
-  haystack: string,
-  needle: string,
-): MatchedSliceResult | null {
-  if (needle === '') {
+function findMatchedSlice(haystack: string, needle: string): MatchedSliceResult | null {
+  if (needle === "") {
     return null;
   }
 
@@ -276,19 +259,16 @@ function findMatchedSlice(
 /* -------------------------------------------------------------------------- */
 
 function removeTrailingNewline(text: string): string {
-  if (text.endsWith('\r\n')) {
+  if (text.endsWith("\r\n")) {
     return text.slice(0, -2);
   }
-  if (text.endsWith('\n') || text.endsWith('\r')) {
+  if (text.endsWith("\n") || text.endsWith("\r")) {
     return text.slice(0, -1);
   }
   return text;
 }
 
-function adjustNewStringForTrailingLine(
-  newString: string,
-  removedTrailingLine: boolean,
-): string {
+function adjustNewStringForTrailingLine(newString: string, removedTrailingLine: boolean): string {
   return removedTrailingLine ? removeTrailingNewline(newString) : newString;
 }
 
@@ -315,7 +295,7 @@ export function normalizeEditStrings(
   oldString: string,
   newString: string,
 ): NormalizedEditStrings {
-  if (fileContent === null || oldString === '') {
+  if (fileContent === null || oldString === "") {
     return {
       oldString,
       newString,
@@ -349,12 +329,7 @@ export function maybeAugmentOldStringForDeletion(
   oldString: string,
   newString: string,
 ): string {
-  if (
-    fileContent === null ||
-    oldString === '' ||
-    newString !== '' ||
-    oldString.endsWith('\n')
-  ) {
+  if (fileContent === null || oldString === "" || newString !== "" || oldString.endsWith("\n")) {
     return oldString;
   }
 
@@ -367,7 +342,7 @@ export function maybeAugmentOldStringForDeletion(
  * {@link source}. Returns 0 when the substring is empty.
  */
 export function countOccurrences(source: string, substr: string): number {
-  if (substr === '') {
+  if (substr === "") {
     return 0;
   }
 
@@ -411,7 +386,7 @@ export function extractEditSnippet(
   oldContent: string | null,
   newContent: string,
 ): EditSnippetResult | null {
-  const newLines = newContent.split('\n');
+  const newLines = newContent.split("\n");
   const totalLines = newLines.length;
 
   if (oldContent === null) {
@@ -428,7 +403,7 @@ export function extractEditSnippet(
     return null;
   }
 
-  const oldLines = oldContent.split('\n');
+  const oldLines = oldContent.split("\n");
 
   // Find the first line that differs from the start
   let firstDiffLine = 0;
@@ -473,6 +448,6 @@ export function extractEditSnippet(
     startLine: snippetStart,
     endLine: snippetEnd,
     totalLines,
-    content: snippetLines.join('\n'),
+    content: snippetLines.join("\n"),
   };
 }

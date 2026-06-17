@@ -4,12 +4,12 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import type { GitIgnoreFilter } from '../utils/gitIgnoreParser.js';
-import type { GeminiIgnoreFilter } from '../utils/geminiIgnoreParser.js';
-import { GitIgnoreParser } from '../utils/gitIgnoreParser.js';
-import { GeminiIgnoreParser } from '../utils/geminiIgnoreParser.js';
-import { isGitRepository } from '../utils/gitUtils.js';
-import * as path from 'node:path';
+import * as path from "node:path";
+import type { GeminiIgnoreFilter } from "../utils/geminiIgnoreParser.js";
+import { GeminiIgnoreParser } from "../utils/geminiIgnoreParser.js";
+import type { GitIgnoreFilter } from "../utils/gitIgnoreParser.js";
+import { GitIgnoreParser } from "../utils/gitIgnoreParser.js";
+import { isGitRepository } from "../utils/gitUtils.js";
 
 export interface FilterFilesOptions {
   respectGitIgnore?: boolean;
@@ -37,10 +37,7 @@ export class FileDiscoveryService {
     if (this.gitIgnoreFilter) {
       const geminiPatterns = this.geminiIgnoreFilter.getPatterns();
       // Create combined parser: .gitignore + .geminiignore
-      this.combinedIgnoreFilter = new GitIgnoreParser(
-        this.projectRoot,
-        geminiPatterns,
-      );
+      this.combinedIgnoreFilter = new GitIgnoreParser(this.projectRoot, geminiPatterns);
     }
   }
 
@@ -50,11 +47,7 @@ export class FileDiscoveryService {
   filterFiles(filePaths: string[], options: FilterFilesOptions = {}): string[] {
     const { respectGitIgnore = true, respectGeminiIgnore = true } = options;
     return filePaths.filter((filePath) => {
-      if (
-        respectGitIgnore &&
-        respectGeminiIgnore &&
-        this.combinedIgnoreFilter
-      ) {
+      if (respectGitIgnore && respectGeminiIgnore && this.combinedIgnoreFilter) {
         return !this.combinedIgnoreFilter.isIgnored(filePath);
       }
 
@@ -91,10 +84,7 @@ export class FileDiscoveryService {
   /**
    * Unified method to check if a file should be ignored based on filtering options
    */
-  shouldIgnoreFile(
-    filePath: string,
-    options: FilterFilesOptions = {},
-  ): boolean {
+  shouldIgnoreFile(filePath: string, options: FilterFilesOptions = {}): boolean {
     return this.filterFiles([filePath], options).length === 0;
   }
 }

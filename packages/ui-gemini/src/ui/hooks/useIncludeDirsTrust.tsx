@@ -4,18 +4,18 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { useEffect } from 'react';
-import type { Config } from '@airiscode/gemini-cli-core';
-import { loadTrustedFolders } from '../../config/trustedFolders.js';
-import { expandHomeDir } from '../utils/directoryUtils.js';
-import { refreshServerHierarchicalMemory } from '@airiscode/gemini-cli-core';
-import { MultiFolderTrustDialog } from '../components/MultiFolderTrustDialog.js';
-import type { UseHistoryManagerReturn } from './useHistoryManager.js';
-import { MessageType, type HistoryItem } from '../types.js';
+import type { Config } from "@airiscode/gemini-cli-core";
+import { refreshServerHierarchicalMemory } from "@airiscode/gemini-cli-core";
+import { useEffect } from "react";
+import { loadTrustedFolders } from "../../config/trustedFolders.js";
+import { MultiFolderTrustDialog } from "../components/MultiFolderTrustDialog.js";
+import { type HistoryItem, MessageType } from "../types.js";
+import { expandHomeDir } from "../utils/directoryUtils.js";
+import type { UseHistoryManagerReturn } from "./useHistoryManager.js";
 
 async function finishAddingDirectories(
   config: Config,
-  addItem: (itemData: Omit<HistoryItem, 'id'>, baseTimestamp: number) => number,
+  addItem: (itemData: Omit<HistoryItem, "id">, baseTimestamp: number) => number,
   added: string[],
   errors: string[],
 ) {
@@ -23,7 +23,7 @@ async function finishAddingDirectories(
     addItem(
       {
         type: MessageType.ERROR,
-        text: 'Configuration is not available.',
+        text: "Configuration is not available.",
       },
       Date.now(),
     );
@@ -46,7 +46,7 @@ async function finishAddingDirectories(
   }
 
   if (errors.length > 0) {
-    addItem({ type: MessageType.ERROR, text: errors.join('\n') }, Date.now());
+    addItem({ type: MessageType.ERROR, text: errors.join("\n") }, Date.now());
   }
 }
 
@@ -116,7 +116,7 @@ export function useIncludeDirsTrust(
     if (untrustedDirs.length > 0) {
       errors.push(
         `The following directories are explicitly untrusted and cannot be added to a trusted workspace:\n- ${untrustedDirs.join(
-          '\n- ',
+          "\n- ",
         )}\nPlease use the permissions command to modify their trust level.`,
       );
     }
@@ -133,10 +133,7 @@ export function useIncludeDirsTrust(
     }
 
     if (undefinedTrustDirs.length > 0) {
-      console.log(
-        'Creating custom dialog with undecidedDirs:',
-        undefinedTrustDirs,
-      );
+      console.log("Creating custom dialog with undecidedDirs:", undefinedTrustDirs);
       setCustomDialog(
         <MultiFolderTrustDialog
           folders={undefinedTrustDirs}

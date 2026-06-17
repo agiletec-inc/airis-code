@@ -4,18 +4,18 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { validateTheme } from './theme.js';
-import { themeManager } from '../ui/themes/theme-manager.js';
-import { type LoadedSettings } from '../config/settings.js';
+import { beforeEach, describe, expect, it, vi } from "vitest";
+import { type LoadedSettings } from "../config/settings.js";
+import { themeManager } from "../ui/themes/theme-manager.js";
+import { validateTheme } from "./theme.js";
 
-vi.mock('../ui/themes/theme-manager.js', () => ({
+vi.mock("../ui/themes/theme-manager.js", () => ({
   themeManager: {
     findThemeByName: vi.fn(),
   },
 }));
 
-describe('theme', () => {
+describe("theme", () => {
   let mockSettings: LoadedSettings;
 
   beforeEach(() => {
@@ -23,29 +23,29 @@ describe('theme', () => {
     mockSettings = {
       merged: {
         ui: {
-          theme: 'test-theme',
+          theme: "test-theme",
         },
       },
     } as unknown as LoadedSettings;
   });
 
-  it('should return null if theme is found', () => {
+  it("should return null if theme is found", () => {
     vi.mocked(themeManager.findThemeByName).mockReturnValue(
       {} as unknown as ReturnType<typeof themeManager.findThemeByName>,
     );
     const result = validateTheme(mockSettings);
     expect(result).toBeNull();
-    expect(themeManager.findThemeByName).toHaveBeenCalledWith('test-theme');
+    expect(themeManager.findThemeByName).toHaveBeenCalledWith("test-theme");
   });
 
-  it('should return error message if theme is not found', () => {
+  it("should return error message if theme is not found", () => {
     vi.mocked(themeManager.findThemeByName).mockReturnValue(undefined);
     const result = validateTheme(mockSettings);
     expect(result).toBe('Theme "test-theme" not found.');
-    expect(themeManager.findThemeByName).toHaveBeenCalledWith('test-theme');
+    expect(themeManager.findThemeByName).toHaveBeenCalledWith("test-theme");
   });
 
-  it('should return null if theme is undefined', () => {
+  it("should return null if theme is undefined", () => {
     mockSettings.merged.ui!.theme = undefined;
     const result = validateTheme(mockSettings);
     expect(result).toBeNull();

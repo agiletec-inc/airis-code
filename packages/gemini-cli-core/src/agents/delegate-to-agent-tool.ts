@@ -4,29 +4,26 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { z } from 'zod';
-import { zodToJsonSchema } from 'zod-to-json-schema';
+import { z } from "zod";
+import { zodToJsonSchema } from "zod-to-json-schema";
+import type { Config } from "../config/config.js";
+import type { MessageBus } from "../confirmation-bus/message-bus.js";
+import { DELEGATE_TO_AGENT_TOOL_NAME } from "../tools/tool-names.js";
 import {
   BaseDeclarativeTool,
+  BaseToolInvocation,
   Kind,
   type ToolInvocation,
   type ToolResult,
-  BaseToolInvocation,
-} from '../tools/tools.js';
-import type { AnsiOutput } from '../utils/terminalSerializer.js';
-import { DELEGATE_TO_AGENT_TOOL_NAME } from '../tools/tool-names.js';
-import type { AgentRegistry } from './registry.js';
-import type { Config } from '../config/config.js';
-import type { MessageBus } from '../confirmation-bus/message-bus.js';
-import { SubagentInvocation } from './invocation.js';
-import type { AgentInputs } from './types.js';
+} from "../tools/tools.js";
+import type { AnsiOutput } from "../utils/terminalSerializer.js";
+import { SubagentInvocation } from "./invocation.js";
+import type { AgentRegistry } from "./registry.js";
+import type { AgentInputs } from "./types.js";
 
 type DelegateParams = { agent_name: string } & Record<string, unknown>;
 
-export class DelegateToAgentTool extends BaseDeclarativeTool<
-  DelegateParams,
-  ToolResult
-> {
+export class DelegateToAgentTool extends BaseDeclarativeTool<DelegateParams, ToolResult> {
   constructor(
     private readonly registry: AgentRegistry,
     private readonly config: Config,
@@ -39,7 +36,7 @@ export class DelegateToAgentTool extends BaseDeclarativeTool<
     if (definitions.length === 0) {
       // Fallback if no agents are registered (mostly for testing/safety)
       schema = z.object({
-        agent_name: z.string().describe('No agents are currently available.'),
+        agent_name: z.string().describe("No agents are currently available."),
       });
     } else {
       const agentSchemas = definitions.map((def) => {
@@ -48,7 +45,7 @@ export class DelegateToAgentTool extends BaseDeclarativeTool<
         };
 
         for (const [key, inputDef] of Object.entries(def.inputConfig.inputs)) {
-          if (key === 'agent_name') {
+          if (key === "agent_name") {
             throw new Error(
               `Agent '${def.name}' cannot have an input parameter named 'agent_name' as it is a reserved parameter for delegation.`,
             );
@@ -58,22 +55,22 @@ export class DelegateToAgentTool extends BaseDeclarativeTool<
 
           // Map input types to Zod
           switch (inputDef.type) {
-            case 'string':
+            case "string":
               validator = z.string();
               break;
-            case 'number':
+            case "number":
               validator = z.number();
               break;
-            case 'boolean':
+            case "boolean":
               validator = z.boolean();
               break;
-            case 'integer':
+            case "integer":
               validator = z.number().int();
               break;
-            case 'string[]':
+            case "string[]":
               validator = z.array(z.string());
               break;
-            case 'number[]':
+            case "number[]":
               validator = z.array(z.number());
               break;
             default: {
@@ -92,9 +89,7 @@ export class DelegateToAgentTool extends BaseDeclarativeTool<
         }
 
         // Cast required because Zod can't infer the discriminator from dynamic keys
-        return z.object(
-          inputShape,
-        ) as z.ZodDiscriminatedUnionOption<'agent_name'>;
+        return z.object(inputShape) as z.ZodDiscriminatedUnionOption<"agent_name">;
       });
 
       // Create the discriminated union
@@ -103,11 +98,11 @@ export class DelegateToAgentTool extends BaseDeclarativeTool<
         schema = agentSchemas[0];
       } else {
         schema = z.discriminatedUnion(
-          'agent_name',
+          "agent_name",
           agentSchemas as [
-            z.ZodDiscriminatedUnionOption<'agent_name'>,
-            z.ZodDiscriminatedUnionOption<'agent_name'>,
-            ...Array<z.ZodDiscriminatedUnionOption<'agent_name'>>,
+            z.ZodDiscriminatedUnionOption<"agent_name">,
+            z.ZodDiscriminatedUnionOption<"agent_name">,
+            ...Array<z.ZodDiscriminatedUnionOption<"agent_name">>,
           ],
         );
       }
@@ -115,7 +110,7 @@ export class DelegateToAgentTool extends BaseDeclarativeTool<
 
     super(
       DELEGATE_TO_AGENT_TOOL_NAME,
-      'Delegate to Agent',
+      "Delegate to Agent",
       registry.getToolDescription(),
       Kind.Think,
       zodToJsonSchema(schema),
@@ -125,22 +120,12 @@ export class DelegateToAgentTool extends BaseDeclarativeTool<
     );
   }
 
-  protected createInvocation(
-    params: DelegateParams,
-  ): ToolInvocation<DelegateParams, ToolResult> {
-    return new DelegateInvocation(
-      params,
-      this.registry,
-      this.config,
-      this.messageBus,
-    );
+  protected createInvocation(params: DelegateParams): ToolInvocation<DelegateParams, ToolResult> {
+    return new DelegateInvocation(params, this.registry, this.config, this.messageBus);
   }
 }
 
-class DelegateInvocation extends BaseToolInvocation<
-  DelegateParams,
-  ToolResult
-> {
+class DelegateInvocation extends BaseToolInvocation<DelegateParams, ToolResult> {
   constructor(
     params: DelegateParams,
     private readonly registry: AgentRegistry,

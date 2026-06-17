@@ -4,14 +4,14 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { Box } from 'ink';
-import { AuthType } from '@airiscode/core';
-import { Header, AuthDisplayType } from './Header.js';
-import { Tips } from './Tips.js';
-import { useSettings } from '../contexts/SettingsContext.js';
-import { useConfig } from '../contexts/ConfigContext.js';
-import { useUIState } from '../contexts/UIStateContext.js';
-import { isCodingPlanConfig } from '../../constants/codingPlan.js';
+import { AuthType } from "@airiscode/core";
+import { Box } from "ink";
+import { isCodingPlanConfig } from "../../constants/codingPlan.js";
+import { useConfig } from "../contexts/ConfigContext.js";
+import { useSettings } from "../contexts/SettingsContext.js";
+import { useUIState } from "../contexts/UIStateContext.js";
+import { AuthDisplayType, Header } from "./Header.js";
+import { Tips } from "./Tips.js";
 
 interface AppHeaderProps {
   version: string;

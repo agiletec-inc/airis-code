@@ -4,156 +4,156 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { renderWithProviders } from '../../test-utils/render.js';
-import { AppHeader } from './AppHeader.js';
-import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { makeFakeConfig } from '@airiscode/gemini-cli-core';
-import crypto from 'node:crypto';
+import crypto from "node:crypto";
+import { makeFakeConfig } from "@airiscode/gemini-cli-core";
+import { beforeEach, describe, expect, it, vi } from "vitest";
+import { renderWithProviders } from "../../test-utils/render.js";
+import { AppHeader } from "./AppHeader.js";
 
 const persistentStateMock = vi.hoisted(() => ({
   get: vi.fn(),
   set: vi.fn(),
 }));
 
-vi.mock('../../utils/persistentState.js', () => ({
+vi.mock("../../utils/persistentState.js", () => ({
   persistentState: persistentStateMock,
 }));
 
-vi.mock('../utils/terminalSetup.js', () => ({
+vi.mock("../utils/terminalSetup.js", () => ({
   getTerminalProgram: () => null,
 }));
 
-describe('<AppHeader />', () => {
+describe("<AppHeader />", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     persistentStateMock.get.mockReturnValue({});
   });
 
-  it('should render the banner with default text', () => {
+  it("should render the banner with default text", () => {
     const mockConfig = makeFakeConfig();
     const uiState = {
       bannerData: {
-        defaultText: 'This is the default banner',
-        warningText: '',
+        defaultText: "This is the default banner",
+        warningText: "",
       },
       bannerVisible: true,
     };
 
-    const { lastFrame, unmount } = renderWithProviders(
-      <AppHeader version="1.0.0" />,
-      { config: mockConfig, uiState },
-    );
+    const { lastFrame, unmount } = renderWithProviders(<AppHeader version="1.0.0" />, {
+      config: mockConfig,
+      uiState,
+    });
 
-    expect(lastFrame()).toContain('This is the default banner');
+    expect(lastFrame()).toContain("This is the default banner");
     expect(lastFrame()).toMatchSnapshot();
     unmount();
   });
 
-  it('should render the banner with warning text', () => {
+  it("should render the banner with warning text", () => {
     const mockConfig = makeFakeConfig();
     const uiState = {
       bannerData: {
-        defaultText: 'This is the default banner',
-        warningText: 'There are capacity issues',
+        defaultText: "This is the default banner",
+        warningText: "There are capacity issues",
       },
       bannerVisible: true,
     };
 
-    const { lastFrame, unmount } = renderWithProviders(
-      <AppHeader version="1.0.0" />,
-      { config: mockConfig, uiState },
-    );
+    const { lastFrame, unmount } = renderWithProviders(<AppHeader version="1.0.0" />, {
+      config: mockConfig,
+      uiState,
+    });
 
-    expect(lastFrame()).toContain('There are capacity issues');
+    expect(lastFrame()).toContain("There are capacity issues");
     expect(lastFrame()).toMatchSnapshot();
     unmount();
   });
 
-  it('should not render the banner when no flags are set', () => {
+  it("should not render the banner when no flags are set", () => {
     const mockConfig = makeFakeConfig();
     const uiState = {
       bannerData: {
-        defaultText: '',
-        warningText: '',
+        defaultText: "",
+        warningText: "",
       },
     };
 
-    const { lastFrame, unmount } = renderWithProviders(
-      <AppHeader version="1.0.0" />,
-      { config: mockConfig, uiState },
-    );
+    const { lastFrame, unmount } = renderWithProviders(<AppHeader version="1.0.0" />, {
+      config: mockConfig,
+      uiState,
+    });
 
-    expect(lastFrame()).not.toContain('Banner');
+    expect(lastFrame()).not.toContain("Banner");
     expect(lastFrame()).toMatchSnapshot();
     unmount();
   });
 
-  it('should render the banner when previewFeatures is disabled', () => {
+  it("should render the banner when previewFeatures is disabled", () => {
     const mockConfig = makeFakeConfig({ previewFeatures: false });
     const uiState = {
       bannerData: {
-        defaultText: 'This is the default banner',
-        warningText: '',
+        defaultText: "This is the default banner",
+        warningText: "",
       },
       bannerVisible: true,
     };
 
-    const { lastFrame, unmount } = renderWithProviders(
-      <AppHeader version="1.0.0" />,
-      { config: mockConfig, uiState },
-    );
+    const { lastFrame, unmount } = renderWithProviders(<AppHeader version="1.0.0" />, {
+      config: mockConfig,
+      uiState,
+    });
 
-    expect(lastFrame()).toContain('This is the default banner');
+    expect(lastFrame()).toContain("This is the default banner");
     expect(lastFrame()).toMatchSnapshot();
     unmount();
   });
 
-  it('should not render the banner when previewFeatures is enabled', () => {
+  it("should not render the banner when previewFeatures is enabled", () => {
     const mockConfig = makeFakeConfig({ previewFeatures: true });
     const uiState = {
       bannerData: {
-        defaultText: 'This is the default banner',
-        warningText: '',
+        defaultText: "This is the default banner",
+        warningText: "",
       },
     };
 
-    const { lastFrame, unmount } = renderWithProviders(
-      <AppHeader version="1.0.0" />,
-      { config: mockConfig, uiState },
-    );
+    const { lastFrame, unmount } = renderWithProviders(<AppHeader version="1.0.0" />, {
+      config: mockConfig,
+      uiState,
+    });
 
-    expect(lastFrame()).not.toContain('This is the default banner');
+    expect(lastFrame()).not.toContain("This is the default banner");
     expect(lastFrame()).toMatchSnapshot();
     unmount();
   });
 
-  it('should not render the default banner if shown count is 5 or more', () => {
+  it("should not render the default banner if shown count is 5 or more", () => {
     persistentStateMock.get.mockReturnValue(5);
     const mockConfig = makeFakeConfig();
     const uiState = {
       bannerData: {
-        defaultText: 'This is the default banner',
-        warningText: '',
+        defaultText: "This is the default banner",
+        warningText: "",
       },
     };
 
-    const { lastFrame, unmount } = renderWithProviders(
-      <AppHeader version="1.0.0" />,
-      { config: mockConfig, uiState },
-    );
+    const { lastFrame, unmount } = renderWithProviders(<AppHeader version="1.0.0" />, {
+      config: mockConfig,
+      uiState,
+    });
 
-    expect(lastFrame()).not.toContain('This is the default banner');
+    expect(lastFrame()).not.toContain("This is the default banner");
     expect(lastFrame()).toMatchSnapshot();
     unmount();
   });
 
-  it('should increment the version count when default banner is displayed', () => {
+  it("should increment the version count when default banner is displayed", () => {
     persistentStateMock.get.mockReturnValue({});
     const mockConfig = makeFakeConfig();
     const uiState = {
       bannerData: {
-        defaultText: 'This is the default banner',
-        warningText: '',
+        defaultText: "This is the default banner",
+        warningText: "",
       },
     };
 
@@ -162,34 +162,28 @@ describe('<AppHeader />', () => {
       uiState,
     });
 
-    expect(persistentStateMock.set).toHaveBeenCalledWith(
-      'defaultBannerShownCount',
-      {
-        [crypto
-          .createHash('sha256')
-          .update(uiState.bannerData.defaultText)
-          .digest('hex')]: 1,
-      },
-    );
+    expect(persistentStateMock.set).toHaveBeenCalledWith("defaultBannerShownCount", {
+      [crypto.createHash("sha256").update(uiState.bannerData.defaultText).digest("hex")]: 1,
+    });
     unmount();
   });
 
-  it('should render banner text with unescaped newlines', () => {
+  it("should render banner text with unescaped newlines", () => {
     const mockConfig = makeFakeConfig();
     const uiState = {
       bannerData: {
-        defaultText: 'First line\\nSecond line',
-        warningText: '',
+        defaultText: "First line\\nSecond line",
+        warningText: "",
       },
       bannerVisible: true,
     };
 
-    const { lastFrame, unmount } = renderWithProviders(
-      <AppHeader version="1.0.0" />,
-      { config: mockConfig, uiState },
-    );
+    const { lastFrame, unmount } = renderWithProviders(<AppHeader version="1.0.0" />, {
+      config: mockConfig,
+      uiState,
+    });
 
-    expect(lastFrame()).not.toContain('First line\\nSecond line');
+    expect(lastFrame()).not.toContain("First line\\nSecond line");
     unmount();
   });
 });

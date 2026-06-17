@@ -4,29 +4,23 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { useState, useCallback } from 'react';
-import type { LoadedSettings, SettingScope } from '../../config/settings.js';
-import { type HistoryItem, MessageType } from '../types.js';
-import type { EditorType } from '@airiscode/core';
-import {
-  allowEditorTypeInSandbox,
-  checkHasEditorType,
-} from '@airiscode/core';
+import type { EditorType } from "@airiscode/core";
+import { allowEditorTypeInSandbox, checkHasEditorType } from "@airiscode/core";
+import { useCallback, useState } from "react";
+import type { LoadedSettings, SettingScope } from "../../config/settings.js";
+import { type HistoryItem, MessageType } from "../types.js";
 
 interface UseEditorSettingsReturn {
   isEditorDialogOpen: boolean;
   openEditorDialog: () => void;
-  handleEditorSelect: (
-    editorType: EditorType | undefined,
-    scope: SettingScope,
-  ) => void;
+  handleEditorSelect: (editorType: EditorType | undefined, scope: SettingScope) => void;
   exitEditorDialog: () => void;
 }
 
 export const useEditorSettings = (
   loadedSettings: LoadedSettings,
   setEditorError: (error: string | null) => void,
-  addItem: (item: Omit<HistoryItem, 'id'>, timestamp: number) => void,
+  addItem: (item: Omit<HistoryItem, "id">, timestamp: number) => void,
 ): UseEditorSettingsReturn => {
   const [isEditorDialogOpen, setIsEditorDialogOpen] = useState(false);
 
@@ -38,18 +32,17 @@ export const useEditorSettings = (
     (editorType: EditorType | undefined, scope: SettingScope) => {
       if (
         editorType &&
-        (!checkHasEditorType(editorType) ||
-          !allowEditorTypeInSandbox(editorType))
+        (!checkHasEditorType(editorType) || !allowEditorTypeInSandbox(editorType))
       ) {
         return;
       }
 
       try {
-        loadedSettings.setValue(scope, 'general.preferredEditor', editorType);
+        loadedSettings.setValue(scope, "general.preferredEditor", editorType);
         addItem(
           {
             type: MessageType.INFO,
-            text: `Editor preference ${editorType ? `set to "${editorType}"` : 'cleared'} in ${scope} settings.`,
+            text: `Editor preference ${editorType ? `set to "${editorType}"` : "cleared"} in ${scope} settings.`,
           },
           Date.now(),
         );

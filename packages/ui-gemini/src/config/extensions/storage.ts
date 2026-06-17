@@ -4,14 +4,11 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import * as path from 'node:path';
-import * as fs from 'node:fs';
-import * as os from 'node:os';
-import {
-  EXTENSION_SETTINGS_FILENAME,
-  EXTENSIONS_CONFIG_FILENAME,
-} from './variables.js';
-import { Storage } from '@airiscode/gemini-cli-core';
+import * as fs from "node:fs";
+import * as os from "node:os";
+import * as path from "node:path";
+import { Storage } from "@airiscode/gemini-cli-core";
+import { EXTENSION_SETTINGS_FILENAME, EXTENSIONS_CONFIG_FILENAME } from "./variables.js";
 
 export class ExtensionStorage {
   private readonly extensionName: string;
@@ -21,10 +18,7 @@ export class ExtensionStorage {
   }
 
   getExtensionDir(): string {
-    return path.join(
-      ExtensionStorage.getUserExtensionsDir(),
-      this.extensionName,
-    );
+    return path.join(ExtensionStorage.getUserExtensionsDir(), this.extensionName);
   }
 
   getConfigPath(): string {
@@ -40,6 +34,6 @@ export class ExtensionStorage {
   }
 
   static async createTmpDir(): Promise<string> {
-    return fs.promises.mkdtemp(path.join(os.tmpdir(), 'gemini-extension'));
+    return fs.promises.mkdtemp(path.join(os.tmpdir(), "gemini-extension"));
   }
 }

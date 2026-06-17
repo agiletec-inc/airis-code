@@ -4,18 +4,18 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { act } from 'react';
-import { render } from '../../test-utils/render.js';
-import { useAnimatedScrollbar } from './useAnimatedScrollbar.js';
-import { debugState } from '../debug.js';
-import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
+import { act } from "react";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { render } from "../../test-utils/render.js";
+import { debugState } from "../debug.js";
+import { useAnimatedScrollbar } from "./useAnimatedScrollbar.js";
 
 const TestComponent = ({ isFocused = false }: { isFocused?: boolean }) => {
   useAnimatedScrollbar(isFocused, () => {});
   return null;
 };
 
-describe('useAnimatedScrollbar', () => {
+describe("useAnimatedScrollbar", () => {
   beforeEach(() => {
     debugState.debugNumAnimatedComponents = 0;
     vi.useFakeTimers();
@@ -25,24 +25,24 @@ describe('useAnimatedScrollbar', () => {
     vi.useRealTimers();
   });
 
-  it('should not increment debugNumAnimatedComponents when not focused', () => {
+  it("should not increment debugNumAnimatedComponents when not focused", () => {
     render(<TestComponent isFocused={false} />);
     expect(debugState.debugNumAnimatedComponents).toBe(0);
   });
 
-  it('should not increment debugNumAnimatedComponents on initial mount even if focused', () => {
+  it("should not increment debugNumAnimatedComponents on initial mount even if focused", () => {
     render(<TestComponent isFocused={true} />);
     expect(debugState.debugNumAnimatedComponents).toBe(0);
   });
 
-  it('should increment debugNumAnimatedComponents when becoming focused', () => {
+  it("should increment debugNumAnimatedComponents when becoming focused", () => {
     const { rerender } = render(<TestComponent isFocused={false} />);
     expect(debugState.debugNumAnimatedComponents).toBe(0);
     rerender(<TestComponent isFocused={true} />);
     expect(debugState.debugNumAnimatedComponents).toBe(1);
   });
 
-  it('should decrement debugNumAnimatedComponents when becoming unfocused', () => {
+  it("should decrement debugNumAnimatedComponents when becoming unfocused", () => {
     const { rerender } = render(<TestComponent isFocused={false} />);
     rerender(<TestComponent isFocused={true} />);
     expect(debugState.debugNumAnimatedComponents).toBe(1);
@@ -50,7 +50,7 @@ describe('useAnimatedScrollbar', () => {
     expect(debugState.debugNumAnimatedComponents).toBe(0);
   });
 
-  it('should decrement debugNumAnimatedComponents on unmount', () => {
+  it("should decrement debugNumAnimatedComponents on unmount", () => {
     const { rerender, unmount } = render(<TestComponent isFocused={false} />);
     rerender(<TestComponent isFocused={true} />);
     expect(debugState.debugNumAnimatedComponents).toBe(1);
@@ -58,7 +58,7 @@ describe('useAnimatedScrollbar', () => {
     expect(debugState.debugNumAnimatedComponents).toBe(0);
   });
 
-  it('should decrement debugNumAnimatedComponents after animation finishes', async () => {
+  it("should decrement debugNumAnimatedComponents after animation finishes", async () => {
     const { rerender } = render(<TestComponent isFocused={false} />);
     rerender(<TestComponent isFocused={true} />);
     expect(debugState.debugNumAnimatedComponents).toBe(1);
@@ -71,12 +71,12 @@ describe('useAnimatedScrollbar', () => {
     expect(debugState.debugNumAnimatedComponents).toBe(0);
   });
 
-  it('should not crash if Date.now() goes backwards (regression test)', async () => {
+  it("should not crash if Date.now() goes backwards (regression test)", async () => {
     // Only fake timers, keep Date real so we can mock it manually
     vi.useFakeTimers({
-      toFake: ['setInterval', 'clearInterval', 'setTimeout', 'clearTimeout'],
+      toFake: ["setInterval", "clearInterval", "setTimeout", "clearTimeout"],
     });
-    const dateSpy = vi.spyOn(Date, 'now');
+    const dateSpy = vi.spyOn(Date, "now");
     let currentTime = 1000;
     dateSpy.mockImplementation(() => currentTime);
 

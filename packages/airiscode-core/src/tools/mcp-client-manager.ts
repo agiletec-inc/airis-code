@@ -4,22 +4,22 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import type { Config } from '../config/config.js';
-import { isSdkMcpServerConfig } from '../config/config.js';
-import type { ToolRegistry } from './tool-registry.js';
+import type { EventEmitter } from "node:events";
+import type { ReadResourceResult } from "@modelcontextprotocol/sdk/types.js";
+import type { Config } from "../config/config.js";
+import { isSdkMcpServerConfig } from "../config/config.js";
+import { createDebugLogger } from "../utils/debugLogger.js";
+import { getErrorMessage } from "../utils/errors.js";
+import type { SendSdkMcpMessage } from "./mcp-client.js";
 import {
-  McpClient,
   MCPDiscoveryState,
   MCPServerStatus,
+  McpClient,
   populateMcpServerCommand,
-} from './mcp-client.js';
-import type { SendSdkMcpMessage } from './mcp-client.js';
-import { getErrorMessage } from '../utils/errors.js';
-import { createDebugLogger } from '../utils/debugLogger.js';
-import type { EventEmitter } from 'node:events';
-import type { ReadResourceResult } from '@modelcontextprotocol/sdk/types.js';
+} from "./mcp-client.js";
+import type { ToolRegistry } from "./tool-registry.js";
 
-const debugLogger = createDebugLogger('MCP');
+const debugLogger = createDebugLogger("MCP");
 
 /**
  * Configuration for MCP health monitoring
@@ -92,47 +92,39 @@ export class McpClientManager {
 
     this.discoveryState = MCPDiscoveryState.IN_PROGRESS;
 
-    this.eventEmitter?.emit('mcp-client-update', this.clients);
-    const discoveryPromises = Object.entries(servers).map(
-      async ([name, config]) => {
-        // Skip disabled servers
-        if (cliConfig.isMcpServerDisabled(name)) {
-          debugLogger.debug(`Skipping disabled MCP server: ${name}`);
-          return;
-        }
+    this.eventEmitter?.emit("mcp-client-update", this.clients);
+    const discoveryPromises = Object.entries(servers).map(async ([name, config]) => {
+      // Skip disabled servers
+      if (cliConfig.isMcpServerDisabled(name)) {
+        debugLogger.debug(`Skipping disabled MCP server: ${name}`);
+        return;
+      }
 
-        // For SDK MCP servers, pass the sendSdkMcpMessage callback
-        const sdkCallback = isSdkMcpServerConfig(config)
-          ? this.sendSdkMcpMessage
-          : undefined;
+      // For SDK MCP servers, pass the sendSdkMcpMessage callback
+      const sdkCallback = isSdkMcpServerConfig(config) ? this.sendSdkMcpMessage : undefined;
 
-        const client = new McpClient(
-          name,
-          config,
-          this.toolRegistry,
-          this.cliConfig.getPromptRegistry(),
-          this.cliConfig.getWorkspaceContext(),
-          this.cliConfig.getDebugMode(),
-          sdkCallback,
-        );
-        this.clients.set(name, client);
+      const client = new McpClient(
+        name,
+        config,
+        this.toolRegistry,
+        this.cliConfig.getPromptRegistry(),
+        this.cliConfig.getWorkspaceContext(),
+        this.cliConfig.getDebugMode(),
+        sdkCallback,
+      );
+      this.clients.set(name, client);
 
-        this.eventEmitter?.emit('mcp-client-update', this.clients);
-        try {
-          await client.connect();
-          await client.discover(cliConfig);
-          this.eventEmitter?.emit('mcp-client-update', this.clients);
-        } catch (error) {
-          this.eventEmitter?.emit('mcp-client-update', this.clients);
-          // Log the error but don't let a single failed server stop the others
-          debugLogger.error(
-            `Error during discovery for server '${name}': ${getErrorMessage(
-              error,
-            )}`,
-          );
-        }
-      },
-    );
+      this.eventEmitter?.emit("mcp-client-update", this.clients);
+      try {
+        await client.connect();
+        await client.discover(cliConfig);
+        this.eventEmitter?.emit("mcp-client-update", this.clients);
+      } catch (error) {
+        this.eventEmitter?.emit("mcp-client-update", this.clients);
+        // Log the error but don't let a single failed server stop the others
+        debugLogger.error(`Error during discovery for server '${name}': ${getErrorMessage(error)}`);
+      }
+    });
 
     await Promise.all(discoveryPromises);
     this.discoveryState = MCPDiscoveryState.COMPLETED;
@@ -144,10 +136,7 @@ export class McpClientManager {
    *
    * This is primarily used for on-demand re-discovery flows (e.g. after OAuth).
    */
-  async discoverMcpToolsForServer(
-    serverName: string,
-    cliConfig: Config,
-  ): Promise<void> {
+  async discoverMcpToolsForServer(serverName: string, cliConfig: Config): Promise<void> {
     const servers = populateMcpServerCommand(
       this.cliConfig.getMcpServers() || {},
       this.cliConfig.getMcpServerCommand(),
@@ -163,19 +152,15 @@ export class McpClientManager {
       try {
         await existingClient.disconnect();
       } catch (error) {
-        debugLogger.error(
-          `Error stopping client '${serverName}': ${getErrorMessage(error)}`,
-        );
+        debugLogger.error(`Error stopping client '${serverName}': ${getErrorMessage(error)}`);
       } finally {
         this.clients.delete(serverName);
-        this.eventEmitter?.emit('mcp-client-update', this.clients);
+        this.eventEmitter?.emit("mcp-client-update", this.clients);
       }
     }
 
     // For SDK MCP servers, pass the sendSdkMcpMessage callback.
-    const sdkCallback = isSdkMcpServerConfig(serverConfig)
-      ? this.sendSdkMcpMessage
-      : undefined;
+    const sdkCallback = isSdkMcpServerConfig(serverConfig) ? this.sendSdkMcpMessage : undefined;
 
     const client = new McpClient(
       serverName,
@@ -188,7 +173,7 @@ export class McpClientManager {
     );
 
     this.clients.set(serverName, client);
-    this.eventEmitter?.emit('mcp-client-update', this.clients);
+    this.eventEmitter?.emit("mcp-client-update", this.clients);
 
     try {
       await client.connect();
@@ -198,12 +183,10 @@ export class McpClientManager {
     } catch (error) {
       // Log the error but don't throw: callers expect best-effort discovery.
       debugLogger.error(
-        `Error during discovery for server '${serverName}': ${getErrorMessage(
-          error,
-        )}`,
+        `Error during discovery for server '${serverName}': ${getErrorMessage(error)}`,
       );
     } finally {
-      this.eventEmitter?.emit('mcp-client-update', this.clients);
+      this.eventEmitter?.emit("mcp-client-update", this.clients);
     }
   }
 
@@ -215,17 +198,13 @@ export class McpClientManager {
     // Stop all health checks first
     this.stopAllHealthChecks();
 
-    const disconnectionPromises = Array.from(this.clients.entries()).map(
-      async ([name, client]) => {
-        try {
-          await client.disconnect();
-        } catch (error) {
-          debugLogger.error(
-            `Error stopping client '${name}': ${getErrorMessage(error)}`,
-          );
-        }
-      },
-    );
+    const disconnectionPromises = Array.from(this.clients.entries()).map(async ([name, client]) => {
+      try {
+        await client.disconnect();
+      } catch (error) {
+        debugLogger.error(`Error stopping client '${name}': ${getErrorMessage(error)}`);
+      }
+    });
 
     await Promise.all(disconnectionPromises);
     this.clients.clear();
@@ -246,14 +225,12 @@ export class McpClientManager {
       try {
         await client.disconnect();
       } catch (error) {
-        debugLogger.error(
-          `Error disconnecting client '${serverName}': ${getErrorMessage(error)}`,
-        );
+        debugLogger.error(`Error disconnecting client '${serverName}': ${getErrorMessage(error)}`);
       } finally {
         this.clients.delete(serverName);
         this.consecutiveFailures.delete(serverName);
         this.isReconnecting.delete(serverName);
-        this.eventEmitter?.emit('mcp-client-update', this.clients);
+        this.eventEmitter?.emit("mcp-client-update", this.clients);
       }
     }
   }
@@ -384,9 +361,7 @@ export class McpClientManager {
 
     try {
       // Wait before reconnecting
-      await new Promise((resolve) =>
-        setTimeout(resolve, this.healthConfig.reconnectDelayMs),
-      );
+      await new Promise((resolve) => setTimeout(resolve, this.healthConfig.reconnectDelayMs));
 
       await this.discoverMcpToolsForServer(serverName, this.cliConfig);
 
@@ -394,9 +369,7 @@ export class McpClientManager {
       this.consecutiveFailures.set(serverName, 0);
       debugLogger.info(`Successfully reconnected to server '${serverName}'`);
     } catch (error) {
-      debugLogger.error(
-        `Failed to reconnect to server '${serverName}': ${getErrorMessage(error)}`,
-      );
+      debugLogger.error(`Failed to reconnect to server '${serverName}': ${getErrorMessage(error)}`);
     } finally {
       this.isReconnecting.set(serverName, false);
     }
@@ -487,7 +460,7 @@ export class McpClientManager {
     // Remove tools for this server from registry
     this.toolRegistry.removeMcpToolsByServer(serverName);
 
-    this.eventEmitter?.emit('mcp-client-update', this.clients);
+    this.eventEmitter?.emit("mcp-client-update", this.clients);
   }
 
   async readResource(
@@ -506,9 +479,7 @@ export class McpClientManager {
         throw new Error(`MCP server '${serverName}' is not configured.`);
       }
 
-      const sdkCallback = isSdkMcpServerConfig(serverConfig)
-        ? this.sendSdkMcpMessage
-        : undefined;
+      const sdkCallback = isSdkMcpServerConfig(serverConfig) ? this.sendSdkMcpMessage : undefined;
 
       client = new McpClient(
         serverName,
@@ -520,7 +491,7 @@ export class McpClientManager {
         sdkCallback,
       );
       this.clients.set(serverName, client);
-      this.eventEmitter?.emit('mcp-client-update', this.clients);
+      this.eventEmitter?.emit("mcp-client-update", this.clients);
     }
 
     if (client.getStatus() !== MCPServerStatus.CONNECTED) {

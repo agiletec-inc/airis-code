@@ -4,35 +4,28 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { debugLogger, listExtensions } from '@airiscode/gemini-cli-core';
-import type { ExtensionUpdateInfo } from '../../config/extension.js';
-import { getErrorMessage } from '../../utils/errors.js';
+import process from "node:process";
+import { debugLogger, listExtensions } from "@airiscode/gemini-cli-core";
+import open from "open";
+import type { ExtensionUpdateInfo } from "../../config/extension.js";
+import { ExtensionManager } from "../../config/extension-manager.js";
+import { SettingScope } from "../../config/settings.js";
+import { getErrorMessage } from "../../utils/errors.js";
+import { theme } from "../semantic-colors.js";
 import {
   emptyIcon,
-  MessageType,
   type HistoryItemExtensionsList,
   type HistoryItemInfo,
-} from '../types.js';
-import {
-  type CommandContext,
-  type SlashCommand,
-  CommandKind,
-} from './types.js';
-import open from 'open';
-import process from 'node:process';
-import { ExtensionManager } from '../../config/extension-manager.js';
-import { SettingScope } from '../../config/settings.js';
-import { theme } from '../semantic-colors.js';
+  MessageType,
+} from "../types.js";
+import { type CommandContext, CommandKind, type SlashCommand } from "./types.js";
 
-function showMessageIfNoExtensions(
-  context: CommandContext,
-  extensions: unknown[],
-): boolean {
+function showMessageIfNoExtensions(context: CommandContext, extensions: unknown[]): boolean {
   if (extensions.length === 0) {
     context.ui.addItem(
       {
         type: MessageType.INFO,
-        text: 'No extensions installed. Run `/extensions explore` to check out the gallery.',
+        text: "No extensions installed. Run `/extensions explore` to check out the gallery.",
       },
       Date.now(),
     );
@@ -42,9 +35,7 @@ function showMessageIfNoExtensions(
 }
 
 async function listAction(context: CommandContext) {
-  const extensions = context.services.config
-    ? listExtensions(context.services.config)
-    : [];
+  const extensions = context.services.config ? listExtensions(context.services.config) : [];
 
   if (showMessageIfNoExtensions(context, extensions)) {
     return;
@@ -59,15 +50,15 @@ async function listAction(context: CommandContext) {
 }
 
 function updateAction(context: CommandContext, args: string): Promise<void> {
-  const updateArgs = args.split(' ').filter((value) => value.length > 0);
-  const all = updateArgs.length === 1 && updateArgs[0] === '--all';
+  const updateArgs = args.split(" ").filter((value) => value.length > 0);
+  const all = updateArgs.length === 1 && updateArgs[0] === "--all";
   const names = all ? null : updateArgs;
 
   if (!all && names?.length === 0) {
     context.ui.addItem(
       {
         type: MessageType.ERROR,
-        text: 'Usage: /extensions update <extension-names>|--all',
+        text: "Usage: /extensions update <extension-names>|--all",
       },
       Date.now(),
     );
@@ -79,9 +70,7 @@ function updateAction(context: CommandContext, args: string): Promise<void> {
     (resolve) => (resolveUpdateComplete = resolve),
   );
 
-  const extensions = context.services.config
-    ? listExtensions(context.services.config)
-    : [];
+  const extensions = context.services.config ? listExtensions(context.services.config) : [];
 
   if (showMessageIfNoExtensions(context, extensions)) {
     return Promise.resolve();
@@ -98,7 +87,7 @@ function updateAction(context: CommandContext, args: string): Promise<void> {
       context.ui.addItem(
         {
           type: MessageType.INFO,
-          text: 'No extensions to update.',
+          text: "No extensions to update.",
         },
         Date.now(),
       );
@@ -112,7 +101,7 @@ function updateAction(context: CommandContext, args: string): Promise<void> {
     context.ui.setPendingItem(historyItem);
 
     context.ui.dispatchExtensionStateUpdate({
-      type: 'SCHEDULE_UPDATE',
+      type: "SCHEDULE_UPDATE",
       payload: {
         all,
         names,
@@ -124,9 +113,7 @@ function updateAction(context: CommandContext, args: string): Promise<void> {
     if (names?.length) {
       const extensions = listExtensions(context.services.config!);
       for (const name of names) {
-        const extension = extensions.find(
-          (extension) => extension.name === name,
-        );
+        const extension = extensions.find((extension) => extension.name === name);
         if (!extension) {
           context.ui.addItem(
             {
@@ -152,10 +139,7 @@ function updateAction(context: CommandContext, args: string): Promise<void> {
   return updateComplete.then((_) => {});
 }
 
-async function restartAction(
-  context: CommandContext,
-  args: string,
-): Promise<void> {
+async function restartAction(context: CommandContext, args: string): Promise<void> {
   const extensionLoader = context.services.config?.getExtensionLoader();
   if (!extensionLoader) {
     context.ui.addItem(
@@ -173,14 +157,14 @@ async function restartAction(
     return;
   }
 
-  const restartArgs = args.split(' ').filter((value) => value.length > 0);
-  const all = restartArgs.length === 1 && restartArgs[0] === '--all';
+  const restartArgs = args.split(" ").filter((value) => value.length > 0);
+  const all = restartArgs.length === 1 && restartArgs[0] === "--all";
   const names = all ? null : restartArgs;
   if (!all && names?.length === 0) {
     context.ui.addItem(
       {
         type: MessageType.ERROR,
-        text: 'Usage: /extensions restart <extension-names>|--all',
+        text: "Usage: /extensions restart <extension-names>|--all",
       },
       Date.now(),
     );
@@ -191,21 +175,16 @@ async function restartAction(
     .getExtensions()
     .filter((extension) => extension.isActive);
   if (names) {
-    extensionsToRestart = extensionsToRestart.filter((extension) =>
-      names.includes(extension.name),
-    );
+    extensionsToRestart = extensionsToRestart.filter((extension) => names.includes(extension.name));
     if (names.length !== extensionsToRestart.length) {
       const notFound = names.filter(
-        (name) =>
-          !extensionsToRestart.some((extension) => extension.name === name),
+        (name) => !extensionsToRestart.some((extension) => extension.name === name),
       );
       if (notFound.length > 0) {
         context.ui.addItem(
           {
             type: MessageType.WARNING,
-            text: `Extension(s) not found or not active: ${notFound.join(
-              ', ',
-            )}`,
+            text: `Extension(s) not found or not active: ${notFound.join(", ")}`,
           },
           Date.now(),
         );
@@ -217,7 +196,7 @@ async function restartAction(
     return;
   }
 
-  const s = extensionsToRestart.length > 1 ? 's' : '';
+  const s = extensionsToRestart.length > 1 ? "s" : "";
 
   const restartingMessage = {
     type: MessageType.INFO,
@@ -231,7 +210,7 @@ async function restartAction(
       if (extension.isActive) {
         await extensionLoader.restartExtension(extension);
         context.ui.dispatchExtensionStateUpdate({
-          type: 'RESTARTED',
+          type: "RESTARTED",
           payload: {
             name: extension.name,
           },
@@ -241,7 +220,7 @@ async function restartAction(
   );
 
   const failures = results.filter(
-    (result): result is PromiseRejectedResult => result.status === 'rejected',
+    (result): result is PromiseRejectedResult => result.status === "rejected",
   );
 
   if (failures.length > 0) {
@@ -250,7 +229,7 @@ async function restartAction(
         const extensionName = extensionsToRestart[index].name;
         return `${extensionName}: ${getErrorMessage(failure.reason)}`;
       })
-      .join('\n  ');
+      .join("\n  ");
     context.ui.addItem(
       {
         type: MessageType.ERROR,
@@ -270,10 +249,10 @@ async function restartAction(
 }
 
 async function exploreAction(context: CommandContext) {
-  const extensionsUrl = 'https://geminicli.com/extensions/';
+  const extensionsUrl = "https://geminicli.com/extensions/";
 
   // Only check for NODE_ENV for explicit test mode, not for unit test framework
-  if (process.env['NODE_ENV'] === 'test') {
+  if (process.env["NODE_ENV"] === "test") {
     context.ui.addItem(
       {
         type: MessageType.INFO,
@@ -281,10 +260,7 @@ async function exploreAction(context: CommandContext) {
       },
       Date.now(),
     );
-  } else if (
-    process.env['SANDBOX'] &&
-    process.env['SANDBOX'] !== 'sandbox-exec'
-  ) {
+  } else if (process.env["SANDBOX"] && process.env["SANDBOX"] !== "sandbox-exec") {
     context.ui.addItem(
       {
         type: MessageType.INFO,
@@ -324,18 +300,18 @@ function getEnableDisableContext(
 } | null {
   const extensionLoader = context.services.config?.getExtensionLoader();
   if (!(extensionLoader instanceof ExtensionManager)) {
-    debugLogger.error(
-      `Cannot ${context.invocation?.name} extensions in this environment`,
-    );
+    debugLogger.error(`Cannot ${context.invocation?.name} extensions in this environment`);
     return null;
   }
-  const parts = argumentsString.split(' ');
+  const parts = argumentsString.split(" ");
   const name = parts[0];
   if (
-    name === '' ||
+    name === "" ||
     !(
-      (parts.length === 2 && parts[1].startsWith('--scope=')) || // --scope=<scope>
-      (parts.length === 3 && parts[1] === '--scope') // --scope <scope>
+      (
+        (parts.length === 2 && parts[1].startsWith("--scope=")) || // --scope=<scope>
+        (parts.length === 3 && parts[1] === "--scope")
+      ) // --scope <scope>
     )
   ) {
     context.ui.addItem(
@@ -350,17 +326,17 @@ function getEnableDisableContext(
   let scope: SettingScope;
   // Transform `--scope=<scope>` to `--scope <scope>`.
   if (parts.length === 2) {
-    parts.push(...parts[1].split('='));
+    parts.push(...parts[1].split("="));
     parts.splice(1, 1);
   }
   switch (parts[2].toLowerCase()) {
-    case 'workspace':
+    case "workspace":
       scope = SettingScope.Workspace;
       break;
-    case 'user':
+    case "user":
       scope = SettingScope.User;
       break;
-    case 'session':
+    case "session":
       scope = SettingScope.Session;
       break;
     default:
@@ -375,12 +351,12 @@ function getEnableDisableContext(
       return null;
   }
   let names: string[] = [];
-  if (name === '--all') {
+  if (name === "--all") {
     let extensions = extensionLoader.getExtensions();
-    if (context.invocation?.name === 'enable') {
+    if (context.invocation?.name === "enable") {
       extensions = extensions.filter((ext) => !ext.isActive);
     }
-    if (context.invocation?.name === 'disable') {
+    if (context.invocation?.name === "disable") {
       extensions = extensions.filter((ext) => ext.isActive);
     }
     names = extensions.map((ext) => ext.name);
@@ -432,37 +408,26 @@ async function enableAction(context: CommandContext, args: string) {
 /**
  * Exported for testing.
  */
-export function completeExtensions(
-  context: CommandContext,
-  partialArg: string,
-) {
+export function completeExtensions(context: CommandContext, partialArg: string) {
   let extensions = context.services.config?.getExtensions() ?? [];
 
-  if (context.invocation?.name === 'enable') {
+  if (context.invocation?.name === "enable") {
     extensions = extensions.filter((ext) => !ext.isActive);
   }
-  if (
-    context.invocation?.name === 'disable' ||
-    context.invocation?.name === 'restart'
-  ) {
+  if (context.invocation?.name === "disable" || context.invocation?.name === "restart") {
     extensions = extensions.filter((ext) => ext.isActive);
   }
   const extensionNames = extensions.map((ext) => ext.name);
-  const suggestions = extensionNames.filter((name) =>
-    name.startsWith(partialArg),
-  );
+  const suggestions = extensionNames.filter((name) => name.startsWith(partialArg));
 
-  if ('--all'.startsWith(partialArg) || 'all'.startsWith(partialArg)) {
-    suggestions.unshift('--all');
+  if ("--all".startsWith(partialArg) || "all".startsWith(partialArg)) {
+    suggestions.unshift("--all");
   }
 
   return suggestions;
 }
 
-export function completeExtensionsAndScopes(
-  context: CommandContext,
-  partialArg: string,
-) {
+export function completeExtensionsAndScopes(context: CommandContext, partialArg: string) {
   return completeExtensions(context, partialArg).flatMap((s) => [
     `${s} --scope user`,
     `${s} --scope workspace`,
@@ -471,16 +436,16 @@ export function completeExtensionsAndScopes(
 }
 
 const listExtensionsCommand: SlashCommand = {
-  name: 'list',
-  description: 'List active extensions',
+  name: "list",
+  description: "List active extensions",
   kind: CommandKind.BUILT_IN,
   autoExecute: true,
   action: listAction,
 };
 
 const updateExtensionsCommand: SlashCommand = {
-  name: 'update',
-  description: 'Update extensions. Usage: update <extension-names>|--all',
+  name: "update",
+  description: "Update extensions. Usage: update <extension-names>|--all",
   kind: CommandKind.BUILT_IN,
   autoExecute: false,
   action: updateAction,
@@ -488,8 +453,8 @@ const updateExtensionsCommand: SlashCommand = {
 };
 
 const disableCommand: SlashCommand = {
-  name: 'disable',
-  description: 'Disable an extension',
+  name: "disable",
+  description: "Disable an extension",
   kind: CommandKind.BUILT_IN,
   autoExecute: false,
   action: disableAction,
@@ -497,8 +462,8 @@ const disableCommand: SlashCommand = {
 };
 
 const enableCommand: SlashCommand = {
-  name: 'enable',
-  description: 'Enable an extension',
+  name: "enable",
+  description: "Enable an extension",
   kind: CommandKind.BUILT_IN,
   autoExecute: false,
   action: enableAction,
@@ -506,31 +471,27 @@ const enableCommand: SlashCommand = {
 };
 
 const exploreExtensionsCommand: SlashCommand = {
-  name: 'explore',
-  description: 'Open extensions page in your browser',
+  name: "explore",
+  description: "Open extensions page in your browser",
   kind: CommandKind.BUILT_IN,
   autoExecute: true,
   action: exploreAction,
 };
 
 const restartCommand: SlashCommand = {
-  name: 'restart',
-  description: 'Restart all extensions',
+  name: "restart",
+  description: "Restart all extensions",
   kind: CommandKind.BUILT_IN,
   autoExecute: false,
   action: restartAction,
   completion: completeExtensions,
 };
 
-export function extensionsCommand(
-  enableExtensionReloading?: boolean,
-): SlashCommand {
-  const conditionalCommands = enableExtensionReloading
-    ? [disableCommand, enableCommand]
-    : [];
+export function extensionsCommand(enableExtensionReloading?: boolean): SlashCommand {
+  const conditionalCommands = enableExtensionReloading ? [disableCommand, enableCommand] : [];
   return {
-    name: 'extensions',
-    description: 'Manage extensions',
+    name: "extensions",
+    description: "Manage extensions",
     kind: CommandKind.BUILT_IN,
     autoExecute: false,
     subCommands: [

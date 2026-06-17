@@ -4,14 +4,11 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import type {
-  ContentGenerator,
-  ContentGeneratorConfig,
-} from '../contentGenerator.js';
-import type { Config } from '../../config/config.js';
-import { AnthropicContentGenerator } from './anthropicContentGenerator.js';
+import type { Config } from "../../config/config.js";
+import type { ContentGenerator, ContentGeneratorConfig } from "../contentGenerator.js";
+import { AnthropicContentGenerator } from "./anthropicContentGenerator.js";
 
-export { AnthropicContentGenerator } from './anthropicContentGenerator.js';
+export { AnthropicContentGenerator } from "./anthropicContentGenerator.js";
 
 export function createAnthropicContentGenerator(
   contentGeneratorConfig: ContentGeneratorConfig,

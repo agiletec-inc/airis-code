@@ -6,7 +6,7 @@ type TokenCount = number;
  * - 'input': Maximum input context window size
  * - 'output': Maximum output tokens that can be generated in a single response
  */
-export type TokenLimitType = 'input' | 'output';
+export type TokenLimitType = "input" | "output";
 
 export const DEFAULT_TOKEN_LIMIT: TokenCount = 131_072; // 128K (power-of-two)
 export const DEFAULT_OUTPUT_TOKEN_LIMIT: TokenCount = 32_000; // 32K tokens
@@ -25,44 +25,41 @@ export const ESCALATED_MAX_TOKENS: TokenCount = 64_000;
  *   used as stated in docs.
  */
 const LIMITS = {
-  '32k': 32_768,
-  '64k': 65_536,
-  '128k': 131_072,
-  '192k': 196_608, // MiniMax-M2.5 context window
-  '200k': 200_000, // vendor-declared decimal, used by OpenAI, Anthropic, etc.
-  '256k': 262_144,
-  '272k': 272_000, // vendor-declared decimal, GPT-5.x input (400K total - 128K output)
-  '400k': 400_000, // vendor-declared decimal, used by OpenAI GPT-5.x
-  '512k': 524_288,
-  '1m': 1_000_000,
+  "32k": 32_768,
+  "64k": 65_536,
+  "128k": 131_072,
+  "192k": 196_608, // MiniMax-M2.5 context window
+  "200k": 200_000, // vendor-declared decimal, used by OpenAI, Anthropic, etc.
+  "256k": 262_144,
+  "272k": 272_000, // vendor-declared decimal, GPT-5.x input (400K total - 128K output)
+  "400k": 400_000, // vendor-declared decimal, used by OpenAI GPT-5.x
+  "512k": 524_288,
+  "1m": 1_000_000,
   // Output token limits (typically much smaller than input limits)
-  '4k': 4_096,
-  '8k': 8_192,
-  '16k': 16_384,
+  "4k": 4_096,
+  "8k": 8_192,
+  "16k": 16_384,
 } as const;
 
 /** Robust normalizer: strips provider prefixes, pipes/colons, date/version suffixes, etc. */
 export function normalize(model: string): string {
-  let s = (model ?? '').toLowerCase().trim();
+  let s = (model ?? "").toLowerCase().trim();
 
   // keep final path segment (strip provider prefixes), handle pipe/colon
-  s = s.replace(/^.*\//, '');
-  s = s.split('|').pop() ?? s;
-  s = s.split(':').pop() ?? s;
+  s = s.replace(/^.*\//, "");
+  s = s.split("|").pop() ?? s;
+  s = s.split(":").pop() ?? s;
 
   // collapse whitespace to single hyphen
-  s = s.replace(/\s+/g, '-');
+  s = s.replace(/\s+/g, "-");
 
   // remove trailing build / date / revision suffixes:
   // - dates (e.g., -20250219), -v1, version numbers, 'latest', 'preview' etc.
-  s = s.replace(/-preview/g, '');
+  s = s.replace(/-preview/g, "");
   // Special handling for model names that include date/version as part of the model identifier
   // - Qwen models: qwen-plus-latest, qwen-flash-latest, qwen-vl-max-latest
   // - Kimi models: kimi-k2-0905, kimi-k2-0711, etc. (keep date for version distinction)
-  if (
-    !s.match(/^qwen-(?:plus|flash|vl-max)-latest$/) &&
-    !s.match(/^kimi-k2-\d{4}$/)
-  ) {
+  if (!s.match(/^qwen-(?:plus|flash|vl-max)-latest$/) && !s.match(/^kimi-k2-\d{4}$/)) {
     // Regex breakdown:
     // -(?:...)$ - Non-capturing group for suffixes at the end of the string
     // The following patterns are matched within the group:
@@ -73,14 +70,11 @@ export function normalize(model: string): string {
     //     like -1.1, -2.0.1 but only when they are preceded by another dash, Example: model-test-1.1 → model-test;
     //     Note: this does NOT match 4.1 in gpt-4.1 because there's no dash before -4.1 in that context.
     //   latest|exp - Match the literal string "latest" or "exp"
-    s = s.replace(
-      /-(?:\d{4,}|\d+x\d+b|v\d+(?:\.\d+)*|(?<=-[^-]+-)\d+(?:\.\d+)+|latest|exp)$/g,
-      '',
-    );
+    s = s.replace(/-(?:\d{4,}|\d+x\d+b|v\d+(?:\.\d+)*|(?<=-[^-]+-)\d+(?:\.\d+)+|latest|exp)$/g, "");
   }
 
   // remove quantization / numeric / precision suffixes common in local/community models
-  s = s.replace(/-(?:\d?bit|int[48]|bf16|fp16|q[45]|quantized)$/g, '');
+  s = s.replace(/-(?:\d?bit|int[48]|bf16|fp16|q[45]|quantized)$/g, "");
 
   return s;
 }
@@ -90,42 +84,42 @@ const PATTERNS: Array<[RegExp, TokenCount]> = [
   // -------------------
   // Google Gemini
   // -------------------
-  [/^gemini-3/, LIMITS['1m']], // Gemini 3.x (Pro, Flash, 3.1, etc.): 1M
-  [/^gemini-/, LIMITS['1m']], // Gemini fallback (1.5, 2.x): 1M
+  [/^gemini-3/, LIMITS["1m"]], // Gemini 3.x (Pro, Flash, 3.1, etc.): 1M
+  [/^gemini-/, LIMITS["1m"]], // Gemini fallback (1.5, 2.x): 1M
 
   // -------------------
   // OpenAI
   // -------------------
-  [/^gpt-5/, LIMITS['272k']], // GPT-5.x: 272K input (400K total - 128K output)
-  [/^gpt-/, LIMITS['128k']], // GPT fallback (4o, 4.1, etc.): 128K
-  [/^o\d/, LIMITS['200k']], // o-series (o3, o4-mini, etc.): 200K
+  [/^gpt-5/, LIMITS["272k"]], // GPT-5.x: 272K input (400K total - 128K output)
+  [/^gpt-/, LIMITS["128k"]], // GPT fallback (4o, 4.1, etc.): 128K
+  [/^o\d/, LIMITS["200k"]], // o-series (o3, o4-mini, etc.): 200K
 
   // -------------------
   // Anthropic Claude
   // -------------------
-  [/^claude-/, LIMITS['200k']], // All Claude models: 200K
+  [/^claude-/, LIMITS["200k"]], // All Claude models: 200K
 
   // -------------------
   // Alibaba / Qwen
   // -------------------
   // Commercial API models (1,000,000 context)
-  [/^qwen3-coder-plus/, LIMITS['1m']],
-  [/^qwen3-coder-flash/, LIMITS['1m']],
-  [/^qwen3\.\d/, LIMITS['1m']],
-  [/^qwen-plus-latest$/, LIMITS['1m']],
-  [/^qwen-flash-latest$/, LIMITS['1m']],
-  [/^coder-model$/, LIMITS['1m']],
+  [/^qwen3-coder-plus/, LIMITS["1m"]],
+  [/^qwen3-coder-flash/, LIMITS["1m"]],
+  [/^qwen3\.\d/, LIMITS["1m"]],
+  [/^qwen-plus-latest$/, LIMITS["1m"]],
+  [/^qwen-flash-latest$/, LIMITS["1m"]],
+  [/^coder-model$/, LIMITS["1m"]],
   // Commercial API models (256K context)
-  [/^qwen3-max/, LIMITS['256k']],
+  [/^qwen3-max/, LIMITS["256k"]],
   // Open-source Qwen3 variants: 256K native
-  [/^qwen3-coder-/, LIMITS['256k']],
+  [/^qwen3-coder-/, LIMITS["256k"]],
   // Qwen fallback (VL, turbo, plus, 2.5, etc.): 128K
-  [/^qwen/, LIMITS['256k']],
+  [/^qwen/, LIMITS["256k"]],
 
   // -------------------
   // DeepSeek
   // -------------------
-  [/^deepseek/, LIMITS['128k']],
+  [/^deepseek/, LIMITS["128k"]],
 
   // -------------------
   // Zhipu GLM
@@ -136,18 +130,18 @@ const PATTERNS: Array<[RegExp, TokenCount]> = [
   // -------------------
   // MiniMax
   // -------------------
-  [/^minimax-m2\.5/i, LIMITS['192k']], // MiniMax-M2.5: 196,608
-  [/^minimax-/i, LIMITS['200k']], // MiniMax fallback: 200K
+  [/^minimax-m2\.5/i, LIMITS["192k"]], // MiniMax-M2.5: 196,608
+  [/^minimax-/i, LIMITS["200k"]], // MiniMax fallback: 200K
 
   // -------------------
   // Moonshot / Kimi
   // -------------------
-  [/^kimi-/, LIMITS['256k']], // Kimi fallback: 256K
+  [/^kimi-/, LIMITS["256k"]], // Kimi fallback: 256K
 
   // -------------------
   // ByteDance Seed-OSS (512K)
   // -------------------
-  [/^seed-oss/, LIMITS['512k']],
+  [/^seed-oss/, LIMITS["512k"]],
 ];
 
 /**
@@ -157,38 +151,38 @@ const PATTERNS: Array<[RegExp, TokenCount]> = [
  */
 const OUTPUT_PATTERNS: Array<[RegExp, TokenCount]> = [
   // Google Gemini
-  [/^gemini-3/, LIMITS['64k']], // Gemini 3.x: 64K
-  [/^gemini-/, LIMITS['8k']], // Gemini fallback: 8K
+  [/^gemini-3/, LIMITS["64k"]], // Gemini 3.x: 64K
+  [/^gemini-/, LIMITS["8k"]], // Gemini fallback: 8K
 
   // OpenAI
-  [/^gpt-5/, LIMITS['128k']], // GPT-5.x: 128K
-  [/^gpt-/, LIMITS['16k']], // GPT fallback: 16K
-  [/^o\d/, LIMITS['128k']], // o-series: 128K
+  [/^gpt-5/, LIMITS["128k"]], // GPT-5.x: 128K
+  [/^gpt-/, LIMITS["16k"]], // GPT fallback: 16K
+  [/^o\d/, LIMITS["128k"]], // o-series: 128K
 
   // Anthropic Claude
-  [/^claude-opus-4-6/, LIMITS['128k']], // Opus 4.6: 128K
-  [/^claude-sonnet-4-6/, LIMITS['64k']], // Sonnet 4.6: 64K
-  [/^claude-/, LIMITS['64k']], // Claude fallback: 64K
+  [/^claude-opus-4-6/, LIMITS["128k"]], // Opus 4.6: 128K
+  [/^claude-sonnet-4-6/, LIMITS["64k"]], // Sonnet 4.6: 64K
+  [/^claude-/, LIMITS["64k"]], // Claude fallback: 64K
 
   // Alibaba / Qwen
-  [/^qwen3\.\d/, LIMITS['64k']],
-  [/^coder-model$/, LIMITS['64k']],
-  [/^qwen/, LIMITS['32k']], // Qwen fallback (VL, turbo, plus, etc.): 8K
+  [/^qwen3\.\d/, LIMITS["64k"]],
+  [/^coder-model$/, LIMITS["64k"]],
+  [/^qwen/, LIMITS["32k"]], // Qwen fallback (VL, turbo, plus, etc.): 8K
 
   // DeepSeek
-  [/^deepseek-reasoner/, LIMITS['64k']],
-  [/^deepseek-r1/, LIMITS['64k']],
-  [/^deepseek-chat/, LIMITS['8k']],
+  [/^deepseek-reasoner/, LIMITS["64k"]],
+  [/^deepseek-r1/, LIMITS["64k"]],
+  [/^deepseek-chat/, LIMITS["8k"]],
 
   // Zhipu GLM
-  [/^glm-5/, LIMITS['16k']],
-  [/^glm-4\.7/, LIMITS['16k']],
+  [/^glm-5/, LIMITS["16k"]],
+  [/^glm-4\.7/, LIMITS["16k"]],
 
   // MiniMax
-  [/^minimax-m2\.5/i, LIMITS['64k']],
+  [/^minimax-m2\.5/i, LIMITS["64k"]],
 
   // Kimi
-  [/^kimi-k2\.5/, LIMITS['32k']],
+  [/^kimi-k2\.5/, LIMITS["32k"]],
 ];
 
 /**
@@ -219,14 +213,11 @@ export function hasExplicitOutputLimit(model: Model): boolean {
  * @param type - The type of token limit ('input' for context window, 'output' for generation)
  * @returns The maximum number of tokens allowed for this model and type
  */
-export function tokenLimit(
-  model: Model,
-  type: TokenLimitType = 'input',
-): TokenCount {
+export function tokenLimit(model: Model, type: TokenLimitType = "input"): TokenCount {
   const norm = normalize(model);
 
   // Choose the appropriate patterns based on token type
-  const patterns = type === 'output' ? OUTPUT_PATTERNS : PATTERNS;
+  const patterns = type === "output" ? OUTPUT_PATTERNS : PATTERNS;
 
   for (const [regex, limit] of patterns) {
     if (regex.test(norm)) {
@@ -235,5 +226,5 @@ export function tokenLimit(
   }
 
   // Return appropriate default based on token type
-  return type === 'output' ? DEFAULT_OUTPUT_TOKEN_LIMIT : DEFAULT_TOKEN_LIMIT;
+  return type === "output" ? DEFAULT_OUTPUT_TOKEN_LIMIT : DEFAULT_TOKEN_LIMIT;
 }

@@ -4,11 +4,11 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { useCallback } from 'react';
-import type React from 'react';
-import { useKeypress } from '../hooks/useKeypress.js';
-import { ShellExecutionService } from '@airiscode/gemini-cli-core';
-import { keyToAnsi, type Key } from '../hooks/keyToAnsi.js';
+import { ShellExecutionService } from "@airiscode/gemini-cli-core";
+import type React from "react";
+import { useCallback } from "react";
+import { type Key, keyToAnsi } from "../hooks/keyToAnsi.js";
+import { useKeypress } from "../hooks/useKeypress.js";
 
 export interface ShellInputPromptProps {
   activeShellPtyId: number | null;
@@ -33,12 +33,12 @@ export const ShellInputPrompt: React.FC<ShellInputPromptProps> = ({
       if (!focus || !activeShellPtyId) {
         return;
       }
-      if (key.ctrl && key.shift && key.name === 'up') {
+      if (key.ctrl && key.shift && key.name === "up") {
         ShellExecutionService.scrollPty(activeShellPtyId, -1);
         return;
       }
 
-      if (key.ctrl && key.shift && key.name === 'down') {
+      if (key.ctrl && key.shift && key.name === "down") {
         ShellExecutionService.scrollPty(activeShellPtyId, 1);
         return;
       }

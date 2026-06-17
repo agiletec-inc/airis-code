@@ -4,25 +4,22 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import fs from 'node:fs';
-import path from 'node:path';
-import { glob, escape } from 'glob';
-import type { ToolInvocation, ToolResult } from './tools.js';
-import { BaseDeclarativeTool, BaseToolInvocation, Kind } from './tools.js';
-import { ToolNames, ToolDisplayNames } from './tool-names.js';
-import { resolveAndValidatePath } from '../utils/paths.js';
-import { type Config } from '../config/config.js';
-import type { PermissionDecision } from '../permissions/types.js';
-import {
-  DEFAULT_FILE_FILTERING_OPTIONS,
-  type FileFilteringOptions,
-} from '../config/constants.js';
-import { ToolErrorType } from './tool-error.js';
-import { getErrorMessage } from '../utils/errors.js';
-import type { FileDiscoveryService } from '../services/fileDiscoveryService.js';
-import { createDebugLogger } from '../utils/debugLogger.js';
+import fs from "node:fs";
+import path from "node:path";
+import { escape as escapeGlob, glob } from "glob";
+import { type Config } from "../config/config.js";
+import { DEFAULT_FILE_FILTERING_OPTIONS, type FileFilteringOptions } from "../config/constants.js";
+import type { PermissionDecision } from "../permissions/types.js";
+import type { FileDiscoveryService } from "../services/fileDiscoveryService.js";
+import { createDebugLogger } from "../utils/debugLogger.js";
+import { getErrorMessage } from "../utils/errors.js";
+import { resolveAndValidatePath } from "../utils/paths.js";
+import { ToolErrorType } from "./tool-error.js";
+import { ToolDisplayNames, ToolNames } from "./tool-names.js";
+import type { ToolInvocation, ToolResult } from "./tools.js";
+import { BaseDeclarativeTool, BaseToolInvocation, Kind } from "./tools.js";
 
-const debugLogger = createDebugLogger('GLOB');
+const debugLogger = createDebugLogger("GLOB");
 
 const MAX_FILE_COUNT = 100;
 
@@ -77,10 +74,7 @@ export interface GlobToolParams {
   path?: string;
 }
 
-class GlobToolInvocation extends BaseToolInvocation<
-  GlobToolParams,
-  ToolResult
-> {
+class GlobToolInvocation extends BaseToolInvocation<GlobToolParams, ToolResult> {
   private fileService: FileDiscoveryService;
 
   constructor(
@@ -106,17 +100,14 @@ class GlobToolInvocation extends BaseToolInvocation<
    */
   override async getDefaultPermission(): Promise<PermissionDecision> {
     if (!this.params.path) {
-      return 'allow'; // Default workspace directory
+      return "allow"; // Default workspace directory
     }
     const workspaceContext = this.config.getWorkspaceContext();
-    const resolvedPath = path.resolve(
-      this.config.getTargetDir(),
-      this.params.path,
-    );
+    const resolvedPath = path.resolve(this.config.getTargetDir(), this.params.path);
     if (workspaceContext.isPathWithinWorkspace(resolvedPath)) {
-      return 'allow';
+      return "allow";
     }
-    return 'ask';
+    return "ask";
   }
 
   /**
@@ -130,7 +121,7 @@ class GlobToolInvocation extends BaseToolInvocation<
     let effectivePattern = pattern;
     const fullPath = path.join(searchDir, effectivePattern);
     if (fs.existsSync(fullPath)) {
-      effectivePattern = escape(effectivePattern);
+      effectivePattern = escapeGlob(effectivePattern);
     }
 
     const entries = (await glob(effectivePattern, {
@@ -149,9 +140,7 @@ class GlobToolInvocation extends BaseToolInvocation<
     // Using searchDir-relative paths would cause ignore rules to be
     // evaluated against incorrect paths when searchDir != projectRoot.
     const projectRoot = this.config.getTargetDir();
-    const relativePaths = entries.map((p) =>
-      path.relative(projectRoot, p.fullpath()),
-    );
+    const relativePaths = entries.map((p) => path.relative(projectRoot, p.fullpath()));
 
     const { filteredPaths } = this.fileService.filterFilesWithReport(
       relativePaths,
@@ -159,14 +148,10 @@ class GlobToolInvocation extends BaseToolInvocation<
     );
 
     const normalizePathForComparison = (p: string) =>
-      process.platform === 'win32' || process.platform === 'darwin'
-        ? p.toLowerCase()
-        : p;
+      process.platform === "win32" || process.platform === "darwin" ? p.toLowerCase() : p;
 
     const filteredAbsolutePaths = new Set(
-      filteredPaths.map((p) =>
-        normalizePathForComparison(path.resolve(projectRoot, p)),
-      ),
+      filteredPaths.map((p) => normalizePathForComparison(path.resolve(projectRoot, p))),
     );
 
     return entries.filter((entry) =>
@@ -182,18 +167,14 @@ class GlobToolInvocation extends BaseToolInvocation<
 
       if (this.params.path) {
         // User specified a path — search only that directory
-        const searchDirAbs = resolveAndValidatePath(
-          this.config,
-          this.params.path,
-          { allowExternalPaths: true },
-        );
+        const searchDirAbs = resolveAndValidatePath(this.config, this.params.path, {
+          allowExternalPaths: true,
+        });
         searchDirs.push(searchDirAbs);
         searchLocationDescription = `within ${searchDirAbs}`;
       } else {
         // No path specified — search all workspace directories
-        const workspaceDirs = this.config
-          .getWorkspaceContext()
-          .getDirectories();
+        const workspaceDirs = this.config.getWorkspaceContext().getDirectories();
         searchDirs.push(...workspaceDirs);
         searchLocationDescription =
           workspaceDirs.length > 1
@@ -232,28 +213,17 @@ class GlobToolInvocation extends BaseToolInvocation<
       const nowTimestamp = new Date().getTime();
 
       // Sort the filtered entries using the new helper function
-      const sortedEntries = sortFileEntries(
-        filteredEntries,
-        nowTimestamp,
-        oneDayInMs,
-      );
+      const sortedEntries = sortFileEntries(filteredEntries, nowTimestamp, oneDayInMs);
 
       const totalFileCount = sortedEntries.length;
-      const fileLimit = Math.min(
-        MAX_FILE_COUNT,
-        this.config.getTruncateToolOutputLines(),
-      );
+      const fileLimit = Math.min(MAX_FILE_COUNT, this.config.getTruncateToolOutputLines());
       const truncated = totalFileCount > fileLimit;
 
       // Limit to fileLimit if needed
-      const entriesToShow = truncated
-        ? sortedEntries.slice(0, fileLimit)
-        : sortedEntries;
+      const entriesToShow = truncated ? sortedEntries.slice(0, fileLimit) : sortedEntries;
 
-      const sortedAbsolutePaths = entriesToShow.map((entry) =>
-        entry.fullpath(),
-      );
-      const fileListDescription = sortedAbsolutePaths.join('\n');
+      const sortedAbsolutePaths = entriesToShow.map((entry) => entry.fullpath());
+      const fileListDescription = sortedAbsolutePaths.join("\n");
 
       let resultMessage = `Found ${totalFileCount} file(s) matching "${this.params.pattern}" ${searchLocationDescription}`;
       resultMessage += `, sorted by modification time (newest first):\n---\n${fileListDescription}`;
@@ -261,22 +231,21 @@ class GlobToolInvocation extends BaseToolInvocation<
       // Add truncation notice if needed
       if (truncated) {
         const omittedFiles = totalFileCount - fileLimit;
-        const fileTerm = omittedFiles === 1 ? 'file' : 'files';
+        const fileTerm = omittedFiles === 1 ? "file" : "files";
         resultMessage += `\n---\n[${omittedFiles} ${fileTerm} truncated] ...`;
       }
 
       return {
         llmContent: resultMessage,
-        returnDisplay: `Found ${totalFileCount} matching file(s)${truncated ? ' (truncated)' : ''}`,
+        returnDisplay: `Found ${totalFileCount} matching file(s)${truncated ? " (truncated)" : ""}`,
       };
     } catch (error) {
-      const errorMessage =
-        error instanceof Error ? error.message : String(error);
+      const errorMessage = error instanceof Error ? error.message : String(error);
       debugLogger.error(`GlobLogic execute Error: ${errorMessage}`, error);
       const rawError = `Error during glob search operation: ${errorMessage}`;
       return {
         llmContent: rawError,
-        returnDisplay: `Error: ${errorMessage || 'An unexpected error occurred.'}`,
+        returnDisplay: `Error: ${errorMessage || "An unexpected error occurred."}`,
         error: {
           message: rawError,
           type: ToolErrorType.GLOB_EXECUTION_ERROR,
@@ -289,11 +258,9 @@ class GlobToolInvocation extends BaseToolInvocation<
     const options = this.config.getFileFilteringOptions?.();
     return {
       respectGitIgnore:
-        options?.respectGitIgnore ??
-        DEFAULT_FILE_FILTERING_OPTIONS.respectGitIgnore,
+        options?.respectGitIgnore ?? DEFAULT_FILE_FILTERING_OPTIONS.respectGitIgnore,
       respectAiriscodeIgnore:
-        options?.respectAiriscodeIgnore ??
-        DEFAULT_FILE_FILTERING_OPTIONS.respectAiriscodeIgnore,
+        options?.respectAiriscodeIgnore ?? DEFAULT_FILE_FILTERING_OPTIONS.respectAiriscodeIgnore,
     };
   }
 }
@@ -313,17 +280,17 @@ export class GlobTool extends BaseDeclarativeTool<GlobToolParams, ToolResult> {
       {
         properties: {
           pattern: {
-            description: 'The glob pattern to match files against',
-            type: 'string',
+            description: "The glob pattern to match files against",
+            type: "string",
           },
           path: {
             description:
               'The directory to search in. If not specified, the current working directory will be used. IMPORTANT: Omit this field to use the default directory. DO NOT enter "undefined" or "null" - simply omit it for the default behavior. Must be a valid directory path if provided.',
-            type: 'string',
+            type: "string",
           },
         },
-        required: ['pattern'],
-        type: 'object',
+        required: ["pattern"],
+        type: "object",
       },
     );
   }
@@ -331,14 +298,8 @@ export class GlobTool extends BaseDeclarativeTool<GlobToolParams, ToolResult> {
   /**
    * Validates the parameters for the tool.
    */
-  protected override validateToolParamValues(
-    params: GlobToolParams,
-  ): string | null {
-    if (
-      !params.pattern ||
-      typeof params.pattern !== 'string' ||
-      params.pattern.trim() === ''
-    ) {
+  protected override validateToolParamValues(params: GlobToolParams): string | null {
+    if (!params.pattern || typeof params.pattern !== "string" || params.pattern.trim() === "") {
       return "The 'pattern' parameter cannot be empty.";
     }
 
@@ -356,9 +317,7 @@ export class GlobTool extends BaseDeclarativeTool<GlobToolParams, ToolResult> {
     return null;
   }
 
-  protected createInvocation(
-    params: GlobToolParams,
-  ): ToolInvocation<GlobToolParams, ToolResult> {
+  protected createInvocation(params: GlobToolParams): ToolInvocation<GlobToolParams, ToolResult> {
     return new GlobToolInvocation(this.config, params);
   }
 }

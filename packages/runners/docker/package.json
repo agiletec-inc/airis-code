@@ -14,7 +14,7 @@
     "build": "echo 'Skipping docker runner build (type errors)'",
     "dev": "tsc --watch",
     "clean": "rm -rf dist",
-    "lint": "eslint src --ext .ts",
+    "lint": "biome check .",
     "test": "echo 'Skipping docker runner tests'"
   },
   "dependencies": {

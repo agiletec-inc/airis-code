@@ -4,21 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import type {
-  CountTokensParameters,
-  CountTokensResponse,
-  EmbedContentParameters,
-  EmbedContentResponse,
-  GenerateContentParameters,
-  GenerateContentResponse,
-} from '../types/llm.js';
-import type { Config } from '../config/config.js';
-import { LoggingContentGenerator } from './loggingContentGenerator/index.js';
-import type {
-  ConfigSource,
-  ConfigSourceKind,
-  ConfigSources,
-} from '../utils/configResolver.js';
+import type { Config } from "../config/config.js";
 import {
   getDefaultApiKeyEnvVar,
   getDefaultModelEnvVar,
@@ -28,8 +14,18 @@ import {
   MissingModelError,
   StrictMissingCredentialsError,
   StrictMissingModelIdError,
-} from '../models/modelConfigErrors.js';
-import { PROVIDER_SOURCED_FIELDS } from '../models/modelsConfig.js';
+} from "../models/modelConfigErrors.js";
+import { PROVIDER_SOURCED_FIELDS } from "../models/modelsConfig.js";
+import type {
+  CountTokensParameters,
+  CountTokensResponse,
+  EmbedContentParameters,
+  EmbedContentResponse,
+  GenerateContentParameters,
+  GenerateContentResponse,
+} from "../types/llm.js";
+import type { ConfigSource, ConfigSourceKind, ConfigSources } from "../utils/configResolver.js";
+import { LoggingContentGenerator } from "./loggingContentGenerator/index.js";
 
 /**
  * Interface abstracting the core functionalities for generating content and counting tokens.
@@ -53,9 +49,9 @@ export interface ContentGenerator {
 }
 
 export enum AuthType {
-  USE_OPENAI = 'openai',
-  USE_OLLAMA = 'ollama',
-  USE_ANTHROPIC = 'anthropic',
+  USE_OPENAI = "openai",
+  USE_OLLAMA = "ollama",
+  USE_ANTHROPIC = "anthropic",
 }
 
 /**
@@ -94,13 +90,13 @@ export type ContentGeneratorConfig = {
   reasoning?:
     | false
     | {
-        effort?: 'low' | 'medium' | 'high';
+        effort?: "low" | "medium" | "high";
         budget_tokens?: number;
       };
   proxy?: string | undefined;
   userAgent?: string;
   // Schema compliance mode for tool definitions
-  schemaCompliance?: 'auto' | 'openapi_30';
+  schemaCompliance?: "auto" | "openapi_30";
   // Context window size override. If set to a positive number, it will override
   // the automatic detection. Leave undefined to use automatic detection.
   contextWindowSize?: number;
@@ -167,20 +163,20 @@ export function resolveContentGeneratorConfigWithSources(
   };
 
   // Set sources for computed fields
-  setSource(sources, 'authType', {
-    kind: 'computed',
-    detail: 'provided by caller',
+  setSource(sources, "authType", {
+    kind: "computed",
+    detail: "provided by caller",
   });
   if (config?.getProxy()) {
-    setSource(sources, 'proxy', {
-      kind: 'computed',
-      detail: 'Config.getProxy()',
+    setSource(sources, "proxy", {
+      kind: "computed",
+      detail: "Config.getProxy()",
     });
   }
 
   // Preserve seed sources for fields that were passed in
   const seedOrUnknown = (path: string): ContentGeneratorConfigSource =>
-    getSeedSource(seedSources, path) ?? { kind: 'unknown' };
+    getSeedSource(seedSources, path) ?? { kind: "unknown" };
 
   for (const field of PROVIDER_SOURCED_FIELDS) {
     if (generationConfig && field in generationConfig && !sources[field]) {
@@ -195,7 +191,7 @@ export function resolveContentGeneratorConfigWithSources(
     strictModelProvider,
   );
   if (!validation.valid) {
-    throw new Error(validation.errors.map((e) => e.message).join('\n'));
+    throw new Error(validation.errors.map((e) => e.message).join("\n"));
   }
 
   return {
@@ -231,15 +227,10 @@ export function validateModelConfig(
   if (!config.apiKey) {
     if (isStrictModelProvider) {
       errors.push(
-        new StrictMissingCredentialsError(
-          config.authType,
-          config.model,
-          config.apiKeyEnvKey,
-        ),
+        new StrictMissingCredentialsError(config.authType, config.model, config.apiKeyEnvKey),
       );
     } else {
-      const envKey =
-        config.apiKeyEnvKey || getDefaultApiKeyEnvVar(config.authType as any);
+      const envKey = config.apiKeyEnvKey || getDefaultApiKeyEnvVar(config.authType as any);
       errors.push(
         new MissingApiKeyError({
           authType: config.authType as any,
@@ -283,11 +274,7 @@ export function createContentGeneratorConfig(
   authType: AuthType | undefined,
   generationConfig?: Partial<ContentGeneratorConfig>,
 ): ContentGeneratorConfig {
-  return resolveContentGeneratorConfigWithSources(
-    config,
-    authType,
-    generationConfig,
-  ).config;
+  return resolveContentGeneratorConfigWithSources(config, authType, generationConfig).config;
 }
 
 export async function createContentGenerator(
@@ -297,33 +284,26 @@ export async function createContentGenerator(
 ): Promise<ContentGenerator> {
   const validation = validateModelConfig(generatorConfig, false);
   if (!validation.valid) {
-    throw new Error(validation.errors.map((e) => e.message).join('\n'));
+    throw new Error(validation.errors.map((e) => e.message).join("\n"));
   }
 
   const authType = generatorConfig.authType;
   if (!authType) {
-    throw new Error('ContentGeneratorConfig must have an authType');
+    throw new Error("ContentGeneratorConfig must have an authType");
   }
 
   let baseGenerator: ContentGenerator;
 
-  if (
-    authType === AuthType.USE_OPENAI ||
-    authType === AuthType.USE_OLLAMA
-  ) {
-    const { createOpenAIContentGenerator } = await import(
-      './openaiContentGenerator/index.js'
-    );
+  if (authType === AuthType.USE_OPENAI || authType === AuthType.USE_OLLAMA) {
+    const { createOpenAIContentGenerator } = await import("./openaiContentGenerator/index.js");
     baseGenerator = createOpenAIContentGenerator(generatorConfig, config);
   } else if (authType === AuthType.USE_ANTHROPIC) {
     const { createAnthropicContentGenerator } = await import(
-      './anthropicContentGenerator/index.js'
+      "./anthropicContentGenerator/index.js"
     );
     baseGenerator = createAnthropicContentGenerator(generatorConfig, config);
   } else {
-    throw new Error(
-      `Error creating contentGenerator: Unsupported authType: ${authType}`,
-    );
+    throw new Error(`Error creating contentGenerator: Unsupported authType: ${authType}`);
   }
 
   return new LoggingContentGenerator(baseGenerator, config, generatorConfig);

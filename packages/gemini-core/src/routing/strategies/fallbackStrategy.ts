@@ -4,17 +4,13 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import type { Config } from '../../config/config.js';
-import { getEffectiveModel } from '../../config/models.js';
-import type { BaseLlmClient } from '../../core/baseLlmClient.js';
-import type {
-  RoutingContext,
-  RoutingDecision,
-  RoutingStrategy,
-} from '../routingStrategy.js';
+import type { Config } from "../../config/config.js";
+import { getEffectiveModel } from "../../config/models.js";
+import type { BaseLlmClient } from "../../core/baseLlmClient.js";
+import type { RoutingContext, RoutingDecision, RoutingStrategy } from "../routingStrategy.js";
 
 export class FallbackStrategy implements RoutingStrategy {
-  readonly name = 'fallback';
+  readonly name = "fallback";
 
   async route(
     _context: RoutingContext,
@@ -27,10 +23,7 @@ export class FallbackStrategy implements RoutingStrategy {
       return null;
     }
 
-    const effectiveModel = getEffectiveModel(
-      isInFallbackMode,
-      config.getModel(),
-    );
+    const effectiveModel = getEffectiveModel(isInFallbackMode, config.getModel());
     return {
       model: effectiveModel,
       metadata: {

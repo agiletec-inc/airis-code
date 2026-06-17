@@ -4,12 +4,12 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import type React from 'react';
-import { Box, Text } from 'ink';
-import { theme } from '../semantic-colors.js';
-import type { ExtendedSystemInfo } from '../../utils/systemInfo.js';
-import { getSystemInfoFields } from '../../utils/systemInfoFields.js';
-import { t } from '../../i18n/index.js';
+import { Box, Text } from "ink";
+import type React from "react";
+import { t } from "../../i18n/index.js";
+import type { ExtendedSystemInfo } from "../../utils/systemInfo.js";
+import { getSystemInfoFields } from "../../utils/systemInfoFields.js";
+import { theme } from "../semantic-colors.js";
 
 type AboutBoxProps = ExtendedSystemInfo & {
   width?: number;
@@ -28,15 +28,11 @@ export const AboutBox: React.FC<AboutBoxProps> = ({ width, ...props }) => {
     >
       <Box marginBottom={1}>
         <Text bold color={theme.text.accent}>
-          {t('Status')}
+          {t("Status")}
         </Text>
       </Box>
       {fields.map((field) => (
-        <Box
-          key={field.label}
-          flexDirection="row"
-          marginTop={field.label === t('Auth') ? 1 : 0}
-        >
+        <Box key={field.label} flexDirection="row" marginTop={field.label === t("Auth") ? 1 : 0}>
           <Box width="35%">
             <Text bold color={theme.text.link}>
               {field.label}

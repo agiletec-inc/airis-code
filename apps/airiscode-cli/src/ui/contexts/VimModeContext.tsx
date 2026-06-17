@@ -4,17 +4,11 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import {
-  createContext,
-  useCallback,
-  useContext,
-  useEffect,
-  useState,
-} from 'react';
-import type { LoadedSettings } from '../../config/settings.js';
-import { SettingScope } from '../../config/settings.js';
+import { createContext, useCallback, useContext, useEffect, useState } from "react";
+import type { LoadedSettings } from "../../config/settings.js";
+import { SettingScope } from "../../config/settings.js";
 
-export type VimMode = 'NORMAL' | 'INSERT';
+export type VimMode = "NORMAL" | "INSERT";
 
 interface VimModeContextType {
   vimEnabled: boolean;
@@ -34,9 +28,7 @@ export const VimModeProvider = ({
 }) => {
   const initialVimEnabled = settings.merged.general?.vimMode ?? false;
   const [vimEnabled, setVimEnabled] = useState(initialVimEnabled);
-  const [vimMode, setVimMode] = useState<VimMode>(
-    initialVimEnabled ? 'NORMAL' : 'INSERT',
-  );
+  const [vimMode, setVimMode] = useState<VimMode>(initialVimEnabled ? "NORMAL" : "INSERT");
 
   useEffect(() => {
     // Initialize vimEnabled from settings on mount
@@ -44,7 +36,7 @@ export const VimModeProvider = ({
     setVimEnabled(enabled);
     // When vim mode is enabled, always start in NORMAL mode
     if (enabled) {
-      setVimMode('NORMAL');
+      setVimMode("NORMAL");
     }
   }, [settings.merged.general?.vimMode]);
 
@@ -53,9 +45,9 @@ export const VimModeProvider = ({
     setVimEnabled(newValue);
     // When enabling vim mode, start in NORMAL mode
     if (newValue) {
-      setVimMode('NORMAL');
+      setVimMode("NORMAL");
     }
-    await settings.setValue(SettingScope.User, 'general.vimMode', newValue);
+    await settings.setValue(SettingScope.User, "general.vimMode", newValue);
     return newValue;
   }, [vimEnabled, settings]);
 
@@ -66,15 +58,13 @@ export const VimModeProvider = ({
     setVimMode,
   };
 
-  return (
-    <VimModeContext.Provider value={value}>{children}</VimModeContext.Provider>
-  );
+  return <VimModeContext.Provider value={value}>{children}</VimModeContext.Provider>;
 };
 
 export const useVimMode = () => {
   const context = useContext(VimModeContext);
   if (context === undefined) {
-    throw new Error('useVimMode must be used within a VimModeProvider');
+    throw new Error("useVimMode must be used within a VimModeProvider");
   }
   return context;
 };

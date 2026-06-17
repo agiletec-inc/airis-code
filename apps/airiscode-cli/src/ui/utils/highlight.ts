@@ -4,21 +4,18 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { cpLen, cpSlice } from './textUtils.js';
+import { cpLen, cpSlice } from "./textUtils.js";
 
 export type HighlightToken = {
   text: string;
-  type: 'default' | 'command' | 'file';
+  type: "default" | "command" | "file";
 };
 
 const HIGHLIGHT_REGEX = /(^\/[a-zA-Z0-9_-]+|@(?:\\ |[a-zA-Z0-9_./-])+)/g;
 
-export function parseInputForHighlighting(
-  text: string,
-  index: number,
-): readonly HighlightToken[] {
+export function parseInputForHighlighting(text: string, index: number): readonly HighlightToken[] {
   if (!text) {
-    return [{ text: '', type: 'default' }];
+    return [{ text: "", type: "default" }];
   }
 
   const tokens: HighlightToken[] = [];
@@ -33,17 +30,17 @@ export function parseInputForHighlighting(
     if (matchIndex > lastIndex) {
       tokens.push({
         text: text.slice(lastIndex, matchIndex),
-        type: 'default',
+        type: "default",
       });
     }
 
     // Add the matched token
-    const type = fullMatch.startsWith('/') ? 'command' : 'file';
+    const type = fullMatch.startsWith("/") ? "command" : "file";
     // Only highlight slash commands if the index is 0.
-    if (type === 'command' && index !== 0) {
+    if (type === "command" && index !== 0) {
       tokens.push({
         text: fullMatch,
-        type: 'default',
+        type: "default",
       });
     } else {
       tokens.push({
@@ -59,7 +56,7 @@ export function parseInputForHighlighting(
   if (lastIndex < text.length) {
     tokens.push({
       text: text.slice(lastIndex),
-      type: 'default',
+      type: "default",
     });
   }
 

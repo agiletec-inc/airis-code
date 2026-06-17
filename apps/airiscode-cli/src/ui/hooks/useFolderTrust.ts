@@ -4,15 +4,11 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { useState, useCallback, useEffect } from 'react';
-import type { LoadedSettings } from '../../config/settings.js';
-import { FolderTrustChoice } from '../components/FolderTrustDialog.js';
-import {
-  loadTrustedFolders,
-  TrustLevel,
-  isWorkspaceTrusted,
-} from '../../config/trustedFolders.js';
-import * as process from 'node:process';
+import * as process from "node:process";
+import { useCallback, useEffect, useState } from "react";
+import type { LoadedSettings } from "../../config/settings.js";
+import { isWorkspaceTrusted, loadTrustedFolders, TrustLevel } from "../../config/trustedFolders.js";
+import { FolderTrustChoice } from "../components/FolderTrustDialog.js";
 
 export const useFolderTrust = (
   settings: LoadedSettings,
@@ -55,8 +51,7 @@ export const useFolderTrust = (
 
       trustedFolders.setValue(cwd, trustLevel);
       const currentIsTrusted =
-        trustLevel === TrustLevel.TRUST_FOLDER ||
-        trustLevel === TrustLevel.TRUST_PARENT;
+        trustLevel === TrustLevel.TRUST_FOLDER || trustLevel === TrustLevel.TRUST_PARENT;
       setIsTrusted(currentIsTrusted);
       onTrustChange(currentIsTrusted);
 

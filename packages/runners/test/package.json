@@ -14,7 +14,7 @@
     "build": "echo Skipping test runner build",
     "dev": "tsc --watch",
     "clean": "rm -rf dist",
-    "lint": "eslint src --ext .ts",
+    "lint": "biome check .",
     "test": "vitest run"
   },
   "dependencies": {

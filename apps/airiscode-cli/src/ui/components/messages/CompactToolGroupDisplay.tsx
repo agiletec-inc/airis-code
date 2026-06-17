@@ -4,14 +4,14 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import type React from 'react';
-import { Box, Text } from 'ink';
-import type { IndividualToolCallDisplay } from '../../types.js';
-import { ToolCallStatus } from '../../types.js';
-import { SHELL_COMMAND_NAME, SHELL_NAME } from '../../constants.js';
-import { theme } from '../../semantic-colors.js';
-import { t } from '../../../i18n/index.js';
-import { ToolStatusIndicator } from '../shared/ToolStatusIndicator.js';
+import { Box, Text } from "ink";
+import type React from "react";
+import { t } from "../../../i18n/index.js";
+import { SHELL_COMMAND_NAME, SHELL_NAME } from "../../constants.js";
+import { theme } from "../../semantic-colors.js";
+import type { IndividualToolCallDisplay } from "../../types.js";
+import { ToolCallStatus } from "../../types.js";
+import { ToolStatusIndicator } from "../shared/ToolStatusIndicator.js";
 
 interface CompactToolGroupDisplayProps {
   toolCalls: IndividualToolCallDisplay[];
@@ -19,26 +19,18 @@ interface CompactToolGroupDisplayProps {
 }
 
 // Priority: Confirming > Executing > Error > Canceled > Pending > Success
-function getOverallStatus(
-  toolCalls: IndividualToolCallDisplay[],
-): ToolCallStatus {
+function getOverallStatus(toolCalls: IndividualToolCallDisplay[]): ToolCallStatus {
   if (toolCalls.some((t) => t.status === ToolCallStatus.Confirming))
     return ToolCallStatus.Confirming;
-  if (toolCalls.some((t) => t.status === ToolCallStatus.Executing))
-    return ToolCallStatus.Executing;
-  if (toolCalls.some((t) => t.status === ToolCallStatus.Error))
-    return ToolCallStatus.Error;
-  if (toolCalls.some((t) => t.status === ToolCallStatus.Canceled))
-    return ToolCallStatus.Canceled;
-  if (toolCalls.some((t) => t.status === ToolCallStatus.Pending))
-    return ToolCallStatus.Pending;
+  if (toolCalls.some((t) => t.status === ToolCallStatus.Executing)) return ToolCallStatus.Executing;
+  if (toolCalls.some((t) => t.status === ToolCallStatus.Error)) return ToolCallStatus.Error;
+  if (toolCalls.some((t) => t.status === ToolCallStatus.Canceled)) return ToolCallStatus.Canceled;
+  if (toolCalls.some((t) => t.status === ToolCallStatus.Pending)) return ToolCallStatus.Pending;
   return ToolCallStatus.Success;
 }
 
 // Active tool priority: Confirming > Executing > last in array
-function getActiveTool(
-  toolCalls: IndividualToolCallDisplay[],
-): IndividualToolCallDisplay {
+function getActiveTool(toolCalls: IndividualToolCallDisplay[]): IndividualToolCallDisplay {
   return (
     toolCalls.find((t) => t.status === ToolCallStatus.Confirming) ??
     toolCalls.find((t) => t.status === ToolCallStatus.Executing) ??
@@ -46,9 +38,10 @@ function getActiveTool(
   );
 }
 
-export const CompactToolGroupDisplay: React.FC<
-  CompactToolGroupDisplayProps
-> = ({ toolCalls, contentWidth }) => {
+export const CompactToolGroupDisplay: React.FC<CompactToolGroupDisplayProps> = ({
+  toolCalls,
+  contentWidth,
+}) => {
   if (toolCalls.length === 0) return null;
 
   const overallStatus = getOverallStatus(toolCalls);
@@ -57,9 +50,7 @@ export const CompactToolGroupDisplay: React.FC<
   const isShellCommand = toolCalls.some(
     (t) => t.name === SHELL_COMMAND_NAME || t.name === SHELL_NAME,
   );
-  const hasPending = !toolCalls.every(
-    (t) => t.status === ToolCallStatus.Success,
-  );
+  const hasPending = !toolCalls.every((t) => t.status === ToolCallStatus.Success);
 
   const borderColor = isShellCommand
     ? theme.ui.symbol
@@ -70,9 +61,7 @@ export const CompactToolGroupDisplay: React.FC<
   // Take only the first line of description to prevent multi-line shell scripts
   // from expanding the compact view (wrap="truncate-end" only handles width overflow,
   // not literal \n characters in the content)
-  const activeToolDescription = activeTool.description
-    ? activeTool.description.split('\n')[0]
-    : '';
+  const activeToolDescription = activeTool.description ? activeTool.description.split("\n")[0] : "";
 
   return (
     <Box
@@ -91,7 +80,7 @@ export const CompactToolGroupDisplay: React.FC<
             <Text bold>{activeTool.name}</Text>
             {activeToolDescription ? (
               <Text color={theme.text.secondary}>
-                {'  '}
+                {"  "}
                 {activeToolDescription}
               </Text>
             ) : null}
@@ -100,9 +89,7 @@ export const CompactToolGroupDisplay: React.FC<
       </Box>
 
       {/* Hint line */}
-      <Text color={theme.text.secondary}>
-        {t('Press Ctrl+O to show full tool output')}
-      </Text>
+      <Text color={theme.text.secondary}>{t("Press Ctrl+O to show full tool output")}</Text>
     </Box>
   );
 };

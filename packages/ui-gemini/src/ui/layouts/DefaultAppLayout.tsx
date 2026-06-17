@@ -4,17 +4,17 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import type React from 'react';
-import { Box } from 'ink';
-import { Notifications } from '../components/Notifications.js';
-import { MainContent } from '../components/MainContent.js';
-import { DialogManager } from '../components/DialogManager.js';
-import { Composer } from '../components/Composer.js';
-import { ExitWarning } from '../components/ExitWarning.js';
-import { useUIState } from '../contexts/UIStateContext.js';
-import { useFlickerDetector } from '../hooks/useFlickerDetector.js';
-import { useAlternateBuffer } from '../hooks/useAlternateBuffer.js';
-import { CopyModeWarning } from '../components/CopyModeWarning.js';
+import { Box } from "ink";
+import type React from "react";
+import { Composer } from "../components/Composer.js";
+import { CopyModeWarning } from "../components/CopyModeWarning.js";
+import { DialogManager } from "../components/DialogManager.js";
+import { ExitWarning } from "../components/ExitWarning.js";
+import { MainContent } from "../components/MainContent.js";
+import { Notifications } from "../components/Notifications.js";
+import { useUIState } from "../contexts/UIStateContext.js";
+import { useAlternateBuffer } from "../hooks/useAlternateBuffer.js";
+import { useFlickerDetector } from "../hooks/useFlickerDetector.js";
 
 export const DefaultAppLayout: React.FC = () => {
   const uiState = useUIState();
@@ -24,9 +24,7 @@ export const DefaultAppLayout: React.FC = () => {
   useFlickerDetector(rootUiRef, terminalHeight);
   // If in alternate buffer mode, need to leave room to draw the scrollbar on
   // the right side of the terminal.
-  const width = isAlternateBuffer
-    ? uiState.terminalWidth
-    : uiState.mainAreaWidth;
+  const width = isAlternateBuffer ? uiState.terminalWidth : uiState.mainAreaWidth;
   return (
     <Box
       flexDirection="column"
@@ -39,12 +37,7 @@ export const DefaultAppLayout: React.FC = () => {
     >
       <MainContent />
 
-      <Box
-        flexDirection="column"
-        ref={uiState.mainControlsRef}
-        flexShrink={0}
-        flexGrow={0}
-      >
+      <Box flexDirection="column" ref={uiState.mainControlsRef} flexShrink={0} flexGrow={0}>
         <Notifications />
         <CopyModeWarning />
 

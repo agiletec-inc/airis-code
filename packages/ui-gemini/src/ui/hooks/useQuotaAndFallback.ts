@@ -7,18 +7,18 @@
 import {
   AuthType,
   type Config,
-  type FallbackModelHandler,
-  type FallbackIntent,
-  TerminalQuotaError,
-  ModelNotFoundError,
-  type UserTierId,
-  PREVIEW_GEMINI_MODEL,
   DEFAULT_GEMINI_MODEL,
-} from '@airiscode/gemini-cli-core';
-import { useCallback, useEffect, useRef, useState } from 'react';
-import { type UseHistoryManagerReturn } from './useHistoryManager.js';
-import { MessageType } from '../types.js';
-import { type ProQuotaDialogRequest } from '../contexts/UIStateContext.js';
+  type FallbackIntent,
+  type FallbackModelHandler,
+  ModelNotFoundError,
+  PREVIEW_GEMINI_MODEL,
+  TerminalQuotaError,
+  type UserTierId,
+} from "@airiscode/gemini-cli-core";
+import { useCallback, useEffect, useRef, useState } from "react";
+import { type ProQuotaDialogRequest } from "../contexts/UIStateContext.js";
+import { MessageType } from "../types.js";
+import { type UseHistoryManagerReturn } from "./useHistoryManager.js";
 
 interface UseQuotaAndFallbackArgs {
   config: Config;
@@ -33,8 +33,7 @@ export function useQuotaAndFallback({
   userTier,
   setModelSwitchedFromQuotaError,
 }: UseQuotaAndFallbackArgs) {
-  const [proQuotaRequest, setProQuotaRequest] =
-    useState<ProQuotaDialogRequest | null>(null);
+  const [proQuotaRequest, setProQuotaRequest] = useState<ProQuotaDialogRequest | null>(null);
   const isDialogPending = useRef(false);
 
   // Set up Flash fallback handler
@@ -57,9 +56,8 @@ export function useQuotaAndFallback({
       let isTerminalQuotaError = false;
       let isModelNotFoundError = false;
       const usageLimitReachedModel =
-        failedModel === DEFAULT_GEMINI_MODEL ||
-        failedModel === PREVIEW_GEMINI_MODEL
-          ? 'all Pro models'
+        failedModel === DEFAULT_GEMINI_MODEL || failedModel === PREVIEW_GEMINI_MODEL
+          ? "all Pro models"
           : failedModel;
       if (error instanceof TerminalQuotaError) {
         isTerminalQuotaError = true;
@@ -70,7 +68,7 @@ export function useQuotaAndFallback({
           `/stats for usage details`,
           `/auth to switch to API key.`,
         ].filter(Boolean);
-        message = messageLines.join('\n');
+        message = messageLines.join("\n");
       } else if (error instanceof ModelNotFoundError) {
         isModelNotFoundError = true;
         const messageLines = [
@@ -78,7 +76,7 @@ export function useQuotaAndFallback({
           `Learn more at https://goo.gle/enable-preview-features`,
           `To disable Gemini 3, disable "Preview features" in /settings.`,
         ];
-        message = messageLines.join('\n');
+        message = messageLines.join("\n");
       } else {
         message = `${failedModel} is currently experiencing high demand. We apologize and appreciate your patience.`;
       }
@@ -87,22 +85,20 @@ export function useQuotaAndFallback({
       config.setQuotaErrorOccurred(true);
 
       if (isDialogPending.current) {
-        return 'stop'; // A dialog is already active, so just stop this request.
+        return "stop"; // A dialog is already active, so just stop this request.
       }
       isDialogPending.current = true;
 
-      const intent: FallbackIntent = await new Promise<FallbackIntent>(
-        (resolve) => {
-          setProQuotaRequest({
-            failedModel,
-            fallbackModel,
-            resolve,
-            message,
-            isTerminalQuotaError,
-            isModelNotFoundError,
-          });
-        },
-      );
+      const intent: FallbackIntent = await new Promise<FallbackIntent>((resolve) => {
+        setProQuotaRequest({
+          failedModel,
+          fallbackModel,
+          resolve,
+          message,
+          isTerminalQuotaError,
+          isModelNotFoundError,
+        });
+      });
 
       return intent;
     };
@@ -119,7 +115,7 @@ export function useQuotaAndFallback({
       setProQuotaRequest(null);
       isDialogPending.current = false; // Reset the flag here
 
-      if (choice === 'retry_always') {
+      if (choice === "retry_always") {
         // If we were recovering from a Preview Model failure, show a specific message.
         if (proQuotaRequest.failedModel === PREVIEW_GEMINI_MODEL) {
           const showPeriodicalCheckMessage =
@@ -128,7 +124,7 @@ export function useQuotaAndFallback({
           historyManager.addItem(
             {
               type: MessageType.INFO,
-              text: `Switched to fallback model ${proQuotaRequest.fallbackModel}. ${showPeriodicalCheckMessage ? `We will periodically check if ${PREVIEW_GEMINI_MODEL} is available again.` : ''}`,
+              text: `Switched to fallback model ${proQuotaRequest.fallbackModel}. ${showPeriodicalCheckMessage ? `We will periodically check if ${PREVIEW_GEMINI_MODEL} is available again.` : ""}`,
             },
             Date.now(),
           );
@@ -136,7 +132,7 @@ export function useQuotaAndFallback({
           historyManager.addItem(
             {
               type: MessageType.INFO,
-              text: 'Switched to fallback model.',
+              text: "Switched to fallback model.",
             },
             Date.now(),
           );
@@ -155,10 +151,10 @@ export function useQuotaAndFallback({
 function getResetTimeMessage(delayMs: number): string {
   const resetDate = new Date(Date.now() + delayMs);
 
-  const timeFormatter = new Intl.DateTimeFormat('en-US', {
-    hour: 'numeric',
-    minute: '2-digit',
-    timeZoneName: 'short',
+  const timeFormatter = new Intl.DateTimeFormat("en-US", {
+    hour: "numeric",
+    minute: "2-digit",
+    timeZoneName: "short",
   });
 
   return `Access resets at ${timeFormatter.format(resetDate)}.`;

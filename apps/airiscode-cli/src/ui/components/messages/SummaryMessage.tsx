@@ -4,11 +4,11 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import type React from 'react';
-import { Box, Text } from 'ink';
-import type { SummaryProps } from '../../types.js';
-import Spinner from 'ink-spinner';
-import { Colors } from '../../colors.js';
+import { Box, Text } from "ink";
+import Spinner from "ink-spinner";
+import type React from "react";
+import { Colors } from "../../colors.js";
+import type { SummaryProps } from "../../types.js";
 
 export interface SummaryDisplayProps {
   summary: SummaryProps;
@@ -22,15 +22,15 @@ export const SummaryMessage: React.FC<SummaryDisplayProps> = ({ summary }) => {
   const getText = () => {
     if (summary.isPending) {
       switch (summary.stage) {
-        case 'generating':
-          return 'Generating project summary...';
-        case 'saving':
-          return 'Saving project summary...';
+        case "generating":
+          return "Generating project summary...";
+        case "saving":
+          return "Saving project summary...";
         default:
-          return 'Processing summary...';
+          return "Processing summary...";
       }
     }
-    const baseMessage = 'Project summary generated and saved successfully!';
+    const baseMessage = "Project summary generated and saved successfully!";
     if (summary.filePath) {
       return `${baseMessage} Saved to: ${summary.filePath}`;
     }
@@ -48,9 +48,7 @@ export const SummaryMessage: React.FC<SummaryDisplayProps> = ({ summary }) => {
     <Box flexDirection="row">
       <Box marginRight={1}>{getIcon()}</Box>
       <Box>
-        <Text
-          color={summary.isPending ? Colors.AccentPurple : Colors.AccentGreen}
-        >
+        <Text color={summary.isPending ? Colors.AccentPurple : Colors.AccentGreen}>
           {getText()}
         </Text>
       </Box>

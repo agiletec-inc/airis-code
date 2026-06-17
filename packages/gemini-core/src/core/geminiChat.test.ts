@@ -4,31 +4,22 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import type {
-  Content,
-  GenerateContentConfig,
-  GenerateContentResponse,
-} from '@google/genai';
-import { ApiError } from '@google/genai';
-import type { ContentGenerator } from '../core/contentGenerator.js';
-import {
-  GeminiChat,
-  InvalidStreamError,
-  StreamEventType,
-  type StreamEvent,
-} from './geminiChat.js';
-import type { Config } from '../config/config.js';
-import { setSimulate429 } from '../utils/testUtils.js';
-import { DEFAULT_GEMINI_FLASH_MODEL } from '../config/models.js';
-import { AuthType } from './contentGenerator.js';
-import { type RetryOptions } from '../utils/retry.js';
-import { uiTelemetryService } from '../telemetry/uiTelemetry.js';
+import type { Content, GenerateContentConfig, GenerateContentResponse } from "@google/genai";
+import { ApiError } from "@google/genai";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import type { Config } from "../config/config.js";
+import { DEFAULT_GEMINI_FLASH_MODEL } from "../config/models.js";
+import type { ContentGenerator } from "../core/contentGenerator.js";
+import { uiTelemetryService } from "../telemetry/uiTelemetry.js";
+import { type RetryOptions } from "../utils/retry.js";
+import { setSimulate429 } from "../utils/testUtils.js";
+import { AuthType } from "./contentGenerator.js";
+import { GeminiChat, InvalidStreamError, type StreamEvent, StreamEventType } from "./geminiChat.js";
 
 // Mock fs module to prevent actual file system operations during tests
 const mockFileSystem = new Map<string, string>();
 
-vi.mock('node:fs', () => {
+vi.mock("node:fs", () => {
   const fsModule = {
     mkdirSync: vi.fn(),
     writeFileSync: vi.fn((path: string, data: string) => {
@@ -38,8 +29,8 @@ vi.mock('node:fs', () => {
       if (mockFileSystem.has(path)) {
         return mockFileSystem.get(path);
       }
-      throw Object.assign(new Error('ENOENT: no such file or directory'), {
-        code: 'ENOENT',
+      throw Object.assign(new Error("ENOENT: no such file or directory"), {
+        code: "ENOENT",
       });
     }),
     existsSync: vi.fn((path: string) => mockFileSystem.has(path)),
@@ -60,11 +51,11 @@ const { mockRetryWithBackoff } = vi.hoisted(() => ({
   mockRetryWithBackoff: vi.fn(),
 }));
 
-vi.mock('../utils/retry.js', () => ({
+vi.mock("../utils/retry.js", () => ({
   retryWithBackoff: mockRetryWithBackoff,
 }));
 
-vi.mock('../fallback/handler.js', () => ({
+vi.mock("../fallback/handler.js", () => ({
   handleFallback: mockHandleFallback,
 }));
 
@@ -73,18 +64,18 @@ const { mockLogContentRetry, mockLogContentRetryFailure } = vi.hoisted(() => ({
   mockLogContentRetryFailure: vi.fn(),
 }));
 
-vi.mock('../telemetry/loggers.js', () => ({
+vi.mock("../telemetry/loggers.js", () => ({
   logContentRetry: mockLogContentRetry,
   logContentRetryFailure: mockLogContentRetryFailure,
 }));
 
-vi.mock('../telemetry/uiTelemetry.js', () => ({
+vi.mock("../telemetry/uiTelemetry.js", () => ({
   uiTelemetryService: {
     setLastPromptTokenCount: vi.fn(),
   },
 }));
 
-describe('GeminiChat', () => {
+describe("GeminiChat", () => {
   let mockContentGenerator: ContentGenerator;
   let chat: GeminiChat;
   let mockConfig: Config;
@@ -105,23 +96,23 @@ describe('GeminiChat', () => {
     // Default mock implementation for tests that don't care about retry logic
     mockRetryWithBackoff.mockImplementation(async (apiCall) => apiCall());
     mockConfig = {
-      getSessionId: () => 'test-session-id',
+      getSessionId: () => "test-session-id",
       getTelemetryLogPromptsEnabled: () => true,
       getUsageStatisticsEnabled: () => true,
       getDebugMode: () => false,
       getContentGeneratorConfig: vi.fn().mockReturnValue({
-        authType: 'oauth-personal', // Ensure this is set for fallback tests
-        model: 'test-model',
+        authType: "oauth-personal", // Ensure this is set for fallback tests
+        model: "test-model",
       }),
-      getModel: vi.fn().mockReturnValue('gemini-pro'),
+      getModel: vi.fn().mockReturnValue("gemini-pro"),
       setModel: vi.fn(),
       isInFallbackMode: vi.fn().mockReturnValue(false),
       getQuotaErrorOccurred: vi.fn().mockReturnValue(false),
       setQuotaErrorOccurred: vi.fn(),
       flashFallbackHandler: undefined,
-      getProjectRoot: vi.fn().mockReturnValue('/test/project/root'),
+      getProjectRoot: vi.fn().mockReturnValue("/test/project/root"),
       storage: {
-        getProjectTempDir: vi.fn().mockReturnValue('/test/temp'),
+        getProjectTempDir: vi.fn().mockReturnValue("/test/temp"),
       },
       getToolRegistry: vi.fn().mockReturnValue({
         getTool: vi.fn(),
@@ -142,35 +133,33 @@ describe('GeminiChat', () => {
     vi.resetAllMocks();
   });
 
-  describe('constructor', () => {
-    it('should initialize lastPromptTokenCount based on history size', () => {
+  describe("constructor", () => {
+    it("should initialize lastPromptTokenCount based on history size", () => {
       const history: Content[] = [
-        { role: 'user', parts: [{ text: 'Hello' }] },
-        { role: 'model', parts: [{ text: 'Hi there' }] },
+        { role: "user", parts: [{ text: "Hello" }] },
+        { role: "model", parts: [{ text: "Hi there" }] },
       ];
       const chatWithHistory = new GeminiChat(mockConfig, config, history);
       const estimatedTokens = Math.ceil(JSON.stringify(history).length / 4);
       expect(chatWithHistory.getLastPromptTokenCount()).toBe(estimatedTokens);
     });
 
-    it('should initialize lastPromptTokenCount for empty history', () => {
+    it("should initialize lastPromptTokenCount for empty history", () => {
       const chatEmpty = new GeminiChat(mockConfig, config, []);
-      expect(chatEmpty.getLastPromptTokenCount()).toBe(
-        Math.ceil(JSON.stringify([]).length / 4),
-      );
+      expect(chatEmpty.getLastPromptTokenCount()).toBe(Math.ceil(JSON.stringify([]).length / 4));
     });
   });
 
-  describe('sendMessageStream', () => {
-    it('should succeed if a tool call is followed by an empty part', async () => {
+  describe("sendMessageStream", () => {
+    it("should succeed if a tool call is followed by an empty part", async () => {
       // 1. Mock a stream that contains a tool call, then an invalid (empty) part.
       const streamWithToolCall = (async function* () {
         yield {
           candidates: [
             {
               content: {
-                role: 'model',
-                parts: [{ functionCall: { name: 'test_tool', args: {} } }],
+                role: "model",
+                parts: [{ functionCall: { name: "test_tool", args: {} } }],
               },
             },
           ],
@@ -180,24 +169,22 @@ describe('GeminiChat', () => {
           candidates: [
             {
               content: {
-                role: 'model',
-                parts: [{ text: '' }],
+                role: "model",
+                parts: [{ text: "" }],
               },
             },
           ],
         } as unknown as GenerateContentResponse;
       })();
 
-      vi.mocked(mockContentGenerator.generateContentStream).mockResolvedValue(
-        streamWithToolCall,
-      );
+      vi.mocked(mockContentGenerator.generateContentStream).mockResolvedValue(streamWithToolCall);
 
       // 2. Action & Assert: The stream processing should complete without throwing an error
       // because the presence of a tool call makes the empty final chunk acceptable.
       const stream = await chat.sendMessageStream(
-        'test-model',
-        { message: 'test message' },
-        'prompt-id-tool-call-empty-end',
+        "test-model",
+        { message: "test message" },
+        "prompt-id-tool-call-empty-end",
       );
       await expect(
         (async () => {
@@ -215,15 +202,15 @@ describe('GeminiChat', () => {
       expect(modelTurn?.parts![0]!.functionCall).toBeDefined();
     });
 
-    it('should fail if the stream ends with an empty part and has no finishReason', async () => {
+    it("should fail if the stream ends with an empty part and has no finishReason", async () => {
       // 1. Mock a stream that ends with an invalid part and has no finish reason.
       const streamWithNoFinish = (async function* () {
         yield {
           candidates: [
             {
               content: {
-                role: 'model',
-                parts: [{ text: 'Initial content...' }],
+                role: "model",
+                parts: [{ text: "Initial content..." }],
               },
             },
           ],
@@ -233,23 +220,21 @@ describe('GeminiChat', () => {
           candidates: [
             {
               content: {
-                role: 'model',
-                parts: [{ text: '' }],
+                role: "model",
+                parts: [{ text: "" }],
               },
             },
           ],
         } as unknown as GenerateContentResponse;
       })();
 
-      vi.mocked(mockContentGenerator.generateContentStream).mockResolvedValue(
-        streamWithNoFinish,
-      );
+      vi.mocked(mockContentGenerator.generateContentStream).mockResolvedValue(streamWithNoFinish);
 
       // 2. Action & Assert: The stream should fail because there's no finish reason.
       const stream = await chat.sendMessageStream(
-        'test-model',
-        { message: 'test message' },
-        'prompt-id-no-finish-empty-end',
+        "test-model",
+        { message: "test message" },
+        "prompt-id-no-finish-empty-end",
       );
       await expect(
         (async () => {
@@ -260,15 +245,15 @@ describe('GeminiChat', () => {
       ).rejects.toThrow(InvalidStreamError);
     });
 
-    it('should succeed if the stream ends with an invalid part but has a finishReason and contained a valid part', async () => {
+    it("should succeed if the stream ends with an invalid part but has a finishReason and contained a valid part", async () => {
       // 1. Mock a stream that sends a valid chunk, then an invalid one, but has a finish reason.
       const streamWithInvalidEnd = (async function* () {
         yield {
           candidates: [
             {
               content: {
-                role: 'model',
-                parts: [{ text: 'Initial valid content...' }],
+                role: "model",
+                parts: [{ text: "Initial valid content..." }],
               },
             },
           ],
@@ -278,24 +263,22 @@ describe('GeminiChat', () => {
           candidates: [
             {
               content: {
-                role: 'model',
-                parts: [{ text: '' }], // Invalid part
+                role: "model",
+                parts: [{ text: "" }], // Invalid part
               },
-              finishReason: 'STOP',
+              finishReason: "STOP",
             },
           ],
         } as unknown as GenerateContentResponse;
       })();
 
-      vi.mocked(mockContentGenerator.generateContentStream).mockResolvedValue(
-        streamWithInvalidEnd,
-      );
+      vi.mocked(mockContentGenerator.generateContentStream).mockResolvedValue(streamWithInvalidEnd);
 
       // 2. Action & Assert: The stream should complete without throwing an error.
       const stream = await chat.sendMessageStream(
-        'test-model',
-        { message: 'test message' },
-        'prompt-id-valid-then-invalid-end',
+        "test-model",
+        { message: "test message" },
+        "prompt-id-valid-then-invalid-end",
       );
       await expect(
         (async () => {
@@ -310,16 +293,14 @@ describe('GeminiChat', () => {
       expect(history.length).toBe(2); // user turn + model turn
       const modelTurn = history[1]!;
       expect(modelTurn?.parts?.length).toBe(1);
-      expect(modelTurn?.parts![0]!.text).toBe('Initial valid content...');
+      expect(modelTurn?.parts![0]!.text).toBe("Initial valid content...");
     });
 
-    it('should consolidate subsequent text chunks after receiving an empty text chunk', async () => {
+    it("should consolidate subsequent text chunks after receiving an empty text chunk", async () => {
       // 1. Mock the API to return a stream where one chunk is just an empty text part.
       const multiChunkStream = (async function* () {
         yield {
-          candidates: [
-            { content: { role: 'model', parts: [{ text: 'Hello' }] } },
-          ],
+          candidates: [{ content: { role: "model", parts: [{ text: "Hello" }] } }],
         } as unknown as GenerateContentResponse;
         // FIX: The original test used { text: '' }, which is invalid.
         // A chunk can be empty but still valid. This chunk is now removed
@@ -327,22 +308,20 @@ describe('GeminiChat', () => {
         yield {
           candidates: [
             {
-              content: { role: 'model', parts: [{ text: ' World!' }] },
-              finishReason: 'STOP',
+              content: { role: "model", parts: [{ text: " World!" }] },
+              finishReason: "STOP",
             },
           ],
         } as unknown as GenerateContentResponse;
       })();
 
-      vi.mocked(mockContentGenerator.generateContentStream).mockResolvedValue(
-        multiChunkStream,
-      );
+      vi.mocked(mockContentGenerator.generateContentStream).mockResolvedValue(multiChunkStream);
 
       // 2. Action: Send a message and consume the stream.
       const stream = await chat.sendMessageStream(
-        'test-model',
-        { message: 'test message' },
-        'prompt-id-empty-chunk-consolidation',
+        "test-model",
+        { message: "test message" },
+        "prompt-id-empty-chunk-consolidation",
       );
       for await (const _ of stream) {
         // Consume the stream
@@ -353,29 +332,25 @@ describe('GeminiChat', () => {
       expect(history.length).toBe(2);
       const modelTurn = history[1]!;
       expect(modelTurn?.parts?.length).toBe(1);
-      expect(modelTurn?.parts![0]!.text).toBe('Hello World!');
+      expect(modelTurn?.parts![0]!.text).toBe("Hello World!");
     });
 
-    it('should consolidate adjacent text parts that arrive in separate stream chunks', async () => {
+    it("should consolidate adjacent text parts that arrive in separate stream chunks", async () => {
       // 1. Mock the API to return a stream of multiple, adjacent text chunks.
       const multiChunkStream = (async function* () {
         yield {
-          candidates: [
-            { content: { role: 'model', parts: [{ text: 'This is the ' }] } },
-          ],
+          candidates: [{ content: { role: "model", parts: [{ text: "This is the " }] } }],
         } as unknown as GenerateContentResponse;
         yield {
-          candidates: [
-            { content: { role: 'model', parts: [{ text: 'first part.' }] } },
-          ],
+          candidates: [{ content: { role: "model", parts: [{ text: "first part." }] } }],
         } as unknown as GenerateContentResponse;
         // This function call should break the consolidation.
         yield {
           candidates: [
             {
               content: {
-                role: 'model',
-                parts: [{ functionCall: { name: 'do_stuff', args: {} } }],
+                role: "model",
+                parts: [{ functionCall: { name: "do_stuff", args: {} } }],
               },
             },
           ],
@@ -384,23 +359,21 @@ describe('GeminiChat', () => {
           candidates: [
             {
               content: {
-                role: 'model',
-                parts: [{ text: 'This is the second part.' }],
+                role: "model",
+                parts: [{ text: "This is the second part." }],
               },
             },
           ],
         } as unknown as GenerateContentResponse;
       })();
 
-      vi.mocked(mockContentGenerator.generateContentStream).mockResolvedValue(
-        multiChunkStream,
-      );
+      vi.mocked(mockContentGenerator.generateContentStream).mockResolvedValue(multiChunkStream);
 
       // 2. Action: Send a message and consume the stream.
       const stream = await chat.sendMessageStream(
-        'test-model',
-        { message: 'test message' },
-        'prompt-id-multi-chunk',
+        "test-model",
+        { message: "test message" },
+        "prompt-id-multi-chunk",
       );
       for await (const _ of stream) {
         // Consume the stream to trigger history recording.
@@ -413,42 +386,40 @@ describe('GeminiChat', () => {
       expect(history.length).toBe(2);
 
       const modelTurn = history[1]!;
-      expect(modelTurn.role).toBe('model');
+      expect(modelTurn.role).toBe("model");
 
       // The model turn should have 3 distinct parts: the merged text, the function call, and the final text.
       expect(modelTurn?.parts?.length).toBe(3);
-      expect(modelTurn?.parts![0]!.text).toBe('This is the first part.');
+      expect(modelTurn?.parts![0]!.text).toBe("This is the first part.");
       expect(modelTurn.parts![1]!.functionCall).toBeDefined();
-      expect(modelTurn.parts![2]!.text).toBe('This is the second part.');
+      expect(modelTurn.parts![2]!.text).toBe("This is the second part.");
     });
-    it('should preserve text parts that stream in the same chunk as a thought', async () => {
+    it("should preserve text parts that stream in the same chunk as a thought", async () => {
       // 1. Mock the API to return a single chunk containing both a thought and visible text.
       const mixedContentStream = (async function* () {
         yield {
           candidates: [
             {
               content: {
-                role: 'model',
+                role: "model",
                 parts: [
-                  { thought: 'This is a thought.' },
-                  { text: 'This is the visible text that should not be lost.' },
+                  { thought: "This is a thought." },
+                  { text: "This is the visible text that should not be lost." },
                 ],
               },
-              finishReason: 'STOP',
+              finishReason: "STOP",
             },
           ],
         } as unknown as GenerateContentResponse;
       })();
 
-      vi.mocked(mockContentGenerator.generateContentStream).mockResolvedValue(
-        mixedContentStream,
-      );
+      vi.mocked(mockContentGenerator.generateContentStream).mockResolvedValue(mixedContentStream);
 
       // 2. Action: Send a message and fully consume the stream to trigger history recording.
       const stream = await chat.sendMessageStream(
-        'test-model',
-        { message: 'test message' },
-        'prompt-id-mixed-chunk',
+        "test-model",
+        { message: "test message" },
+        "prompt-id-mixed-chunk",
       );
       for await (const _ of stream) {
         // This loop consumes the stream.
@@ -461,30 +432,28 @@ describe('GeminiChat', () => {
       expect(history.length).toBe(2);
 
       const modelTurn = history[1]!;
-      expect(modelTurn.role).toBe('model');
+      expect(modelTurn.role).toBe("model");
 
       // CRUCIAL ASSERTION:
       // The buggy code would fail here, resulting in parts.length being 0.
       // The corrected code will pass, preserving the single visible text part.
       expect(modelTurn?.parts?.length).toBe(1);
-      expect(modelTurn?.parts![0]!.text).toBe(
-        'This is the visible text that should not be lost.',
-      );
+      expect(modelTurn?.parts![0]!.text).toBe("This is the visible text that should not be lost.");
     });
-    it('should throw an error when a tool call is followed by an empty stream response', async () => {
+    it("should throw an error when a tool call is followed by an empty stream response", async () => {
       // 1. Setup: A history where the model has just made a function call.
       const initialHistory: Content[] = [
         {
-          role: 'user',
-          parts: [{ text: 'Find a good Italian restaurant for me.' }],
+          role: "user",
+          parts: [{ text: "Find a good Italian restaurant for me." }],
         },
         {
-          role: 'model',
+          role: "model",
           parts: [
             {
               functionCall: {
-                name: 'find_restaurant',
-                args: { cuisine: 'Italian' },
+                name: "find_restaurant",
+                args: { cuisine: "Italian" },
               },
             },
           ],
@@ -497,28 +466,26 @@ describe('GeminiChat', () => {
         yield {
           candidates: [
             {
-              content: { role: 'model', parts: [{ thought: true }] },
-              finishReason: 'STOP',
+              content: { role: "model", parts: [{ thought: true }] },
+              finishReason: "STOP",
             },
           ],
         } as unknown as GenerateContentResponse;
       })();
-      vi.mocked(mockContentGenerator.generateContentStream).mockResolvedValue(
-        emptyStreamResponse,
-      );
+      vi.mocked(mockContentGenerator.generateContentStream).mockResolvedValue(emptyStreamResponse);
 
       // 3. Action: Send the function response back to the model and consume the stream.
       const stream = await chat.sendMessageStream(
-        'test-model',
+        "test-model",
         {
           message: {
             functionResponse: {
-              name: 'find_restaurant',
-              response: { name: 'Vesuvio' },
+              name: "find_restaurant",
+              response: { name: "Vesuvio" },
             },
           },
         },
-        'prompt-id-stream-1',
+        "prompt-id-stream-1",
       );
 
       // 4. Assert: The stream processing should throw an InvalidStreamError.
@@ -531,19 +498,19 @@ describe('GeminiChat', () => {
       ).rejects.toThrow(InvalidStreamError);
     });
 
-    it('should succeed when there is a tool call without finish reason', async () => {
+    it("should succeed when there is a tool call without finish reason", async () => {
       // Setup: Stream with tool call but no finish reason
       const streamWithToolCall = (async function* () {
         yield {
           candidates: [
             {
               content: {
-                role: 'model',
+                role: "model",
                 parts: [
                   {
                     functionCall: {
-                      name: 'test_function',
-                      args: { param: 'value' },
+                      name: "test_function",
+                      args: { param: "value" },
                     },
                   },
                 ],
@@ -554,15 +521,9 @@ describe('GeminiChat', () => {
         } as unknown as GenerateContentResponse;
       })();
 
-      vi.mocked(mockContentGenerator.generateContentStream).mockResolvedValue(
-        streamWithToolCall,
-      );
+      vi.mocked(mockContentGenerator.generateContentStream).mockResolvedValue(streamWithToolCall);
 
-      const stream = await chat.sendMessageStream(
-        'test-model',
-        { message: 'test' },
-        'prompt-id-1',
-      );
+      const stream = await chat.sendMessageStream("test-model", { message: "test" }, "prompt-id-1");
 
       // Should not throw an error
       await expect(
@@ -574,15 +535,15 @@ describe('GeminiChat', () => {
       ).resolves.not.toThrow();
     });
 
-    it('should throw InvalidStreamError when no tool call and no finish reason', async () => {
+    it("should throw InvalidStreamError when no tool call and no finish reason", async () => {
       // Setup: Stream with text but no finish reason and no tool call
       const streamWithoutFinishReason = (async function* () {
         yield {
           candidates: [
             {
               content: {
-                role: 'model',
-                parts: [{ text: 'some response' }],
+                role: "model",
+                parts: [{ text: "some response" }],
               },
               // No finishReason
             },
@@ -594,11 +555,7 @@ describe('GeminiChat', () => {
         streamWithoutFinishReason,
       );
 
-      const stream = await chat.sendMessageStream(
-        'test-model',
-        { message: 'test' },
-        'prompt-id-1',
-      );
+      const stream = await chat.sendMessageStream("test-model", { message: "test" }, "prompt-id-1");
 
       await expect(
         (async () => {
@@ -609,17 +566,17 @@ describe('GeminiChat', () => {
       ).rejects.toThrow(InvalidStreamError);
     });
 
-    it('should throw InvalidStreamError when no tool call and empty response text', async () => {
+    it("should throw InvalidStreamError when no tool call and empty response text", async () => {
       // Setup: Stream with finish reason but empty response (only thoughts)
       const streamWithEmptyResponse = (async function* () {
         yield {
           candidates: [
             {
               content: {
-                role: 'model',
-                parts: [{ thought: 'thinking...' }],
+                role: "model",
+                parts: [{ thought: "thinking..." }],
               },
-              finishReason: 'STOP',
+              finishReason: "STOP",
             },
           ],
         } as unknown as GenerateContentResponse;
@@ -629,11 +586,7 @@ describe('GeminiChat', () => {
         streamWithEmptyResponse,
       );
 
-      const stream = await chat.sendMessageStream(
-        'test-model',
-        { message: 'test' },
-        'prompt-id-1',
-      );
+      const stream = await chat.sendMessageStream("test-model", { message: "test" }, "prompt-id-1");
 
       await expect(
         (async () => {
@@ -644,31 +597,25 @@ describe('GeminiChat', () => {
       ).rejects.toThrow(InvalidStreamError);
     });
 
-    it('should succeed when there is finish reason and response text', async () => {
+    it("should succeed when there is finish reason and response text", async () => {
       // Setup: Stream with both finish reason and text content
       const validStream = (async function* () {
         yield {
           candidates: [
             {
               content: {
-                role: 'model',
-                parts: [{ text: 'valid response' }],
+                role: "model",
+                parts: [{ text: "valid response" }],
               },
-              finishReason: 'STOP',
+              finishReason: "STOP",
             },
           ],
         } as unknown as GenerateContentResponse;
       })();
 
-      vi.mocked(mockContentGenerator.generateContentStream).mockResolvedValue(
-        validStream,
-      );
+      vi.mocked(mockContentGenerator.generateContentStream).mockResolvedValue(validStream);
 
-      const stream = await chat.sendMessageStream(
-        'test-model',
-        { message: 'test' },
-        'prompt-id-1',
-      );
+      const stream = await chat.sendMessageStream("test-model", { message: "test" }, "prompt-id-1");
 
       // Should not throw an error
       await expect(
@@ -680,21 +627,21 @@ describe('GeminiChat', () => {
       ).resolves.not.toThrow();
     });
 
-    it('should call generateContentStream with the correct parameters', async () => {
+    it("should call generateContentStream with the correct parameters", async () => {
       const response = (async function* () {
         yield {
           candidates: [
             {
               content: {
-                parts: [{ text: 'response' }],
-                role: 'model',
+                parts: [{ text: "response" }],
+                role: "model",
               },
-              finishReason: 'STOP',
+              finishReason: "STOP",
               index: 0,
               safetyRatings: [],
             },
           ],
-          text: () => 'response',
+          text: () => "response",
           usageMetadata: {
             promptTokenCount: 42,
             candidatesTokenCount: 15,
@@ -702,14 +649,12 @@ describe('GeminiChat', () => {
           },
         } as unknown as GenerateContentResponse;
       })();
-      vi.mocked(mockContentGenerator.generateContentStream).mockResolvedValue(
-        response,
-      );
+      vi.mocked(mockContentGenerator.generateContentStream).mockResolvedValue(response);
 
       const stream = await chat.sendMessageStream(
-        'test-model',
-        { message: 'hello' },
-        'prompt-id-1',
+        "test-model",
+        { message: "hello" },
+        "prompt-id-1",
       );
       for await (const _ of stream) {
         // consume stream
@@ -717,25 +662,25 @@ describe('GeminiChat', () => {
 
       expect(mockContentGenerator.generateContentStream).toHaveBeenCalledWith(
         {
-          model: 'test-model',
+          model: "test-model",
           contents: [
             {
-              role: 'user',
-              parts: [{ text: 'hello' }],
+              role: "user",
+              parts: [{ text: "hello" }],
             },
           ],
           config: {},
         },
-        'prompt-id-1',
+        "prompt-id-1",
       );
     });
   });
 
-  describe('addHistory', () => {
-    it('should add a new content item to the history', () => {
+  describe("addHistory", () => {
+    it("should add a new content item to the history", () => {
       const newContent: Content = {
-        role: 'user',
-        parts: [{ text: 'A new message' }],
+        role: "user",
+        parts: [{ text: "A new message" }],
       };
       chat.addHistory(newContent);
       const history = chat.getHistory();
@@ -743,14 +688,14 @@ describe('GeminiChat', () => {
       expect(history[0]).toEqual(newContent);
     });
 
-    it('should add multiple items correctly', () => {
+    it("should add multiple items correctly", () => {
       const content1: Content = {
-        role: 'user',
-        parts: [{ text: 'Message 1' }],
+        role: "user",
+        parts: [{ text: "Message 1" }],
       };
       const content2: Content = {
-        role: 'model',
-        parts: [{ text: 'Message 2' }],
+        role: "model",
+        parts: [{ text: "Message 2" }],
       };
       chat.addHistory(content1);
       chat.addHistory(content2);
@@ -761,15 +706,15 @@ describe('GeminiChat', () => {
     });
   });
 
-  describe('sendMessageStream with retries', () => {
-    it('should yield a RETRY event when an invalid stream is encountered', async () => {
+  describe("sendMessageStream with retries", () => {
+    it("should yield a RETRY event when an invalid stream is encountered", async () => {
       // ARRANGE: Mock the stream to fail once, then succeed.
       vi.mocked(mockContentGenerator.generateContentStream)
         .mockImplementationOnce(async () =>
           // First attempt: An invalid stream with an empty text part.
           (async function* () {
             yield {
-              candidates: [{ content: { parts: [{ text: '' }] } }],
+              candidates: [{ content: { parts: [{ text: "" }] } }],
             } as unknown as GenerateContentResponse;
           })(),
         )
@@ -779,8 +724,8 @@ describe('GeminiChat', () => {
             yield {
               candidates: [
                 {
-                  content: { parts: [{ text: 'Success' }] },
-                  finishReason: 'STOP',
+                  content: { parts: [{ text: "Success" }] },
+                  finishReason: "STOP",
                 },
               ],
             } as unknown as GenerateContentResponse;
@@ -789,9 +734,9 @@ describe('GeminiChat', () => {
 
       // ACT: Send a message and collect all events from the stream.
       const stream = await chat.sendMessageStream(
-        'test-model',
-        { message: 'test' },
-        'prompt-id-yield-retry',
+        "test-model",
+        { message: "test" },
+        "prompt-id-yield-retry",
       );
       const events: StreamEvent[] = [];
       for await (const event of stream) {
@@ -804,14 +749,14 @@ describe('GeminiChat', () => {
       expect(retryEvent).toBeDefined();
       expect(retryEvent?.type).toBe(StreamEventType.RETRY);
     });
-    it('should retry on invalid content, succeed, and report metrics', async () => {
+    it("should retry on invalid content, succeed, and report metrics", async () => {
       // Use mockImplementationOnce to provide a fresh, promise-wrapped generator for each attempt.
       vi.mocked(mockContentGenerator.generateContentStream)
         .mockImplementationOnce(async () =>
           // First call returns an invalid stream
           (async function* () {
             yield {
-              candidates: [{ content: { parts: [{ text: '' }] } }], // Invalid empty text part
+              candidates: [{ content: { parts: [{ text: "" }] } }], // Invalid empty text part
             } as unknown as GenerateContentResponse;
           })(),
         )
@@ -821,8 +766,8 @@ describe('GeminiChat', () => {
             yield {
               candidates: [
                 {
-                  content: { parts: [{ text: 'Successful response' }] },
-                  finishReason: 'STOP',
+                  content: { parts: [{ text: "Successful response" }] },
+                  finishReason: "STOP",
                 },
               ],
             } as unknown as GenerateContentResponse;
@@ -830,9 +775,9 @@ describe('GeminiChat', () => {
         );
 
       const stream = await chat.sendMessageStream(
-        'test-model',
-        { message: 'test' },
-        'prompt-id-retry-success',
+        "test-model",
+        { message: "test" },
+        "prompt-id-retry-success",
       );
       const chunks: StreamEvent[] = [];
       for await (const chunk of stream) {
@@ -842,9 +787,7 @@ describe('GeminiChat', () => {
       // Assertions
       expect(mockLogContentRetry).toHaveBeenCalledTimes(1);
       expect(mockLogContentRetryFailure).not.toHaveBeenCalled();
-      expect(mockContentGenerator.generateContentStream).toHaveBeenCalledTimes(
-        2,
-      );
+      expect(mockContentGenerator.generateContentStream).toHaveBeenCalledTimes(2);
 
       // Check for a retry event
       expect(chunks.some((c) => c.type === StreamEventType.RETRY)).toBe(true);
@@ -854,8 +797,7 @@ describe('GeminiChat', () => {
         chunks.some(
           (c) =>
             c.type === StreamEventType.CHUNK &&
-            c.value.candidates?.[0]?.content?.parts?.[0]?.text ===
-              'Successful response',
+            c.value.candidates?.[0]?.content?.parts?.[0]?.text === "Successful response",
         ),
       ).toBe(true);
 
@@ -863,26 +805,26 @@ describe('GeminiChat', () => {
       const history = chat.getHistory();
       expect(history.length).toBe(2);
       expect(history[0]).toEqual({
-        role: 'user',
-        parts: [{ text: 'test' }],
+        role: "user",
+        parts: [{ text: "test" }],
       });
       expect(history[1]).toEqual({
-        role: 'model',
-        parts: [{ text: 'Successful response' }],
+        role: "model",
+        parts: [{ text: "Successful response" }],
       });
 
       // Verify that token counting is not called when usageMetadata is missing
       expect(uiTelemetryService.setLastPromptTokenCount).not.toHaveBeenCalled();
     });
 
-    it('should set temperature to 1 on retry', async () => {
+    it("should set temperature to 1 on retry", async () => {
       // Use mockImplementationOnce to provide a fresh, promise-wrapped generator for each attempt.
       vi.mocked(mockContentGenerator.generateContentStream)
         .mockImplementationOnce(async () =>
           // First call returns an invalid stream
           (async function* () {
             yield {
-              candidates: [{ content: { parts: [{ text: '' }] } }], // Invalid empty text part
+              candidates: [{ content: { parts: [{ text: "" }] } }], // Invalid empty text part
             } as unknown as GenerateContentResponse;
           })(),
         )
@@ -892,8 +834,8 @@ describe('GeminiChat', () => {
             yield {
               candidates: [
                 {
-                  content: { parts: [{ text: 'Successful response' }] },
-                  finishReason: 'STOP',
+                  content: { parts: [{ text: "Successful response" }] },
+                  finishReason: "STOP",
                 },
               ],
             } as unknown as GenerateContentResponse;
@@ -901,67 +843,60 @@ describe('GeminiChat', () => {
         );
 
       const stream = await chat.sendMessageStream(
-        'test-model',
-        { message: 'test', config: { temperature: 0.5 } },
-        'prompt-id-retry-temperature',
+        "test-model",
+        { message: "test", config: { temperature: 0.5 } },
+        "prompt-id-retry-temperature",
       );
 
       for await (const _ of stream) {
         // consume stream
       }
 
-      expect(mockContentGenerator.generateContentStream).toHaveBeenCalledTimes(
-        2,
-      );
+      expect(mockContentGenerator.generateContentStream).toHaveBeenCalledTimes(2);
 
       // First call should have original temperature
-      expect(
-        mockContentGenerator.generateContentStream,
-      ).toHaveBeenNthCalledWith(
+      expect(mockContentGenerator.generateContentStream).toHaveBeenNthCalledWith(
         1,
         expect.objectContaining({
           config: expect.objectContaining({
             temperature: 0.5,
           }),
         }),
-        'prompt-id-retry-temperature',
+        "prompt-id-retry-temperature",
       );
 
       // Second call (retry) should have temperature 1
-      expect(
-        mockContentGenerator.generateContentStream,
-      ).toHaveBeenNthCalledWith(
+      expect(mockContentGenerator.generateContentStream).toHaveBeenNthCalledWith(
         2,
         expect.objectContaining({
           config: expect.objectContaining({
             temperature: 1,
           }),
         }),
-        'prompt-id-retry-temperature',
+        "prompt-id-retry-temperature",
       );
     });
 
-    it('should fail after all retries on persistent invalid content and report metrics', async () => {
-      vi.mocked(mockContentGenerator.generateContentStream).mockImplementation(
-        async () =>
-          (async function* () {
-            yield {
-              candidates: [
-                {
-                  content: {
-                    parts: [{ text: '' }],
-                    role: 'model',
-                  },
+    it("should fail after all retries on persistent invalid content and report metrics", async () => {
+      vi.mocked(mockContentGenerator.generateContentStream).mockImplementation(async () =>
+        (async function* () {
+          yield {
+            candidates: [
+              {
+                content: {
+                  parts: [{ text: "" }],
+                  role: "model",
                 },
-              ],
-            } as unknown as GenerateContentResponse;
-          })(),
+              },
+            ],
+          } as unknown as GenerateContentResponse;
+        })(),
       );
 
       const stream = await chat.sendMessageStream(
-        'test-model',
-        { message: 'test' },
-        'prompt-id-retry-fail',
+        "test-model",
+        { message: "test" },
+        "prompt-id-retry-fail",
       );
       await expect(async () => {
         for await (const _ of stream) {
@@ -970,9 +905,7 @@ describe('GeminiChat', () => {
       }).rejects.toThrow(InvalidStreamError);
 
       // Should be called 2 times (initial + 1 retry)
-      expect(mockContentGenerator.generateContentStream).toHaveBeenCalledTimes(
-        2,
-      );
+      expect(mockContentGenerator.generateContentStream).toHaveBeenCalledTimes(2);
       expect(mockLogContentRetry).toHaveBeenCalledTimes(1);
       expect(mockLogContentRetryFailure).toHaveBeenCalledTimes(1);
 
@@ -980,12 +913,12 @@ describe('GeminiChat', () => {
       const history = chat.getHistory();
       expect(history.length).toBe(1);
       expect(history[0]).toEqual({
-        role: 'user',
-        parts: [{ text: 'test' }],
+        role: "user",
+        parts: [{ text: "test" }],
       });
     });
 
-    describe('API error retry behavior', () => {
+    describe("API error retry behavior", () => {
       beforeEach(() => {
         // Use a more direct mock for retry testing
         mockRetryWithBackoff.mockImplementation(async (apiCall) => {
@@ -995,10 +928,7 @@ describe('GeminiChat', () => {
             // Simulate the logic of defaultShouldRetry for ApiError
             let shouldRetry = false;
             if (error instanceof ApiError && error.message) {
-              if (
-                error.status === 429 ||
-                (error.status >= 500 && error.status < 600)
-              ) {
+              if (error.status === 429 || (error.status >= 500 && error.status < 600)) {
                 shouldRetry = true;
               }
               // Explicitly don't retry on these
@@ -1016,17 +946,15 @@ describe('GeminiChat', () => {
         });
       });
 
-      it('should not retry on 400 Bad Request errors', async () => {
-        const error400 = new ApiError({ message: 'Bad Request', status: 400 });
+      it("should not retry on 400 Bad Request errors", async () => {
+        const error400 = new ApiError({ message: "Bad Request", status: 400 });
 
-        vi.mocked(mockContentGenerator.generateContentStream).mockRejectedValue(
-          error400,
-        );
+        vi.mocked(mockContentGenerator.generateContentStream).mockRejectedValue(error400);
 
         const stream = await chat.sendMessageStream(
-          'test-model',
-          { message: 'test' },
-          'prompt-id-400',
+          "test-model",
+          { message: "test" },
+          "prompt-id-400",
         );
 
         await expect(
@@ -1038,13 +966,11 @@ describe('GeminiChat', () => {
         ).rejects.toThrow(error400);
 
         // Should only be called once (no retry)
-        expect(
-          mockContentGenerator.generateContentStream,
-        ).toHaveBeenCalledTimes(1);
+        expect(mockContentGenerator.generateContentStream).toHaveBeenCalledTimes(1);
       });
 
-      it('should retry on 429 Rate Limit errors', async () => {
-        const error429 = new ApiError({ message: 'Rate Limited', status: 429 });
+      it("should retry on 429 Rate Limit errors", async () => {
+        const error429 = new ApiError({ message: "Rate Limited", status: 429 });
 
         vi.mocked(mockContentGenerator.generateContentStream)
           .mockRejectedValueOnce(error429)
@@ -1053,8 +979,8 @@ describe('GeminiChat', () => {
               yield {
                 candidates: [
                   {
-                    content: { parts: [{ text: 'Success after retry' }] },
-                    finishReason: 'STOP',
+                    content: { parts: [{ text: "Success after retry" }] },
+                    finishReason: "STOP",
                   },
                 ],
               } as unknown as GenerateContentResponse;
@@ -1062,9 +988,9 @@ describe('GeminiChat', () => {
           );
 
         const stream = await chat.sendMessageStream(
-          'test-model',
-          { message: 'test' },
-          'prompt-id-429-retry',
+          "test-model",
+          { message: "test" },
+          "prompt-id-429-retry",
         );
 
         const events: StreamEvent[] = [];
@@ -1073,24 +999,21 @@ describe('GeminiChat', () => {
         }
 
         // Should be called twice (initial + retry)
-        expect(
-          mockContentGenerator.generateContentStream,
-        ).toHaveBeenCalledTimes(2);
+        expect(mockContentGenerator.generateContentStream).toHaveBeenCalledTimes(2);
 
         // Should have successful content
         expect(
           events.some(
             (e) =>
               e.type === StreamEventType.CHUNK &&
-              e.value.candidates?.[0]?.content?.parts?.[0]?.text ===
-                'Success after retry',
+              e.value.candidates?.[0]?.content?.parts?.[0]?.text === "Success after retry",
           ),
         ).toBe(true);
       });
 
-      it('should retry on 5xx server errors', async () => {
+      it("should retry on 5xx server errors", async () => {
         const error500 = new ApiError({
-          message: 'Internal Server Error 500',
+          message: "Internal Server Error 500",
           status: 500,
         });
 
@@ -1101,8 +1024,8 @@ describe('GeminiChat', () => {
               yield {
                 candidates: [
                   {
-                    content: { parts: [{ text: 'Recovered from 500' }] },
-                    finishReason: 'STOP',
+                    content: { parts: [{ text: "Recovered from 500" }] },
+                    finishReason: "STOP",
                   },
                 ],
               } as unknown as GenerateContentResponse;
@@ -1110,9 +1033,9 @@ describe('GeminiChat', () => {
           );
 
         const stream = await chat.sendMessageStream(
-          'test-model',
-          { message: 'test' },
-          'prompt-id-500-retry',
+          "test-model",
+          { message: "test" },
+          "prompt-id-500-retry",
         );
 
         const events: StreamEvent[] = [];
@@ -1121,17 +1044,13 @@ describe('GeminiChat', () => {
         }
 
         // Should be called twice (initial + retry)
-        expect(
-          mockContentGenerator.generateContentStream,
-        ).toHaveBeenCalledTimes(2);
+        expect(mockContentGenerator.generateContentStream).toHaveBeenCalledTimes(2);
       });
 
-      it('should retry on specific fetch errors when configured', async () => {
+      it("should retry on specific fetch errors when configured", async () => {
         vi.mocked(mockConfig.getRetryFetchErrors).mockReturnValue(true);
 
-        const fetchError = new Error(
-          'exception TypeError: fetch failed sending request',
-        );
+        const fetchError = new Error("exception TypeError: fetch failed sending request");
 
         vi.mocked(mockContentGenerator.generateContentStream)
           .mockRejectedValueOnce(fetchError)
@@ -1140,8 +1059,8 @@ describe('GeminiChat', () => {
               yield {
                 candidates: [
                   {
-                    content: { parts: [{ text: 'Success after fetch error' }] },
-                    finishReason: 'STOP',
+                    content: { parts: [{ text: "Success after fetch error" }] },
+                    finishReason: "STOP",
                   },
                 ],
               } as unknown as GenerateContentResponse;
@@ -1155,9 +1074,7 @@ describe('GeminiChat', () => {
             if (
               options?.retryFetchErrors &&
               error instanceof Error &&
-              error.message.includes(
-                'exception TypeError: fetch failed sending request',
-              )
+              error.message.includes("exception TypeError: fetch failed sending request")
             ) {
               return await apiCall();
             }
@@ -1166,9 +1083,9 @@ describe('GeminiChat', () => {
         });
 
         const stream = await chat.sendMessageStream(
-          'test-model',
-          { message: 'test' },
-          'prompt-id-fetch-error-retry',
+          "test-model",
+          { message: "test" },
+          "prompt-id-fetch-error-retry",
         );
 
         const events: StreamEvent[] = [];
@@ -1176,16 +1093,13 @@ describe('GeminiChat', () => {
           events.push(event);
         }
 
-        expect(
-          mockContentGenerator.generateContentStream,
-        ).toHaveBeenCalledTimes(2);
+        expect(mockContentGenerator.generateContentStream).toHaveBeenCalledTimes(2);
 
         expect(
           events.some(
             (e) =>
               e.type === StreamEventType.CHUNK &&
-              e.value.candidates?.[0]?.content?.parts?.[0]?.text ===
-                'Success after fetch error',
+              e.value.candidates?.[0]?.content?.parts?.[0]?.text === "Success after fetch error",
           ),
         ).toBe(true);
       });
@@ -1196,11 +1110,11 @@ describe('GeminiChat', () => {
       });
     });
   });
-  it('should correctly retry and append to an existing history mid-conversation', async () => {
+  it("should correctly retry and append to an existing history mid-conversation", async () => {
     // 1. Setup
     const initialHistory: Content[] = [
-      { role: 'user', parts: [{ text: 'First question' }] },
-      { role: 'model', parts: [{ text: 'First answer' }] },
+      { role: "user", parts: [{ text: "First question" }] },
+      { role: "model", parts: [{ text: "First answer" }] },
     ];
     chat.setHistory(initialHistory);
 
@@ -1209,7 +1123,7 @@ describe('GeminiChat', () => {
       .mockImplementationOnce(async () =>
         (async function* () {
           yield {
-            candidates: [{ content: { parts: [{ text: '' }] } }],
+            candidates: [{ content: { parts: [{ text: "" }] } }],
           } as unknown as GenerateContentResponse;
         })(),
       )
@@ -1219,8 +1133,8 @@ describe('GeminiChat', () => {
           yield {
             candidates: [
               {
-                content: { parts: [{ text: 'Second answer' }] },
-                finishReason: 'STOP',
+                content: { parts: [{ text: "Second answer" }] },
+                finishReason: "STOP",
               },
             ],
           } as unknown as GenerateContentResponse;
@@ -1229,9 +1143,9 @@ describe('GeminiChat', () => {
 
     // 3. Send a new message
     const stream = await chat.sendMessageStream(
-      'test-model',
-      { message: 'Second question' },
-      'prompt-id-retry-existing',
+      "test-model",
+      { message: "Second question" },
+      "prompt-id-retry-existing",
     );
     for await (const _ of stream) {
       // consume stream
@@ -1246,35 +1160,31 @@ describe('GeminiChat', () => {
 
     // Explicitly verify the structure of each part to satisfy TypeScript
     const turn1 = history[0];
-    if (!turn1?.parts?.[0] || !('text' in turn1.parts[0])) {
-      throw new Error('Test setup error: First turn is not a valid text part.');
+    if (!turn1?.parts?.[0] || !("text" in turn1.parts[0])) {
+      throw new Error("Test setup error: First turn is not a valid text part.");
     }
-    expect(turn1.parts[0].text).toBe('First question');
+    expect(turn1.parts[0].text).toBe("First question");
 
     const turn2 = history[1];
-    if (!turn2?.parts?.[0] || !('text' in turn2.parts[0])) {
-      throw new Error(
-        'Test setup error: Second turn is not a valid text part.',
-      );
+    if (!turn2?.parts?.[0] || !("text" in turn2.parts[0])) {
+      throw new Error("Test setup error: Second turn is not a valid text part.");
     }
-    expect(turn2.parts[0].text).toBe('First answer');
+    expect(turn2.parts[0].text).toBe("First answer");
 
     const turn3 = history[2];
-    if (!turn3?.parts?.[0] || !('text' in turn3.parts[0])) {
-      throw new Error('Test setup error: Third turn is not a valid text part.');
+    if (!turn3?.parts?.[0] || !("text" in turn3.parts[0])) {
+      throw new Error("Test setup error: Third turn is not a valid text part.");
     }
-    expect(turn3.parts[0].text).toBe('Second question');
+    expect(turn3.parts[0].text).toBe("Second question");
 
     const turn4 = history[3];
-    if (!turn4?.parts?.[0] || !('text' in turn4.parts[0])) {
-      throw new Error(
-        'Test setup error: Fourth turn is not a valid text part.',
-      );
+    if (!turn4?.parts?.[0] || !("text" in turn4.parts[0])) {
+      throw new Error("Test setup error: Fourth turn is not a valid text part.");
     }
-    expect(turn4.parts[0].text).toBe('Second answer');
+    expect(turn4.parts[0].text).toBe("Second answer");
   });
 
-  it('should retry if the model returns a completely empty stream (no chunks)', async () => {
+  it("should retry if the model returns a completely empty stream (no chunks)", async () => {
     // 1. Mock the API to return an empty stream first, then a valid one.
     vi.mocked(mockContentGenerator.generateContentStream)
       .mockImplementationOnce(
@@ -1289,9 +1199,9 @@ describe('GeminiChat', () => {
               candidates: [
                 {
                   content: {
-                    parts: [{ text: 'Successful response after empty' }],
+                    parts: [{ text: "Successful response after empty" }],
                   },
-                  finishReason: 'STOP',
+                  finishReason: "STOP",
                 },
               ],
             } as unknown as GenerateContentResponse;
@@ -1300,9 +1210,9 @@ describe('GeminiChat', () => {
 
     // 2. Call the method and consume the stream.
     const stream = await chat.sendMessageStream(
-      'test-model',
-      { message: 'test empty stream' },
-      'prompt-id-empty-stream',
+      "test-model",
+      { message: "test empty stream" },
+      "prompt-id-empty-stream",
     );
     const chunks: StreamEvent[] = [];
     for await (const chunk of stream) {
@@ -1315,8 +1225,7 @@ describe('GeminiChat', () => {
       chunks.some(
         (c) =>
           c.type === StreamEventType.CHUNK &&
-          c.value.candidates?.[0]?.content?.parts?.[0]?.text ===
-            'Successful response after empty',
+          c.value.candidates?.[0]?.content?.parts?.[0]?.text === "Successful response after empty",
       ),
     ).toBe(true);
 
@@ -1325,20 +1234,18 @@ describe('GeminiChat', () => {
 
     // Explicitly verify the structure of each part to satisfy TypeScript
     const turn1 = history[0];
-    if (!turn1?.parts?.[0] || !('text' in turn1.parts[0])) {
-      throw new Error('Test setup error: First turn is not a valid text part.');
+    if (!turn1?.parts?.[0] || !("text" in turn1.parts[0])) {
+      throw new Error("Test setup error: First turn is not a valid text part.");
     }
-    expect(turn1.parts[0].text).toBe('test empty stream');
+    expect(turn1.parts[0].text).toBe("test empty stream");
 
     const turn2 = history[1];
-    if (!turn2?.parts?.[0] || !('text' in turn2.parts[0])) {
-      throw new Error(
-        'Test setup error: Second turn is not a valid text part.',
-      );
+    if (!turn2?.parts?.[0] || !("text" in turn2.parts[0])) {
+      throw new Error("Test setup error: Second turn is not a valid text part.");
     }
-    expect(turn2.parts[0].text).toBe('Successful response after empty');
+    expect(turn2.parts[0].text).toBe("Successful response after empty");
   });
-  it('should queue a subsequent sendMessageStream call until the first stream is fully consumed', async () => {
+  it("should queue a subsequent sendMessageStream call until the first stream is fully consumed", async () => {
     // 1. Create a promise to manually control the stream's lifecycle
     let continueFirstStream: () => void;
     const firstStreamContinuePromise = new Promise<void>((resolve) => {
@@ -1348,16 +1255,14 @@ describe('GeminiChat', () => {
     // 2. Mock the API to return controllable async generators
     const firstStreamGenerator = (async function* () {
       yield {
-        candidates: [
-          { content: { parts: [{ text: 'first response part 1' }] } },
-        ],
+        candidates: [{ content: { parts: [{ text: "first response part 1" }] } }],
       } as unknown as GenerateContentResponse;
       await firstStreamContinuePromise; // Pause the stream
       yield {
         candidates: [
           {
-            content: { parts: [{ text: ' part 2' }] },
-            finishReason: 'STOP',
+            content: { parts: [{ text: " part 2" }] },
+            finishReason: "STOP",
           },
         ],
       } as unknown as GenerateContentResponse;
@@ -1367,8 +1272,8 @@ describe('GeminiChat', () => {
       yield {
         candidates: [
           {
-            content: { parts: [{ text: 'second response' }] },
-            finishReason: 'STOP',
+            content: { parts: [{ text: "second response" }] },
+            finishReason: "STOP",
           },
         ],
       } as unknown as GenerateContentResponse;
@@ -1380,18 +1285,18 @@ describe('GeminiChat', () => {
 
     // 3. Start the first stream and consume only the first chunk to pause it
     const firstStream = await chat.sendMessageStream(
-      'test-model',
-      { message: 'first' },
-      'prompt-1',
+      "test-model",
+      { message: "first" },
+      "prompt-1",
     );
     const firstStreamIterator = firstStream[Symbol.asyncIterator]();
     await firstStreamIterator.next();
 
     // 4. While the first stream is paused, start the second call. It will block.
     const secondStreamPromise = chat.sendMessageStream(
-      'test-model',
-      { message: 'second' },
-      'prompt-2',
+      "test-model",
+      { message: "second" },
+      "prompt-2",
     );
 
     // 5. Assert that only one API call has been made so far.
@@ -1420,38 +1325,35 @@ describe('GeminiChat', () => {
     expect(history.length).toBe(4);
 
     const turn4 = history[3];
-    if (!turn4?.parts?.[0] || !('text' in turn4.parts[0])) {
-      throw new Error(
-        'Test setup error: Fourth turn is not a valid text part.',
-      );
+    if (!turn4?.parts?.[0] || !("text" in turn4.parts[0])) {
+      throw new Error("Test setup error: Fourth turn is not a valid text part.");
     }
-    expect(turn4.parts[0].text).toBe('second response');
+    expect(turn4.parts[0].text).toBe("second response");
   });
 
-  describe('Model Resolution', () => {
+  describe("Model Resolution", () => {
     const mockResponse = {
       candidates: [
         {
-          content: { parts: [{ text: 'response' }], role: 'model' },
-          finishReason: 'STOP',
+          content: { parts: [{ text: "response" }], role: "model" },
+          finishReason: "STOP",
         },
       ],
     } as unknown as GenerateContentResponse;
 
-    it('should use the FLASH model when in fallback mode (sendMessageStream)', async () => {
-      vi.mocked(mockConfig.getModel).mockReturnValue('gemini-pro');
+    it("should use the FLASH model when in fallback mode (sendMessageStream)", async () => {
+      vi.mocked(mockConfig.getModel).mockReturnValue("gemini-pro");
       vi.mocked(mockConfig.isInFallbackMode).mockReturnValue(true);
-      vi.mocked(mockContentGenerator.generateContentStream).mockImplementation(
-        async () =>
-          (async function* () {
-            yield mockResponse;
-          })(),
+      vi.mocked(mockContentGenerator.generateContentStream).mockImplementation(async () =>
+        (async function* () {
+          yield mockResponse;
+        })(),
       );
 
       const stream = await chat.sendMessageStream(
-        'test-model',
-        { message: 'test' },
-        'prompt-id-res3',
+        "test-model",
+        { message: "test" },
+        "prompt-id-res3",
       );
       for await (const _ of stream) {
         // consume stream
@@ -1461,14 +1363,14 @@ describe('GeminiChat', () => {
         expect.objectContaining({
           model: DEFAULT_GEMINI_FLASH_MODEL,
         }),
-        'prompt-id-res3',
+        "prompt-id-res3",
       );
     });
   });
 
-  describe('Fallback Integration (Retries)', () => {
+  describe("Fallback Integration (Retries)", () => {
     const error429 = new ApiError({
-      message: 'API Error 429: Quota exceeded',
+      message: "API Error 429: Quota exceeded",
       status: 429,
     });
 
@@ -1484,10 +1386,7 @@ describe('GeminiChat', () => {
       } catch (error) {
         if (options.onPersistent429) {
           // We simulate the "persistent" trigger here for simplicity.
-          const shouldRetry = await options.onPersistent429(
-            options.authType,
-            error,
-          );
+          const shouldRetry = await options.onPersistent429(options.authType, error);
           if (shouldRetry) {
             return await apiCall();
           }
@@ -1504,13 +1403,13 @@ describe('GeminiChat', () => {
       mockRetryWithBackoff.mockImplementation(async (apiCall) => apiCall());
     });
 
-    it('should call handleFallback with the specific failed model and retry if handler returns true', async () => {
+    it("should call handleFallback with the specific failed model and retry if handler returns true", async () => {
       const authType = AuthType.LOGIN_WITH_GOOGLE;
       vi.mocked(mockConfig.getContentGeneratorConfig).mockReturnValue({
         authType,
       });
 
-      const isInFallbackModeSpy = vi.spyOn(mockConfig, 'isInFallbackMode');
+      const isInFallbackModeSpy = vi.spyOn(mockConfig, "isInFallbackMode");
       isInFallbackModeSpy.mockReturnValue(false);
 
       vi.mocked(mockContentGenerator.generateContentStream)
@@ -1521,8 +1420,8 @@ describe('GeminiChat', () => {
             yield {
               candidates: [
                 {
-                  content: { parts: [{ text: 'Success on retry' }] },
-                  finishReason: 'STOP',
+                  content: { parts: [{ text: "Success on retry" }] },
+                  finishReason: "STOP",
                 },
               ],
             } as unknown as GenerateContentResponse;
@@ -1535,9 +1434,9 @@ describe('GeminiChat', () => {
       });
 
       const stream = await chat.sendMessageStream(
-        'test-model',
-        { message: 'trigger 429' },
-        'prompt-id-fb1',
+        "test-model",
+        { message: "trigger 429" },
+        "prompt-id-fb1",
       );
 
       // Consume stream to trigger logic
@@ -1545,33 +1444,24 @@ describe('GeminiChat', () => {
         // no-op
       }
 
-      expect(mockContentGenerator.generateContentStream).toHaveBeenCalledTimes(
-        2,
-      );
+      expect(mockContentGenerator.generateContentStream).toHaveBeenCalledTimes(2);
       expect(mockHandleFallback).toHaveBeenCalledTimes(1);
-      expect(mockHandleFallback).toHaveBeenCalledWith(
-        mockConfig,
-        'test-model',
-        authType,
-        error429,
-      );
+      expect(mockHandleFallback).toHaveBeenCalledWith(mockConfig, "test-model", authType, error429);
 
       const history = chat.getHistory();
       const modelTurn = history[1]!;
-      expect(modelTurn.parts![0]!.text).toBe('Success on retry');
+      expect(modelTurn.parts![0]!.text).toBe("Success on retry");
     });
 
-    it('should stop retrying if handleFallback returns false (e.g., auth intent)', async () => {
-      vi.mocked(mockConfig.getModel).mockReturnValue('gemini-pro');
-      vi.mocked(mockContentGenerator.generateContentStream).mockRejectedValue(
-        error429,
-      );
+    it("should stop retrying if handleFallback returns false (e.g., auth intent)", async () => {
+      vi.mocked(mockConfig.getModel).mockReturnValue("gemini-pro");
+      vi.mocked(mockContentGenerator.generateContentStream).mockRejectedValue(error429);
       mockHandleFallback.mockResolvedValue(false);
 
       const stream = await chat.sendMessageStream(
-        'test-model',
-        { message: 'test stop' },
-        'prompt-id-fb2',
+        "test-model",
+        { message: "test stop" },
+        "prompt-id-fb2",
       );
 
       await expect(
@@ -1582,14 +1472,12 @@ describe('GeminiChat', () => {
         })(),
       ).rejects.toThrow(error429);
 
-      expect(mockContentGenerator.generateContentStream).toHaveBeenCalledTimes(
-        1,
-      );
+      expect(mockContentGenerator.generateContentStream).toHaveBeenCalledTimes(1);
       expect(mockHandleFallback).toHaveBeenCalledTimes(1);
     });
   });
 
-  it('should discard valid partial content from a failed attempt upon retry', async () => {
+  it("should discard valid partial content from a failed attempt upon retry", async () => {
     // Mock the stream to fail on the first attempt after yielding some valid content.
     vi.mocked(mockContentGenerator.generateContentStream)
       .mockImplementationOnce(async () =>
@@ -1599,13 +1487,13 @@ describe('GeminiChat', () => {
             candidates: [
               {
                 content: {
-                  parts: [{ text: 'This valid part should be discarded' }],
+                  parts: [{ text: "This valid part should be discarded" }],
                 },
               },
             ],
           } as unknown as GenerateContentResponse;
           yield {
-            candidates: [{ content: { parts: [{ text: '' }] } }], // Invalid chunk triggers retry
+            candidates: [{ content: { parts: [{ text: "" }] } }], // Invalid chunk triggers retry
           } as unknown as GenerateContentResponse;
         })(),
       )
@@ -1616,9 +1504,9 @@ describe('GeminiChat', () => {
             candidates: [
               {
                 content: {
-                  parts: [{ text: 'Successful final response' }],
+                  parts: [{ text: "Successful final response" }],
                 },
-                finishReason: 'STOP',
+                finishReason: "STOP",
               },
             ],
           } as unknown as GenerateContentResponse;
@@ -1627,9 +1515,9 @@ describe('GeminiChat', () => {
 
     // Send a message and consume the stream
     const stream = await chat.sendMessageStream(
-      'test-model',
-      { message: 'test' },
-      'prompt-id-discard-test',
+      "test-model",
+      { message: "test" },
+      "prompt-id-discard-test",
     );
     const events: StreamEvent[] = [];
     for await (const event of stream) {
@@ -1646,27 +1534,25 @@ describe('GeminiChat', () => {
 
     const modelTurn = history[1]!;
     // The model turn should only contain the text from the successful attempt
-    expect(modelTurn!.parts![0]!.text).toBe('Successful final response');
+    expect(modelTurn!.parts![0]!.text).toBe("Successful final response");
     // It should NOT contain any text from the failed attempt
-    expect(modelTurn!.parts![0]!.text).not.toContain(
-      'This valid part should be discarded',
-    );
+    expect(modelTurn!.parts![0]!.text).not.toContain("This valid part should be discarded");
   });
 
-  describe('stripThoughtsFromHistory', () => {
-    it('should strip thought signatures', () => {
+  describe("stripThoughtsFromHistory", () => {
+    it("should strip thought signatures", () => {
       chat.setHistory([
         {
-          role: 'user',
-          parts: [{ text: 'hello' }],
+          role: "user",
+          parts: [{ text: "hello" }],
         },
         {
-          role: 'model',
+          role: "model",
           parts: [
-            { text: 'thinking...', thoughtSignature: 'thought-123' },
+            { text: "thinking...", thoughtSignature: "thought-123" },
             {
-              functionCall: { name: 'test', args: {} },
-              thoughtSignature: 'thought-456',
+              functionCall: { name: "test", args: {} },
+              thoughtSignature: "thought-456",
             },
           ],
         },
@@ -1676,15 +1562,12 @@ describe('GeminiChat', () => {
 
       expect(chat.getHistory()).toEqual([
         {
-          role: 'user',
-          parts: [{ text: 'hello' }],
+          role: "user",
+          parts: [{ text: "hello" }],
         },
         {
-          role: 'model',
-          parts: [
-            { text: 'thinking...' },
-            { functionCall: { name: 'test', args: {} } },
-          ],
+          role: "model",
+          parts: [{ text: "thinking..." }, { functionCall: { name: "test", args: {} } }],
         },
       ]);
     });

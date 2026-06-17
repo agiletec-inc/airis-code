@@ -4,32 +4,22 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { z } from 'zod';
-import type { BaseLlmClient } from '../../core/baseLlmClient.js';
-import { promptIdContext } from '../../utils/promptIdContext.js';
-import type {
-  RoutingContext,
-  RoutingDecision,
-  RoutingStrategy,
-} from '../routingStrategy.js';
-import {
-  DEFAULT_GEMINI_FLASH_MODEL,
-  DEFAULT_GEMINI_MODEL,
-} from '../../config/models.js';
-import { createUserContent, Type } from '@google/genai';
-import type { Config } from '../../config/config.js';
-import {
-  isFunctionCall,
-  isFunctionResponse,
-} from '../../utils/messageInspectors.js';
-import { debugLogger } from '../../utils/debugLogger.js';
+import { createUserContent, Type } from "@google/genai";
+import { z } from "zod";
+import type { Config } from "../../config/config.js";
+import { DEFAULT_GEMINI_FLASH_MODEL, DEFAULT_GEMINI_MODEL } from "../../config/models.js";
+import type { BaseLlmClient } from "../../core/baseLlmClient.js";
+import { debugLogger } from "../../utils/debugLogger.js";
+import { isFunctionCall, isFunctionResponse } from "../../utils/messageInspectors.js";
+import { promptIdContext } from "../../utils/promptIdContext.js";
+import type { RoutingContext, RoutingDecision, RoutingStrategy } from "../routingStrategy.js";
 
 // The number of recent history turns to provide to the router for context.
 const HISTORY_TURNS_FOR_CONTEXT = 4;
 const HISTORY_SEARCH_WINDOW = 20;
 
-const FLASH_MODEL = 'flash';
-const PRO_MODEL = 'pro';
+const FLASH_MODEL = "flash";
+const PRO_MODEL = "pro";
 
 const CLASSIFIER_SYSTEM_PROMPT = `
 You are a specialized Task Routing AI. Your sole function is to analyze the user's request and classify its complexity. Choose between \`${FLASH_MODEL}\` (SIMPLE) or \`${PRO_MODEL}\` (COMPLEX).
@@ -111,14 +101,14 @@ const RESPONSE_SCHEMA = {
     reasoning: {
       type: Type.STRING,
       description:
-        'A brief, step-by-step explanation for the model choice, referencing the rubric.',
+        "A brief, step-by-step explanation for the model choice, referencing the rubric.",
     },
     model_choice: {
       type: Type.STRING,
       enum: [FLASH_MODEL, PRO_MODEL],
     },
   },
-  required: ['reasoning', 'model_choice'],
+  required: ["reasoning", "model_choice"],
 };
 
 const ClassifierResponseSchema = z.object({
@@ -127,7 +117,7 @@ const ClassifierResponseSchema = z.object({
 });
 
 export class ClassifierStrategy implements RoutingStrategy {
-  readonly name = 'classifier';
+  readonly name = "classifier";
 
   async route(
     context: RoutingContext,
@@ -158,7 +148,7 @@ export class ClassifierStrategy implements RoutingStrategy {
       const finalHistory = cleanHistory.slice(-HISTORY_TURNS_FOR_CONTEXT);
 
       const jsonResponse = await baseLlmClient.generateJson({
-        modelConfigKey: { model: 'classifier' },
+        modelConfigKey: { model: "classifier" },
         contents: [...finalHistory, createUserContent(context.request)],
         schema: RESPONSE_SCHEMA,
         systemInstruction: CLASSIFIER_SYSTEM_PROMPT,
@@ -175,7 +165,7 @@ export class ClassifierStrategy implements RoutingStrategy {
         return {
           model: DEFAULT_GEMINI_FLASH_MODEL,
           metadata: {
-            source: 'Classifier',
+            source: "Classifier",
             latencyMs,
             reasoning,
           },
@@ -184,7 +174,7 @@ export class ClassifierStrategy implements RoutingStrategy {
         return {
           model: DEFAULT_GEMINI_MODEL,
           metadata: {
-            source: 'Classifier',
+            source: "Classifier",
             reasoning,
             latencyMs,
           },

@@ -4,24 +4,23 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { renderWithProviders } from '../../test-utils/render.js';
-import { waitFor } from '../../test-utils/async.js';
-import { act } from 'react';
-import { vi } from 'vitest';
-import { FolderTrustDialog } from './FolderTrustDialog.js';
-import { ExitCodes } from '@airiscode/gemini-cli-core';
-import * as processUtils from '../../utils/processUtils.js';
+import { ExitCodes } from "@airiscode/gemini-cli-core";
+import { act } from "react";
+import { vi } from "vitest";
+import { waitFor } from "../../test-utils/async.js";
+import { renderWithProviders } from "../../test-utils/render.js";
+import * as processUtils from "../../utils/processUtils.js";
+import { FolderTrustDialog } from "./FolderTrustDialog.js";
 
-vi.mock('../../utils/processUtils.js', () => ({
+vi.mock("../../utils/processUtils.js", () => ({
   relaunchApp: vi.fn(),
 }));
 
 const mockedExit = vi.hoisted(() => vi.fn());
 const mockedCwd = vi.hoisted(() => vi.fn());
 
-vi.mock('node:process', async () => {
-  const actual =
-    await vi.importActual<typeof import('node:process')>('node:process');
+vi.mock("node:process", async () => {
+  const actual = await vi.importActual<typeof import("node:process")>("node:process");
   return {
     ...actual,
     exit: mockedExit,
@@ -29,60 +28,54 @@ vi.mock('node:process', async () => {
   };
 });
 
-describe('FolderTrustDialog', () => {
+describe("FolderTrustDialog", () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    mockedCwd.mockReturnValue('/home/user/project');
+    mockedCwd.mockReturnValue("/home/user/project");
   });
 
-  it('should render the dialog with title and description', () => {
-    const { lastFrame } = renderWithProviders(
-      <FolderTrustDialog onSelect={vi.fn()} />,
-    );
+  it("should render the dialog with title and description", () => {
+    const { lastFrame } = renderWithProviders(<FolderTrustDialog onSelect={vi.fn()} />);
 
-    expect(lastFrame()).toContain('Do you trust this folder?');
+    expect(lastFrame()).toContain("Do you trust this folder?");
     expect(lastFrame()).toContain(
-      'Trusting a folder allows Gemini to execute commands it suggests.',
+      "Trusting a folder allows Gemini to execute commands it suggests.",
     );
   });
 
-  it('should display exit message and call process.exit and not call onSelect when escape is pressed', async () => {
+  it("should display exit message and call process.exit and not call onSelect when escape is pressed", async () => {
     const onSelect = vi.fn();
     const { lastFrame, stdin } = renderWithProviders(
       <FolderTrustDialog onSelect={onSelect} isRestarting={false} />,
     );
 
     act(() => {
-      stdin.write('\u001b[27u'); // Press kitty escape key
+      stdin.write("\u001b[27u"); // Press kitty escape key
     });
 
     await waitFor(() => {
       expect(lastFrame()).toContain(
-        'A folder trust level must be selected to continue. Exiting since escape was pressed.',
+        "A folder trust level must be selected to continue. Exiting since escape was pressed.",
       );
     });
     await waitFor(() => {
-      expect(mockedExit).toHaveBeenCalledWith(
-        ExitCodes.FATAL_CANCELLATION_ERROR,
-      );
+      expect(mockedExit).toHaveBeenCalledWith(ExitCodes.FATAL_CANCELLATION_ERROR);
     });
     expect(onSelect).not.toHaveBeenCalled();
   });
 
-  it('should display restart message when isRestarting is true', () => {
+  it("should display restart message when isRestarting is true", () => {
     const { lastFrame } = renderWithProviders(
       <FolderTrustDialog onSelect={vi.fn()} isRestarting={true} />,
     );
 
-    expect(lastFrame()).toContain(' Gemini CLI is restarting');
+    expect(lastFrame()).toContain(" Gemini CLI is restarting");
   });
 
-  it('should call relaunchApp when isRestarting is true', async () => {
+  it("should call relaunchApp when isRestarting is true", async () => {
     vi.useFakeTimers();
-    const relaunchApp = vi.spyOn(processUtils, 'relaunchApp');
-    renderWithProviders(
-      <FolderTrustDialog onSelect={vi.fn()} isRestarting={true} />,
-    );
+    const relaunchApp = vi.spyOn(processUtils, "relaunchApp");
+    renderWithProviders(<FolderTrustDialog onSelect={vi.fn()} isRestarting={true} />);
     await vi.advanceTimersByTimeAsync(250);
     expect(relaunchApp).toHaveBeenCalled();
     vi.useRealTimers();
@@ -94,7 +87,7 @@ describe('FolderTrustDialog', () => {
     );
 
     act(() => {
-      stdin.write('r');
+      stdin.write("r");
     });
 
     await waitFor(() => {
@@ -102,29 +95,23 @@ describe('FolderTrustDialog', () => {
     });
   });
 
-  describe('directory display', () => {
-    it('should correctly display the folder name for a nested directory', () => {
-      mockedCwd.mockReturnValue('/home/user/project');
-      const { lastFrame } = renderWithProviders(
-        <FolderTrustDialog onSelect={vi.fn()} />,
-      );
-      expect(lastFrame()).toContain('Trust folder (project)');
+  describe("directory display", () => {
+    it("should correctly display the folder name for a nested directory", () => {
+      mockedCwd.mockReturnValue("/home/user/project");
+      const { lastFrame } = renderWithProviders(<FolderTrustDialog onSelect={vi.fn()} />);
+      expect(lastFrame()).toContain("Trust folder (project)");
     });
 
-    it('should correctly display the parent folder name for a nested directory', () => {
-      mockedCwd.mockReturnValue('/home/user/project');
-      const { lastFrame } = renderWithProviders(
-        <FolderTrustDialog onSelect={vi.fn()} />,
-      );
-      expect(lastFrame()).toContain('Trust parent folder (user)');
+    it("should correctly display the parent folder name for a nested directory", () => {
+      mockedCwd.mockReturnValue("/home/user/project");
+      const { lastFrame } = renderWithProviders(<FolderTrustDialog onSelect={vi.fn()} />);
+      expect(lastFrame()).toContain("Trust parent folder (user)");
     });
 
-    it('should correctly display an empty parent folder name for a directory directly under root', () => {
-      mockedCwd.mockReturnValue('/project');
-      const { lastFrame } = renderWithProviders(
-        <FolderTrustDialog onSelect={vi.fn()} />,
-      );
-      expect(lastFrame()).toContain('Trust parent folder ()');
+    it("should correctly display an empty parent folder name for a directory directly under root", () => {
+      mockedCwd.mockReturnValue("/project");
+      const { lastFrame } = renderWithProviders(<FolderTrustDialog onSelect={vi.fn()} />);
+      expect(lastFrame()).toContain("Trust parent folder ()");
     });
   });
 });

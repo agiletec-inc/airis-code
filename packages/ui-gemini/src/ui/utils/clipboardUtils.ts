@@ -4,35 +4,28 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import * as fs from 'node:fs/promises';
-import * as path from 'node:path';
-import { debugLogger, spawnAsync } from '@airiscode/gemini-cli-core';
+import * as fs from "node:fs/promises";
+import * as path from "node:path";
+import { debugLogger, spawnAsync } from "@airiscode/gemini-cli-core";
 
 /**
  * Supported image file extensions based on Gemini API.
  * See: https://ai.google.dev/gemini-api/docs/image-understanding
  */
-export const IMAGE_EXTENSIONS = [
-  '.png',
-  '.jpg',
-  '.jpeg',
-  '.webp',
-  '.heic',
-  '.heif',
-];
+export const IMAGE_EXTENSIONS = [".png", ".jpg", ".jpeg", ".webp", ".heic", ".heif"];
 
 /**
  * Checks if the system clipboard contains an image (macOS only for now)
  * @returns true if clipboard contains an image
  */
 export async function clipboardHasImage(): Promise<boolean> {
-  if (process.platform !== 'darwin') {
+  if (process.platform !== "darwin") {
     return false;
   }
 
   try {
     // Use osascript to check clipboard type
-    const { stdout } = await spawnAsync('osascript', ['-e', 'clipboard info']);
+    const { stdout } = await spawnAsync("osascript", ["-e", "clipboard info"]);
     const imageRegex =
       /«class PNGf»|TIFF picture|JPEG picture|GIF picture|«class JPEG»|«class TIFF»/;
     return imageRegex.test(stdout);
@@ -46,10 +39,8 @@ export async function clipboardHasImage(): Promise<boolean> {
  * @param targetDir The target directory to create temp files within
  * @returns The path to the saved image file, or null if no image or error
  */
-export async function saveClipboardImage(
-  targetDir?: string,
-): Promise<string | null> {
-  if (process.platform !== 'darwin') {
+export async function saveClipboardImage(targetDir?: string): Promise<string | null> {
+  if (process.platform !== "darwin") {
     return null;
   }
 
@@ -57,7 +48,7 @@ export async function saveClipboardImage(
     // Create a temporary directory for clipboard images within the target directory
     // This avoids security restrictions on paths outside the target directory
     const baseDir = targetDir || process.cwd();
-    const tempDir = path.join(baseDir, '.gemini-clipboard');
+    const tempDir = path.join(baseDir, ".gemini-clipboard");
     await fs.mkdir(tempDir, { recursive: true });
 
     // Generate a unique filename with timestamp
@@ -66,15 +57,12 @@ export async function saveClipboardImage(
     // AppleScript clipboard classes to try, in order of preference.
     // macOS converts clipboard images to these formats (WEBP/HEIC/HEIF not supported by osascript).
     const formats = [
-      { class: 'PNGf', extension: 'png' },
-      { class: 'JPEG', extension: 'jpg' },
+      { class: "PNGf", extension: "png" },
+      { class: "JPEG", extension: "jpg" },
     ];
 
     for (const format of formats) {
-      const tempFilePath = path.join(
-        tempDir,
-        `clipboard-${timestamp}.${format.extension}`,
-      );
+      const tempFilePath = path.join(tempDir, `clipboard-${timestamp}.${format.extension}`);
 
       // Try to save clipboard as this format
       const script = `
@@ -92,9 +80,9 @@ export async function saveClipboardImage(
         end try
       `;
 
-      const { stdout } = await spawnAsync('osascript', ['-e', script]);
+      const { stdout } = await spawnAsync("osascript", ["-e", script]);
 
-      if (stdout.trim() === 'success') {
+      if (stdout.trim() === "success") {
         // Verify the file was created and has content
         try {
           const stats = await fs.stat(tempFilePath);
@@ -117,7 +105,7 @@ export async function saveClipboardImage(
     // No format worked
     return null;
   } catch (error) {
-    debugLogger.warn('Error saving clipboard image:', error);
+    debugLogger.warn("Error saving clipboard image:", error);
     return null;
   }
 }
@@ -127,18 +115,16 @@ export async function saveClipboardImage(
  * Removes files older than 1 hour
  * @param targetDir The target directory where temp files are stored
  */
-export async function cleanupOldClipboardImages(
-  targetDir?: string,
-): Promise<void> {
+export async function cleanupOldClipboardImages(targetDir?: string): Promise<void> {
   try {
     const baseDir = targetDir || process.cwd();
-    const tempDir = path.join(baseDir, '.gemini-clipboard');
+    const tempDir = path.join(baseDir, ".gemini-clipboard");
     const files = await fs.readdir(tempDir);
     const oneHourAgo = Date.now() - 60 * 60 * 1000;
 
     for (const file of files) {
       const ext = path.extname(file).toLowerCase();
-      if (file.startsWith('clipboard-') && IMAGE_EXTENSIONS.includes(ext)) {
+      if (file.startsWith("clipboard-") && IMAGE_EXTENSIONS.includes(ext)) {
         const filePath = path.join(tempDir, file);
         const stats = await fs.stat(filePath);
         if (stats.mtimeMs < oneHourAgo) {

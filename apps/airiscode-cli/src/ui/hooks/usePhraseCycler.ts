@@ -4,8 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { useState, useEffect, useRef, useMemo } from 'react';
-import { t, ta } from '../../i18n/index.js';
+import { useEffect, useMemo, useRef, useState } from "react";
+import { t, ta } from "../../i18n/index.js";
 
 export const WITTY_LOADING_PHRASES: string[] = ["I'm Feeling Lucky"];
 
@@ -27,20 +27,16 @@ export const usePhraseCycler = (
     if (customPhrases && customPhrases.length > 0) {
       return customPhrases;
     }
-    const translatedPhrases = ta('WITTY_LOADING_PHRASES');
-    return translatedPhrases.length > 0
-      ? translatedPhrases
-      : WITTY_LOADING_PHRASES;
+    const translatedPhrases = ta("WITTY_LOADING_PHRASES");
+    return translatedPhrases.length > 0 ? translatedPhrases : WITTY_LOADING_PHRASES;
   }, [customPhrases]);
 
-  const [currentLoadingPhrase, setCurrentLoadingPhrase] = useState(
-    loadingPhrases[0],
-  );
+  const [currentLoadingPhrase, setCurrentLoadingPhrase] = useState(loadingPhrases[0]);
   const phraseIntervalRef = useRef<NodeJS.Timeout | null>(null);
 
   useEffect(() => {
     if (isWaiting) {
-      setCurrentLoadingPhrase(t('Waiting for user confirmation...'));
+      setCurrentLoadingPhrase(t("Waiting for user confirmation..."));
       if (phraseIntervalRef.current) {
         clearInterval(phraseIntervalRef.current);
         phraseIntervalRef.current = null;
@@ -50,9 +46,7 @@ export const usePhraseCycler = (
         clearInterval(phraseIntervalRef.current);
       }
       // Select an initial random phrase
-      const initialRandomIndex = Math.floor(
-        Math.random() * loadingPhrases.length,
-      );
+      const initialRandomIndex = Math.floor(Math.random() * loadingPhrases.length);
       setCurrentLoadingPhrase(loadingPhrases[initialRandomIndex]);
 
       phraseIntervalRef.current = setInterval(() => {

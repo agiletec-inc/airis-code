@@ -4,14 +4,14 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { render } from '../../test-utils/render.js';
-import { describe, it, expect, vi } from 'vitest';
-import { SessionSummaryDisplay } from './SessionSummaryDisplay.js';
-import * as SessionContext from '../contexts/SessionContext.js';
-import type { SessionMetrics } from '../contexts/SessionContext.js';
-import { ToolCallDecision } from '@airiscode/gemini-cli-core';
+import { ToolCallDecision } from "@airiscode/gemini-cli-core";
+import { describe, expect, it, vi } from "vitest";
+import { render } from "../../test-utils/render.js";
+import type { SessionMetrics } from "../contexts/SessionContext.js";
+import * as SessionContext from "../contexts/SessionContext.js";
+import { SessionSummaryDisplay } from "./SessionSummaryDisplay.js";
 
-vi.mock('../contexts/SessionContext.js', async (importOriginal) => {
+vi.mock("../contexts/SessionContext.js", async (importOriginal) => {
   const actual = await importOriginal<typeof SessionContext>();
   return {
     ...actual,
@@ -24,7 +24,7 @@ const useSessionStatsMock = vi.mocked(SessionContext.useSessionStats);
 const renderWithMockedStats = (metrics: SessionMetrics) => {
   useSessionStatsMock.mockReturnValue({
     stats: {
-      sessionId: 'test-session',
+      sessionId: "test-session",
       sessionStartTime: new Date(),
       metrics,
       lastPromptTokenCount: 0,
@@ -38,11 +38,11 @@ const renderWithMockedStats = (metrics: SessionMetrics) => {
   return render(<SessionSummaryDisplay duration="1h 23m 45s" />);
 };
 
-describe('<SessionSummaryDisplay />', () => {
-  it('renders the summary display with a title', () => {
+describe("<SessionSummaryDisplay />", () => {
+  it("renders the summary display with a title", () => {
     const metrics: SessionMetrics = {
       models: {
-        'gemini-2.5-pro': {
+        "gemini-2.5-pro": {
           api: { totalRequests: 10, totalErrors: 1, totalLatencyMs: 50234 },
           tokens: {
             prompt: 1000,
@@ -76,7 +76,7 @@ describe('<SessionSummaryDisplay />', () => {
     const { lastFrame } = renderWithMockedStats(metrics);
     const output = lastFrame();
 
-    expect(output).toContain('Agent powering down. Goodbye!');
+    expect(output).toContain("Agent powering down. Goodbye!");
     expect(output).toMatchSnapshot();
   });
 });

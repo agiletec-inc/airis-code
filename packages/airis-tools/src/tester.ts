@@ -1,37 +1,35 @@
-import { McpToolSpec } from '@airiscode/mcp-client';
+import { McpToolSpec } from "@airiscode/mcp-client";
 
 export const testerToolSpec: McpToolSpec = {
-  name: 'tester',
-  description: 'Runs tests for a given file or component.',
+  name: "tester",
+  description: "Runs tests for a given file or component.",
   inputSchema: {
-    type: 'object',
+    type: "object",
     properties: {
       filePath: {
-        type: 'string',
-        description: 'The path to the file to test.',
+        type: "string",
+        description: "The path to the file to test.",
       },
     },
-    required: ['filePath'],
+    required: ["filePath"],
   },
   outputSchema: {
-    type: 'object',
+    type: "object",
     properties: {
       success: {
-        type: 'boolean',
-        description: 'Whether the tests passed.',
+        type: "boolean",
+        description: "Whether the tests passed.",
       },
       log: {
-        type: 'string',
-        description: 'The output log from the test runner.',
+        type: "string",
+        description: "The output log from the test runner.",
       },
     },
-    required: ['success', 'log'],
+    required: ["success", "log"],
   },
 };
 
-export async function testerTool(
-  inputs: any,
-): Promise<{ success: boolean; log: string }> {
+export async function testerTool(inputs: any): Promise<{ success: boolean; log: string }> {
   console.log(`Tester tool called for file: ${inputs.filePath}`);
   // Placeholder implementation
   return {

@@ -5,9 +5,9 @@
  * All shell execution MUST flow through this guard.
  */
 
-import * as yaml from 'yaml';
-import * as fs from 'fs/promises';
-import * as path from 'path';
+import * as fs from "fs/promises";
+import * as path from "path";
+import * as yaml from "yaml";
 
 export interface GuardConfig {
   version: number;
@@ -38,7 +38,7 @@ export interface GuardVerdict {
   timeout_sec: number;
 }
 
-export type TrustLevel = 'restricted' | 'sandboxed' | 'untrusted';
+export type TrustLevel = "restricted" | "sandboxed" | "untrusted";
 
 export class ShellGuard {
   private config: GuardConfig;
@@ -49,14 +49,8 @@ export class ShellGuard {
   }
 
   async init(configPath?: string): Promise<void> {
-    const defaultPath = path.join(
-      __dirname,
-      '../policies/schemas/guard.schema.yaml'
-    );
-    const yamlContent = await fs.readFile(
-      configPath || defaultPath,
-      'utf-8'
-    );
+    const defaultPath = path.join(__dirname, "../policies/schemas/guard.schema.yaml");
+    const yamlContent = await fs.readFile(configPath || defaultPath, "utf-8");
     this.config = yaml.parse(yamlContent);
   }
 
@@ -66,7 +60,7 @@ export class ShellGuard {
   evaluate(command: string, trustLevel: TrustLevel): GuardVerdict {
     // 1. Check denylist (absolute blocks)
     for (const rule of this.config.denylist) {
-      const regex = new RegExp(rule.pattern, 'i');
+      const regex = new RegExp(rule.pattern, "i");
       if (regex.test(command)) {
         return {
           allowed: false,
@@ -79,10 +73,7 @@ export class ShellGuard {
     // 2. Apply rewrites based on trust level
     let rewrittenCommand = command;
     for (const rewrite of this.config.rewrites) {
-      if (
-        !rewrite.when_trust ||
-        rewrite.when_trust === trustLevel
-      ) {
+      if (!rewrite.when_trust || rewrite.when_trust === trustLevel) {
         const regex = new RegExp(rewrite.from);
         if (regex.test(command)) {
           rewrittenCommand = command.replace(regex, rewrite.to);
@@ -96,8 +87,7 @@ export class ShellGuard {
 
     return {
       allowed: true,
-      rewritten_command:
-        rewrittenCommand !== command ? rewrittenCommand : undefined,
+      rewritten_command: rewrittenCommand !== command ? rewrittenCommand : undefined,
       timeout_sec,
     };
   }
@@ -115,15 +105,12 @@ export class ShellGuard {
   /**
    * Validate filesystem access based on trust level
    */
-  validateFsAccess(
-    paths: string[],
-    trustLevel: TrustLevel
-  ): { allowed: boolean; reason?: string } {
-    if (trustLevel === 'restricted') {
+  validateFsAccess(paths: string[], trustLevel: TrustLevel): { allowed: boolean; reason?: string } {
+    if (trustLevel === "restricted") {
       // Read-only: reject all writes
       return {
         allowed: false,
-        reason: 'Filesystem writes disabled in restricted mode',
+        reason: "Filesystem writes disabled in restricted mode",
       };
     }
 
@@ -139,9 +126,9 @@ export class ShellGuard {
       }
 
       // Check write root (sandboxed mode)
-      if (trustLevel === 'sandboxed') {
+      if (trustLevel === "sandboxed") {
         const writeRoot = this.config.fs.write_root;
-        if (!p.startsWith(writeRoot) && !p.startsWith('./')) {
+        if (!p.startsWith(writeRoot) && !p.startsWith("./")) {
           return {
             allowed: false,
             reason: `Write outside workspace root: ${p}`,
@@ -159,9 +146,7 @@ export class ShellGuard {
  */
 let guardInstance: ShellGuard | null = null;
 
-export async function getGuard(
-  configPath?: string
-): Promise<ShellGuard> {
+export async function getGuard(configPath?: string): Promise<ShellGuard> {
   if (!guardInstance) {
     guardInstance = new ShellGuard(configPath);
     await guardInstance.init(configPath);

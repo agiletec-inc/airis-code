@@ -4,19 +4,19 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { render } from '../../test-utils/render.js';
-import { SuggestionsDisplay } from './SuggestionsDisplay.js';
-import { describe, it, expect } from 'vitest';
-import { CommandKind } from '../commands/types.js';
+import { describe, expect, it } from "vitest";
+import { render } from "../../test-utils/render.js";
+import { CommandKind } from "../commands/types.js";
+import { SuggestionsDisplay } from "./SuggestionsDisplay.js";
 
-describe('SuggestionsDisplay', () => {
+describe("SuggestionsDisplay", () => {
   const mockSuggestions = [
-    { label: 'Command 1', value: 'command1', description: 'Description 1' },
-    { label: 'Command 2', value: 'command2', description: 'Description 2' },
-    { label: 'Command 3', value: 'command3', description: 'Description 3' },
+    { label: "Command 1", value: "command1", description: "Description 1" },
+    { label: "Command 2", value: "command2", description: "Description 2" },
+    { label: "Command 3", value: "command3", description: "Description 3" },
   ];
 
-  it('renders loading state', () => {
+  it("renders loading state", () => {
     const { lastFrame } = render(
       <SuggestionsDisplay
         suggestions={[]}
@@ -31,7 +31,7 @@ describe('SuggestionsDisplay', () => {
     expect(lastFrame()).toMatchSnapshot();
   });
 
-  it('renders nothing when empty and not loading', () => {
+  it("renders nothing when empty and not loading", () => {
     const { lastFrame } = render(
       <SuggestionsDisplay
         suggestions={[]}
@@ -43,10 +43,10 @@ describe('SuggestionsDisplay', () => {
         mode="reverse"
       />,
     );
-    expect(lastFrame()).toBe('');
+    expect(lastFrame()).toBe("");
   });
 
-  it('renders suggestions list', () => {
+  it("renders suggestions list", () => {
     const { lastFrame } = render(
       <SuggestionsDisplay
         suggestions={mockSuggestions}
@@ -61,7 +61,7 @@ describe('SuggestionsDisplay', () => {
     expect(lastFrame()).toMatchSnapshot();
   });
 
-  it('highlights active item', () => {
+  it("highlights active item", () => {
     // This test relies on visual inspection or implementation details (colors)
     // For now, we just ensure it renders without error and contains the item
     const { lastFrame } = render(
@@ -78,7 +78,7 @@ describe('SuggestionsDisplay', () => {
     expect(lastFrame()).toMatchSnapshot();
   });
 
-  it('handles scrolling', () => {
+  it("handles scrolling", () => {
     const manySuggestions = Array.from({ length: 20 }, (_, i) => ({
       label: `Cmd ${i}`,
       value: `Cmd ${i}`,
@@ -99,11 +99,11 @@ describe('SuggestionsDisplay', () => {
     expect(lastFrame()).toMatchSnapshot();
   });
 
-  it('renders MCP tag for MCP prompts', () => {
+  it("renders MCP tag for MCP prompts", () => {
     const mcpSuggestions = [
       {
-        label: 'MCP Tool',
-        value: 'mcp-tool',
+        label: "MCP Tool",
+        value: "mcp-tool",
         commandKind: CommandKind.MCP_PROMPT,
       },
     ];

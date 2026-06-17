@@ -4,32 +4,30 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import type React from 'react';
-import { Box, Text } from 'ink';
-import { theme } from '../semantic-colors.js';
-import { ApprovalMode } from '@airiscode/gemini-cli-core';
+import { ApprovalMode } from "@airiscode/gemini-cli-core";
+import { Box, Text } from "ink";
+import type React from "react";
+import { theme } from "../semantic-colors.js";
 
 interface AutoAcceptIndicatorProps {
   approvalMode: ApprovalMode;
 }
 
-export const AutoAcceptIndicator: React.FC<AutoAcceptIndicatorProps> = ({
-  approvalMode,
-}) => {
-  let textColor = '';
-  let textContent = '';
-  let subText = '';
+export const AutoAcceptIndicator: React.FC<AutoAcceptIndicatorProps> = ({ approvalMode }) => {
+  let textColor = "";
+  let textContent = "";
+  let subText = "";
 
   switch (approvalMode) {
     case ApprovalMode.AUTO_EDIT:
       textColor = theme.status.warning;
-      textContent = 'accepting edits';
-      subText = ' (shift + tab to toggle)';
+      textContent = "accepting edits";
+      subText = " (shift + tab to toggle)";
       break;
     case ApprovalMode.YOLO:
       textColor = theme.status.error;
-      textContent = 'YOLO mode';
-      subText = ' (ctrl + y to toggle)';
+      textContent = "YOLO mode";
+      subText = " (ctrl + y to toggle)";
       break;
     case ApprovalMode.DEFAULT:
     default:

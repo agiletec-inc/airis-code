@@ -5,26 +5,26 @@
  */
 
 import type {
-  GenerateContentResponse,
-  GenerateContentParameters,
-  GenerateContentConfig,
   ContentListUnion,
+  GenerateContentConfig,
+  GenerateContentParameters,
+  GenerateContentResponse,
   ToolConfig,
   ToolListUnion,
-} from '@google/genai';
-import type { MessageBus } from '../confirmation-bus/message-bus.js';
+} from "@google/genai";
+import type { MessageBus } from "../confirmation-bus/message-bus.js";
 import {
-  MessageBusType,
   type HookExecutionRequest,
   type HookExecutionResponse,
-} from '../confirmation-bus/types.js';
+  MessageBusType,
+} from "../confirmation-bus/types.js";
 import {
-  createHookOutput,
+  type AfterModelHookOutput,
   type BeforeModelHookOutput,
   type BeforeToolSelectionHookOutput,
-  type AfterModelHookOutput,
-} from '../hooks/types.js';
-import { debugLogger } from '../utils/debugLogger.js';
+  createHookOutput,
+} from "../hooks/types.js";
+import { debugLogger } from "../utils/debugLogger.js";
 
 /**
  * Result from firing the BeforeModel hook.
@@ -73,13 +73,10 @@ export async function fireBeforeModelHook(
   llmRequest: GenerateContentParameters,
 ): Promise<BeforeModelHookResult> {
   try {
-    const response = await messageBus.request<
-      HookExecutionRequest,
-      HookExecutionResponse
-    >(
+    const response = await messageBus.request<HookExecutionRequest, HookExecutionResponse>(
       {
         type: MessageBusType.HOOK_EXECUTION_REQUEST,
-        eventName: 'BeforeModel',
+        eventName: "BeforeModel",
         input: {
           llm_request: llmRequest as unknown as Record<string, unknown>,
         },
@@ -89,7 +86,7 @@ export async function fireBeforeModelHook(
 
     // Reconstruct result from response
     const beforeResultFinalOutput = response.output
-      ? createHookOutput('BeforeModel', response.output)
+      ? createHookOutput("BeforeModel", response.output)
       : undefined;
 
     const hookOutput = beforeResultFinalOutput;
@@ -99,8 +96,7 @@ export async function fireBeforeModelHook(
     if (blockingError?.blocked || hookOutput?.shouldStopExecution()) {
       const beforeModelOutput = hookOutput as BeforeModelHookOutput;
       const syntheticResponse = beforeModelOutput.getSyntheticResponse();
-      const reason =
-        hookOutput?.getEffectiveReason() || 'Model call blocked by hook';
+      const reason = hookOutput?.getEffectiveReason() || "Model call blocked by hook";
 
       return {
         blocked: true,
@@ -112,8 +108,7 @@ export async function fireBeforeModelHook(
     // Apply modifications from hook
     if (hookOutput) {
       const beforeModelOutput = hookOutput as BeforeModelHookOutput;
-      const modifiedRequest =
-        beforeModelOutput.applyLLMRequestModifications(llmRequest);
+      const modifiedRequest = beforeModelOutput.applyLLMRequestModifications(llmRequest);
 
       return {
         blocked: false,
@@ -141,13 +136,10 @@ export async function fireBeforeToolSelectionHook(
   llmRequest: GenerateContentParameters,
 ): Promise<BeforeToolSelectionHookResult> {
   try {
-    const response = await messageBus.request<
-      HookExecutionRequest,
-      HookExecutionResponse
-    >(
+    const response = await messageBus.request<HookExecutionRequest, HookExecutionResponse>(
       {
         type: MessageBusType.HOOK_EXECUTION_REQUEST,
-        eventName: 'BeforeToolSelection',
+        eventName: "BeforeToolSelection",
         input: {
           llm_request: llmRequest as unknown as Record<string, unknown>,
         },
@@ -157,18 +149,17 @@ export async function fireBeforeToolSelectionHook(
 
     // Reconstruct result from response
     const toolSelectionResultFinalOutput = response.output
-      ? createHookOutput('BeforeToolSelection', response.output)
+      ? createHookOutput("BeforeToolSelection", response.output)
       : undefined;
 
     // Apply tool configuration modifications
     if (toolSelectionResultFinalOutput) {
       const beforeToolSelectionOutput =
         toolSelectionResultFinalOutput as BeforeToolSelectionHookOutput;
-      const modifiedConfig =
-        beforeToolSelectionOutput.applyToolConfigModifications({
-          toolConfig: llmRequest.config?.toolConfig,
-          tools: llmRequest.config?.tools,
-        });
+      const modifiedConfig = beforeToolSelectionOutput.applyToolConfigModifications({
+        toolConfig: llmRequest.config?.toolConfig,
+        tools: llmRequest.config?.tools,
+      });
 
       return {
         toolConfig: modifiedConfig.toolConfig,
@@ -197,13 +188,10 @@ export async function fireAfterModelHook(
   chunk: GenerateContentResponse,
 ): Promise<AfterModelHookResult> {
   try {
-    const response = await messageBus.request<
-      HookExecutionRequest,
-      HookExecutionResponse
-    >(
+    const response = await messageBus.request<HookExecutionRequest, HookExecutionResponse>(
       {
         type: MessageBusType.HOOK_EXECUTION_REQUEST,
-        eventName: 'AfterModel',
+        eventName: "AfterModel",
         input: {
           llm_request: originalRequest as unknown as Record<string, unknown>,
           llm_response: chunk as unknown as Record<string, unknown>,
@@ -214,7 +202,7 @@ export async function fireAfterModelHook(
 
     // Reconstruct result from response
     const afterResultFinalOutput = response.output
-      ? createHookOutput('AfterModel', response.output)
+      ? createHookOutput("AfterModel", response.output)
       : undefined;
 
     // Apply modifications from hook (handles both normal modifications and stop execution)

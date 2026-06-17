@@ -4,24 +4,24 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import type { GenerateContentResponse } from '@google/genai';
-import { ApiError } from '@google/genai';
-import type { ContentGenerator } from '../core/contentGenerator.js';
-import { GeminiChat, StreamEventType, type StreamEvent } from './geminiChat.js';
-import type { Config } from '../config/config.js';
-import { setSimulate429 } from '../utils/testUtils.js';
-import { HookSystem } from '../hooks/hookSystem.js';
-import { createMockMessageBus } from '../test-utils/mock-message-bus.js';
+import type { GenerateContentResponse } from "@google/genai";
+import { ApiError } from "@google/genai";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import type { Config } from "../config/config.js";
+import type { ContentGenerator } from "../core/contentGenerator.js";
+import { HookSystem } from "../hooks/hookSystem.js";
+import { createMockMessageBus } from "../test-utils/mock-message-bus.js";
+import { setSimulate429 } from "../utils/testUtils.js";
+import { GeminiChat, type StreamEvent, StreamEventType } from "./geminiChat.js";
 
 // Mock fs module
-vi.mock('node:fs', () => ({
+vi.mock("node:fs", () => ({
   default: {
     mkdirSync: vi.fn(),
     writeFileSync: vi.fn(),
     readFileSync: vi.fn(() => {
-      const error = new Error('ENOENT');
-      (error as NodeJS.ErrnoException).code = 'ENOENT';
+      const error = new Error("ENOENT");
+      (error as NodeJS.ErrnoException).code = "ENOENT";
       throw error;
     }),
     existsSync: vi.fn(() => false),
@@ -32,8 +32,8 @@ const { mockRetryWithBackoff } = vi.hoisted(() => ({
   mockRetryWithBackoff: vi.fn(),
 }));
 
-vi.mock('../utils/retry.js', async (importOriginal) => {
-  const actual = await importOriginal<typeof import('../utils/retry.js')>();
+vi.mock("../utils/retry.js", async (importOriginal) => {
+  const actual = await importOriginal<typeof import("../utils/retry.js")>();
   return {
     ...actual,
     retryWithBackoff: mockRetryWithBackoff,
@@ -46,12 +46,12 @@ const { mockLogContentRetry, mockLogContentRetryFailure } = vi.hoisted(() => ({
   mockLogContentRetryFailure: vi.fn(),
 }));
 
-vi.mock('../telemetry/loggers.js', () => ({
+vi.mock("../telemetry/loggers.js", () => ({
   logContentRetry: mockLogContentRetry,
   logContentRetryFailure: mockLogContentRetryFailure,
 }));
 
-describe('GeminiChat Network Retries', () => {
+describe("GeminiChat Network Retries", () => {
   let mockContentGenerator: ContentGenerator;
   let chat: GeminiChat;
   let mockConfig: Config;
@@ -68,21 +68,21 @@ describe('GeminiChat Network Retries', () => {
     mockRetryWithBackoff.mockImplementation(async (apiCall) => apiCall());
 
     mockConfig = {
-      getSessionId: () => 'test-session-id',
+      getSessionId: () => "test-session-id",
       getTelemetryLogPromptsEnabled: () => true,
       getUsageStatisticsEnabled: () => true,
       getDebugMode: () => false,
       getPreviewFeatures: () => false,
       getContentGeneratorConfig: vi.fn().mockReturnValue({
-        authType: 'oauth-personal',
-        model: 'test-model',
+        authType: "oauth-personal",
+        model: "test-model",
       }),
-      getModel: vi.fn().mockReturnValue('gemini-pro'),
+      getModel: vi.fn().mockReturnValue("gemini-pro"),
       isInFallbackMode: vi.fn().mockReturnValue(false),
       getQuotaErrorOccurred: vi.fn().mockReturnValue(false),
-      getProjectRoot: vi.fn().mockReturnValue('/test/project/root'),
+      getProjectRoot: vi.fn().mockReturnValue("/test/project/root"),
       storage: {
-        getProjectTempDir: vi.fn().mockReturnValue('/test/temp'),
+        getProjectTempDir: vi.fn().mockReturnValue("/test/temp"),
       },
       getToolRegistry: vi.fn().mockReturnValue({ getTool: vi.fn() }),
       getContentGenerator: vi.fn().mockReturnValue(mockContentGenerator),
@@ -103,9 +103,7 @@ describe('GeminiChat Network Retries', () => {
 
     const mockMessageBus = createMockMessageBus();
     mockConfig.getMessageBus = vi.fn().mockReturnValue(mockMessageBus);
-    mockConfig.getHookSystem = vi
-      .fn()
-      .mockReturnValue(new HookSystem(mockConfig));
+    mockConfig.getHookSystem = vi.fn().mockReturnValue(new HookSystem(mockConfig));
 
     setSimulate429(false);
     chat = new GeminiChat(mockConfig);
@@ -115,10 +113,10 @@ describe('GeminiChat Network Retries', () => {
     vi.restoreAllMocks();
   });
 
-  it('should retry when a 503 ApiError occurs during stream iteration', async () => {
+  it("should retry when a 503 ApiError occurs during stream iteration", async () => {
     // 1. Mock the API to yield one chunk, then throw a 503 error.
     const error503 = new ApiError({
-      message: 'Service Unavailable',
+      message: "Service Unavailable",
       status: 503,
     });
 
@@ -126,7 +124,7 @@ describe('GeminiChat Network Retries', () => {
       .mockImplementationOnce(async () =>
         (async function* () {
           yield {
-            candidates: [{ content: { parts: [{ text: 'First part' }] } }],
+            candidates: [{ content: { parts: [{ text: "First part" }] } }],
           } as unknown as GenerateContentResponse;
           throw error503;
         })(),
@@ -136,8 +134,8 @@ describe('GeminiChat Network Retries', () => {
           yield {
             candidates: [
               {
-                content: { parts: [{ text: 'Retry success' }] },
-                finishReason: 'STOP',
+                content: { parts: [{ text: "Retry success" }] },
+                finishReason: "STOP",
               },
             ],
           } as unknown as GenerateContentResponse;
@@ -146,9 +144,9 @@ describe('GeminiChat Network Retries', () => {
 
     // 2. Execute sendMessageStream
     const stream = await chat.sendMessageStream(
-      { model: 'test-model' },
-      'test message',
-      'prompt-id-retry-network',
+      { model: "test-model" },
+      "test message",
+      "prompt-id-retry-network",
       new AbortController().signal,
     );
 
@@ -164,7 +162,7 @@ describe('GeminiChat Network Retries', () => {
     const firstChunk = events.find(
       (e) =>
         e.type === StreamEventType.CHUNK &&
-        e.value.candidates?.[0]?.content?.parts?.[0]?.text === 'First part',
+        e.value.candidates?.[0]?.content?.parts?.[0]?.text === "First part",
     );
     expect(firstChunk).toBeDefined();
 
@@ -174,7 +172,7 @@ describe('GeminiChat Network Retries', () => {
     const successChunk = events.find(
       (e) =>
         e.type === StreamEventType.CHUNK &&
-        e.value.candidates?.[0]?.content?.parts?.[0]?.text === 'Retry success',
+        e.value.candidates?.[0]?.content?.parts?.[0]?.text === "Retry success",
     );
     expect(successChunk).toBeDefined();
 
@@ -182,21 +180,21 @@ describe('GeminiChat Network Retries', () => {
     expect(mockLogContentRetry).toHaveBeenCalledWith(
       expect.anything(),
       expect.objectContaining({
-        error_type: 'NETWORK_ERROR',
+        error_type: "NETWORK_ERROR",
       }),
     );
   });
 
-  it('should retry on generic network error if retryFetchErrors is true', async () => {
+  it("should retry on generic network error if retryFetchErrors is true", async () => {
     vi.mocked(mockConfig.getRetryFetchErrors).mockReturnValue(true);
 
-    const fetchError = new Error('fetch failed: socket hang up');
+    const fetchError = new Error("fetch failed: socket hang up");
 
     vi.mocked(mockContentGenerator.generateContentStream)
       .mockImplementationOnce(async () =>
         (async function* () {
           yield {
-            candidates: [{ content: { parts: [{ text: '' }] } }],
+            candidates: [{ content: { parts: [{ text: "" }] } }],
           } as GenerateContentResponse; // Dummy yield
           throw fetchError;
         })(),
@@ -206,8 +204,8 @@ describe('GeminiChat Network Retries', () => {
           yield {
             candidates: [
               {
-                content: { parts: [{ text: 'Success' }] },
-                finishReason: 'STOP',
+                content: { parts: [{ text: "Success" }] },
+                finishReason: "STOP",
               },
             ],
           } as unknown as GenerateContentResponse;
@@ -215,9 +213,9 @@ describe('GeminiChat Network Retries', () => {
       );
 
     const stream = await chat.sendMessageStream(
-      { model: 'test-model' },
-      'test message',
-      'prompt-id-retry-fetch',
+      { model: "test-model" },
+      "test message",
+      "prompt-id-retry-fetch",
       new AbortController().signal,
     );
 
@@ -232,32 +230,30 @@ describe('GeminiChat Network Retries', () => {
     const successChunk = events.find(
       (e) =>
         e.type === StreamEventType.CHUNK &&
-        e.value.candidates?.[0]?.content?.parts?.[0]?.text === 'Success',
+        e.value.candidates?.[0]?.content?.parts?.[0]?.text === "Success",
     );
     expect(successChunk).toBeDefined();
   });
 
-  it('should NOT retry on 400 ApiError', async () => {
+  it("should NOT retry on 400 ApiError", async () => {
     const error400 = new ApiError({
-      message: 'Bad Request',
+      message: "Bad Request",
       status: 400,
     });
 
-    vi.mocked(
-      mockContentGenerator.generateContentStream,
-    ).mockImplementationOnce(async () =>
+    vi.mocked(mockContentGenerator.generateContentStream).mockImplementationOnce(async () =>
       (async function* () {
         yield {
-          candidates: [{ content: { parts: [{ text: '' }] } }],
+          candidates: [{ content: { parts: [{ text: "" }] } }],
         } as GenerateContentResponse; // Dummy yield
         throw error400;
       })(),
     );
 
     const stream = await chat.sendMessageStream(
-      { model: 'test-model' },
-      'test message',
-      'prompt-id-no-retry',
+      { model: "test-model" },
+      "test message",
+      "prompt-id-no-retry",
       new AbortController().signal,
     );
 

@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import type { OAuthClientProvider } from '@modelcontextprotocol/sdk/client/auth.js';
+import type { OAuthClientProvider } from "@modelcontextprotocol/sdk/client/auth.js";
 
 /**
  * Extension of OAuthClientProvider that allows providers to inject custom headers

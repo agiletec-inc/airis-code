@@ -4,11 +4,11 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import type React from 'react';
-import { Box, Text } from 'ink';
-import { theme } from '../../semantic-colors.js';
-import { type ToolDefinition } from '../../types.js';
-import { MarkdownDisplay } from '../../utils/MarkdownDisplay.js';
+import { Box, Text } from "ink";
+import type React from "react";
+import { theme } from "../../semantic-colors.js";
+import { type ToolDefinition } from "../../types.js";
+import { MarkdownDisplay } from "../../utils/MarkdownDisplay.js";
 
 interface ToolsListProps {
   tools: readonly ToolDefinition[];
@@ -16,11 +16,7 @@ interface ToolsListProps {
   terminalWidth: number;
 }
 
-export const ToolsList: React.FC<ToolsListProps> = ({
-  tools,
-  showDescriptions,
-  terminalWidth,
-}) => (
+export const ToolsList: React.FC<ToolsListProps> = ({ tools, showDescriptions, terminalWidth }) => (
   <Box flexDirection="column" marginBottom={1}>
     <Text bold color={theme.text.primary}>
       Available Gemini CLI tools:
@@ -29,7 +25,7 @@ export const ToolsList: React.FC<ToolsListProps> = ({
     {tools.length > 0 ? (
       tools.map((tool) => (
         <Box key={tool.name} flexDirection="row">
-          <Text color={theme.text.primary}>{'  '}- </Text>
+          <Text color={theme.text.primary}>{"  "}- </Text>
           <Box flexDirection="column">
             <Text bold color={theme.text.accent}>
               {tool.displayName} ({tool.name})

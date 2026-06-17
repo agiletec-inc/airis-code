@@ -4,60 +4,56 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { Box, Text } from 'ink';
-import { IdeIntegrationNudge } from '../IdeIntegrationNudge.js';
-import { CommandFormatMigrationNudge } from '../CommandFormatMigrationNudge.js';
-import { LoopDetectionConfirmation } from './LoopDetectionConfirmation.js';
-import { FolderTrustDialog } from './FolderTrustDialog.js';
-import { ShellConfirmationDialog } from './ShellConfirmationDialog.js';
-import { ConsentPrompt } from './ConsentPrompt.js';
-import { SettingInputPrompt } from './SettingInputPrompt.js';
-import { PluginChoicePrompt } from './PluginChoicePrompt.js';
-import { ThemeDialog } from './ThemeDialog.js';
-import { SettingsDialog } from './SettingsDialog.js';
-import { AuthDialog } from '../auth/AuthDialog.js';
-import { EditorSettingsDialog } from './EditorSettingsDialog.js';
-import { TrustDialog } from './TrustDialog.js';
-import { PermissionsDialog } from './PermissionsDialog.js';
-import { ModelDialog } from './ModelDialog.js';
-import { ArenaStartDialog } from './arena/ArenaStartDialog.js';
-import { ArenaSelectDialog } from './arena/ArenaSelectDialog.js';
-import { ArenaStopDialog } from './arena/ArenaStopDialog.js';
-import { ArenaStatusDialog } from './arena/ArenaStatusDialog.js';
-import { ApprovalModeDialog } from './ApprovalModeDialog.js';
-import { theme } from '../semantic-colors.js';
-import { useUIState } from '../contexts/UIStateContext.js';
-import { useUIActions } from '../contexts/UIActionsContext.js';
-import { useConfig } from '../contexts/ConfigContext.js';
-import { useSettings } from '../contexts/SettingsContext.js';
-import process from 'node:process';
-import { type UseHistoryManagerReturn } from '../hooks/useHistoryManager.js';
-import { IdeTrustChangeDialog } from './IdeTrustChangeDialog.js';
-import { WelcomeBackDialog } from './WelcomeBackDialog.js';
-import { AgentCreationWizard } from './subagents/create/AgentCreationWizard.js';
-import { AgentsManagerDialog } from './subagents/manage/AgentsManagerDialog.js';
-import { ExtensionsManagerDialog } from './extensions/ExtensionsManagerDialog.js';
-import { MCPManagementDialog } from './mcp/MCPManagementDialog.js';
-import { HooksManagementDialog } from './hooks/HooksManagementDialog.js';
-import { SessionPicker } from './SessionPicker.js';
+import process from "node:process";
+import { Box, Text } from "ink";
+import { AuthDialog } from "../auth/AuthDialog.js";
+import { CommandFormatMigrationNudge } from "../CommandFormatMigrationNudge.js";
+import { useConfig } from "../contexts/ConfigContext.js";
+import { useSettings } from "../contexts/SettingsContext.js";
+import { useUIActions } from "../contexts/UIActionsContext.js";
+import { useUIState } from "../contexts/UIStateContext.js";
+import { type UseHistoryManagerReturn } from "../hooks/useHistoryManager.js";
+import { IdeIntegrationNudge } from "../IdeIntegrationNudge.js";
+import { theme } from "../semantic-colors.js";
+import { ApprovalModeDialog } from "./ApprovalModeDialog.js";
+import { ArenaSelectDialog } from "./arena/ArenaSelectDialog.js";
+import { ArenaStartDialog } from "./arena/ArenaStartDialog.js";
+import { ArenaStatusDialog } from "./arena/ArenaStatusDialog.js";
+import { ArenaStopDialog } from "./arena/ArenaStopDialog.js";
+import { ConsentPrompt } from "./ConsentPrompt.js";
+import { EditorSettingsDialog } from "./EditorSettingsDialog.js";
+import { ExtensionsManagerDialog } from "./extensions/ExtensionsManagerDialog.js";
+import { FolderTrustDialog } from "./FolderTrustDialog.js";
+import { HooksManagementDialog } from "./hooks/HooksManagementDialog.js";
+import { IdeTrustChangeDialog } from "./IdeTrustChangeDialog.js";
+import { LoopDetectionConfirmation } from "./LoopDetectionConfirmation.js";
+import { ModelDialog } from "./ModelDialog.js";
+import { MCPManagementDialog } from "./mcp/MCPManagementDialog.js";
+import { PermissionsDialog } from "./PermissionsDialog.js";
+import { PluginChoicePrompt } from "./PluginChoicePrompt.js";
+import { SessionPicker } from "./SessionPicker.js";
+import { SettingInputPrompt } from "./SettingInputPrompt.js";
+import { SettingsDialog } from "./SettingsDialog.js";
+import { ShellConfirmationDialog } from "./ShellConfirmationDialog.js";
+import { AgentCreationWizard } from "./subagents/create/AgentCreationWizard.js";
+import { AgentsManagerDialog } from "./subagents/manage/AgentsManagerDialog.js";
+import { ThemeDialog } from "./ThemeDialog.js";
+import { TrustDialog } from "./TrustDialog.js";
+import { WelcomeBackDialog } from "./WelcomeBackDialog.js";
 
 interface DialogManagerProps {
-  addItem: UseHistoryManagerReturn['addItem'];
+  addItem: UseHistoryManagerReturn["addItem"];
   terminalWidth: number;
 }
 
 // Props for DialogManager
-export const DialogManager = ({
-  addItem,
-  terminalWidth,
-}: DialogManagerProps) => {
+export const DialogManager = ({ addItem, terminalWidth }: DialogManagerProps) => {
   const config = useConfig();
   const settings = useSettings();
 
   const uiState = useUIState();
   const uiActions = useUIActions();
-  const { constrainHeight, terminalHeight, staticExtraHeight, mainAreaWidth } =
-    uiState;
+  const { constrainHeight, terminalHeight, staticExtraHeight, mainAreaWidth } = uiState;
 
   if (uiState.showWelcomeBackDialog && uiState.welcomeBackInfo?.hasHistory) {
     return (
@@ -96,15 +92,11 @@ export const DialogManager = ({
     );
   }
   if (uiState.shellConfirmationRequest) {
-    return (
-      <ShellConfirmationDialog request={uiState.shellConfirmationRequest} />
-    );
+    return <ShellConfirmationDialog request={uiState.shellConfirmationRequest} />;
   }
   if (uiState.loopDetectionConfirmationRequest) {
     return (
-      <LoopDetectionConfirmation
-        onComplete={uiState.loopDetectionConfirmationRequest.onComplete}
-      />
+      <LoopDetectionConfirmation onComplete={uiState.loopDetectionConfirmationRequest.onComplete} />
     );
   }
   if (uiState.confirmationRequest) {
@@ -175,9 +167,7 @@ export const DialogManager = ({
           onSelect={uiActions.handleThemeSelect}
           onHighlight={uiActions.handleThemeHighlight}
           settings={settings}
-          availableTerminalHeight={
-            constrainHeight ? terminalHeight - staticExtraHeight : undefined
-          }
+          availableTerminalHeight={constrainHeight ? terminalHeight - staticExtraHeight : undefined}
           terminalWidth={mainAreaWidth}
         />
       </Box>
@@ -205,11 +195,11 @@ export const DialogManager = ({
         <SettingsDialog
           settings={settings}
           onSelect={(settingName) => {
-            if (settingName === 'ui.theme') {
+            if (settingName === "ui.theme") {
               uiActions.openThemeDialog();
               return;
             }
-            if (settingName === 'general.preferredEditor') {
+            if (settingName === "general.preferredEditor") {
               uiActions.openEditorDialog();
               return;
             }
@@ -230,22 +220,17 @@ export const DialogManager = ({
           settings={settings}
           currentMode={currentMode}
           onSelect={uiActions.handleApprovalModeSelect}
-          availableTerminalHeight={
-            constrainHeight ? terminalHeight - staticExtraHeight : undefined
-          }
+          availableTerminalHeight={constrainHeight ? terminalHeight - staticExtraHeight : undefined}
         />
       </Box>
     );
   }
   if (uiState.isModelDialogOpen) {
     return (
-      <ModelDialog
-        onClose={uiActions.closeModelDialog}
-        isFastModelMode={uiState.isFastModelMode}
-      />
+      <ModelDialog onClose={uiActions.closeModelDialog} isFastModelMode={uiState.isFastModelMode} />
     );
   }
-  if (uiState.activeArenaDialog === 'start') {
+  if (uiState.activeArenaDialog === "start") {
     return (
       <ArenaStartDialog
         onClose={() => uiActions.closeArenaDialog()}
@@ -253,7 +238,7 @@ export const DialogManager = ({
       />
     );
   }
-  if (uiState.activeArenaDialog === 'status') {
+  if (uiState.activeArenaDialog === "status") {
     const arenaManager = config.getArenaManager();
     if (arenaManager) {
       return (
@@ -265,7 +250,7 @@ export const DialogManager = ({
       );
     }
   }
-  if (uiState.activeArenaDialog === 'stop') {
+  if (uiState.activeArenaDialog === "stop") {
     return (
       <ArenaStopDialog
         config={config}
@@ -274,7 +259,7 @@ export const DialogManager = ({
       />
     );
   }
-  if (uiState.activeArenaDialog === 'select') {
+  if (uiState.activeArenaDialog === "select") {
     const arenaManager = config.getArenaManager();
     if (arenaManager) {
       return (
@@ -299,9 +284,7 @@ export const DialogManager = ({
   // Qwen OAuth removed; OpenAI authentication now handled through AuthDialog
   // with coding-plan/custom sub-modes
   if (uiState.isTrustDialogOpen) {
-    return (
-      <TrustDialog onExit={uiActions.closeTrustDialog} addItem={addItem} />
-    );
+    return <TrustDialog onExit={uiActions.closeTrustDialog} addItem={addItem} />;
   }
 
   if (uiState.isPermissionsDialogOpen) {
@@ -309,29 +292,16 @@ export const DialogManager = ({
   }
 
   if (uiState.isSubagentCreateDialogOpen) {
-    return (
-      <AgentCreationWizard
-        onClose={uiActions.closeSubagentCreateDialog}
-        config={config}
-      />
-    );
+    return <AgentCreationWizard onClose={uiActions.closeSubagentCreateDialog} config={config} />;
   }
 
   if (uiState.isAgentsManagerDialogOpen) {
-    return (
-      <AgentsManagerDialog
-        onClose={uiActions.closeAgentsManagerDialog}
-        config={config}
-      />
-    );
+    return <AgentsManagerDialog onClose={uiActions.closeAgentsManagerDialog} config={config} />;
   }
 
   if (uiState.isExtensionsManagerDialogOpen) {
     return (
-      <ExtensionsManagerDialog
-        onClose={uiActions.closeExtensionsManagerDialog}
-        config={config}
-      />
+      <ExtensionsManagerDialog onClose={uiActions.closeExtensionsManagerDialog} config={config} />
     );
   }
   if (uiState.isHooksDialogOpen) {

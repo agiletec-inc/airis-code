@@ -8,17 +8,17 @@
  * Thin React wrapper around the framework-agnostic controller from core.
  */
 
-import { useState, useMemo, useRef, useEffect, useCallback } from 'react';
+import type { Config, FollowupState } from "@airiscode/core";
 import {
-  INITIAL_FOLLOWUP_STATE,
   createFollowupController,
+  INITIAL_FOLLOWUP_STATE,
   logPromptSuggestion,
   PromptSuggestionEvent,
-} from '@airiscode/core';
-import type { FollowupState, Config } from '@airiscode/core';
+} from "@airiscode/core";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 // Re-export for consumers that import from here
-export type { FollowupState } from '@airiscode/core';
+export type { FollowupState } from "@airiscode/core";
 
 /**
  * Options for the hook
@@ -43,10 +43,7 @@ export interface UseFollowupSuggestionsReturn {
   /** Set suggestion text (called by parent component) */
   setSuggestion: (text: string | null) => void;
   /** Accept the current suggestion */
-  accept: (
-    method?: 'tab' | 'enter' | 'right',
-    options?: { skipOnAccept?: boolean },
-  ) => void;
+  accept: (method?: "tab" | "enter" | "right", options?: { skipOnAccept?: boolean }) => void;
   /** Dismiss the current suggestion */
   dismiss: () => void;
   /** Clear all state */
@@ -102,8 +99,8 @@ export function useFollowupSuggestionsCLI(
   // Telemetry callback from controller (accept/dismiss)
   const onOutcome = useCallback(
     (params: {
-      outcome: 'accepted' | 'ignored';
-      accept_method?: 'tab' | 'enter' | 'right';
+      outcome: "accepted" | "ignored";
+      accept_method?: "tab" | "enter" | "right";
       time_ms: number;
       suggestion_length: number;
     }) => {
@@ -114,16 +111,15 @@ export function useFollowupSuggestionsCLI(
         new PromptSuggestionEvent({
           outcome: params.outcome,
           accept_method: params.accept_method,
-          ...(params.outcome === 'accepted'
+          ...(params.outcome === "accepted"
             ? { time_to_accept_ms: params.time_ms }
             : { time_to_ignore_ms: params.time_ms }),
           ...(firstKeystrokeAtRef.current > 0 &&
             prevShownAtRef.current > 0 && {
-              time_to_first_keystroke_ms:
-                firstKeystrokeAtRef.current - prevShownAtRef.current,
+              time_to_first_keystroke_ms: firstKeystrokeAtRef.current - prevShownAtRef.current,
             }),
           suggestion_length: params.suggestion_length,
-          similarity: params.outcome === 'accepted' ? 1.0 : 0.0,
+          similarity: params.outcome === "accepted" ? 1.0 : 0.0,
           was_focused_when_shown: wasFocusedWhenShownRef.current,
         }),
       );

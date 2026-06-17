@@ -4,17 +4,17 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import type { ThoughtSummary } from '@airiscode/gemini-cli-core';
-import type React from 'react';
-import { Box, Text } from 'ink';
-import { theme } from '../semantic-colors.js';
-import { useStreamingContext } from '../contexts/StreamingContext.js';
-import { StreamingState } from '../types.js';
-import { GeminiRespondingSpinner } from './GeminiRespondingSpinner.js';
-import { formatDuration } from '../utils/formatters.js';
-import { useTerminalSize } from '../hooks/useTerminalSize.js';
-import { isNarrowWidth } from '../utils/isNarrowWidth.js';
-import { INTERACTIVE_SHELL_WAITING_PHRASE } from '../hooks/usePhraseCycler.js';
+import type { ThoughtSummary } from "@airiscode/gemini-cli-core";
+import { Box, Text } from "ink";
+import type React from "react";
+import { useStreamingContext } from "../contexts/StreamingContext.js";
+import { INTERACTIVE_SHELL_WAITING_PHRASE } from "../hooks/usePhraseCycler.js";
+import { useTerminalSize } from "../hooks/useTerminalSize.js";
+import { theme } from "../semantic-colors.js";
+import { StreamingState } from "../types.js";
+import { formatDuration } from "../utils/formatters.js";
+import { isNarrowWidth } from "../utils/isNarrowWidth.js";
+import { GeminiRespondingSpinner } from "./GeminiRespondingSpinner.js";
 
 interface LoadingIndicatorProps {
   currentLoadingPhrase?: string;
@@ -54,16 +54,14 @@ export const LoadingIndicator: React.FC<LoadingIndicatorProps> = ({
       {/* Main loading line */}
       <Box
         width="100%"
-        flexDirection={isNarrow ? 'column' : 'row'}
-        alignItems={isNarrow ? 'flex-start' : 'center'}
+        flexDirection={isNarrow ? "column" : "row"}
+        alignItems={isNarrow ? "flex-start" : "center"}
       >
         <Box>
           <Box marginRight={1}>
             <GeminiRespondingSpinner
               nonRespondingDisplay={
-                streamingState === StreamingState.WaitingForConfirmation
-                  ? '⠏'
-                  : ''
+                streamingState === StreamingState.WaitingForConfirmation ? "⠏" : ""
               }
             />
           </Box>

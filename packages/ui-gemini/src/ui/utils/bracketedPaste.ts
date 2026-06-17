@@ -4,10 +4,10 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { writeToStdout } from '@airiscode/gemini-cli-core';
+import { writeToStdout } from "@airiscode/gemini-cli-core";
 
-const ENABLE_BRACKETED_PASTE = '\x1b[?2004h';
-const DISABLE_BRACKETED_PASTE = '\x1b[?2004l';
+const ENABLE_BRACKETED_PASTE = "\x1b[?2004h";
+const DISABLE_BRACKETED_PASTE = "\x1b[?2004l";
 
 export const enableBracketedPaste = () => {
   writeToStdout(ENABLE_BRACKETED_PASTE);

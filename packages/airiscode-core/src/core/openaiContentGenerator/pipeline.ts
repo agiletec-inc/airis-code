@@ -4,16 +4,13 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import type OpenAI from 'openai';
-import {
-  type GenerateContentParameters,
-  GenerateContentResponse,
-} from '../../types/llm.js';
-import type { Config } from '../../config/config.js';
-import type { ContentGeneratorConfig } from '../contentGenerator.js';
-import type { OpenAICompatibleProvider } from './provider/index.js';
-import { OpenAIContentConverter } from './converter.js';
-import type { ErrorHandler, RequestContext } from './errorHandler.js';
+import type OpenAI from "openai";
+import type { Config } from "../../config/config.js";
+import { type GenerateContentParameters, GenerateContentResponse } from "../../types/llm.js";
+import type { ContentGeneratorConfig } from "../contentGenerator.js";
+import { OpenAIContentConverter } from "./converter.js";
+import type { ErrorHandler, RequestContext } from "./errorHandler.js";
+import type { OpenAICompatibleProvider } from "./provider/index.js";
 
 /**
  * Error thrown when the API returns an error embedded as stream content
@@ -24,7 +21,7 @@ import type { ErrorHandler, RequestContext } from './errorHandler.js';
 export class StreamContentError extends Error {
   constructor(message: string) {
     super(message);
-    this.name = 'StreamContentError';
+    this.name = "StreamContentError";
   }
 }
 
@@ -66,15 +63,11 @@ export class ContentGenerationPipeline {
       false,
       effectiveModel,
       async (openaiRequest) => {
-        const openaiResponse = (await this.client.chat.completions.create(
-          openaiRequest,
-          {
-            signal: request.config?.abortSignal,
-          },
-        )) as OpenAI.Chat.ChatCompletion;
+        const openaiResponse = (await this.client.chat.completions.create(openaiRequest, {
+          signal: request.config?.abortSignal,
+        })) as OpenAI.Chat.ChatCompletion;
 
-        const geminiResponse =
-          this.converter.convertOpenAIResponseToGemini(openaiResponse);
+        const geminiResponse = this.converter.convertOpenAIResponseToGemini(openaiResponse);
 
         return geminiResponse;
       },
@@ -95,12 +88,9 @@ export class ContentGenerationPipeline {
       effectiveModel,
       async (openaiRequest, context) => {
         // Stage 1: Create OpenAI stream
-        const stream = (await this.client.chat.completions.create(
-          openaiRequest,
-          {
-            signal: request.config?.abortSignal,
-          },
-        )) as AsyncIterable<OpenAI.Chat.ChatCompletionChunk>;
+        const stream = (await this.client.chat.completions.create(openaiRequest, {
+          signal: request.config?.abortSignal,
+        })) as AsyncIterable<OpenAI.Chat.ChatCompletionChunk>;
 
         // Stage 2: Process stream with conversion and logging
         return this.processStreamWithLogging(stream, context, request);
@@ -144,10 +134,8 @@ export class ContentGenerationPipeline {
         // Some providers return errors (e.g., TPM throttling) as a normal SSE chunk
         // with finish_reason="error_finish" and the error in delta.content,
         // instead of returning a proper HTTP error status.
-        if ((chunk.choices?.[0]?.finish_reason as string) === 'error_finish') {
-          const errorContent =
-            chunk.choices?.[0]?.delta?.content?.trim() ||
-            'Unknown stream error';
+        if ((chunk.choices?.[0]?.finish_reason as string) === "error_finish") {
+          const errorContent = chunk.choices?.[0]?.delta?.content?.trim() || "Unknown stream error";
           throw new StreamContentError(errorContent);
         }
 
@@ -175,8 +163,7 @@ export class ContentGenerationPipeline {
           // block below. TypeScript cannot infer this through the callback
           // assignment in handleChunkMerging, so an explicit cast is needed.
           if (response.usageMetadata) {
-            const pending =
-              pendingFinishResponse as GenerateContentResponse | null;
+            const pending = pendingFinishResponse as GenerateContentResponse | null;
             if (pending) {
               pending.usageMetadata = response.usageMetadata;
             }
@@ -251,8 +238,7 @@ export class ContentGenerationPipeline {
     // Check if we have a pending finish response from previous chunks
     const hasPendingFinish =
       collectedGeminiResponses.length > 0 &&
-      collectedGeminiResponses[collectedGeminiResponses.length - 1]
-        .candidates?.[0]?.finishReason;
+      collectedGeminiResponses[collectedGeminiResponses.length - 1].candidates?.[0]?.finishReason;
 
     if (isFinishChunk) {
       if (hasPendingFinish) {
@@ -261,8 +247,7 @@ export class ContentGenerationPipeline {
         // was already reset after the first finish chunk, so the second one
         // carries no functionCall parts. Merge only usageMetadata and keep the
         // candidates (including functionCall parts) from the first finish chunk.
-        const lastResponse =
-          collectedGeminiResponses[collectedGeminiResponses.length - 1];
+        const lastResponse = collectedGeminiResponses[collectedGeminiResponses.length - 1];
         if (response.usageMetadata) {
           lastResponse.usageMetadata = response.usageMetadata;
         }
@@ -275,8 +260,7 @@ export class ContentGenerationPipeline {
       return false; // Don't yield yet, wait for potential subsequent chunks to merge
     } else if (hasPendingFinish) {
       // We have a pending finish chunk, merge this chunk's data into it
-      const lastResponse =
-        collectedGeminiResponses[collectedGeminiResponses.length - 1];
+      const lastResponse = collectedGeminiResponses[collectedGeminiResponses.length - 1];
       const mergedResponse = new GenerateContentResponse();
 
       // Keep the finish reason from the previous chunk
@@ -296,8 +280,7 @@ export class ContentGenerationPipeline {
       mergedResponse.promptFeedback = response.promptFeedback;
 
       // Update the collected responses with the merged response
-      collectedGeminiResponses[collectedGeminiResponses.length - 1] =
-        mergedResponse;
+      collectedGeminiResponses[collectedGeminiResponses.length - 1] = mergedResponse;
 
       setPendingFinish(mergedResponse);
       return true; // Yield the merged response
@@ -325,28 +308,21 @@ export class ContentGenerationPipeline {
 
     // Add streaming options if present
     if (streaming) {
-      (
-        baseRequest as unknown as OpenAI.Chat.ChatCompletionCreateParamsStreaming
-      ).stream = true;
+      (baseRequest as unknown as OpenAI.Chat.ChatCompletionCreateParamsStreaming).stream = true;
       baseRequest.stream_options = { include_usage: true };
     }
 
     // Add tools if present
     if (request.config?.tools) {
-      baseRequest.tools = await this.converter.convertGeminiToolsToOpenAI(
-        request.config.tools,
-      );
+      baseRequest.tools = await this.converter.convertGeminiToolsToOpenAI(request.config.tools);
     }
 
     // Let provider enhance the request (e.g., add metadata, cache control)
     return this.config.provider.buildRequest(baseRequest, userPromptId);
   }
 
-  private buildGenerateContentConfig(
-    request: GenerateContentParameters,
-  ): Record<string, unknown> {
-    const defaultSamplingParams =
-      this.config.provider.getDefaultGenerationConfig();
+  private buildGenerateContentConfig(request: GenerateContentParameters): Record<string, unknown> {
+    const defaultSamplingParams = this.config.provider.getDefaultGenerationConfig();
     const configSamplingParams = this.contentGeneratorConfig.samplingParams;
 
     // Helper function to get parameter value with priority: config > request > default
@@ -355,12 +331,8 @@ export class ContentGenerationPipeline {
       requestKey?: keyof NonNullable<typeof request.config>,
     ): T | undefined => {
       const configValue = configSamplingParams?.[configKey] as T | undefined;
-      const requestValue = requestKey
-        ? (request.config?.[requestKey] as T | undefined)
-        : undefined;
-      const defaultValue = requestKey
-        ? (defaultSamplingParams[requestKey] as T)
-        : undefined;
+      const requestValue = requestKey ? (request.config?.[requestKey] as T | undefined) : undefined;
+      const defaultValue = requestKey ? (defaultSamplingParams[requestKey] as T) : undefined;
 
       if (configValue !== undefined) return configValue;
       if (requestValue !== undefined) return requestValue;
@@ -380,34 +352,24 @@ export class ContentGenerationPipeline {
 
     const params: Record<string, unknown> = {
       // Parameters with request fallback but no defaults
-      ...addParameterIfDefined('temperature', 'temperature', 'temperature'),
-      ...addParameterIfDefined('top_p', 'top_p', 'topP'),
+      ...addParameterIfDefined("temperature", "temperature", "temperature"),
+      ...addParameterIfDefined("top_p", "top_p", "topP"),
 
       // Max tokens (special case: different property names)
-      ...addParameterIfDefined('max_tokens', 'max_tokens', 'maxOutputTokens'),
+      ...addParameterIfDefined("max_tokens", "max_tokens", "maxOutputTokens"),
 
       // Config-only parameters (no request fallback)
-      ...addParameterIfDefined('top_k', 'top_k', 'topK'),
-      ...addParameterIfDefined('repetition_penalty', 'repetition_penalty'),
-      ...addParameterIfDefined(
-        'presence_penalty',
-        'presence_penalty',
-        'presencePenalty',
-      ),
-      ...addParameterIfDefined(
-        'frequency_penalty',
-        'frequency_penalty',
-        'frequencyPenalty',
-      ),
+      ...addParameterIfDefined("top_k", "top_k", "topK"),
+      ...addParameterIfDefined("repetition_penalty", "repetition_penalty"),
+      ...addParameterIfDefined("presence_penalty", "presence_penalty", "presencePenalty"),
+      ...addParameterIfDefined("frequency_penalty", "frequency_penalty", "frequencyPenalty"),
       ...this.buildReasoningConfig(request),
     };
 
     return params;
   }
 
-  private buildReasoningConfig(
-    request: GenerateContentParameters,
-  ): Record<string, unknown> {
+  private buildReasoningConfig(request: GenerateContentParameters): Record<string, unknown> {
     // Reasoning configuration for OpenAI-compatible endpoints is highly fragmented.
     // For example, across common providers and models:
     //
@@ -447,11 +409,7 @@ export class ContentGenerationPipeline {
       context: RequestContext,
     ) => Promise<T>,
   ): Promise<T> {
-    const context = this.createRequestContext(
-      userPromptId,
-      isStreaming,
-      effectiveModel,
-    );
+    const context = this.createRequestContext(userPromptId, isStreaming, effectiveModel);
 
     try {
       const openaiRequest = await this.buildRequest(
@@ -495,7 +453,7 @@ export class ContentGenerationPipeline {
     return {
       userPromptId,
       model: effectiveModel,
-      authType: this.contentGeneratorConfig.authType || 'unknown',
+      authType: this.contentGeneratorConfig.authType || "unknown",
       startTime: Date.now(),
       duration: 0,
       isStreaming,

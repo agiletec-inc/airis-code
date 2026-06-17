@@ -4,11 +4,11 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import type React from 'react';
-import { Text, Box } from 'ink';
-import { theme } from '../../semantic-colors.js';
-import { SCREEN_READER_USER_PREFIX } from '../../textConstants.js';
-import { isSlashCommand as checkIsSlashCommand } from '../../utils/commandUtils.js';
+import { Box, Text } from "ink";
+import type React from "react";
+import { theme } from "../../semantic-colors.js";
+import { SCREEN_READER_USER_PREFIX } from "../../textConstants.js";
+import { isSlashCommand as checkIsSlashCommand } from "../../utils/commandUtils.js";
 
 interface UserMessageProps {
   text: string;
@@ -16,20 +16,14 @@ interface UserMessageProps {
 }
 
 export const UserMessage: React.FC<UserMessageProps> = ({ text, width }) => {
-  const prefix = '> ';
+  const prefix = "> ";
   const prefixWidth = prefix.length;
   const isSlashCommand = checkIsSlashCommand(text);
 
   const textColor = isSlashCommand ? theme.text.accent : theme.text.secondary;
 
   return (
-    <Box
-      flexDirection="row"
-      paddingY={0}
-      marginY={1}
-      alignSelf="flex-start"
-      width={width}
-    >
+    <Box flexDirection="row" paddingY={0} marginY={1} alignSelf="flex-start" width={width}>
       <Box width={prefixWidth} flexShrink={0}>
         <Text color={theme.text.accent} aria-label={SCREEN_READER_USER_PREFIX}>
           {prefix}

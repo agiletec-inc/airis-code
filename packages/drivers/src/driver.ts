@@ -3,12 +3,12 @@
  */
 
 import type {
+  Capabilities,
   ChatRequest,
   ChatResponse,
-  Capabilities,
   DriverConfig,
   StreamChunk,
-} from './types.js';
+} from "./types.js";
 
 /**
  * Abstract base class for all model drivers
@@ -64,14 +64,14 @@ export abstract class ModelDriver {
    */
   protected validateRequest(request: ChatRequest): void {
     if (!request.sessionId) {
-      throw new Error('Session ID is required');
+      throw new Error("Session ID is required");
     }
     if (!request.messages || request.messages.length === 0) {
-      throw new Error('Messages array cannot be empty');
+      throw new Error("Messages array cannot be empty");
     }
     if (request.temperature !== undefined) {
       if (request.temperature < 0 || request.temperature > 2) {
-        throw new Error('Temperature must be between 0 and 2');
+        throw new Error("Temperature must be between 0 and 2");
       }
     }
   }
@@ -80,6 +80,6 @@ export abstract class ModelDriver {
    * Get default model from config or hints
    */
   protected getModelName(request: ChatRequest): string {
-    return request.modelHints?.model || this.config.defaultModel || 'default';
+    return request.modelHints?.model || this.config.defaultModel || "default";
   }
 }

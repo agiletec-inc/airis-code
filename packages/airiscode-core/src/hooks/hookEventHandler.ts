@@ -4,40 +4,39 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import type { Config } from '../config/config.js';
-import type { HookPlanner, HookEventContext } from './hookPlanner.js';
-import type { HookRunner } from './hookRunner.js';
-import type { HookAggregator, AggregatedHookResult } from './hookAggregator.js';
-import { HookEventName } from './types.js';
+import type { Config } from "../config/config.js";
+import { logHookCall } from "../telemetry/loggers.js";
+import { HookCallEvent } from "../telemetry/types.js";
+import { createDebugLogger } from "../utils/debugLogger.js";
+import type { AggregatedHookResult, HookAggregator } from "./hookAggregator.js";
+import type { HookEventContext, HookPlanner } from "./hookPlanner.js";
+import type { HookRunner } from "./hookRunner.js";
 import type {
-  HookConfig,
-  HookInput,
-  HookExecutionResult,
-  UserPromptSubmitInput,
-  StopInput,
-  SessionStartInput,
-  SessionEndInput,
-  SessionStartSource,
-  SessionEndReason,
   AgentType,
-  PreToolUseInput,
-  PostToolUseInput,
-  PostToolUseFailureInput,
-  PreCompactInput,
-  PreCompactTrigger,
+  HookConfig,
+  HookExecutionResult,
+  HookInput,
   NotificationInput,
   NotificationType,
   PermissionRequestInput,
   PermissionSuggestion,
+  PostToolUseFailureInput,
+  PostToolUseInput,
+  PreCompactInput,
+  PreCompactTrigger,
+  PreToolUseInput,
+  SessionEndInput,
+  SessionEndReason,
+  SessionStartInput,
+  SessionStartSource,
+  StopInput,
   SubagentStartInput,
   SubagentStopInput,
-} from './types.js';
-import { PermissionMode } from './types.js';
-import { createDebugLogger } from '../utils/debugLogger.js';
-import { logHookCall } from '../telemetry/loggers.js';
-import { HookCallEvent } from '../telemetry/types.js';
+  UserPromptSubmitInput,
+} from "./types.js";
+import { HookEventName, PermissionMode } from "./types.js";
 
-const debugLogger = createDebugLogger('TRUSTED_HOOKS');
+const debugLogger = createDebugLogger("TRUSTED_HOOKS");
 
 /**
  * Hook event bus that coordinates hook execution across the system
@@ -73,12 +72,7 @@ export class HookEventHandler {
       prompt,
     };
 
-    return this.executeHooks(
-      HookEventName.UserPromptSubmit,
-      input,
-      undefined,
-      signal,
-    );
+    return this.executeHooks(HookEventName.UserPromptSubmit, input, undefined, signal);
   }
 
   /**
@@ -87,7 +81,7 @@ export class HookEventHandler {
    */
   async fireStopEvent(
     stopHookActive: boolean = false,
-    lastAssistantMessage: string = '',
+    lastAssistantMessage: string = "",
     signal?: AbortSignal,
   ): Promise<AggregatedHookResult> {
     const input: StopInput = {
@@ -255,7 +249,7 @@ export class HookEventHandler {
    */
   async firePreCompactEvent(
     trigger: PreCompactTrigger,
-    customInstructions: string = '',
+    customInstructions: string = "",
     signal?: AbortSignal,
   ): Promise<AggregatedHookResult> {
     const input: PreCompactInput = {
@@ -427,7 +421,7 @@ export class HookEventHandler {
       const onHookEnd = (config: HookConfig, result: HookExecutionResult) => {
         const hookName = this.getHookName(config);
         debugLogger.debug(
-          `Hook ${hookName} ended for event ${eventName}: ${result.success ? 'success' : 'failed'}`,
+          `Hook ${hookName} ended for event ${eventName}: ${result.success ? "success" : "failed"}`,
         );
       };
 
@@ -451,10 +445,7 @@ export class HookEventHandler {
           );
 
       // Aggregate results
-      const aggregated = this.hookAggregator.aggregateResults(
-        results,
-        eventName,
-      );
+      const aggregated = this.hookAggregator.aggregateResults(results, eventName);
 
       // Process common hook output fields centrally
       this.processCommonHookOutputFields(aggregated);
@@ -494,9 +485,7 @@ export class HookEventHandler {
   /**
    * Process common hook output fields centrally
    */
-  private processCommonHookOutputFields(
-    aggregated: AggregatedHookResult,
-  ): void {
+  private processCommonHookOutputFields(aggregated: AggregatedHookResult): void {
     if (!aggregated.finalOutput) {
       return;
     }
@@ -510,9 +499,7 @@ export class HookEventHandler {
     // Handle continue=false - this should stop the entire agent execution
     if (aggregated.finalOutput.continue === false) {
       const stopReason =
-        aggregated.finalOutput.stopReason ||
-        aggregated.finalOutput.reason ||
-        'No reason provided';
+        aggregated.finalOutput.stopReason || aggregated.finalOutput.reason || "No reason provided";
       debugLogger.debug(`Hook requested to stop execution: ${stopReason}`);
     }
   }
@@ -531,9 +518,7 @@ export class HookEventHandler {
     const errorCount = failedHooks.length;
 
     if (errorCount > 0) {
-      const failedNames = failedHooks
-        .map((r) => this.getHookNameFromResult(r))
-        .join(', ');
+      const failedNames = failedHooks.map((r) => this.getHookNameFromResult(r)).join(", ");
 
       debugLogger.warn(
         `Hook(s) [${failedNames}] failed for event ${eventName}. Check debug logs for more details.`,
@@ -575,10 +560,10 @@ export class HookEventHandler {
    * Get hook name from config for display or telemetry
    */
   private getHookName(config: HookConfig): string {
-    if (config.type === 'command') {
-      return config.name || config.command || 'unknown-command';
+    if (config.type === "command") {
+      return config.name || config.command || "unknown-command";
     }
-    return config.name || 'unknown-hook';
+    return config.name || "unknown-hook";
   }
 
   /**
@@ -591,7 +576,7 @@ export class HookEventHandler {
   /**
    * Get hook type from execution result for telemetry
    */
-  private getHookTypeFromResult(result: HookExecutionResult): 'command' {
-    return result.hookConfig.type as 'command';
+  private getHookTypeFromResult(result: HookExecutionResult): "command" {
+    return result.hookConfig.type as "command";
   }
 }

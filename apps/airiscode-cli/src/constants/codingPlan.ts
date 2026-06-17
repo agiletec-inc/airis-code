@@ -4,15 +4,15 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { createHash } from 'node:crypto';
-import type { ProviderModelConfig as ModelConfig } from '@airiscode/core';
+import { createHash } from "node:crypto";
+import type { ProviderModelConfig as ModelConfig } from "@airiscode/core";
 
 /**
  * Coding plan regions
  */
 export enum CodingPlanRegion {
-  CHINA = 'china',
-  GLOBAL = 'global',
+  CHINA = "china",
+  GLOBAL = "global",
 }
 
 /**
@@ -25,7 +25,7 @@ export type CodingPlanTemplate = ModelConfig[];
  * Environment variable key for storing the coding plan API key.
  * Unified key for both regions since they are mutually exclusive.
  */
-export const CODING_PLAN_ENV_KEY = 'BAILIAN_CODING_PLAN_API_KEY';
+export const CODING_PLAN_ENV_KEY = "BAILIAN_CODING_PLAN_API_KEY";
 
 /**
  * Computes the version hash for the coding plan template.
@@ -35,7 +35,7 @@ export const CODING_PLAN_ENV_KEY = 'BAILIAN_CODING_PLAN_API_KEY';
  */
 export function computeCodingPlanVersion(template: CodingPlanTemplate): string {
   const templateString = JSON.stringify(template);
-  return createHash('sha256').update(templateString).digest('hex');
+  return createHash("sha256").update(templateString).digest("hex");
 }
 
 /**
@@ -45,17 +45,15 @@ export function computeCodingPlanVersion(template: CodingPlanTemplate): string {
  * @param region - The region to generate template for
  * @returns Complete model configuration array for the region
  */
-export function generateCodingPlanTemplate(
-  region: CodingPlanRegion,
-): CodingPlanTemplate {
+export function generateCodingPlanTemplate(region: CodingPlanRegion): CodingPlanTemplate {
   if (region === CodingPlanRegion.CHINA) {
     // China region uses legacy fields to maintain backward compatibility
     // This ensures existing users don't get prompted for unnecessary updates
     return [
       {
-        id: 'qwen3.6-plus',
-        name: '[ModelStudio Coding Plan] qwen3.6-plus',
-        baseUrl: 'https://coding.dashscope.aliyuncs.com/v1',
+        id: "qwen3.6-plus",
+        name: "[ModelStudio Coding Plan] qwen3.6-plus",
+        baseUrl: "https://coding.dashscope.aliyuncs.com/v1",
         envKey: CODING_PLAN_ENV_KEY,
         generationConfig: {
           extra_body: {
@@ -65,9 +63,9 @@ export function generateCodingPlanTemplate(
         },
       },
       {
-        id: 'qwen3.5-plus',
-        name: '[ModelStudio Coding Plan] qwen3.5-plus',
-        baseUrl: 'https://coding.dashscope.aliyuncs.com/v1',
+        id: "qwen3.5-plus",
+        name: "[ModelStudio Coding Plan] qwen3.5-plus",
+        baseUrl: "https://coding.dashscope.aliyuncs.com/v1",
         envKey: CODING_PLAN_ENV_KEY,
         generationConfig: {
           extra_body: {
@@ -77,9 +75,9 @@ export function generateCodingPlanTemplate(
         },
       },
       {
-        id: 'glm-5',
-        name: '[ModelStudio Coding Plan] glm-5',
-        baseUrl: 'https://coding.dashscope.aliyuncs.com/v1',
+        id: "glm-5",
+        name: "[ModelStudio Coding Plan] glm-5",
+        baseUrl: "https://coding.dashscope.aliyuncs.com/v1",
         envKey: CODING_PLAN_ENV_KEY,
         generationConfig: {
           extra_body: {
@@ -89,9 +87,9 @@ export function generateCodingPlanTemplate(
         },
       },
       {
-        id: 'kimi-k2.5',
-        name: '[ModelStudio Coding Plan] kimi-k2.5',
-        baseUrl: 'https://coding.dashscope.aliyuncs.com/v1',
+        id: "kimi-k2.5",
+        name: "[ModelStudio Coding Plan] kimi-k2.5",
+        baseUrl: "https://coding.dashscope.aliyuncs.com/v1",
         envKey: CODING_PLAN_ENV_KEY,
         generationConfig: {
           extra_body: {
@@ -101,9 +99,9 @@ export function generateCodingPlanTemplate(
         },
       },
       {
-        id: 'MiniMax-M2.5',
-        name: '[ModelStudio Coding Plan] MiniMax-M2.5',
-        baseUrl: 'https://coding.dashscope.aliyuncs.com/v1',
+        id: "MiniMax-M2.5",
+        name: "[ModelStudio Coding Plan] MiniMax-M2.5",
+        baseUrl: "https://coding.dashscope.aliyuncs.com/v1",
         envKey: CODING_PLAN_ENV_KEY,
         generationConfig: {
           extra_body: {
@@ -113,27 +111,27 @@ export function generateCodingPlanTemplate(
         },
       },
       {
-        id: 'qwen3-coder-plus',
-        name: '[ModelStudio Coding Plan] qwen3-coder-plus',
-        baseUrl: 'https://coding.dashscope.aliyuncs.com/v1',
+        id: "qwen3-coder-plus",
+        name: "[ModelStudio Coding Plan] qwen3-coder-plus",
+        baseUrl: "https://coding.dashscope.aliyuncs.com/v1",
         envKey: CODING_PLAN_ENV_KEY,
         generationConfig: {
           contextWindowSize: 1000000,
         },
       },
       {
-        id: 'qwen3-coder-next',
-        name: '[ModelStudio Coding Plan] qwen3-coder-next',
-        baseUrl: 'https://coding.dashscope.aliyuncs.com/v1',
+        id: "qwen3-coder-next",
+        name: "[ModelStudio Coding Plan] qwen3-coder-next",
+        baseUrl: "https://coding.dashscope.aliyuncs.com/v1",
         envKey: CODING_PLAN_ENV_KEY,
         generationConfig: {
           contextWindowSize: 262144,
         },
       },
       {
-        id: 'qwen3-max-2026-01-23',
-        name: '[ModelStudio Coding Plan] qwen3-max-2026-01-23',
-        baseUrl: 'https://coding.dashscope.aliyuncs.com/v1',
+        id: "qwen3-max-2026-01-23",
+        name: "[ModelStudio Coding Plan] qwen3-max-2026-01-23",
+        baseUrl: "https://coding.dashscope.aliyuncs.com/v1",
         envKey: CODING_PLAN_ENV_KEY,
         generationConfig: {
           extra_body: {
@@ -143,9 +141,9 @@ export function generateCodingPlanTemplate(
         },
       },
       {
-        id: 'glm-4.7',
-        name: '[ModelStudio Coding Plan] glm-4.7',
-        baseUrl: 'https://coding.dashscope.aliyuncs.com/v1',
+        id: "glm-4.7",
+        name: "[ModelStudio Coding Plan] glm-4.7",
+        baseUrl: "https://coding.dashscope.aliyuncs.com/v1",
         envKey: CODING_PLAN_ENV_KEY,
         generationConfig: {
           extra_body: {
@@ -160,9 +158,9 @@ export function generateCodingPlanTemplate(
   // Global region uses ModelStudio Coding Plan branding for Global/Intl
   return [
     {
-      id: 'qwen3.6-plus',
-      name: '[ModelStudio Coding Plan for Global/Intl] qwen3.6-plus',
-      baseUrl: 'https://coding-intl.dashscope.aliyuncs.com/v1',
+      id: "qwen3.6-plus",
+      name: "[ModelStudio Coding Plan for Global/Intl] qwen3.6-plus",
+      baseUrl: "https://coding-intl.dashscope.aliyuncs.com/v1",
       envKey: CODING_PLAN_ENV_KEY,
       generationConfig: {
         extra_body: {
@@ -172,9 +170,9 @@ export function generateCodingPlanTemplate(
       },
     },
     {
-      id: 'qwen3.5-plus',
-      name: '[ModelStudio Coding Plan for Global/Intl] qwen3.5-plus',
-      baseUrl: 'https://coding-intl.dashscope.aliyuncs.com/v1',
+      id: "qwen3.5-plus",
+      name: "[ModelStudio Coding Plan for Global/Intl] qwen3.5-plus",
+      baseUrl: "https://coding-intl.dashscope.aliyuncs.com/v1",
       envKey: CODING_PLAN_ENV_KEY,
       generationConfig: {
         extra_body: {
@@ -184,27 +182,27 @@ export function generateCodingPlanTemplate(
       },
     },
     {
-      id: 'qwen3-coder-plus',
-      name: '[ModelStudio Coding Plan for Global/Intl] qwen3-coder-plus',
-      baseUrl: 'https://coding-intl.dashscope.aliyuncs.com/v1',
+      id: "qwen3-coder-plus",
+      name: "[ModelStudio Coding Plan for Global/Intl] qwen3-coder-plus",
+      baseUrl: "https://coding-intl.dashscope.aliyuncs.com/v1",
       envKey: CODING_PLAN_ENV_KEY,
       generationConfig: {
         contextWindowSize: 1000000,
       },
     },
     {
-      id: 'qwen3-coder-next',
-      name: '[ModelStudio Coding Plan for Global/Intl] qwen3-coder-next',
-      baseUrl: 'https://coding-intl.dashscope.aliyuncs.com/v1',
+      id: "qwen3-coder-next",
+      name: "[ModelStudio Coding Plan for Global/Intl] qwen3-coder-next",
+      baseUrl: "https://coding-intl.dashscope.aliyuncs.com/v1",
       envKey: CODING_PLAN_ENV_KEY,
       generationConfig: {
         contextWindowSize: 262144,
       },
     },
     {
-      id: 'qwen3-max-2026-01-23',
-      name: '[ModelStudio Coding Plan for Global/Intl] qwen3-max-2026-01-23',
-      baseUrl: 'https://coding-intl.dashscope.aliyuncs.com/v1',
+      id: "qwen3-max-2026-01-23",
+      name: "[ModelStudio Coding Plan for Global/Intl] qwen3-max-2026-01-23",
+      baseUrl: "https://coding-intl.dashscope.aliyuncs.com/v1",
       envKey: CODING_PLAN_ENV_KEY,
       generationConfig: {
         extra_body: {
@@ -214,9 +212,9 @@ export function generateCodingPlanTemplate(
       },
     },
     {
-      id: 'glm-4.7',
-      name: '[ModelStudio Coding Plan for Global/Intl] glm-4.7',
-      baseUrl: 'https://coding-intl.dashscope.aliyuncs.com/v1',
+      id: "glm-4.7",
+      name: "[ModelStudio Coding Plan for Global/Intl] glm-4.7",
+      baseUrl: "https://coding-intl.dashscope.aliyuncs.com/v1",
       envKey: CODING_PLAN_ENV_KEY,
       generationConfig: {
         extra_body: {
@@ -226,9 +224,9 @@ export function generateCodingPlanTemplate(
       },
     },
     {
-      id: 'glm-5',
-      name: '[ModelStudio Coding Plan for Global/Intl] glm-5',
-      baseUrl: 'https://coding-intl.dashscope.aliyuncs.com/v1',
+      id: "glm-5",
+      name: "[ModelStudio Coding Plan for Global/Intl] glm-5",
+      baseUrl: "https://coding-intl.dashscope.aliyuncs.com/v1",
       envKey: CODING_PLAN_ENV_KEY,
       generationConfig: {
         extra_body: {
@@ -238,9 +236,9 @@ export function generateCodingPlanTemplate(
       },
     },
     {
-      id: 'MiniMax-M2.5',
-      name: '[ModelStudio Coding Plan for Global/Intl] MiniMax-M2.5',
-      baseUrl: 'https://coding-intl.dashscope.aliyuncs.com/v1',
+      id: "MiniMax-M2.5",
+      name: "[ModelStudio Coding Plan for Global/Intl] MiniMax-M2.5",
+      baseUrl: "https://coding-intl.dashscope.aliyuncs.com/v1",
       envKey: CODING_PLAN_ENV_KEY,
       generationConfig: {
         extra_body: {
@@ -250,9 +248,9 @@ export function generateCodingPlanTemplate(
       },
     },
     {
-      id: 'kimi-k2.5',
-      name: '[ModelStudio Coding Plan for Global/Intl] kimi-k2.5',
-      baseUrl: 'https://coding-intl.dashscope.aliyuncs.com/v1',
+      id: "kimi-k2.5",
+      name: "[ModelStudio Coding Plan for Global/Intl] kimi-k2.5",
+      baseUrl: "https://coding-intl.dashscope.aliyuncs.com/v1",
       envKey: CODING_PLAN_ENV_KEY,
       generationConfig: {
         extra_body: {
@@ -273,8 +271,8 @@ export function getCodingPlanConfig(region: CodingPlanRegion) {
   const template = generateCodingPlanTemplate(region);
   const baseUrl =
     region === CodingPlanRegion.CHINA
-      ? 'https://coding.dashscope.aliyuncs.com/v1'
-      : 'https://coding-intl.dashscope.aliyuncs.com/v1';
+      ? "https://coding.dashscope.aliyuncs.com/v1"
+      : "https://coding-intl.dashscope.aliyuncs.com/v1";
   return {
     template,
     baseUrl,
@@ -288,8 +286,8 @@ export function getCodingPlanConfig(region: CodingPlanRegion) {
  */
 export function getCodingPlanBaseUrls(): string[] {
   return [
-    'https://coding.dashscope.aliyuncs.com/v1',
-    'https://coding-intl.dashscope.aliyuncs.com/v1',
+    "https://coding.dashscope.aliyuncs.com/v1",
+    "https://coding-intl.dashscope.aliyuncs.com/v1",
   ];
 }
 
@@ -314,10 +312,10 @@ export function isCodingPlanConfig(
   }
 
   // Check which region's baseUrl matches
-  if (baseUrl === 'https://coding.dashscope.aliyuncs.com/v1') {
+  if (baseUrl === "https://coding.dashscope.aliyuncs.com/v1") {
     return CodingPlanRegion.CHINA;
   }
-  if (baseUrl === 'https://coding-intl.dashscope.aliyuncs.com/v1') {
+  if (baseUrl === "https://coding-intl.dashscope.aliyuncs.com/v1") {
     return CodingPlanRegion.GLOBAL;
   }
 
@@ -329,15 +327,13 @@ export function isCodingPlanConfig(
  * @param baseUrl - The baseUrl to check
  * @returns The region if matched, null otherwise
  */
-export function getRegionFromBaseUrl(
-  baseUrl: string | undefined,
-): CodingPlanRegion | null {
+export function getRegionFromBaseUrl(baseUrl: string | undefined): CodingPlanRegion | null {
   if (!baseUrl) return null;
 
-  if (baseUrl === 'https://coding.dashscope.aliyuncs.com/v1') {
+  if (baseUrl === "https://coding.dashscope.aliyuncs.com/v1") {
     return CodingPlanRegion.CHINA;
   }
-  if (baseUrl === 'https://coding-intl.dashscope.aliyuncs.com/v1') {
+  if (baseUrl === "https://coding-intl.dashscope.aliyuncs.com/v1") {
     return CodingPlanRegion.GLOBAL;
   }
 

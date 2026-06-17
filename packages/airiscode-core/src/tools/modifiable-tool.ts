@@ -4,22 +4,18 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import type { EditorType } from '../utils/editor.js';
-import { openDiff } from '../utils/editor.js';
-import os from 'node:os';
-import path from 'node:path';
-import fs from 'node:fs';
-import * as Diff from 'diff';
-import { DEFAULT_DIFF_OPTIONS } from './diffOptions.js';
-import { isNodeError } from '../utils/errors.js';
-import { createDebugLogger } from '../utils/debugLogger.js';
-import type {
-  AnyDeclarativeTool,
-  DeclarativeTool,
-  ToolResult,
-} from './tools.js';
+import fs from "node:fs";
+import os from "node:os";
+import path from "node:path";
+import * as Diff from "diff";
+import { createDebugLogger } from "../utils/debugLogger.js";
+import type { EditorType } from "../utils/editor.js";
+import { openDiff } from "../utils/editor.js";
+import { isNodeError } from "../utils/errors.js";
+import { DEFAULT_DIFF_OPTIONS } from "./diffOptions.js";
+import type { AnyDeclarativeTool, DeclarativeTool, ToolResult } from "./tools.js";
 
-const debugLogger = createDebugLogger('MODIFIABLE_TOOL');
+const debugLogger = createDebugLogger("MODIFIABLE_TOOL");
 
 /**
  * A declarative tool that supports a modify operation.
@@ -54,7 +50,7 @@ export interface ModifyResult<ToolParams> {
 export function isModifiableDeclarativeTool(
   tool: AnyDeclarativeTool,
 ): tool is ModifiableDeclarativeTool<object> {
-  return 'getModifyContext' in tool;
+  return "getModifyContext" in tool;
 }
 
 function createTempFilesForModify(
@@ -63,7 +59,7 @@ function createTempFilesForModify(
   file_path: string,
 ): { oldPath: string; newPath: string } {
   const tempDir = os.tmpdir();
-  const diffDir = path.join(tempDir, 'airiscode-tool-modify-diffs');
+  const diffDir = path.join(tempDir, "airiscode-tool-modify-diffs");
 
   if (!fs.existsSync(diffDir)) {
     fs.mkdirSync(diffDir, { recursive: true });
@@ -72,17 +68,11 @@ function createTempFilesForModify(
   const ext = path.extname(file_path);
   const fileName = path.basename(file_path, ext);
   const timestamp = Date.now();
-  const tempOldPath = path.join(
-    diffDir,
-    `airiscode-modify-${fileName}-old-${timestamp}${ext}`,
-  );
-  const tempNewPath = path.join(
-    diffDir,
-    `airiscode-modify-${fileName}-new-${timestamp}${ext}`,
-  );
+  const tempOldPath = path.join(diffDir, `airiscode-modify-${fileName}-old-${timestamp}${ext}`);
+  const tempNewPath = path.join(diffDir, `airiscode-modify-${fileName}-new-${timestamp}${ext}`);
 
-  fs.writeFileSync(tempOldPath, currentContent, 'utf8');
-  fs.writeFileSync(tempNewPath, proposedContent, 'utf8');
+  fs.writeFileSync(tempOldPath, currentContent, "utf8");
+  fs.writeFileSync(tempNewPath, proposedContent, "utf8");
 
   return { oldPath: tempOldPath, newPath: tempNewPath };
 }
@@ -93,34 +83,30 @@ function getUpdatedParams<ToolParams>(
   originalParams: ToolParams,
   modifyContext: ModifyContext<ToolParams>,
 ): { updatedParams: ToolParams; updatedDiff: string } {
-  let oldContent = '';
-  let newContent = '';
+  let oldContent = "";
+  let newContent = "";
 
   try {
-    oldContent = fs.readFileSync(tmpOldPath, 'utf8');
+    oldContent = fs.readFileSync(tmpOldPath, "utf8");
   } catch (err) {
-    if (!isNodeError(err) || err.code !== 'ENOENT') throw err;
-    oldContent = '';
+    if (!isNodeError(err) || err.code !== "ENOENT") throw err;
+    oldContent = "";
   }
 
   try {
-    newContent = fs.readFileSync(tempNewPath, 'utf8');
+    newContent = fs.readFileSync(tempNewPath, "utf8");
   } catch (err) {
-    if (!isNodeError(err) || err.code !== 'ENOENT') throw err;
-    newContent = '';
+    if (!isNodeError(err) || err.code !== "ENOENT") throw err;
+    newContent = "";
   }
 
-  const updatedParams = modifyContext.createUpdatedParams(
-    oldContent,
-    newContent,
-    originalParams,
-  );
+  const updatedParams = modifyContext.createUpdatedParams(oldContent, newContent, originalParams);
   const updatedDiff = Diff.createPatch(
     path.basename(modifyContext.getFilePath(originalParams)),
     oldContent,
     newContent,
-    'Current',
-    'Proposed',
+    "Current",
+    "Proposed",
     DEFAULT_DIFF_OPTIONS,
   );
 
@@ -153,8 +139,7 @@ export async function modifyWithEditor<ToolParams>(
   onEditorClose: () => void,
 ): Promise<ModifyResult<ToolParams>> {
   const currentContent = await modifyContext.getCurrentContent(originalParams);
-  const proposedContent =
-    await modifyContext.getProposedContent(originalParams);
+  const proposedContent = await modifyContext.getProposedContent(originalParams);
 
   const { oldPath, newPath } = createTempFilesForModify(
     currentContent,
@@ -164,12 +149,7 @@ export async function modifyWithEditor<ToolParams>(
 
   try {
     await openDiff(oldPath, newPath, editorType, onEditorClose);
-    const result = getUpdatedParams(
-      oldPath,
-      newPath,
-      originalParams,
-      modifyContext,
-    );
+    const result = getUpdatedParams(oldPath, newPath, originalParams, modifyContext);
 
     return result;
   } finally {

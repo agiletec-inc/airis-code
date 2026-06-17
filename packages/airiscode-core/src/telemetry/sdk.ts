@@ -8,7 +8,7 @@
 // Telemetry calls throughout the codebase are gated by isTelemetrySdkInitialized()
 // which now always returns false, making them no-ops.
 
-import type { Config } from '../config/config.js';
+import type { Config } from "../config/config.js";
 
 export function isTelemetrySdkInitialized(): boolean {
   return false;

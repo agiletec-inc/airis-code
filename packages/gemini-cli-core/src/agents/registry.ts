@@ -4,17 +4,17 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import type { Config } from '../config/config.js';
-import type { AgentDefinition } from './types.js';
-import { CodebaseInvestigatorAgent } from './codebase-investigator.js';
-import { type z } from 'zod';
-import { debugLogger } from '../utils/debugLogger.js';
+import { type z } from "zod";
+import type { Config } from "../config/config.js";
 import {
   DEFAULT_GEMINI_MODEL_AUTO,
   GEMINI_MODEL_ALIAS_PRO,
   PREVIEW_GEMINI_MODEL,
-} from '../config/models.js';
-import type { ModelConfigAlias } from '../services/modelConfigService.js';
+} from "../config/models.js";
+import type { ModelConfigAlias } from "../services/modelConfigService.js";
+import { debugLogger } from "../utils/debugLogger.js";
+import { CodebaseInvestigatorAgent } from "./codebase-investigator.js";
+import type { AgentDefinition } from "./types.js";
 
 /**
  * Returns the model config alias for a given agent definition.
@@ -42,9 +42,7 @@ export class AgentRegistry {
     this.loadBuiltInAgents();
 
     if (this.config.getDebugMode()) {
-      debugLogger.log(
-        `[AgentRegistry] Initialized with ${this.agents.size} agents.`,
-      );
+      debugLogger.log(`[AgentRegistry] Initialized with ${this.agents.size} agents.`);
     }
   }
 
@@ -53,17 +51,12 @@ export class AgentRegistry {
 
     // Only register the agent if it's enabled in the settings.
     if (investigatorSettings?.enabled) {
-      let model =
-        investigatorSettings.model ??
-        CodebaseInvestigatorAgent.modelConfig.model;
+      let model = investigatorSettings.model ?? CodebaseInvestigatorAgent.modelConfig.model;
 
       // If the user is using the preview model for the main agent, force the sub-agent to use it too
       // if it's configured to use 'pro' or 'auto'.
       if (this.config.getModel() === PREVIEW_GEMINI_MODEL) {
-        if (
-          model === GEMINI_MODEL_ALIAS_PRO ||
-          model === DEFAULT_GEMINI_MODEL_AUTO
-        ) {
+        if (model === GEMINI_MODEL_ALIAS_PRO || model === DEFAULT_GEMINI_MODEL_AUTO) {
           model = PREVIEW_GEMINI_MODEL;
         }
       }
@@ -83,8 +76,7 @@ export class AgentRegistry {
             investigatorSettings.maxTimeMinutes ??
             CodebaseInvestigatorAgent.runConfig.max_time_minutes,
           max_turns:
-            investigatorSettings.maxNumTurns ??
-            CodebaseInvestigatorAgent.runConfig.max_turns,
+            investigatorSettings.maxNumTurns ?? CodebaseInvestigatorAgent.runConfig.max_turns,
         },
       };
       this.registerAgent(agentDef);
@@ -165,12 +157,12 @@ export class AgentRegistry {
    */
   getToolDescription(): string {
     if (this.agents.size === 0) {
-      return 'Delegates a task to a specialized sub-agent. No agents are currently available.';
+      return "Delegates a task to a specialized sub-agent. No agents are currently available.";
     }
 
     const agentDescriptions = Array.from(this.agents.entries())
       .map(([name, def]) => `- **${name}**: ${def.description}`)
-      .join('\n');
+      .join("\n");
 
     return `Delegates a task to a specialized sub-agent.
 
@@ -184,12 +176,11 @@ ${agentDescriptions}`;
    */
   getDirectoryContext(): string {
     if (this.agents.size === 0) {
-      return 'No sub-agents are currently available.';
+      return "No sub-agents are currently available.";
     }
 
-    let context = '## Available Sub-Agents\n';
-    context +=
-      'Use `delegate_to_agent` for complex tasks requiring specialized analysis.\n\n';
+    let context = "## Available Sub-Agents\n";
+    context += "Use `delegate_to_agent` for complex tasks requiring specialized analysis.\n\n";
 
     for (const [name, def] of this.agents.entries()) {
       context += `- **${name}**: ${def.description}\n`;

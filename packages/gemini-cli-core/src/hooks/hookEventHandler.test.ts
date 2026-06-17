@@ -4,20 +4,21 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { HookEventHandler } from './hookEventHandler.js';
-import type { Config } from '../config/config.js';
-import type { HookConfig } from './types.js';
-import type { Logger } from '@opentelemetry/api-logs';
-import type { HookPlanner } from './hookPlanner.js';
-import type { HookRunner } from './hookRunner.js';
-import type { HookAggregator } from './hookAggregator.js';
-import { HookEventName, HookType } from './types.js';
+import type { Logger } from "@opentelemetry/api-logs";
+import { beforeEach, describe, expect, it, vi } from "vitest";
+import type { Config } from "../config/config.js";
+import type { HookAggregator } from "./hookAggregator.js";
+import { HookEventHandler } from "./hookEventHandler.js";
+import type { HookPlanner } from "./hookPlanner.js";
+import type { HookRunner } from "./hookRunner.js";
+import type { HookConfig } from "./types.js";
 import {
+  HookEventName,
+  type HookExecutionResult,
+  HookType,
   NotificationType,
   SessionStartSource,
-  type HookExecutionResult,
-} from './types.js';
+} from "./types.js";
 
 // Mock debugLogger
 const mockDebugLogger = vi.hoisted(() => ({
@@ -27,11 +28,11 @@ const mockDebugLogger = vi.hoisted(() => ({
   debug: vi.fn(),
 }));
 
-vi.mock('../utils/debugLogger.js', () => ({
+vi.mock("../utils/debugLogger.js", () => ({
   debugLogger: mockDebugLogger,
 }));
 
-describe('HookEventHandler', () => {
+describe("HookEventHandler", () => {
   let hookEventHandler: HookEventHandler;
   let mockConfig: Config;
   let mockLogger: Logger;
@@ -43,13 +44,13 @@ describe('HookEventHandler', () => {
     vi.resetAllMocks();
 
     mockConfig = {
-      getSessionId: vi.fn().mockReturnValue('test-session'),
-      getWorkingDir: vi.fn().mockReturnValue('/test/project'),
+      getSessionId: vi.fn().mockReturnValue("test-session"),
+      getWorkingDir: vi.fn().mockReturnValue("/test/project"),
       getGeminiClient: vi.fn().mockReturnValue({
         getChatRecordingService: vi.fn().mockReturnValue({
           getConversationFilePath: vi
             .fn()
-            .mockReturnValue('/test/project/.gemini/tmp/chats/session.json'),
+            .mockReturnValue("/test/project/.gemini/tmp/chats/session.json"),
         }),
       }),
     } as unknown as Config;
@@ -78,13 +79,13 @@ describe('HookEventHandler', () => {
     );
   });
 
-  describe('fireBeforeToolEvent', () => {
-    it('should fire BeforeTool event with correct input', async () => {
+  describe("fireBeforeToolEvent", () => {
+    it("should fire BeforeTool event with correct input", async () => {
       const mockPlan = [
         {
           hookConfig: {
             type: HookType.Command,
-            command: './test.sh',
+            command: "./test.sh",
           } as unknown as HookConfig,
           eventName: HookEventName.BeforeTool,
         },
@@ -95,7 +96,7 @@ describe('HookEventHandler', () => {
           duration: 100,
           hookConfig: {
             type: HookType.Command,
-            command: './test.sh',
+            command: "./test.sh",
             timeout: 30000,
           },
           eventName: HookEventName.BeforeTool,
@@ -113,41 +114,36 @@ describe('HookEventHandler', () => {
         hookConfigs: mockPlan.map((p) => p.hookConfig),
         sequential: false,
       });
-      vi.mocked(mockHookRunner.executeHooksParallel).mockResolvedValue(
-        mockResults,
-      );
-      vi.mocked(mockHookAggregator.aggregateResults).mockReturnValue(
-        mockAggregated,
-      );
+      vi.mocked(mockHookRunner.executeHooksParallel).mockResolvedValue(mockResults);
+      vi.mocked(mockHookAggregator.aggregateResults).mockReturnValue(mockAggregated);
 
-      const result = await hookEventHandler.fireBeforeToolEvent('EditTool', {
-        file: 'test.txt',
+      const result = await hookEventHandler.fireBeforeToolEvent("EditTool", {
+        file: "test.txt",
       });
 
-      expect(mockHookPlanner.createExecutionPlan).toHaveBeenCalledWith(
-        HookEventName.BeforeTool,
-        { toolName: 'EditTool' },
-      );
+      expect(mockHookPlanner.createExecutionPlan).toHaveBeenCalledWith(HookEventName.BeforeTool, {
+        toolName: "EditTool",
+      });
 
       expect(mockHookRunner.executeHooksParallel).toHaveBeenCalledWith(
         [mockPlan[0].hookConfig],
         HookEventName.BeforeTool,
         expect.objectContaining({
-          session_id: 'test-session',
-          cwd: '/test/project',
-          hook_event_name: 'BeforeTool',
-          tool_name: 'EditTool',
-          tool_input: { file: 'test.txt' },
+          session_id: "test-session",
+          cwd: "/test/project",
+          hook_event_name: "BeforeTool",
+          tool_name: "EditTool",
+          tool_input: { file: "test.txt" },
         }),
       );
 
       expect(result).toBe(mockAggregated);
     });
 
-    it('should return empty result when no hooks to execute', async () => {
+    it("should return empty result when no hooks to execute", async () => {
       vi.mocked(mockHookPlanner.createExecutionPlan).mockReturnValue(null);
 
-      const result = await hookEventHandler.fireBeforeToolEvent('EditTool', {});
+      const result = await hookEventHandler.fireBeforeToolEvent("EditTool", {});
 
       expect(result.success).toBe(true);
       expect(result.allOutputs).toHaveLength(0);
@@ -155,27 +151,27 @@ describe('HookEventHandler', () => {
       expect(result.totalDuration).toBe(0);
     });
 
-    it('should handle execution errors gracefully', async () => {
+    it("should handle execution errors gracefully", async () => {
       vi.mocked(mockHookPlanner.createExecutionPlan).mockImplementation(() => {
-        throw new Error('Planning failed');
+        throw new Error("Planning failed");
       });
 
-      const result = await hookEventHandler.fireBeforeToolEvent('EditTool', {});
+      const result = await hookEventHandler.fireBeforeToolEvent("EditTool", {});
 
       expect(result.success).toBe(false);
       expect(result.errors).toHaveLength(1);
-      expect(result.errors[0].message).toBe('Planning failed');
+      expect(result.errors[0].message).toBe("Planning failed");
       expect(mockDebugLogger.error).toHaveBeenCalled();
     });
   });
 
-  describe('fireAfterToolEvent', () => {
-    it('should fire AfterTool event with tool response', async () => {
+  describe("fireAfterToolEvent", () => {
+    it("should fire AfterTool event with tool response", async () => {
       const mockPlan = [
         {
           hookConfig: {
             type: HookType.Command,
-            command: './after.sh',
+            command: "./after.sh",
           } as unknown as HookConfig,
           eventName: HookEventName.AfterTool,
         },
@@ -186,7 +182,7 @@ describe('HookEventHandler', () => {
           duration: 100,
           hookConfig: {
             type: HookType.Command,
-            command: './test.sh',
+            command: "./test.sh",
             timeout: 30000,
           },
           eventName: HookEventName.BeforeTool,
@@ -204,27 +200,19 @@ describe('HookEventHandler', () => {
         hookConfigs: mockPlan.map((p) => p.hookConfig),
         sequential: false,
       });
-      vi.mocked(mockHookRunner.executeHooksParallel).mockResolvedValue(
-        mockResults,
-      );
-      vi.mocked(mockHookAggregator.aggregateResults).mockReturnValue(
-        mockAggregated,
-      );
+      vi.mocked(mockHookRunner.executeHooksParallel).mockResolvedValue(mockResults);
+      vi.mocked(mockHookAggregator.aggregateResults).mockReturnValue(mockAggregated);
 
-      const toolInput = { file: 'test.txt' };
-      const toolResponse = { success: true, content: 'File edited' };
+      const toolInput = { file: "test.txt" };
+      const toolResponse = { success: true, content: "File edited" };
 
-      const result = await hookEventHandler.fireAfterToolEvent(
-        'EditTool',
-        toolInput,
-        toolResponse,
-      );
+      const result = await hookEventHandler.fireAfterToolEvent("EditTool", toolInput, toolResponse);
 
       expect(mockHookRunner.executeHooksParallel).toHaveBeenCalledWith(
         [mockPlan[0].hookConfig],
         HookEventName.AfterTool,
         expect.objectContaining({
-          tool_name: 'EditTool',
+          tool_name: "EditTool",
           tool_input: toolInput,
           tool_response: toolResponse,
         }),
@@ -234,13 +222,13 @@ describe('HookEventHandler', () => {
     });
   });
 
-  describe('fireBeforeAgentEvent', () => {
-    it('should fire BeforeAgent event with prompt', async () => {
+  describe("fireBeforeAgentEvent", () => {
+    it("should fire BeforeAgent event with prompt", async () => {
       const mockPlan = [
         {
           hookConfig: {
             type: HookType.Command,
-            command: './before_agent.sh',
+            command: "./before_agent.sh",
           } as unknown as HookConfig,
           eventName: HookEventName.BeforeAgent,
         },
@@ -251,7 +239,7 @@ describe('HookEventHandler', () => {
           duration: 100,
           hookConfig: {
             type: HookType.Command,
-            command: './test.sh',
+            command: "./test.sh",
             timeout: 30000,
           },
           eventName: HookEventName.BeforeTool,
@@ -269,14 +257,10 @@ describe('HookEventHandler', () => {
         hookConfigs: mockPlan.map((p) => p.hookConfig),
         sequential: false,
       });
-      vi.mocked(mockHookRunner.executeHooksParallel).mockResolvedValue(
-        mockResults,
-      );
-      vi.mocked(mockHookAggregator.aggregateResults).mockReturnValue(
-        mockAggregated,
-      );
+      vi.mocked(mockHookRunner.executeHooksParallel).mockResolvedValue(mockResults);
+      vi.mocked(mockHookAggregator.aggregateResults).mockReturnValue(mockAggregated);
 
-      const prompt = 'Please help me with this task';
+      const prompt = "Please help me with this task";
 
       const result = await hookEventHandler.fireBeforeAgentEvent(prompt);
 
@@ -292,13 +276,13 @@ describe('HookEventHandler', () => {
     });
   });
 
-  describe('fireNotificationEvent', () => {
-    it('should fire Notification event', async () => {
+  describe("fireNotificationEvent", () => {
+    it("should fire Notification event", async () => {
       const mockPlan = [
         {
           hookConfig: {
             type: HookType.Command,
-            command: './notification-hook.sh',
+            command: "./notification-hook.sh",
           } as HookConfig,
           eventName: HookEventName.Notification,
         },
@@ -309,7 +293,7 @@ describe('HookEventHandler', () => {
           duration: 50,
           hookConfig: {
             type: HookType.Command,
-            command: './notification-hook.sh',
+            command: "./notification-hook.sh",
             timeout: 30000,
           },
           eventName: HookEventName.Notification,
@@ -327,27 +311,23 @@ describe('HookEventHandler', () => {
         hookConfigs: mockPlan.map((p) => p.hookConfig),
         sequential: false,
       });
-      vi.mocked(mockHookRunner.executeHooksParallel).mockResolvedValue(
-        mockResults,
-      );
-      vi.mocked(mockHookAggregator.aggregateResults).mockReturnValue(
-        mockAggregated,
-      );
+      vi.mocked(mockHookRunner.executeHooksParallel).mockResolvedValue(mockResults);
+      vi.mocked(mockHookAggregator.aggregateResults).mockReturnValue(mockAggregated);
 
-      const message = 'Tool execution requires permission';
+      const message = "Tool execution requires permission";
 
       const result = await hookEventHandler.fireNotificationEvent(
         NotificationType.ToolPermission,
         message,
-        { type: 'ToolPermission', title: 'Test Permission' },
+        { type: "ToolPermission", title: "Test Permission" },
       );
 
       expect(mockHookRunner.executeHooksParallel).toHaveBeenCalledWith(
         [mockPlan[0].hookConfig],
         HookEventName.Notification,
         expect.objectContaining({
-          notification_type: 'ToolPermission',
-          details: { type: 'ToolPermission', title: 'Test Permission' },
+          notification_type: "ToolPermission",
+          details: { type: "ToolPermission", title: "Test Permission" },
         }),
       );
 
@@ -355,13 +335,13 @@ describe('HookEventHandler', () => {
     });
   });
 
-  describe('fireSessionStartEvent', () => {
-    it('should fire SessionStart event with source', async () => {
+  describe("fireSessionStartEvent", () => {
+    it("should fire SessionStart event with source", async () => {
       const mockPlan = [
         {
           hookConfig: {
             type: HookType.Command,
-            command: './session_start.sh',
+            command: "./session_start.sh",
           } as unknown as HookConfig,
           eventName: HookEventName.SessionStart,
         },
@@ -372,7 +352,7 @@ describe('HookEventHandler', () => {
           duration: 200,
           hookConfig: {
             type: HookType.Command,
-            command: './session_start.sh',
+            command: "./session_start.sh",
             timeout: 30000,
           },
           eventName: HookEventName.SessionStart,
@@ -390,27 +370,20 @@ describe('HookEventHandler', () => {
         hookConfigs: mockPlan.map((p) => p.hookConfig),
         sequential: false,
       });
-      vi.mocked(mockHookRunner.executeHooksParallel).mockResolvedValue(
-        mockResults,
-      );
-      vi.mocked(mockHookAggregator.aggregateResults).mockReturnValue(
-        mockAggregated,
-      );
+      vi.mocked(mockHookRunner.executeHooksParallel).mockResolvedValue(mockResults);
+      vi.mocked(mockHookAggregator.aggregateResults).mockReturnValue(mockAggregated);
 
-      const result = await hookEventHandler.fireSessionStartEvent(
-        SessionStartSource.Startup,
-      );
+      const result = await hookEventHandler.fireSessionStartEvent(SessionStartSource.Startup);
 
-      expect(mockHookPlanner.createExecutionPlan).toHaveBeenCalledWith(
-        HookEventName.SessionStart,
-        { trigger: 'startup' },
-      );
+      expect(mockHookPlanner.createExecutionPlan).toHaveBeenCalledWith(HookEventName.SessionStart, {
+        trigger: "startup",
+      });
 
       expect(mockHookRunner.executeHooksParallel).toHaveBeenCalledWith(
         [mockPlan[0].hookConfig],
         HookEventName.SessionStart,
         expect.objectContaining({
-          source: 'startup',
+          source: "startup",
         }),
       );
 
@@ -418,13 +391,13 @@ describe('HookEventHandler', () => {
     });
   });
 
-  describe('fireBeforeModelEvent', () => {
-    it('should fire BeforeModel event with LLM request', async () => {
+  describe("fireBeforeModelEvent", () => {
+    it("should fire BeforeModel event with LLM request", async () => {
       const mockPlan = [
         {
           hookConfig: {
             type: HookType.Command,
-            command: './model-hook.sh',
+            command: "./model-hook.sh",
           } as HookConfig,
           eventName: HookEventName.BeforeModel,
         },
@@ -435,7 +408,7 @@ describe('HookEventHandler', () => {
           duration: 150,
           hookConfig: {
             type: HookType.Command,
-            command: './model-hook.sh',
+            command: "./model-hook.sh",
             timeout: 30000,
           },
           eventName: HookEventName.BeforeModel,
@@ -453,17 +426,13 @@ describe('HookEventHandler', () => {
         hookConfigs: mockPlan.map((p) => p.hookConfig),
         sequential: false,
       });
-      vi.mocked(mockHookRunner.executeHooksParallel).mockResolvedValue(
-        mockResults,
-      );
-      vi.mocked(mockHookAggregator.aggregateResults).mockReturnValue(
-        mockAggregated,
-      );
+      vi.mocked(mockHookRunner.executeHooksParallel).mockResolvedValue(mockResults);
+      vi.mocked(mockHookAggregator.aggregateResults).mockReturnValue(mockAggregated);
 
       const llmRequest = {
-        model: 'gemini-pro',
+        model: "gemini-pro",
         config: { temperature: 0.7 },
-        contents: [{ role: 'user', parts: [{ text: 'Hello' }] }],
+        contents: [{ role: "user", parts: [{ text: "Hello" }] }],
       };
 
       const result = await hookEventHandler.fireBeforeModelEvent(llmRequest);
@@ -473,11 +442,11 @@ describe('HookEventHandler', () => {
         HookEventName.BeforeModel,
         expect.objectContaining({
           llm_request: expect.objectContaining({
-            model: 'gemini-pro',
+            model: "gemini-pro",
             messages: expect.arrayContaining([
               expect.objectContaining({
-                role: 'user',
-                content: 'Hello',
+                role: "user",
+                content: "Hello",
               }),
             ]),
           }),
@@ -488,13 +457,13 @@ describe('HookEventHandler', () => {
     });
   });
 
-  describe('createBaseInput', () => {
-    it('should create base input with correct fields', async () => {
+  describe("createBaseInput", () => {
+    it("should create base input with correct fields", async () => {
       const mockPlan = [
         {
           hookConfig: {
             type: HookType.Command,
-            command: './test.sh',
+            command: "./test.sh",
           } as unknown as HookConfig,
           eventName: HookEventName.BeforeTool,
         },
@@ -513,16 +482,16 @@ describe('HookEventHandler', () => {
         totalDuration: 0,
       });
 
-      await hookEventHandler.fireBeforeToolEvent('TestTool', {});
+      await hookEventHandler.fireBeforeToolEvent("TestTool", {});
 
       expect(mockHookRunner.executeHooksParallel).toHaveBeenCalledWith(
         expect.any(Array),
         HookEventName.BeforeTool,
         expect.objectContaining({
-          session_id: 'test-session',
-          transcript_path: '/test/project/.gemini/tmp/chats/session.json',
-          cwd: '/test/project',
-          hook_event_name: 'BeforeTool',
+          session_id: "test-session",
+          transcript_path: "/test/project/.gemini/tmp/chats/session.json",
+          cwd: "/test/project",
+          hook_event_name: "BeforeTool",
           timestamp: expect.any(String),
         }),
       );

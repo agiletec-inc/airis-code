@@ -4,22 +4,22 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import * as fs from 'node:fs';
-import * as path from 'node:path';
-import { fileURLToPath, pathToFileURL } from 'node:url';
-import { homedir } from 'node:os';
-import { writeStderrLine } from '../utils/stdioHelpers.js';
+import * as fs from "node:fs";
+import { homedir } from "node:os";
+import * as path from "node:path";
+import { fileURLToPath, pathToFileURL } from "node:url";
+import { writeStderrLine } from "../utils/stdioHelpers.js";
 import {
-  type SupportedLanguage,
-  SUPPORTED_LANGUAGES,
   getLanguageNameFromLocale,
-} from './languages.js';
+  SUPPORTED_LANGUAGES,
+  type SupportedLanguage,
+} from "./languages.js";
 
 export type { SupportedLanguage };
 export { getLanguageNameFromLocale };
 
 // State
-let currentLanguage: SupportedLanguage = 'en';
+let currentLanguage: SupportedLanguage = "en";
 let translations: Record<string, string | string[]> = {};
 
 // Cache
@@ -30,11 +30,10 @@ const loadingPromises: Record<string, Promise<TranslationDict>> = {};
 // Path helpers
 const getBuiltinLocalesDir = (): string => {
   const __filename = fileURLToPath(import.meta.url);
-  return path.join(path.dirname(__filename), 'locales');
+  return path.join(path.dirname(__filename), "locales");
 };
 
-const getUserLocalesDir = (): string =>
-  path.join(homedir(), '.airiscode', 'locales');
+const getUserLocalesDir = (): string => path.join(homedir(), ".airiscode", "locales");
 
 /**
  * Get the path to the user's custom locales directory.
@@ -45,17 +44,14 @@ export function getUserLocalesDirectory(): string {
   return getUserLocalesDir();
 }
 
-const getLocalePath = (
-  lang: SupportedLanguage,
-  useUserDir: boolean = false,
-): string => {
+const getLocalePath = (lang: SupportedLanguage, useUserDir: boolean = false): string => {
   const baseDir = useUserDir ? getUserLocalesDir() : getBuiltinLocalesDir();
   return path.join(baseDir, `${lang}.js`);
 };
 
 // Language detection
 export function detectSystemLanguage(): SupportedLanguage {
-  const envLang = process.env['AIRISCODE_LANG'] || process.env['LANG'];
+  const envLang = process.env["AIRISCODE_LANG"] || process.env["LANG"];
   if (envLang) {
     for (const lang of SUPPORTED_LANGUAGES) {
       if (envLang.startsWith(lang.code)) return lang.code;
@@ -71,13 +67,11 @@ export function detectSystemLanguage(): SupportedLanguage {
     // Fallback to default
   }
 
-  return 'en';
+  return "en";
 }
 
 // Translation loading
-async function loadTranslationsAsync(
-  lang: SupportedLanguage,
-): Promise<TranslationDict> {
+async function loadTranslationsAsync(lang: SupportedLanguage): Promise<TranslationDict> {
   if (translationCache[lang]) {
     return translationCache[lang];
   }
@@ -111,15 +105,11 @@ async function loadTranslationsAsync(
         try {
           const module = await import(fileUrl);
           const result = module.default || module;
-          if (
-            result &&
-            typeof result === 'object' &&
-            Object.keys(result).length > 0
-          ) {
+          if (result && typeof result === "object" && Object.keys(result).length > 0) {
             translationCache[lang] = result;
             return result;
           } else {
-            throw new Error('Module loaded but result is empty or invalid');
+            throw new Error("Module loaded but result is empty or invalid");
           }
         } catch {
           // For builtin locales, try alternative import method (relative path)
@@ -127,11 +117,7 @@ async function loadTranslationsAsync(
             try {
               const module = await import(`./locales/${lang}.js`);
               const result = module.default || module;
-              if (
-                result &&
-                typeof result === 'object' &&
-                Object.keys(result).length > 0
-              ) {
+              if (result && typeof result === "object" && Object.keys(result).length > 0) {
                 translationCache[lang] = result;
                 return result;
               }
@@ -180,24 +166,18 @@ function loadTranslations(lang: SupportedLanguage): TranslationDict {
 }
 
 // String interpolation
-function interpolate(
-  template: string,
-  params?: Record<string, string>,
-): string {
+function interpolate(template: string, params?: Record<string, string>): string {
   if (!params) return template;
-  return template.replace(
-    /\{\{(\w+)\}\}/g,
-    (match, key) => params[key] ?? match,
-  );
+  return template.replace(/\{\{(\w+)\}\}/g, (match, key) => params[key] ?? match);
 }
 
 // Language setting helpers
-function resolveLanguage(lang: SupportedLanguage | 'auto'): SupportedLanguage {
-  return lang === 'auto' ? detectSystemLanguage() : lang;
+function resolveLanguage(lang: SupportedLanguage | "auto"): SupportedLanguage {
+  return lang === "auto" ? detectSystemLanguage() : lang;
 }
 
 // Public API
-export function setLanguage(lang: SupportedLanguage | 'auto'): void {
+export function setLanguage(lang: SupportedLanguage | "auto"): void {
   const resolvedLang = resolveLanguage(lang);
   currentLanguage = resolvedLang;
 
@@ -218,9 +198,7 @@ export function setLanguage(lang: SupportedLanguage | 'auto'): void {
   }
 }
 
-export async function setLanguageAsync(
-  lang: SupportedLanguage | 'auto',
-): Promise<void> {
+export async function setLanguageAsync(lang: SupportedLanguage | "auto"): Promise<void> {
   currentLanguage = resolveLanguage(lang);
   translations = await loadTranslationsAsync(currentLanguage);
 }
@@ -250,8 +228,6 @@ export function ta(key: string): string[] {
   return [];
 }
 
-export async function initializeI18n(
-  lang?: SupportedLanguage | 'auto',
-): Promise<void> {
-  await setLanguageAsync(lang ?? 'auto');
+export async function initializeI18n(lang?: SupportedLanguage | "auto"): Promise<void> {
+  await setLanguageAsync(lang ?? "auto");
 }

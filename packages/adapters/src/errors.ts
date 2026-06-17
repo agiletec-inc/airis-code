@@ -6,9 +6,12 @@
  * Base error for adapter-related issues
  */
 export class AdapterError extends Error {
-  constructor(message: string, public readonly code?: string) {
+  constructor(
+    message: string,
+    public readonly code?: string,
+  ) {
     super(message);
-    this.name = 'AdapterError';
+    this.name = "AdapterError";
   }
 }
 
@@ -16,9 +19,12 @@ export class AdapterError extends Error {
  * Error when adapter spawn fails
  */
 export class AdapterSpawnError extends AdapterError {
-  constructor(message: string, public readonly adapterName: string) {
-    super(message, 'ADAPTER_SPAWN_ERROR');
-    this.name = 'AdapterSpawnError';
+  constructor(
+    message: string,
+    public readonly adapterName: string,
+  ) {
+    super(message, "ADAPTER_SPAWN_ERROR");
+    this.name = "AdapterSpawnError";
   }
 }
 
@@ -26,9 +32,12 @@ export class AdapterSpawnError extends AdapterError {
  * Error when adapter execution fails
  */
 export class AdapterExecutionError extends AdapterError {
-  constructor(message: string, public readonly action?: string) {
-    super(message, 'ADAPTER_EXECUTION_ERROR');
-    this.name = 'AdapterExecutionError';
+  constructor(
+    message: string,
+    public readonly action?: string,
+  ) {
+    super(message, "ADAPTER_EXECUTION_ERROR");
+    this.name = "AdapterExecutionError";
   }
 }
 
@@ -36,9 +45,9 @@ export class AdapterExecutionError extends AdapterError {
  * Error when adapter times out
  */
 export class AdapterTimeoutError extends AdapterError {
-  constructor(message: string = 'Adapter operation timed out') {
-    super(message, 'ADAPTER_TIMEOUT_ERROR');
-    this.name = 'AdapterTimeoutError';
+  constructor(message: string = "Adapter operation timed out") {
+    super(message, "ADAPTER_TIMEOUT_ERROR");
+    this.name = "AdapterTimeoutError";
   }
 }
 
@@ -49,10 +58,10 @@ export class AdapterCrashError extends AdapterError {
   constructor(
     message: string,
     public readonly exitCode?: number,
-    public readonly signal?: string
+    public readonly signal?: string,
   ) {
-    super(message, 'ADAPTER_CRASH_ERROR');
-    this.name = 'AdapterCrashError';
+    super(message, "ADAPTER_CRASH_ERROR");
+    this.name = "AdapterCrashError";
   }
 }
 
@@ -63,9 +72,9 @@ export class ShellBlockedError extends AdapterError {
   constructor(
     message: string,
     public readonly command: string,
-    public readonly reason: string
+    public readonly reason: string,
   ) {
-    super(message, 'SHELL_BLOCKED_ERROR');
-    this.name = 'ShellBlockedError';
+    super(message, "SHELL_BLOCKED_ERROR");
+    this.name = "ShellBlockedError";
   }
 }

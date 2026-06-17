@@ -4,148 +4,146 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { StreamJsonFormatter } from './stream-json-formatter.js';
-import { JsonStreamEventType } from './types.js';
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { ToolCallDecision } from "../telemetry/tool-call-decision.js";
+import type { SessionMetrics } from "../telemetry/uiTelemetry.js";
+import { StreamJsonFormatter } from "./stream-json-formatter.js";
 import type {
+  ErrorEvent,
   InitEvent,
   MessageEvent,
-  ToolUseEvent,
-  ToolResultEvent,
-  ErrorEvent,
   ResultEvent,
-} from './types.js';
-import type { SessionMetrics } from '../telemetry/uiTelemetry.js';
-import { ToolCallDecision } from '../telemetry/tool-call-decision.js';
+  ToolResultEvent,
+  ToolUseEvent,
+} from "./types.js";
+import { JsonStreamEventType } from "./types.js";
 
-describe('StreamJsonFormatter', () => {
+describe("StreamJsonFormatter", () => {
   let formatter: StreamJsonFormatter;
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   let stdoutWriteSpy: any;
 
   beforeEach(() => {
     formatter = new StreamJsonFormatter();
-    stdoutWriteSpy = vi
-      .spyOn(process.stdout, 'write')
-      .mockImplementation(() => true);
+    stdoutWriteSpy = vi.spyOn(process.stdout, "write").mockImplementation(() => true);
   });
 
   afterEach(() => {
     stdoutWriteSpy.mockRestore();
   });
 
-  describe('formatEvent', () => {
-    it('should format init event as JSONL', () => {
+  describe("formatEvent", () => {
+    it("should format init event as JSONL", () => {
       const event: InitEvent = {
         type: JsonStreamEventType.INIT,
-        timestamp: '2025-10-10T12:00:00.000Z',
-        session_id: 'test-session-123',
-        model: 'gemini-2.0-flash-exp',
+        timestamp: "2025-10-10T12:00:00.000Z",
+        session_id: "test-session-123",
+        model: "gemini-2.0-flash-exp",
       };
 
       const result = formatter.formatEvent(event);
 
-      expect(result).toBe(JSON.stringify(event) + '\n');
+      expect(result).toBe(JSON.stringify(event) + "\n");
       expect(JSON.parse(result.trim())).toEqual(event);
     });
 
-    it('should format user message event', () => {
+    it("should format user message event", () => {
       const event: MessageEvent = {
         type: JsonStreamEventType.MESSAGE,
-        timestamp: '2025-10-10T12:00:00.000Z',
-        role: 'user',
-        content: 'What is 2+2?',
+        timestamp: "2025-10-10T12:00:00.000Z",
+        role: "user",
+        content: "What is 2+2?",
       };
 
       const result = formatter.formatEvent(event);
 
-      expect(result).toBe(JSON.stringify(event) + '\n');
+      expect(result).toBe(JSON.stringify(event) + "\n");
       expect(JSON.parse(result.trim())).toEqual(event);
     });
 
-    it('should format assistant message event with delta', () => {
+    it("should format assistant message event with delta", () => {
       const event: MessageEvent = {
         type: JsonStreamEventType.MESSAGE,
-        timestamp: '2025-10-10T12:00:00.000Z',
-        role: 'assistant',
-        content: '4',
+        timestamp: "2025-10-10T12:00:00.000Z",
+        role: "assistant",
+        content: "4",
         delta: true,
       };
 
       const result = formatter.formatEvent(event);
 
-      expect(result).toBe(JSON.stringify(event) + '\n');
+      expect(result).toBe(JSON.stringify(event) + "\n");
       const parsed = JSON.parse(result.trim());
       expect(parsed.delta).toBe(true);
     });
 
-    it('should format tool_use event', () => {
+    it("should format tool_use event", () => {
       const event: ToolUseEvent = {
         type: JsonStreamEventType.TOOL_USE,
-        timestamp: '2025-10-10T12:00:00.000Z',
-        tool_name: 'Read',
-        tool_id: 'read-123',
-        parameters: { file_path: '/path/to/file.txt' },
+        timestamp: "2025-10-10T12:00:00.000Z",
+        tool_name: "Read",
+        tool_id: "read-123",
+        parameters: { file_path: "/path/to/file.txt" },
       };
 
       const result = formatter.formatEvent(event);
 
-      expect(result).toBe(JSON.stringify(event) + '\n');
+      expect(result).toBe(JSON.stringify(event) + "\n");
       expect(JSON.parse(result.trim())).toEqual(event);
     });
 
-    it('should format tool_result event (success)', () => {
+    it("should format tool_result event (success)", () => {
       const event: ToolResultEvent = {
         type: JsonStreamEventType.TOOL_RESULT,
-        timestamp: '2025-10-10T12:00:00.000Z',
-        tool_id: 'read-123',
-        status: 'success',
-        output: 'File contents here',
+        timestamp: "2025-10-10T12:00:00.000Z",
+        tool_id: "read-123",
+        status: "success",
+        output: "File contents here",
       };
 
       const result = formatter.formatEvent(event);
 
-      expect(result).toBe(JSON.stringify(event) + '\n');
+      expect(result).toBe(JSON.stringify(event) + "\n");
       expect(JSON.parse(result.trim())).toEqual(event);
     });
 
-    it('should format tool_result event (error)', () => {
+    it("should format tool_result event (error)", () => {
       const event: ToolResultEvent = {
         type: JsonStreamEventType.TOOL_RESULT,
-        timestamp: '2025-10-10T12:00:00.000Z',
-        tool_id: 'read-123',
-        status: 'error',
+        timestamp: "2025-10-10T12:00:00.000Z",
+        tool_id: "read-123",
+        status: "error",
         error: {
-          type: 'FILE_NOT_FOUND',
-          message: 'File not found',
+          type: "FILE_NOT_FOUND",
+          message: "File not found",
         },
       };
 
       const result = formatter.formatEvent(event);
 
-      expect(result).toBe(JSON.stringify(event) + '\n');
+      expect(result).toBe(JSON.stringify(event) + "\n");
       expect(JSON.parse(result.trim())).toEqual(event);
     });
 
-    it('should format error event', () => {
+    it("should format error event", () => {
       const event: ErrorEvent = {
         type: JsonStreamEventType.ERROR,
-        timestamp: '2025-10-10T12:00:00.000Z',
-        severity: 'warning',
-        message: 'Loop detected, stopping execution',
+        timestamp: "2025-10-10T12:00:00.000Z",
+        severity: "warning",
+        message: "Loop detected, stopping execution",
       };
 
       const result = formatter.formatEvent(event);
 
-      expect(result).toBe(JSON.stringify(event) + '\n');
+      expect(result).toBe(JSON.stringify(event) + "\n");
       expect(JSON.parse(result.trim())).toEqual(event);
     });
 
-    it('should format result event with success status', () => {
+    it("should format result event with success status", () => {
       const event: ResultEvent = {
         type: JsonStreamEventType.RESULT,
-        timestamp: '2025-10-10T12:00:00.000Z',
-        status: 'success',
+        timestamp: "2025-10-10T12:00:00.000Z",
+        status: "success",
         stats: {
           total_tokens: 100,
           input_tokens: 50,
@@ -157,18 +155,18 @@ describe('StreamJsonFormatter', () => {
 
       const result = formatter.formatEvent(event);
 
-      expect(result).toBe(JSON.stringify(event) + '\n');
+      expect(result).toBe(JSON.stringify(event) + "\n");
       expect(JSON.parse(result.trim())).toEqual(event);
     });
 
-    it('should format result event with error status', () => {
+    it("should format result event with error status", () => {
       const event: ResultEvent = {
         type: JsonStreamEventType.RESULT,
-        timestamp: '2025-10-10T12:00:00.000Z',
-        status: 'error',
+        timestamp: "2025-10-10T12:00:00.000Z",
+        status: "error",
         error: {
-          type: 'MaxSessionTurnsError',
-          message: 'Maximum session turns exceeded',
+          type: "MaxSessionTurnsError",
+          message: "Maximum session turns exceeded",
         },
         stats: {
           total_tokens: 100,
@@ -181,76 +179,70 @@ describe('StreamJsonFormatter', () => {
 
       const result = formatter.formatEvent(event);
 
-      expect(result).toBe(JSON.stringify(event) + '\n');
+      expect(result).toBe(JSON.stringify(event) + "\n");
       expect(JSON.parse(result.trim())).toEqual(event);
     });
 
-    it('should produce minified JSON without pretty-printing', () => {
+    it("should produce minified JSON without pretty-printing", () => {
       const event: MessageEvent = {
         type: JsonStreamEventType.MESSAGE,
-        timestamp: '2025-10-10T12:00:00.000Z',
-        role: 'user',
-        content: 'Test',
+        timestamp: "2025-10-10T12:00:00.000Z",
+        role: "user",
+        content: "Test",
       };
 
       const result = formatter.formatEvent(event);
 
       // Should not contain multiple spaces or newlines (except trailing)
-      expect(result).not.toContain('  ');
-      expect(result.split('\n').length).toBe(2); // JSON + trailing newline
+      expect(result).not.toContain("  ");
+      expect(result.split("\n").length).toBe(2); // JSON + trailing newline
     });
   });
 
-  describe('emitEvent', () => {
-    it('should write formatted event to stdout', () => {
+  describe("emitEvent", () => {
+    it("should write formatted event to stdout", () => {
       const event: InitEvent = {
         type: JsonStreamEventType.INIT,
-        timestamp: '2025-10-10T12:00:00.000Z',
-        session_id: 'test-session',
-        model: 'gemini-2.0-flash-exp',
+        timestamp: "2025-10-10T12:00:00.000Z",
+        session_id: "test-session",
+        model: "gemini-2.0-flash-exp",
       };
 
       formatter.emitEvent(event);
 
       expect(stdoutWriteSpy).toHaveBeenCalledTimes(1);
-      expect(stdoutWriteSpy).toHaveBeenCalledWith(JSON.stringify(event) + '\n');
+      expect(stdoutWriteSpy).toHaveBeenCalledWith(JSON.stringify(event) + "\n");
     });
 
-    it('should emit multiple events sequentially', () => {
+    it("should emit multiple events sequentially", () => {
       const event1: InitEvent = {
         type: JsonStreamEventType.INIT,
-        timestamp: '2025-10-10T12:00:00.000Z',
-        session_id: 'test-session',
-        model: 'gemini-2.0-flash-exp',
+        timestamp: "2025-10-10T12:00:00.000Z",
+        session_id: "test-session",
+        model: "gemini-2.0-flash-exp",
       };
 
       const event2: MessageEvent = {
         type: JsonStreamEventType.MESSAGE,
-        timestamp: '2025-10-10T12:00:01.000Z',
-        role: 'user',
-        content: 'Hello',
+        timestamp: "2025-10-10T12:00:01.000Z",
+        role: "user",
+        content: "Hello",
       };
 
       formatter.emitEvent(event1);
       formatter.emitEvent(event2);
 
       expect(stdoutWriteSpy).toHaveBeenCalledTimes(2);
-      expect(stdoutWriteSpy).toHaveBeenNthCalledWith(
-        1,
-        JSON.stringify(event1) + '\n',
-      );
-      expect(stdoutWriteSpy).toHaveBeenNthCalledWith(
-        2,
-        JSON.stringify(event2) + '\n',
-      );
+      expect(stdoutWriteSpy).toHaveBeenNthCalledWith(1, JSON.stringify(event1) + "\n");
+      expect(stdoutWriteSpy).toHaveBeenNthCalledWith(2, JSON.stringify(event2) + "\n");
     });
   });
 
-  describe('convertToStreamStats', () => {
-    it('should aggregate token counts from single model', () => {
+  describe("convertToStreamStats", () => {
+    it("should aggregate token counts from single model", () => {
       const metrics: SessionMetrics = {
         models: {
-          'gemini-2.0-flash': {
+          "gemini-2.0-flash": {
             api: {
               totalRequests: 1,
               totalErrors: 0,
@@ -296,10 +288,10 @@ describe('StreamJsonFormatter', () => {
       });
     });
 
-    it('should aggregate token counts from multiple models', () => {
+    it("should aggregate token counts from multiple models", () => {
       const metrics: SessionMetrics = {
         models: {
-          'gemini-2.0-flash': {
+          "gemini-2.0-flash": {
             api: {
               totalRequests: 1,
               totalErrors: 0,
@@ -314,7 +306,7 @@ describe('StreamJsonFormatter', () => {
               tool: 0,
             },
           },
-          'gemini-1.5-pro': {
+          "gemini-1.5-pro": {
             api: {
               totalRequests: 1,
               totalErrors: 0,
@@ -360,7 +352,7 @@ describe('StreamJsonFormatter', () => {
       });
     });
 
-    it('should handle empty metrics', () => {
+    it("should handle empty metrics", () => {
       const metrics: SessionMetrics = {
         models: {},
         tools: {
@@ -393,7 +385,7 @@ describe('StreamJsonFormatter', () => {
       });
     });
 
-    it('should use session-level tool calls count', () => {
+    it("should use session-level tool calls count", () => {
       const metrics: SessionMetrics = {
         models: {},
         tools: {
@@ -445,7 +437,7 @@ describe('StreamJsonFormatter', () => {
       expect(result.tool_calls).toBe(3);
     });
 
-    it('should pass through duration unchanged', () => {
+    it("should pass through duration unchanged", () => {
       const metrics: SessionMetrics = {
         models: {},
         tools: {
@@ -473,44 +465,44 @@ describe('StreamJsonFormatter', () => {
     });
   });
 
-  describe('JSON validity', () => {
-    it('should produce valid JSON for all event types', () => {
+  describe("JSON validity", () => {
+    it("should produce valid JSON for all event types", () => {
       const events = [
         {
           type: JsonStreamEventType.INIT,
-          timestamp: '2025-10-10T12:00:00.000Z',
-          session_id: 'test',
-          model: 'gemini-2.0-flash',
+          timestamp: "2025-10-10T12:00:00.000Z",
+          session_id: "test",
+          model: "gemini-2.0-flash",
         } as InitEvent,
         {
           type: JsonStreamEventType.MESSAGE,
-          timestamp: '2025-10-10T12:00:00.000Z',
-          role: 'user',
-          content: 'Test',
+          timestamp: "2025-10-10T12:00:00.000Z",
+          role: "user",
+          content: "Test",
         } as MessageEvent,
         {
           type: JsonStreamEventType.TOOL_USE,
-          timestamp: '2025-10-10T12:00:00.000Z',
-          tool_name: 'Read',
-          tool_id: 'read-1',
+          timestamp: "2025-10-10T12:00:00.000Z",
+          tool_name: "Read",
+          tool_id: "read-1",
           parameters: {},
         } as ToolUseEvent,
         {
           type: JsonStreamEventType.TOOL_RESULT,
-          timestamp: '2025-10-10T12:00:00.000Z',
-          tool_id: 'read-1',
-          status: 'success',
+          timestamp: "2025-10-10T12:00:00.000Z",
+          tool_id: "read-1",
+          status: "success",
         } as ToolResultEvent,
         {
           type: JsonStreamEventType.ERROR,
-          timestamp: '2025-10-10T12:00:00.000Z',
-          severity: 'error',
-          message: 'Test error',
+          timestamp: "2025-10-10T12:00:00.000Z",
+          severity: "error",
+          message: "Test error",
         } as ErrorEvent,
         {
           type: JsonStreamEventType.RESULT,
-          timestamp: '2025-10-10T12:00:00.000Z',
-          status: 'success',
+          timestamp: "2025-10-10T12:00:00.000Z",
+          status: "success",
           stats: {
             total_tokens: 0,
             input_tokens: 0,
@@ -527,11 +519,11 @@ describe('StreamJsonFormatter', () => {
       });
     });
 
-    it('should preserve field types', () => {
+    it("should preserve field types", () => {
       const event: ResultEvent = {
         type: JsonStreamEventType.RESULT,
-        timestamp: '2025-10-10T12:00:00.000Z',
-        status: 'success',
+        timestamp: "2025-10-10T12:00:00.000Z",
+        status: "success",
         stats: {
           total_tokens: 100,
           input_tokens: 50,
@@ -544,11 +536,11 @@ describe('StreamJsonFormatter', () => {
       const formatted = formatter.formatEvent(event);
       const parsed = JSON.parse(formatted.trim());
 
-      expect(typeof parsed.stats.total_tokens).toBe('number');
-      expect(typeof parsed.stats.input_tokens).toBe('number');
-      expect(typeof parsed.stats.output_tokens).toBe('number');
-      expect(typeof parsed.stats.duration_ms).toBe('number');
-      expect(typeof parsed.stats.tool_calls).toBe('number');
+      expect(typeof parsed.stats.total_tokens).toBe("number");
+      expect(typeof parsed.stats.input_tokens).toBe("number");
+      expect(typeof parsed.stats.output_tokens).toBe("number");
+      expect(typeof parsed.stats.duration_ms).toBe("number");
+      expect(typeof parsed.stats.tool_calls).toBe("number");
     });
   });
 });

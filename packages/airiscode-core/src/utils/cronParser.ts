@@ -33,14 +33,14 @@ const FIELD_RANGES: Array<[number, number]> = [
 function parseField(field: string, min: number, max: number): Set<number> {
   const values = new Set<number>();
 
-  for (const part of field.split(',')) {
+  for (const part of field.split(",")) {
     const trimmed = part.trim();
     if (!trimmed) {
       throw new Error(`Empty field segment in "${field}"`);
     }
 
     // Handle step: */N or range/N or value/N
-    const stepParts = trimmed.split('/');
+    const stepParts = trimmed.split("/");
     if (stepParts.length > 2) {
       throw new Error(`Invalid step expression: "${trimmed}"`);
     }
@@ -49,11 +49,11 @@ function parseField(field: string, min: number, max: number): Set<number> {
     let rangeEnd: number;
     const base = stepParts[0]!;
 
-    if (base === '*') {
+    if (base === "*") {
       rangeStart = min;
       rangeEnd = max;
-    } else if (base.includes('-')) {
-      const [startStr, endStr] = base.split('-');
+    } else if (base.includes("-")) {
+      const [startStr, endStr] = base.split("-");
       rangeStart = parseInt(startStr!, 10);
       rangeEnd = parseInt(endStr!, 10);
       if (isNaN(rangeStart) || isNaN(rangeEnd)) {
@@ -97,11 +97,7 @@ export function parseCron(cronExpr: string): CronFields {
   }
 
   // Parse day-of-week with range 0-7, then normalize 7 → 0 (both mean Sunday)
-  const dayOfWeek = parseField(
-    parts[4]!,
-    FIELD_RANGES[4]![0],
-    FIELD_RANGES[4]![1],
-  );
+  const dayOfWeek = parseField(parts[4]!, FIELD_RANGES[4]![0], FIELD_RANGES[4]![1]);
   if (dayOfWeek.has(7)) {
     dayOfWeek.delete(7);
     dayOfWeek.add(0);
@@ -113,8 +109,8 @@ export function parseCron(cronExpr: string): CronFields {
     dayOfMonth: parseField(parts[2]!, FIELD_RANGES[2]![0], FIELD_RANGES[2]![1]),
     month: parseField(parts[3]!, FIELD_RANGES[3]![0], FIELD_RANGES[3]![1]),
     dayOfWeek,
-    domIsWild: parts[2]!.trim() === '*',
-    dowIsWild: parts[4]!.trim() === '*',
+    domIsWild: parts[2]!.trim() === "*",
+    dowIsWild: parts[4]!.trim() === "*",
   };
 }
 
@@ -171,8 +167,7 @@ export function nextFireTime(cronExpr: string, after: Date): Date {
     const dowOk = fields.dayOfWeek.has(candidate.getDay());
 
     // Vixie-cron day semantics: OR when both constrained, AND otherwise
-    const dayOk =
-      !fields.domIsWild && !fields.dowIsWild ? domOk || dowOk : domOk && dowOk;
+    const dayOk = !fields.domIsWild && !fields.dowIsWild ? domOk || dowOk : domOk && dowOk;
 
     if (minuteOk && hourOk && monthOk && dayOk) {
       return candidate;
@@ -180,7 +175,5 @@ export function nextFireTime(cronExpr: string, after: Date): Date {
     candidate.setMinutes(candidate.getMinutes() + 1);
   }
 
-  throw new Error(
-    `No matching fire time found within 4 years for: "${cronExpr}"`,
-  );
+  throw new Error(`No matching fire time found within 4 years for: "${cronExpr}"`);
 }

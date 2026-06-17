@@ -4,12 +4,11 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { Box, Text } from 'ink';
-import { type Extension } from '@airiscode/core';
-import { createDebugLogger } from '@airiscode/core';
-import { theme } from '../../../semantic-colors.js';
-import { useKeypress } from '../../../hooks/useKeypress.js';
-import { t } from '../../../../i18n/index.js';
+import { createDebugLogger, type Extension } from "@airiscode/core";
+import { Box, Text } from "ink";
+import { t } from "../../../../i18n/index.js";
+import { useKeypress } from "../../../hooks/useKeypress.js";
+import { theme } from "../../../semantic-colors.js";
 
 interface UninstallConfirmStepProps {
   selectedExtension: Extension | null;
@@ -17,7 +16,7 @@ interface UninstallConfirmStepProps {
   onNavigateBack: () => void;
 }
 
-const debugLogger = createDebugLogger('EXTENSION_UNINSTALL_STEP');
+const debugLogger = createDebugLogger("EXTENSION_UNINSTALL_STEP");
 
 export function UninstallConfirmStep({
   selectedExtension,
@@ -28,14 +27,14 @@ export function UninstallConfirmStep({
     async (key) => {
       if (!selectedExtension) return;
 
-      if (key.name === 'y' || key.name === 'return') {
+      if (key.name === "y" || key.name === "return") {
         try {
           await onConfirm(selectedExtension);
           // Navigation will be handled by the parent component after successful uninstall
         } catch (error) {
-          debugLogger.error('Failed to uninstall extension:', error);
+          debugLogger.error("Failed to uninstall extension:", error);
         }
-      } else if (key.name === 'n' || key.name === 'escape') {
+      } else if (key.name === "n" || key.name === "escape") {
         onNavigateBack();
       }
     },
@@ -45,7 +44,7 @@ export function UninstallConfirmStep({
   if (!selectedExtension) {
     return (
       <Box>
-        <Text color={theme.status.error}>{t('No extension selected')}</Text>
+        <Text color={theme.status.error}>{t("No extension selected")}</Text>
       </Box>
     );
   }
@@ -57,9 +56,7 @@ export function UninstallConfirmStep({
           name: selectedExtension.name,
         })}
       </Text>
-      <Text color={theme.text.secondary}>
-        {t('This action cannot be undone.')}
-      </Text>
+      <Text color={theme.text.secondary}>{t("This action cannot be undone.")}</Text>
     </Box>
   );
 }

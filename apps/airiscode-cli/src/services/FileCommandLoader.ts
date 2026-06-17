@@ -4,35 +4,25 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { promises as fs } from 'node:fs';
-import * as fsSync from 'node:fs';
-import path from 'node:path';
-import toml from '@iarna/toml';
-import { glob } from 'glob';
-import { z } from 'zod';
-import type { Config } from '@airiscode/core';
-import {
-  createDebugLogger,
-  EXTENSIONS_CONFIG_FILENAME,
-  Storage,
-} from '@airiscode/core';
-import type { ICommandLoader } from './types.js';
-import {
-  parseMarkdownCommand,
-  MarkdownCommandDefSchema,
-} from './markdown-command-parser.js';
-import {
-  createSlashCommandFromDefinition,
-  type CommandDefinition,
-} from './command-factory.js';
-import type { SlashCommand } from '../ui/commands/types.js';
+import * as fsSync from "node:fs";
+import { promises as fs } from "node:fs";
+import path from "node:path";
+import type { Config } from "@airiscode/core";
+import { createDebugLogger, EXTENSIONS_CONFIG_FILENAME, Storage } from "@airiscode/core";
+import toml from "@iarna/toml";
+import { glob } from "glob";
+import { z } from "zod";
+import type { SlashCommand } from "../ui/commands/types.js";
+import { type CommandDefinition, createSlashCommandFromDefinition } from "./command-factory.js";
+import { MarkdownCommandDefSchema, parseMarkdownCommand } from "./markdown-command-parser.js";
+import type { ICommandLoader } from "./types.js";
 
 interface CommandDirectory {
   path: string;
   extensionName?: string;
 }
 
-const debugLogger = createDebugLogger('FILE_COMMAND_LOADER');
+const debugLogger = createDebugLogger("FILE_COMMAND_LOADER");
 
 /**
  * Defines the Zod schema for a command definition file. This serves as the
@@ -92,11 +82,11 @@ export class FileCommandLoader implements ICommandLoader {
     for (const dirInfo of commandDirs) {
       try {
         // Scan both .toml and .md files
-        const tomlFiles = await glob('**/*.toml', {
+        const tomlFiles = await glob("**/*.toml", {
           ...globOptions,
           cwd: dirInfo.path,
         });
-        const mdFiles = await glob('**/*.md', {
+        const mdFiles = await glob("**/*.md", {
           ...globOptions,
           cwd: dirInfo.path,
         });
@@ -123,17 +113,16 @@ export class FileCommandLoader implements ICommandLoader {
           ),
         );
 
-        const commands = (
-          await Promise.all([...tomlCommandPromises, ...mdCommandPromises])
-        ).filter((cmd): cmd is SlashCommand => cmd !== null);
+        const commands = (await Promise.all([...tomlCommandPromises, ...mdCommandPromises])).filter(
+          (cmd): cmd is SlashCommand => cmd !== null,
+        );
 
         // Add all commands without deduplication
         allCommands.push(...commands);
       } catch (error) {
         // Ignore ENOENT (directory doesn't exist) and AbortError (operation was cancelled)
-        const isEnoent = (error as NodeJS.ErrnoException).code === 'ENOENT';
-        const isAbortError =
-          error instanceof Error && error.name === 'AbortError';
+        const isEnoent = (error as NodeJS.ErrnoException).code === "ENOENT";
+        const isAbortError = error instanceof Error && error.name === "AbortError";
         if (!isEnoent && !isAbortError) {
           debugLogger.error(
             `[FileCommandLoader] Error loading commands from ${dirInfo.path}:`,
@@ -190,15 +179,12 @@ export class FileCommandLoader implements ICommandLoader {
    * Get commands paths from an extension.
    * Returns paths from config.commands if specified, otherwise defaults to 'commands' directory.
    */
-  private getExtensionCommandsPaths(ext: {
-    path: string;
-    name: string;
-  }): string[] {
+  private getExtensionCommandsPaths(ext: { path: string; name: string }): string[] {
     // Try to get extension config
     try {
       const configPath = path.join(ext.path, EXTENSIONS_CONFIG_FILENAME);
       if (fsSync.existsSync(configPath)) {
-        const configContent = fsSync.readFileSync(configPath, 'utf-8');
+        const configContent = fsSync.readFileSync(configPath, "utf-8");
         const config = JSON.parse(configContent);
 
         if (config.commands) {
@@ -220,14 +206,11 @@ export class FileCommandLoader implements ICommandLoader {
         }
       }
     } catch (error) {
-      debugLogger.warn(
-        `Failed to read extension config for ${ext.name}:`,
-        error,
-      );
+      debugLogger.warn(`Failed to read extension config for ${ext.name}:`, error);
     }
 
     // Default fallback: use 'commands' directory
-    const defaultPath = path.join(ext.path, 'commands');
+    const defaultPath = path.join(ext.path, "commands");
     try {
       if (fsSync.existsSync(defaultPath)) {
         return [defaultPath];
@@ -253,7 +236,7 @@ export class FileCommandLoader implements ICommandLoader {
   ): Promise<SlashCommand | null> {
     let fileContent: string;
     try {
-      fileContent = await fs.readFile(filePath, 'utf-8');
+      fileContent = await fs.readFile(filePath, "utf-8");
     } catch (error: unknown) {
       debugLogger.error(
         `[FileCommandLoader] Failed to read file ${filePath}:`,
@@ -291,7 +274,7 @@ export class FileCommandLoader implements ICommandLoader {
       baseDir,
       validDef as any,
       extensionName,
-      '.toml',
+      ".toml",
     );
   }
 
@@ -309,7 +292,7 @@ export class FileCommandLoader implements ICommandLoader {
   ): Promise<SlashCommand | null> {
     let fileContent: string;
     try {
-      fileContent = await fs.readFile(filePath, 'utf-8');
+      fileContent = await fs.readFile(filePath, "utf-8");
     } catch (error: unknown) {
       debugLogger.error(
         `[FileCommandLoader] Failed to read file ${filePath}:`,
@@ -345,19 +328,12 @@ export class FileCommandLoader implements ICommandLoader {
     const definition: CommandDefinition = {
       prompt: validDef.prompt,
       description:
-        validDef.frontmatter?.description &&
-        typeof validDef.frontmatter.description === 'string'
+        validDef.frontmatter?.description && typeof validDef.frontmatter.description === "string"
           ? validDef.frontmatter.description
           : undefined,
     };
 
     // Use factory to create command
-    return createSlashCommandFromDefinition(
-      filePath,
-      baseDir,
-      definition,
-      extensionName,
-      '.md',
-    );
+    return createSlashCommandFromDefinition(filePath, baseDir, definition, extensionName, ".md");
   }
 }

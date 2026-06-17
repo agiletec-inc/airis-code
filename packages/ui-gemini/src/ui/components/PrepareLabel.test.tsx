@@ -4,15 +4,15 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { describe, it, expect } from 'vitest';
-import { render } from '../../test-utils/render.js';
-import { PrepareLabel, MAX_WIDTH } from './PrepareLabel.js';
+import { describe, expect, it } from "vitest";
+import { render } from "../../test-utils/render.js";
+import { MAX_WIDTH, PrepareLabel } from "./PrepareLabel.js";
 
-describe('PrepareLabel', () => {
-  const color = 'white';
-  const flat = (s: string | undefined) => (s ?? '').replace(/\n/g, '');
+describe("PrepareLabel", () => {
+  const color = "white";
+  const flat = (s: string | undefined) => (s ?? "").replace(/\n/g, "");
 
-  it('renders plain label when no match (short label)', () => {
+  it("renders plain label when no match (short label)", () => {
     const { lastFrame, unmount } = render(
       <PrepareLabel
         label="simple command"
@@ -26,33 +26,23 @@ describe('PrepareLabel', () => {
     unmount();
   });
 
-  it('truncates long label when collapsed and no match', () => {
-    const long = 'x'.repeat(MAX_WIDTH + 25);
+  it("truncates long label when collapsed and no match", () => {
+    const long = "x".repeat(MAX_WIDTH + 25);
     const { lastFrame, unmount } = render(
-      <PrepareLabel
-        label={long}
-        userInput=""
-        textColor={color}
-        isExpanded={false}
-      />,
+      <PrepareLabel label={long} userInput="" textColor={color} isExpanded={false} />,
     );
     const out = lastFrame();
     const f = flat(out);
-    expect(f.endsWith('...')).toBe(true);
+    expect(f.endsWith("...")).toBe(true);
     expect(f.length).toBe(MAX_WIDTH + 3);
     expect(out).toMatchSnapshot();
     unmount();
   });
 
-  it('shows full long label when expanded and no match', () => {
-    const long = 'y'.repeat(MAX_WIDTH + 25);
+  it("shows full long label when expanded and no match", () => {
+    const long = "y".repeat(MAX_WIDTH + 25);
     const { lastFrame, unmount } = render(
-      <PrepareLabel
-        label={long}
-        userInput=""
-        textColor={color}
-        isExpanded={true}
-      />,
+      <PrepareLabel label={long} userInput="" textColor={color} isExpanded={true} />,
     );
     const out = lastFrame();
     const f = flat(out);
@@ -61,9 +51,9 @@ describe('PrepareLabel', () => {
     unmount();
   });
 
-  it('highlights matched substring when expanded (text only visible)', () => {
+  it("highlights matched substring when expanded (text only visible)", () => {
     const label = 'run: git commit -m "feat: add search"';
-    const userInput = 'commit';
+    const userInput = "commit";
     const matchedIndex = label.indexOf(userInput);
     const { lastFrame, unmount } = render(
       <PrepareLabel
@@ -79,10 +69,10 @@ describe('PrepareLabel', () => {
     unmount();
   });
 
-  it('creates centered window around match when collapsed', () => {
-    const prefix = 'cd_/very/long/path/that/keeps/going/'.repeat(3);
-    const core = 'search-here';
-    const suffix = '/and/then/some/more/components/'.repeat(3);
+  it("creates centered window around match when collapsed", () => {
+    const prefix = "cd_/very/long/path/that/keeps/going/".repeat(3);
+    const core = "search-here";
+    const suffix = "/and/then/some/more/components/".repeat(3);
     const label = prefix + core + suffix;
     const matchedIndex = prefix.length;
     const { lastFrame, unmount } = render(
@@ -98,16 +88,16 @@ describe('PrepareLabel', () => {
     const out = lastFrame();
     const f = flat(out);
     expect(f.includes(core)).toBe(true);
-    expect(f.startsWith('...')).toBe(true);
-    expect(f.endsWith('...')).toBe(true);
+    expect(f.startsWith("...")).toBe(true);
+    expect(f.endsWith("...")).toBe(true);
     expect(out).toMatchSnapshot();
     unmount();
   });
 
-  it('truncates match itself when match is very long', () => {
-    const prefix = 'find ';
-    const core = 'x'.repeat(MAX_WIDTH + 25);
-    const suffix = ' in this text';
+  it("truncates match itself when match is very long", () => {
+    const prefix = "find ";
+    const core = "x".repeat(MAX_WIDTH + 25);
+    const suffix = " in this text";
     const label = prefix + core + suffix;
     const matchedIndex = prefix.length;
     const { lastFrame, unmount } = render(
@@ -121,9 +111,9 @@ describe('PrepareLabel', () => {
     );
     const out = lastFrame();
     const f = flat(out);
-    expect(f.includes('...')).toBe(true);
-    expect(f.startsWith('...')).toBe(false);
-    expect(f.endsWith('...')).toBe(true);
+    expect(f.includes("...")).toBe(true);
+    expect(f.startsWith("...")).toBe(false);
+    expect(f.endsWith("...")).toBe(true);
     expect(f.length).toBe(MAX_WIDTH + 2);
     expect(out).toMatchSnapshot();
     unmount();

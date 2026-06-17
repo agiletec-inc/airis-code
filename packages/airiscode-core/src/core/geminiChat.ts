@@ -7,44 +7,38 @@
 // DISCLAIMER: This is a copied version of https://github.com/googleapis/js-genai/blob/main/src/chats.ts with the intention of working around a key bug
 // where function responses are not treated as "valid" responses: https://b.corp.google.com/issues/420354090
 
+import type { Config } from "../config/config.js";
+import { type ChatRecordingService } from "../services/chatRecordingService.js";
+import { logContentRetry, logContentRetryFailure } from "../telemetry/loggers.js";
+import { ContentRetryEvent, ContentRetryFailureEvent } from "../telemetry/types.js";
+import type { UiTelemetryService } from "../telemetry/uiTelemetry.js";
+import { hasCycleInSchema } from "../tools/tools.js";
 import type {
-  GenerateContentResponse,
   Content,
   GenerateContentConfig,
-  SendMessageParameters,
-  Part,
-  Tool,
+  GenerateContentResponse,
   GenerateContentResponseUsageMetadata,
-} from '../types/llm.js';
-import { createUserContent, FinishReason } from '../types/llm.js';
-import { retryWithBackoff } from '../utils/retry.js';
-import { getErrorStatus } from '../utils/errors.js';
-import { createDebugLogger } from '../utils/debugLogger.js';
-import { parseAndFormatApiError } from '../utils/errorParsing.js';
-import { isRateLimitError, type RetryInfo } from '../utils/rateLimit.js';
-import type { Config } from '../config/config.js';
-import { ESCALATED_MAX_TOKENS } from './tokenLimits.js';
-import { hasCycleInSchema } from '../tools/tools.js';
-import type { StructuredError } from './turn.js';
-import {
-  logContentRetry,
-  logContentRetryFailure,
-} from '../telemetry/loggers.js';
-import { type ChatRecordingService } from '../services/chatRecordingService.js';
-import {
-  ContentRetryEvent,
-  ContentRetryFailureEvent,
-} from '../telemetry/types.js';
-import type { UiTelemetryService } from '../telemetry/uiTelemetry.js';
+  Part,
+  SendMessageParameters,
+  Tool,
+} from "../types/llm.js";
+import { createUserContent, FinishReason } from "../types/llm.js";
+import { createDebugLogger } from "../utils/debugLogger.js";
+import { parseAndFormatApiError } from "../utils/errorParsing.js";
+import { getErrorStatus } from "../utils/errors.js";
+import { isRateLimitError, type RetryInfo } from "../utils/rateLimit.js";
+import { retryWithBackoff } from "../utils/retry.js";
+import { ESCALATED_MAX_TOKENS } from "./tokenLimits.js";
+import type { StructuredError } from "./turn.js";
 
-const debugLogger = createDebugLogger('AIRISCODE_CHAT');
+const debugLogger = createDebugLogger("AIRISCODE_CHAT");
 
 export enum StreamEventType {
   /** A regular content chunk from the API. */
-  CHUNK = 'chunk',
+  CHUNK = "chunk",
   /** A signal that a retry is about to happen. The UI should discard any partial
    * content from the attempt that just failed. */
-  RETRY = 'retry',
+  RETRY = "retry",
 }
 
 export type StreamEvent =
@@ -115,7 +109,7 @@ function delay(
     timeoutId = setTimeout(resolve, delayMs);
 
     signal?.addEventListener(
-      'abort',
+      "abort",
       () => {
         clearTimeout(timeoutId);
         reject(signal.reason);
@@ -160,7 +154,7 @@ function isValidResponse(response: GenerateContentResponse): boolean {
 
 export function isValidNonThoughtTextPart(part: Part): boolean {
   return (
-    typeof part.text === 'string' &&
+    typeof part.text === "string" &&
     !part.thought &&
     !part.thoughtSignature &&
     // Technically, the model should never generate parts that have text and
@@ -192,7 +186,7 @@ function isValidContentPart(part: Part): boolean {
     !part.thought &&
     !part.thoughtSignature &&
     part.text !== undefined &&
-    part.text === '' &&
+    part.text === "" &&
     part.functionCall === undefined;
 
   return !isInvalid;
@@ -206,7 +200,7 @@ function isValidContentPart(part: Part): boolean {
  */
 function validateHistory(history: Content[]) {
   for (const content of history) {
-    if (content.role !== 'user' && content.role !== 'model') {
+    if (content.role !== "user" && content.role !== "model") {
       throw new Error(`Role must be user or model, but got ${content.role}.`);
     }
   }
@@ -228,13 +222,13 @@ function extractCuratedHistory(comprehensiveHistory: Content[]): Content[] {
   const length = comprehensiveHistory.length;
   let i = 0;
   while (i < length) {
-    if (comprehensiveHistory[i].role === 'user') {
+    if (comprehensiveHistory[i].role === "user") {
       curatedHistory.push(comprehensiveHistory[i]);
       i++;
     } else {
       const modelOutput: Content[] = [];
       let isValid = true;
-      while (i < length && comprehensiveHistory[i].role === 'model') {
+      while (i < length && comprehensiveHistory[i].role === "model") {
         modelOutput.push(comprehensiveHistory[i]);
         if (isValid && !isValidContent(comprehensiveHistory[i])) {
           isValid = false;
@@ -254,11 +248,11 @@ function extractCuratedHistory(comprehensiveHistory: Content[]): Content[] {
  * which should trigger a retry.
  */
 export class InvalidStreamError extends Error {
-  readonly type: 'NO_FINISH_REASON' | 'NO_RESPONSE_TEXT';
+  readonly type: "NO_FINISH_REASON" | "NO_RESPONSE_TEXT";
 
-  constructor(message: string, type: 'NO_FINISH_REASON' | 'NO_RESPONSE_TEXT') {
+  constructor(message: string, type: "NO_FINISH_REASON" | "NO_RESPONSE_TEXT") {
     super(message);
-    this.name = 'InvalidStreamError';
+    this.name = "InvalidStreamError";
     this.type = type;
   }
 }
@@ -346,14 +340,13 @@ export class GeminiChat {
     const self = this;
     return (async function* () {
       try {
-        let lastError: unknown = new Error('Request failed after all retries.');
+        let lastError: unknown = new Error("Request failed after all retries.");
         let rateLimitRetryCount = 0;
         let invalidStreamRetryCount = 0;
 
         // Read per-config overrides; fall back to built-in defaults.
         const cgConfig = self.config.getContentGeneratorConfig();
-        const maxRateLimitRetries =
-          cgConfig?.maxRetries ?? RATE_LIMIT_RETRY_OPTIONS.maxRetries;
+        const maxRateLimitRetries = cgConfig?.maxRetries ?? RATE_LIMIT_RETRY_OPTIONS.maxRetries;
         const extraRetryErrorCodes = cgConfig?.retryErrorCodes;
 
         // Max output tokens escalation: when no user/env override is set,
@@ -363,21 +356,13 @@ export class GeminiChat {
         const hasUserMaxTokensOverride =
           (cgConfig?.samplingParams?.max_tokens !== undefined &&
             cgConfig?.samplingParams?.max_tokens !== null) ||
-          !!process.env['AIRISCODE_MAX_OUTPUT_TOKENS'];
+          !!process.env["AIRISCODE_MAX_OUTPUT_TOKENS"];
 
         let lastFinishReason: string | undefined;
 
-        for (
-          let attempt = 0;
-          attempt < INVALID_CONTENT_RETRY_OPTIONS.maxAttempts;
-          attempt++
-        ) {
+        for (let attempt = 0; attempt < INVALID_CONTENT_RETRY_OPTIONS.maxAttempts; attempt++) {
           try {
-            if (
-              attempt > 0 ||
-              rateLimitRetryCount > 0 ||
-              invalidStreamRetryCount > 0
-            ) {
+            if (attempt > 0 || rateLimitRetryCount > 0 || invalidStreamRetryCount > 0) {
               yield { type: StreamEventType.RETRY };
             }
 
@@ -415,10 +400,7 @@ export class GeminiChat {
                 `Rate limit throttling detected (retry ${rateLimitRetryCount}/${maxRateLimitRetries}). ` +
                   `Waiting ${delayMs / 1000}s before retrying...`,
               );
-              const { promise: delayPromise, skip } = delay(
-                delayMs,
-                params.config?.abortSignal,
-              );
+              const { promise: delayPromise, skip } = delay(delayMs, params.config?.abortSignal);
               yield {
                 type: StreamEventType.RETRY,
                 retryInfo: {
@@ -444,9 +426,7 @@ export class GeminiChat {
               invalidStreamRetryCount < INVALID_STREAM_RETRY_CONFIG.maxRetries
             ) {
               invalidStreamRetryCount++;
-              const delayMs =
-                INVALID_STREAM_RETRY_CONFIG.initialDelayMs *
-                invalidStreamRetryCount;
+              const delayMs = INVALID_STREAM_RETRY_CONFIG.initialDelayMs * invalidStreamRetryCount;
               debugLogger.warn(
                 `Invalid stream [${(error as InvalidStreamError).type}] ` +
                   `(retry ${invalidStreamRetryCount}/${INVALID_STREAM_RETRY_CONFIG.maxRetries}). ` +
@@ -512,10 +492,7 @@ export class GeminiChat {
           );
           // Remove partial model response from history
           // (processStreamResponse already pushed it)
-          if (
-            self.history.length > 0 &&
-            self.history[self.history.length - 1].role === 'model'
-          ) {
+          if (self.history.length > 0 && self.history[self.history.length - 1].role === "model") {
             self.history.pop();
           }
           // Signal UI to discard partial output
@@ -544,11 +521,7 @@ export class GeminiChat {
             const totalAttempts = invalidStreamRetryCount + 1;
             logContentRetryFailure(
               self.config,
-              new ContentRetryFailureEvent(
-                totalAttempts,
-                lastError.type,
-                model,
-              ),
+              new ContentRetryFailureEvent(totalAttempts, lastError.type, model),
             );
           }
           throw lastError;
@@ -618,9 +591,7 @@ export class GeminiChat {
    * chat session.
    */
   getHistory(curated: boolean = false): Content[] {
-    const history = curated
-      ? extractCuratedHistory(this.history)
-      : this.history;
+    const history = curated ? extractCuratedHistory(this.history) : this.history;
     // Deep copy the history to avoid mutating the history outside of the
     // chat session.
     return structuredClone(history);
@@ -652,23 +623,12 @@ export class GeminiChat {
         // Filter out thought parts entirely
         const filteredParts = content.parts
           .filter(
-            (part) =>
-              !(
-                part &&
-                typeof part === 'object' &&
-                'thought' in part &&
-                part.thought
-              ),
+            (part) => !(part && typeof part === "object" && "thought" in part && part.thought),
           )
           .map((part) => {
-            if (
-              part &&
-              typeof part === 'object' &&
-              'thoughtSignature' in part
-            ) {
+            if (part && typeof part === "object" && "thoughtSignature" in part) {
               const newPart = { ...part };
-              delete (newPart as { thoughtSignature?: string })
-                .thoughtSignature;
+              delete (newPart as { thoughtSignature?: string }).thoughtSignature;
               return newPart;
             }
             return part;
@@ -696,22 +656,16 @@ export class GeminiChat {
    * but still consume context tokens.
    */
   stripThoughtsFromHistoryKeepRecent(keepTurns: number): void {
-    keepTurns = Number.isFinite(keepTurns)
-      ? Math.max(0, Math.floor(keepTurns))
-      : 0;
+    keepTurns = Number.isFinite(keepTurns) ? Math.max(0, Math.floor(keepTurns)) : 0;
 
     // Find indices of model turns that contain thought parts
     const modelTurnIndices: number[] = [];
     for (let i = 0; i < this.history.length; i++) {
       const content = this.history[i];
       if (
-        content.role === 'model' &&
+        content.role === "model" &&
         content.parts?.some(
-          (part) =>
-            part &&
-            typeof part === 'object' &&
-            'thought' in part &&
-            part.thought,
+          (part) => part && typeof part === "object" && "thought" in part && part.thought,
         )
       ) {
         modelTurnIndices.push(i);
@@ -720,10 +674,7 @@ export class GeminiChat {
 
     // Determine which model turns to keep (the most recent `keepTurns`)
     const turnsToStrip = new Set(
-      modelTurnIndices.slice(
-        0,
-        Math.max(0, modelTurnIndices.length - keepTurns),
-      ),
+      modelTurnIndices.slice(0, Math.max(0, modelTurnIndices.length - keepTurns)),
     );
 
     if (turnsToStrip.size === 0) return;
@@ -735,23 +686,12 @@ export class GeminiChat {
         // Strip thought parts from this turn
         const filteredParts = content.parts
           .filter(
-            (part) =>
-              !(
-                part &&
-                typeof part === 'object' &&
-                'thought' in part &&
-                part.thought
-              ),
+            (part) => !(part && typeof part === "object" && "thought" in part && part.thought),
           )
           .map((part) => {
-            if (
-              part &&
-              typeof part === 'object' &&
-              'thoughtSignature' in part
-            ) {
+            if (part && typeof part === "object" && "thoughtSignature" in part) {
               const newPart = { ...part };
-              delete (newPart as { thoughtSignature?: string })
-                .thoughtSignature;
+              delete (newPart as { thoughtSignature?: string }).thoughtSignature;
               return newPart;
             }
             return part;
@@ -772,10 +712,7 @@ export class GeminiChat {
    * any trailing user entries are leftovers from a request that failed.
    */
   stripOrphanedUserEntriesFromHistory(): void {
-    while (
-      this.history.length > 0 &&
-      this.history[this.history.length - 1]!.role === 'user'
-    ) {
+    while (this.history.length > 0 && this.history[this.history.length - 1]!.role === "user") {
       this.history.pop();
     }
   }
@@ -792,10 +729,7 @@ export class GeminiChat {
   async maybeIncludeSchemaDepthContext(error: StructuredError): Promise<void> {
     // Check for potentially problematic cyclic tools with cyclic schemas
     // and include a recommendation to remove potentially problematic tools.
-    if (
-      isSchemaDepthError(error.message) ||
-      isInvalidArgumentError(error.message)
-    ) {
+    if (isSchemaDepthError(error.message) || isInvalidArgumentError(error.message)) {
       const tools = this.config.getToolRegistry().getAllTools();
       const cyclicSchemaTools: string[] = [];
       for (const tool of tools) {
@@ -831,8 +765,7 @@ export class GeminiChat {
     for await (const chunk of streamResponse) {
       // Use ||= to avoid later usage-only chunks (no candidates) overwriting
       // a finishReason that was already seen in an earlier chunk.
-      hasFinishReason ||=
-        chunk?.candidates?.some((candidate) => candidate.finishReason) ?? false;
+      hasFinishReason ||= chunk?.candidates?.some((candidate) => candidate.finishReason) ?? false;
 
       if (isValidResponse(chunk)) {
         const content = chunk.candidates?.[0]?.content;
@@ -870,10 +803,10 @@ export class GeminiChat {
     const thoughtText = allModelParts
       .filter((part) => part.thought)
       .map((part) => part.text)
-      .join('')
+      .join("")
       .trim();
 
-    if (thoughtText !== '') {
+    if (thoughtText !== "") {
       thoughtContentPart = {
         text: thoughtText,
         thought: true,
@@ -890,8 +823,7 @@ export class GeminiChat {
     const contentParts = allModelParts.filter((part) => !part.thought);
     const consolidatedHistoryParts: Part[] = [];
     for (const part of contentParts) {
-      const lastPart =
-        consolidatedHistoryParts[consolidatedHistoryParts.length - 1];
+      const lastPart = consolidatedHistoryParts[consolidatedHistoryParts.length - 1];
       if (
         lastPart?.text &&
         isValidNonThoughtTextPart(lastPart) &&
@@ -906,13 +838,12 @@ export class GeminiChat {
     const contentText = consolidatedHistoryParts
       .filter((part) => part.text)
       .map((part) => part.text)
-      .join('')
+      .join("")
       .trim();
 
     // Record assistant turn with raw Content and metadata
     if (thoughtContentPart || contentText || hasToolCall || usageMetadata) {
-      const contextWindowSize =
-        this.config.getContentGeneratorConfig()?.contextWindowSize;
+      const contextWindowSize = this.config.getContentGeneratorConfig()?.contextWindowSize;
       this.chatRecordingService?.recordAssistantTurn({
         model,
         message: [
@@ -939,32 +870,29 @@ export class GeminiChat {
     if (!hasToolCall && (!hasFinishReason || !contentText)) {
       if (!hasFinishReason) {
         throw new InvalidStreamError(
-          'Model stream ended without a finish reason.',
-          'NO_FINISH_REASON',
+          "Model stream ended without a finish reason.",
+          "NO_FINISH_REASON",
         );
       } else {
         throw new InvalidStreamError(
-          'Model stream ended with empty response text.',
-          'NO_RESPONSE_TEXT',
+          "Model stream ended with empty response text.",
+          "NO_RESPONSE_TEXT",
         );
       }
     }
 
     this.history.push({
-      role: 'model',
-      parts: [
-        ...(thoughtContentPart ? [thoughtContentPart] : []),
-        ...consolidatedHistoryParts,
-      ],
+      role: "model",
+      parts: [...(thoughtContentPart ? [thoughtContentPart] : []), ...consolidatedHistoryParts],
     });
   }
 }
 
 /** Visible for Testing */
 export function isSchemaDepthError(errorMessage: string): boolean {
-  return errorMessage.includes('maximum schema depth exceeded');
+  return errorMessage.includes("maximum schema depth exceeded");
 }
 
 export function isInvalidArgumentError(errorMessage: string): boolean {
-  return errorMessage.includes('Request contains an invalid argument');
+  return errorMessage.includes("Request contains an invalid argument");
 }

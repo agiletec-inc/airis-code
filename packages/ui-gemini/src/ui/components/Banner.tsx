@@ -4,10 +4,10 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { Box, Text } from 'ink';
-import { ThemedGradient } from './ThemedGradient.js';
-import { theme } from '../semantic-colors.js';
-import type { ReactNode } from 'react';
+import { Box, Text } from "ink";
+import type { ReactNode } from "react";
+import { theme } from "../semantic-colors.js";
+import { ThemedGradient } from "./ThemedGradient.js";
 
 export function getFormattedBannerContent(
   rawText: string,
@@ -15,13 +15,11 @@ export function getFormattedBannerContent(
   subsequentLineColor: string,
 ): ReactNode {
   if (isWarning) {
-    return (
-      <Text color={theme.status.warning}>{rawText.replace(/\\n/g, '\n')}</Text>
-    );
+    return <Text color={theme.status.warning}>{rawText.replace(/\\n/g, "\n")}</Text>;
   }
 
-  const text = rawText.replace(/\\n/g, '\n');
-  const lines = text.split('\n');
+  const text = rawText.replace(/\\n/g, "\n");
+  const lines = text.split("\n");
 
   return lines.map((line, index) => {
     if (index === 0) {

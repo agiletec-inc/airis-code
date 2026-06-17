@@ -5,7 +5,7 @@
 export interface DenyPattern {
   pattern: RegExp;
   reason: string;
-  severity: 'critical' | 'high' | 'medium';
+  severity: "critical" | "high" | "medium";
 }
 
 /**
@@ -14,33 +14,33 @@ export interface DenyPattern {
 const CRITICAL_PATTERNS: DenyPattern[] = [
   {
     pattern: /rm\s+-rf\s+\//,
-    reason: 'Attempting to delete root directory',
-    severity: 'critical',
+    reason: "Attempting to delete root directory",
+    severity: "critical",
   },
   {
     pattern: /rm\s+-rf\s+~/,
-    reason: 'Attempting to delete home directory',
-    severity: 'critical',
+    reason: "Attempting to delete home directory",
+    severity: "critical",
   },
   {
     pattern: /:\(\)\s*{\s*:\|:&\s*};:/,
-    reason: 'Fork bomb detected',
-    severity: 'critical',
+    reason: "Fork bomb detected",
+    severity: "critical",
   },
   {
     pattern: /mkfs/,
-    reason: 'Attempting to format filesystem',
-    severity: 'critical',
+    reason: "Attempting to format filesystem",
+    severity: "critical",
   },
   {
     pattern: /dd\s+if=.*of=\/dev\/(sd[a-z]|hd[a-z]|nvme\d+n\d+)/,
-    reason: 'Attempting to write to raw disk device',
-    severity: 'critical',
+    reason: "Attempting to write to raw disk device",
+    severity: "critical",
   },
   {
     pattern: /chmod\s+-R\s+777\s+\//,
-    reason: 'Attempting to set world-writable permissions on root',
-    severity: 'critical',
+    reason: "Attempting to set world-writable permissions on root",
+    severity: "critical",
   },
 ];
 
@@ -50,28 +50,28 @@ const CRITICAL_PATTERNS: DenyPattern[] = [
 const HIGH_PATTERNS: DenyPattern[] = [
   {
     pattern: /docker\s+system\s+prune\s+-a/,
-    reason: 'Attempting to prune all Docker resources',
-    severity: 'high',
+    reason: "Attempting to prune all Docker resources",
+    severity: "high",
   },
   {
     pattern: /curl.*\|\s*(sudo\s+)?bash/,
-    reason: 'Executing remote script with elevated privileges',
-    severity: 'high',
+    reason: "Executing remote script with elevated privileges",
+    severity: "high",
   },
   {
     pattern: /wget.*\|\s*(sudo\s+)?sh/,
-    reason: 'Executing remote script with elevated privileges',
-    severity: 'high',
+    reason: "Executing remote script with elevated privileges",
+    severity: "high",
   },
   {
     pattern: /sudo\s+chmod\s+u\+s/,
-    reason: 'Setting SUID bit with sudo',
-    severity: 'high',
+    reason: "Setting SUID bit with sudo",
+    severity: "high",
   },
   {
     pattern: />\s*\/dev\/(sda|hda|nvme)/,
-    reason: 'Redirecting output to disk device',
-    severity: 'high',
+    reason: "Redirecting output to disk device",
+    severity: "high",
   },
 ];
 
@@ -81,18 +81,18 @@ const HIGH_PATTERNS: DenyPattern[] = [
 const MEDIUM_PATTERNS: DenyPattern[] = [
   {
     pattern: /rm\s+-rf\s+\*$/,
-    reason: 'Recursive deletion of all files in current directory',
-    severity: 'medium',
+    reason: "Recursive deletion of all files in current directory",
+    severity: "medium",
   },
   {
     pattern: /pkill\s+-9\s+-U/,
-    reason: 'Force killing all processes for a user',
-    severity: 'medium',
+    reason: "Force killing all processes for a user",
+    severity: "medium",
   },
   {
     pattern: /iptables\s+-F/,
-    reason: 'Flushing iptables rules',
-    severity: 'medium',
+    reason: "Flushing iptables rules",
+    severity: "medium",
   },
 ];
 

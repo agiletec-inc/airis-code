@@ -4,12 +4,12 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { describe, it, expect, vi, beforeEach, type Mocked } from 'vitest';
-import { AcpFileSystemService } from './fileSystemService.js';
-import type { Client } from './acp.js';
-import type { FileSystemService } from '@airiscode/gemini-cli-core';
+import type { FileSystemService } from "@airiscode/gemini-cli-core";
+import { beforeEach, describe, expect, it, type Mocked, vi } from "vitest";
+import type { Client } from "./acp.js";
+import { AcpFileSystemService } from "./fileSystemService.js";
 
-describe('AcpFileSystemService', () => {
+describe("AcpFileSystemService", () => {
   let mockClient: Mocked<Client>;
   let mockFallback: Mocked<FileSystemService>;
   let service: AcpFileSystemService;
@@ -27,18 +27,18 @@ describe('AcpFileSystemService', () => {
     };
   });
 
-  describe('readTextFile', () => {
+  describe("readTextFile", () => {
     it.each([
       {
         capability: true,
-        desc: 'client if capability exists',
+        desc: "client if capability exists",
         setup: () => {
-          mockClient.readTextFile.mockResolvedValue({ content: 'content' });
+          mockClient.readTextFile.mockResolvedValue({ content: "content" });
         },
         verify: () => {
           expect(mockClient.readTextFile).toHaveBeenCalledWith({
-            path: '/path/to/file',
-            sessionId: 'session-1',
+            path: "/path/to/file",
+            sessionId: "session-1",
             line: null,
             limit: null,
           });
@@ -47,67 +47,62 @@ describe('AcpFileSystemService', () => {
       },
       {
         capability: false,
-        desc: 'fallback if capability missing',
+        desc: "fallback if capability missing",
         setup: () => {
-          mockFallback.readTextFile.mockResolvedValue('content');
+          mockFallback.readTextFile.mockResolvedValue("content");
         },
         verify: () => {
-          expect(mockFallback.readTextFile).toHaveBeenCalledWith(
-            '/path/to/file',
-          );
+          expect(mockFallback.readTextFile).toHaveBeenCalledWith("/path/to/file");
           expect(mockClient.readTextFile).not.toHaveBeenCalled();
         },
       },
-    ])('should use $desc', async ({ capability, setup, verify }) => {
+    ])("should use $desc", async ({ capability, setup, verify }) => {
       service = new AcpFileSystemService(
         mockClient,
-        'session-1',
+        "session-1",
         { readTextFile: capability, writeTextFile: true },
         mockFallback,
       );
       setup();
 
-      const result = await service.readTextFile('/path/to/file');
+      const result = await service.readTextFile("/path/to/file");
 
-      expect(result).toBe('content');
+      expect(result).toBe("content");
       verify();
     });
   });
 
-  describe('writeTextFile', () => {
+  describe("writeTextFile", () => {
     it.each([
       {
         capability: true,
-        desc: 'client if capability exists',
+        desc: "client if capability exists",
         verify: () => {
           expect(mockClient.writeTextFile).toHaveBeenCalledWith({
-            path: '/path/to/file',
-            content: 'content',
-            sessionId: 'session-1',
+            path: "/path/to/file",
+            content: "content",
+            sessionId: "session-1",
           });
           expect(mockFallback.writeTextFile).not.toHaveBeenCalled();
         },
       },
       {
         capability: false,
-        desc: 'fallback if capability missing',
+        desc: "fallback if capability missing",
         verify: () => {
-          expect(mockFallback.writeTextFile).toHaveBeenCalledWith(
-            '/path/to/file',
-            'content',
-          );
+          expect(mockFallback.writeTextFile).toHaveBeenCalledWith("/path/to/file", "content");
           expect(mockClient.writeTextFile).not.toHaveBeenCalled();
         },
       },
-    ])('should use $desc', async ({ capability, verify }) => {
+    ])("should use $desc", async ({ capability, verify }) => {
       service = new AcpFileSystemService(
         mockClient,
-        'session-1',
+        "session-1",
         { writeTextFile: capability, readTextFile: true },
         mockFallback,
       );
 
-      await service.writeTextFile('/path/to/file', 'content');
+      await service.writeTextFile("/path/to/file", "content");
 
       verify();
     });

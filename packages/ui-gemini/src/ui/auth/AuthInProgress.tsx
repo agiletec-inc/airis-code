@@ -4,25 +4,23 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import type React from 'react';
-import { useState, useEffect } from 'react';
-import { Box, Text } from 'ink';
-import { CliSpinner } from '../components/CliSpinner.js';
-import { theme } from '../semantic-colors.js';
-import { useKeypress } from '../hooks/useKeypress.js';
+import { Box, Text } from "ink";
+import type React from "react";
+import { useEffect, useState } from "react";
+import { CliSpinner } from "../components/CliSpinner.js";
+import { useKeypress } from "../hooks/useKeypress.js";
+import { theme } from "../semantic-colors.js";
 
 interface AuthInProgressProps {
   onTimeout: () => void;
 }
 
-export function AuthInProgress({
-  onTimeout,
-}: AuthInProgressProps): React.JSX.Element {
+export function AuthInProgress({ onTimeout }: AuthInProgressProps): React.JSX.Element {
   const [timedOut, setTimedOut] = useState(false);
 
   useKeypress(
     (key) => {
-      if (key.name === 'escape' || (key.ctrl && key.name === 'c')) {
+      if (key.name === "escape" || (key.ctrl && key.name === "c")) {
         onTimeout();
       }
     },
@@ -47,14 +45,11 @@ export function AuthInProgress({
       width="100%"
     >
       {timedOut ? (
-        <Text color={theme.status.error}>
-          Authentication timed out. Please try again.
-        </Text>
+        <Text color={theme.status.error}>Authentication timed out. Please try again.</Text>
       ) : (
         <Box>
           <Text>
-            <CliSpinner type="dots" /> Waiting for auth... (Press ESC or CTRL+C
-            to cancel)
+            <CliSpinner type="dots" /> Waiting for auth... (Press ESC or CTRL+C to cancel)
           </Text>
         </Box>
       )}

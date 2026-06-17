@@ -4,16 +4,11 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { vi, describe, it, expect, beforeEach, type Mock } from 'vitest';
-import {
-  AgentSideConnection,
-  RequestError,
-  type Agent,
-  type Client,
-} from './acp.js';
-import { type ErrorResponse } from './schema.js';
-import { type MethodHandler } from './connection.js';
-import { ReadableStream, WritableStream } from 'node:stream/web';
+import { ReadableStream, WritableStream } from "node:stream/web";
+import { beforeEach, describe, expect, it, type Mock, vi } from "vitest";
+import { type Agent, AgentSideConnection, type Client, RequestError } from "./acp.js";
+import { type MethodHandler } from "./connection.js";
+import { type ErrorResponse } from "./schema.js";
 
 const mockConnectionConstructor = vi.hoisted(() =>
   vi.fn<
@@ -28,7 +23,7 @@ const mockConnectionConstructor = vi.hoisted(() =>
   })),
 );
 
-vi.mock('./connection.js', async (importOriginal) => {
+vi.mock("./connection.js", async (importOriginal) => {
   const actual = await importOriginal();
   return {
     ...(actual as object),
@@ -36,32 +31,32 @@ vi.mock('./connection.js', async (importOriginal) => {
   };
 });
 
-describe('acp', () => {
-  describe('RequestError', () => {
-    it('should create a parse error', () => {
-      const error = RequestError.parseError('details');
+describe("acp", () => {
+  describe("RequestError", () => {
+    it("should create a parse error", () => {
+      const error = RequestError.parseError("details");
       expect(error.code).toBe(-32700);
-      expect(error.message).toBe('Parse error');
-      expect(error.data?.details).toBe('details');
+      expect(error.message).toBe("Parse error");
+      expect(error.data?.details).toBe("details");
     });
 
-    it('should create a method not found error', () => {
-      const error = RequestError.methodNotFound('details');
+    it("should create a method not found error", () => {
+      const error = RequestError.methodNotFound("details");
       expect(error.code).toBe(-32601);
-      expect(error.message).toBe('Method not found');
-      expect(error.data?.details).toBe('details');
+      expect(error.message).toBe("Method not found");
+      expect(error.data?.details).toBe("details");
     });
 
-    it('should convert to a result', () => {
-      const error = RequestError.internalError('details');
+    it("should convert to a result", () => {
+      const error = RequestError.internalError("details");
       const result = error.toResult() as { error: ErrorResponse };
       expect(result.error.code).toBe(-32603);
-      expect(result.error.message).toBe('Internal error');
-      expect(result.error.data).toEqual({ details: 'details' });
+      expect(result.error.message).toBe("Internal error");
+      expect(result.error.data).toEqual({ details: "details" });
     });
   });
 
-  describe('AgentSideConnection', () => {
+  describe("AgentSideConnection", () => {
     let mockAgent: Agent;
 
     let toAgent: WritableStream<Uint8Array>;
@@ -77,8 +72,8 @@ describe('acp', () => {
         authMethods: [],
         protocolVersion: 1,
       };
-      const newSessionResponse = { sessionId: 'session-1' };
-      const loadSessionResponse = { sessionId: 'session-1' };
+      const newSessionResponse = { sessionId: "session-1" };
+      const loadSessionResponse = { sessionId: "session-1" };
 
       mockAgent = {
         initialize: vi.fn().mockResolvedValue(initializeResponse),
@@ -102,7 +97,7 @@ describe('acp', () => {
       connectionInstance = mockConnectionConstructor.mock.results[0].value;
     });
 
-    it('should initialize Connection with the correct handler and streams', () => {
+    it("should initialize Connection with the correct handler and streams", () => {
       expect(mockConnectionConstructor).toHaveBeenCalledTimes(1);
       expect(mockConnectionConstructor).toHaveBeenCalledWith(
         expect.any(Function),
@@ -111,7 +106,7 @@ describe('acp', () => {
       );
     });
 
-    it('should call agent.initialize when Connection handler receives initialize method', async () => {
+    it("should call agent.initialize when Connection handler receives initialize method", async () => {
       const initializeParams = {
         clientCapabilities: { fs: { readTextFile: true, writeTextFile: true } },
         protocolVersion: 1,
@@ -121,170 +116,156 @@ describe('acp', () => {
         authMethods: [],
         protocolVersion: 1,
       };
-      const handler = mockConnectionConstructor.mock
-        .calls[0][0]! as MethodHandler;
-      const result = await handler('initialize', initializeParams);
+      const handler = mockConnectionConstructor.mock.calls[0][0]! as MethodHandler;
+      const result = await handler("initialize", initializeParams);
 
       expect(mockAgent.initialize).toHaveBeenCalledWith(initializeParams);
       expect(result).toEqual(initializeResponse);
     });
 
-    it('should call agent.newSession when Connection handler receives session_new method', async () => {
-      const newSessionParams = { cwd: '/tmp', mcpServers: [] };
-      const newSessionResponse = { sessionId: 'session-1' };
-      const handler = mockConnectionConstructor.mock
-        .calls[0][0]! as MethodHandler;
-      const result = await handler('session/new', newSessionParams);
+    it("should call agent.newSession when Connection handler receives session_new method", async () => {
+      const newSessionParams = { cwd: "/tmp", mcpServers: [] };
+      const newSessionResponse = { sessionId: "session-1" };
+      const handler = mockConnectionConstructor.mock.calls[0][0]! as MethodHandler;
+      const result = await handler("session/new", newSessionParams);
 
       expect(mockAgent.newSession).toHaveBeenCalledWith(newSessionParams);
       expect(result).toEqual(newSessionResponse);
     });
 
-    it('should call agent.loadSession when Connection handler receives session_load method', async () => {
+    it("should call agent.loadSession when Connection handler receives session_load method", async () => {
       const loadSessionParams = {
-        cwd: '/tmp',
+        cwd: "/tmp",
         mcpServers: [],
-        sessionId: 'session-1',
+        sessionId: "session-1",
       };
-      const loadSessionResponse = { sessionId: 'session-1' };
-      const handler = mockConnectionConstructor.mock
-        .calls[0][0]! as MethodHandler;
-      const result = await handler('session/load', loadSessionParams);
+      const loadSessionResponse = { sessionId: "session-1" };
+      const handler = mockConnectionConstructor.mock.calls[0][0]! as MethodHandler;
+      const result = await handler("session/load", loadSessionParams);
 
       expect(mockAgent.loadSession).toHaveBeenCalledWith(loadSessionParams);
       expect(result).toEqual(loadSessionResponse);
     });
 
-    it('should throw methodNotFound if agent.loadSession is not implemented', async () => {
+    it("should throw methodNotFound if agent.loadSession is not implemented", async () => {
       mockAgent.loadSession = undefined; // Simulate not implemented
       const loadSessionParams = {
-        cwd: '/tmp',
+        cwd: "/tmp",
         mcpServers: [],
-        sessionId: 'session-1',
+        sessionId: "session-1",
       };
-      const handler = mockConnectionConstructor.mock
-        .calls[0][0]! as MethodHandler;
-      await expect(handler('session/load', loadSessionParams)).rejects.toThrow(
+      const handler = mockConnectionConstructor.mock.calls[0][0]! as MethodHandler;
+      await expect(handler("session/load", loadSessionParams)).rejects.toThrow(
         RequestError.methodNotFound().message,
       );
     });
 
-    it('should call agent.authenticate when Connection handler receives authenticate method', async () => {
+    it("should call agent.authenticate when Connection handler receives authenticate method", async () => {
       const authenticateParams = {
-        methodId: 'test-auth-method',
+        methodId: "test-auth-method",
       };
-      const handler = mockConnectionConstructor.mock
-        .calls[0][0]! as MethodHandler;
-      const result = await handler('authenticate', authenticateParams);
+      const handler = mockConnectionConstructor.mock.calls[0][0]! as MethodHandler;
+      const result = await handler("authenticate", authenticateParams);
 
       expect(mockAgent.authenticate).toHaveBeenCalledWith(authenticateParams);
       expect(result).toBeUndefined();
     });
 
-    it('should call agent.prompt when Connection handler receives session_prompt method', async () => {
+    it("should call agent.prompt when Connection handler receives session_prompt method", async () => {
       const promptParams = {
-        prompt: [{ type: 'text', text: 'hi' }],
-        sessionId: 'session-1',
+        prompt: [{ type: "text", text: "hi" }],
+        sessionId: "session-1",
       };
       const promptResponse = {
-        response: [{ type: 'text', text: 'hello' }],
-        traceId: 'trace-1',
+        response: [{ type: "text", text: "hello" }],
+        traceId: "trace-1",
       };
       (mockAgent.prompt as Mock).mockResolvedValue(promptResponse);
-      const handler = mockConnectionConstructor.mock
-        .calls[0][0]! as MethodHandler;
-      const result = await handler('session/prompt', promptParams);
+      const handler = mockConnectionConstructor.mock.calls[0][0]! as MethodHandler;
+      const result = await handler("session/prompt", promptParams);
 
       expect(mockAgent.prompt).toHaveBeenCalledWith(promptParams);
       expect(result).toEqual(promptResponse);
     });
 
-    it('should call agent.cancel when Connection handler receives session_cancel method', async () => {
-      const cancelParams = { sessionId: 'session-1' };
-      const handler = mockConnectionConstructor.mock
-        .calls[0][0]! as MethodHandler;
-      const result = await handler('session/cancel', cancelParams);
+    it("should call agent.cancel when Connection handler receives session_cancel method", async () => {
+      const cancelParams = { sessionId: "session-1" };
+      const handler = mockConnectionConstructor.mock.calls[0][0]! as MethodHandler;
+      const result = await handler("session/cancel", cancelParams);
 
       expect(mockAgent.cancel).toHaveBeenCalledWith(cancelParams);
       expect(result).toBeUndefined();
     });
 
-    it('should throw methodNotFound for unknown methods', async () => {
-      const handler = mockConnectionConstructor.mock
-        .calls[0][0]! as MethodHandler;
-      await expect(handler('unknown_method', {})).rejects.toThrow(
+    it("should throw methodNotFound for unknown methods", async () => {
+      const handler = mockConnectionConstructor.mock.calls[0][0]! as MethodHandler;
+      await expect(handler("unknown_method", {})).rejects.toThrow(
         RequestError.methodNotFound().message,
       );
     });
 
-    it('should send sessionUpdate notification via connection', async () => {
+    it("should send sessionUpdate notification via connection", async () => {
       const params = {
-        sessionId: '123',
+        sessionId: "123",
         update: {
-          sessionUpdate: 'user_message_chunk' as const,
-          content: { type: 'text' as const, text: 'hello' },
+          sessionUpdate: "user_message_chunk" as const,
+          content: { type: "text" as const, text: "hello" },
         },
       };
       await agentSideConnection.sessionUpdate(params);
     });
 
-    it('should send requestPermission request via connection', async () => {
+    it("should send requestPermission request via connection", async () => {
       const params = {
-        sessionId: '123',
+        sessionId: "123",
         toolCall: {
-          toolCallId: 'tool-1',
-          title: 'Test Tool',
-          kind: 'other' as const,
-          status: 'pending' as const,
+          toolCallId: "tool-1",
+          title: "Test Tool",
+          kind: "other" as const,
+          status: "pending" as const,
         },
         options: [
           {
-            optionId: 'option-1',
-            name: 'Allow',
-            kind: 'allow_once' as const,
+            optionId: "option-1",
+            name: "Allow",
+            kind: "allow_once" as const,
           },
         ],
       };
       const response = {
-        outcome: { outcome: 'selected', optionId: 'option-1' },
+        outcome: { outcome: "selected", optionId: "option-1" },
       };
       (connectionInstance.sendRequest as Mock).mockResolvedValue(response);
 
       const result = await agentSideConnection.requestPermission(params);
       expect(connectionInstance.sendRequest).toHaveBeenCalledWith(
-        'session/request_permission',
+        "session/request_permission",
         params,
       );
       expect(result).toEqual(response);
     });
 
-    it('should send readTextFile request via connection', async () => {
-      const params = { path: '/a/b.txt', sessionId: 'session-1' };
-      const response = { content: 'file content' };
+    it("should send readTextFile request via connection", async () => {
+      const params = { path: "/a/b.txt", sessionId: "session-1" };
+      const response = { content: "file content" };
       (connectionInstance.sendRequest as Mock).mockResolvedValue(response);
 
       const result = await agentSideConnection.readTextFile(params);
-      expect(connectionInstance.sendRequest).toHaveBeenCalledWith(
-        'fs/read_text_file',
-        params,
-      );
+      expect(connectionInstance.sendRequest).toHaveBeenCalledWith("fs/read_text_file", params);
       expect(result).toEqual(response);
     });
 
-    it('should send writeTextFile request via connection', async () => {
+    it("should send writeTextFile request via connection", async () => {
       const params = {
-        path: '/a/b.txt',
-        content: 'new content',
-        sessionId: 'session-1',
+        path: "/a/b.txt",
+        content: "new content",
+        sessionId: "session-1",
       };
       const response = { success: true };
       (connectionInstance.sendRequest as Mock).mockResolvedValue(response);
 
       const result = await agentSideConnection.writeTextFile(params);
-      expect(connectionInstance.sendRequest).toHaveBeenCalledWith(
-        'fs/write_text_file',
-        params,
-      );
+      expect(connectionInstance.sendRequest).toHaveBeenCalledWith("fs/write_text_file", params);
       expect(result).toEqual(response);
     });
   });

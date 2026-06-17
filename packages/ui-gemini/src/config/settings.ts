@@ -4,40 +4,37 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import * as fs from 'node:fs';
-import * as path from 'node:path';
-import { homedir, platform } from 'node:os';
-import * as dotenv from 'dotenv';
-import process from 'node:process';
+import * as fs from "node:fs";
+import { homedir, platform } from "node:os";
+import * as path from "node:path";
+import process from "node:process";
 import {
+  coreEvents,
   debugLogger,
   FatalConfigError,
   GEMINI_DIR,
   getErrorMessage,
   Storage,
-  coreEvents,
-} from '@airiscode/gemini-cli-core';
-import stripJsonComments from 'strip-json-comments';
-import { DefaultLight } from '../ui/themes/default-light.js';
-import { DefaultDark } from '../ui/themes/default.js';
-import { isWorkspaceTrusted } from './trustedFolders.js';
+} from "@airiscode/gemini-cli-core";
+import * as dotenv from "dotenv";
+import stripJsonComments from "strip-json-comments";
+import { DefaultDark } from "../ui/themes/default.js";
+import { DefaultLight } from "../ui/themes/default-light.js";
+import { updateSettingsFilePreservingFormat } from "../utils/commentJson.js";
+import { customDeepMerge, type MergeableObject } from "../utils/deepMerge.js";
+import { resolveEnvVarsInObject } from "../utils/envVarResolver.js";
+import type { ExtensionManager } from "./extension-manager.js";
+import { SettingPaths } from "./settingPaths.js";
+import { formatValidationError, validateSettings } from "./settings-validation.js";
 import {
-  type Settings,
+  getSettingsSchema,
   type MemoryImportFormat,
   type MergeStrategy,
-  type SettingsSchema,
   type SettingDefinition,
-  getSettingsSchema,
-} from './settingsSchema.js';
-import { resolveEnvVarsInObject } from '../utils/envVarResolver.js';
-import { customDeepMerge, type MergeableObject } from '../utils/deepMerge.js';
-import { updateSettingsFilePreservingFormat } from '../utils/commentJson.js';
-import type { ExtensionManager } from './extension-manager.js';
-import {
-  validateSettings,
-  formatValidationError,
-} from './settings-validation.js';
-import { SettingPaths } from './settingPaths.js';
+  type Settings,
+  type SettingsSchema,
+} from "./settingsSchema.js";
+import { isWorkspaceTrusted } from "./trustedFolders.js";
 
 function getMergeStrategyForPath(path: string[]): MergeStrategy | undefined {
   let current: SettingDefinition | undefined = undefined;
@@ -60,118 +57,115 @@ function getMergeStrategyForPath(path: string[]): MergeStrategy | undefined {
   return current?.mergeStrategy;
 }
 
-export type { Settings, MemoryImportFormat };
+export type { MemoryImportFormat, Settings };
 
 export const USER_SETTINGS_PATH = Storage.getGlobalSettingsPath();
 export const USER_SETTINGS_DIR = path.dirname(USER_SETTINGS_PATH);
-export const DEFAULT_EXCLUDED_ENV_VARS = ['DEBUG', 'DEBUG_MODE'];
+export const DEFAULT_EXCLUDED_ENV_VARS = ["DEBUG", "DEBUG_MODE"];
 
 const MIGRATE_V2_OVERWRITE = true;
 
 const MIGRATION_MAP: Record<string, string> = {
-  accessibility: 'ui.accessibility',
-  allowedTools: 'tools.allowed',
-  allowMCPServers: 'mcp.allowed',
-  autoAccept: 'tools.autoAccept',
-  autoConfigureMaxOldSpaceSize: 'advanced.autoConfigureMemory',
-  bugCommand: 'advanced.bugCommand',
-  chatCompression: 'model.compressionThreshold',
-  checkpointing: 'general.checkpointing',
-  coreTools: 'tools.core',
-  contextFileName: 'context.fileName',
-  customThemes: 'ui.customThemes',
-  customWittyPhrases: 'ui.customWittyPhrases',
-  debugKeystrokeLogging: 'general.debugKeystrokeLogging',
-  disableAutoUpdate: 'general.disableAutoUpdate',
-  disableUpdateNag: 'general.disableUpdateNag',
-  dnsResolutionOrder: 'advanced.dnsResolutionOrder',
-  enableMessageBusIntegration: 'tools.enableMessageBusIntegration',
-  enableHooks: 'tools.enableHooks',
-  enablePromptCompletion: 'general.enablePromptCompletion',
-  enforcedAuthType: 'security.auth.enforcedType',
-  excludeTools: 'tools.exclude',
-  excludeMCPServers: 'mcp.excluded',
-  excludedProjectEnvVars: 'advanced.excludedEnvVars',
-  extensionManagement: 'experimental.extensionManagement',
-  extensions: 'extensions',
-  fileFiltering: 'context.fileFiltering',
-  folderTrustFeature: 'security.folderTrust.featureEnabled',
-  folderTrust: 'security.folderTrust.enabled',
-  hasSeenIdeIntegrationNudge: 'ide.hasSeenNudge',
-  hideWindowTitle: 'ui.hideWindowTitle',
-  showStatusInTitle: 'ui.showStatusInTitle',
-  hideTips: 'ui.hideTips',
-  hideBanner: 'ui.hideBanner',
-  hideFooter: 'ui.hideFooter',
-  hideCWD: 'ui.footer.hideCWD',
-  hideSandboxStatus: 'ui.footer.hideSandboxStatus',
-  hideModelInfo: 'ui.footer.hideModelInfo',
-  hideContextSummary: 'ui.hideContextSummary',
-  showMemoryUsage: 'ui.showMemoryUsage',
-  showLineNumbers: 'ui.showLineNumbers',
-  showCitations: 'ui.showCitations',
-  ideMode: 'ide.enabled',
-  includeDirectories: 'context.includeDirectories',
-  loadMemoryFromIncludeDirectories: 'context.loadFromIncludeDirectories',
-  maxSessionTurns: 'model.maxSessionTurns',
-  mcpServers: 'mcpServers',
-  mcpServerCommand: 'mcp.serverCommand',
-  memoryImportFormat: 'context.importFormat',
-  memoryDiscoveryMaxDirs: 'context.discoveryMaxDirs',
-  model: 'model.name',
+  accessibility: "ui.accessibility",
+  allowedTools: "tools.allowed",
+  allowMCPServers: "mcp.allowed",
+  autoAccept: "tools.autoAccept",
+  autoConfigureMaxOldSpaceSize: "advanced.autoConfigureMemory",
+  bugCommand: "advanced.bugCommand",
+  chatCompression: "model.compressionThreshold",
+  checkpointing: "general.checkpointing",
+  coreTools: "tools.core",
+  contextFileName: "context.fileName",
+  customThemes: "ui.customThemes",
+  customWittyPhrases: "ui.customWittyPhrases",
+  debugKeystrokeLogging: "general.debugKeystrokeLogging",
+  disableAutoUpdate: "general.disableAutoUpdate",
+  disableUpdateNag: "general.disableUpdateNag",
+  dnsResolutionOrder: "advanced.dnsResolutionOrder",
+  enableMessageBusIntegration: "tools.enableMessageBusIntegration",
+  enableHooks: "tools.enableHooks",
+  enablePromptCompletion: "general.enablePromptCompletion",
+  enforcedAuthType: "security.auth.enforcedType",
+  excludeTools: "tools.exclude",
+  excludeMCPServers: "mcp.excluded",
+  excludedProjectEnvVars: "advanced.excludedEnvVars",
+  extensionManagement: "experimental.extensionManagement",
+  extensions: "extensions",
+  fileFiltering: "context.fileFiltering",
+  folderTrustFeature: "security.folderTrust.featureEnabled",
+  folderTrust: "security.folderTrust.enabled",
+  hasSeenIdeIntegrationNudge: "ide.hasSeenNudge",
+  hideWindowTitle: "ui.hideWindowTitle",
+  showStatusInTitle: "ui.showStatusInTitle",
+  hideTips: "ui.hideTips",
+  hideBanner: "ui.hideBanner",
+  hideFooter: "ui.hideFooter",
+  hideCWD: "ui.footer.hideCWD",
+  hideSandboxStatus: "ui.footer.hideSandboxStatus",
+  hideModelInfo: "ui.footer.hideModelInfo",
+  hideContextSummary: "ui.hideContextSummary",
+  showMemoryUsage: "ui.showMemoryUsage",
+  showLineNumbers: "ui.showLineNumbers",
+  showCitations: "ui.showCitations",
+  ideMode: "ide.enabled",
+  includeDirectories: "context.includeDirectories",
+  loadMemoryFromIncludeDirectories: "context.loadFromIncludeDirectories",
+  maxSessionTurns: "model.maxSessionTurns",
+  mcpServers: "mcpServers",
+  mcpServerCommand: "mcp.serverCommand",
+  memoryImportFormat: "context.importFormat",
+  memoryDiscoveryMaxDirs: "context.discoveryMaxDirs",
+  model: "model.name",
   preferredEditor: SettingPaths.General.PreferredEditor,
-  retryFetchErrors: 'general.retryFetchErrors',
-  sandbox: 'tools.sandbox',
-  selectedAuthType: 'security.auth.selectedType',
-  enableInteractiveShell: 'tools.shell.enableInteractiveShell',
-  shellPager: 'tools.shell.pager',
-  shellShowColor: 'tools.shell.showColor',
-  shellInactivityTimeout: 'tools.shell.inactivityTimeout',
-  skipNextSpeakerCheck: 'model.skipNextSpeakerCheck',
-  summarizeToolOutput: 'model.summarizeToolOutput',
-  telemetry: 'telemetry',
-  theme: 'ui.theme',
-  toolDiscoveryCommand: 'tools.discoveryCommand',
-  toolCallCommand: 'tools.callCommand',
-  usageStatisticsEnabled: 'privacy.usageStatisticsEnabled',
-  useExternalAuth: 'security.auth.useExternal',
-  useRipgrep: 'tools.useRipgrep',
-  vimMode: 'general.vimMode',
+  retryFetchErrors: "general.retryFetchErrors",
+  sandbox: "tools.sandbox",
+  selectedAuthType: "security.auth.selectedType",
+  enableInteractiveShell: "tools.shell.enableInteractiveShell",
+  shellPager: "tools.shell.pager",
+  shellShowColor: "tools.shell.showColor",
+  shellInactivityTimeout: "tools.shell.inactivityTimeout",
+  skipNextSpeakerCheck: "model.skipNextSpeakerCheck",
+  summarizeToolOutput: "model.summarizeToolOutput",
+  telemetry: "telemetry",
+  theme: "ui.theme",
+  toolDiscoveryCommand: "tools.discoveryCommand",
+  toolCallCommand: "tools.callCommand",
+  usageStatisticsEnabled: "privacy.usageStatisticsEnabled",
+  useExternalAuth: "security.auth.useExternal",
+  useRipgrep: "tools.useRipgrep",
+  vimMode: "general.vimMode",
 };
 
 export function getSystemSettingsPath(): string {
-  if (process.env['GEMINI_CLI_SYSTEM_SETTINGS_PATH']) {
-    return process.env['GEMINI_CLI_SYSTEM_SETTINGS_PATH'];
+  if (process.env["GEMINI_CLI_SYSTEM_SETTINGS_PATH"]) {
+    return process.env["GEMINI_CLI_SYSTEM_SETTINGS_PATH"];
   }
-  if (platform() === 'darwin') {
-    return '/Library/Application Support/GeminiCli/settings.json';
-  } else if (platform() === 'win32') {
-    return 'C:\\ProgramData\\gemini-cli\\settings.json';
+  if (platform() === "darwin") {
+    return "/Library/Application Support/GeminiCli/settings.json";
+  } else if (platform() === "win32") {
+    return "C:\\ProgramData\\gemini-cli\\settings.json";
   } else {
-    return '/etc/gemini-cli/settings.json';
+    return "/etc/gemini-cli/settings.json";
   }
 }
 
 export function getSystemDefaultsPath(): string {
-  if (process.env['GEMINI_CLI_SYSTEM_DEFAULTS_PATH']) {
-    return process.env['GEMINI_CLI_SYSTEM_DEFAULTS_PATH'];
+  if (process.env["GEMINI_CLI_SYSTEM_DEFAULTS_PATH"]) {
+    return process.env["GEMINI_CLI_SYSTEM_DEFAULTS_PATH"];
   }
-  return path.join(
-    path.dirname(getSystemSettingsPath()),
-    'system-defaults.json',
-  );
+  return path.join(path.dirname(getSystemSettingsPath()), "system-defaults.json");
 }
 
-export type { DnsResolutionOrder } from './settingsSchema.js';
+export type { DnsResolutionOrder } from "./settingsSchema.js";
 
 export enum SettingScope {
-  User = 'User',
-  Workspace = 'Workspace',
-  System = 'System',
-  SystemDefaults = 'SystemDefaults',
+  User = "User",
+  Workspace = "Workspace",
+  System = "System",
+  SystemDefaults = "SystemDefaults",
   // Note that this scope is not supported in the settings dialog at this time,
   // it is only supported for extensions.
-  Session = 'Session',
+  Session = "Session",
 }
 
 /**
@@ -197,9 +191,7 @@ const _loadableSettingScopes = [
  * A type guard function that checks if `scope` is a loadable settings scope,
  * and allows promotion to the `LoadableSettingsScope` type based on the result.
  */
-export function isLoadableSettingScope(
-  scope: SettingScope,
-): scope is LoadableSettingScope {
+export function isLoadableSettingScope(scope: SettingScope): scope is LoadableSettingScope {
   return _loadableSettingScopes.includes(scope);
 }
 
@@ -242,12 +234,8 @@ export interface SettingsFile {
   rawJson?: string;
 }
 
-function setNestedProperty(
-  obj: Record<string, unknown>,
-  path: string,
-  value: unknown,
-) {
-  const keys = path.split('.');
+function setNestedProperty(obj: Record<string, unknown>, path: string, value: unknown) {
+  const keys = path.split(".");
   const lastKey = keys.pop();
   if (!lastKey) return;
 
@@ -257,7 +245,7 @@ function setNestedProperty(
       current[key] = {};
     }
     const next = current[key];
-    if (typeof next === 'object' && next !== null) {
+    if (typeof next === "object" && next !== null) {
       current = next as Record<string, unknown>;
     } else {
       // This path is invalid, so we stop.
@@ -279,7 +267,7 @@ export function needsMigration(settings: Record<string, unknown>): boolean {
     // a V1 key that needs migration.
     if (
       KNOWN_V2_CONTAINERS.has(v1Key) &&
-      typeof settings[v1Key] === 'object' &&
+      typeof settings[v1Key] === "object" &&
       settings[v1Key] !== null
     ) {
       return false;
@@ -308,9 +296,9 @@ function migrateSettingsToV2(
   }
 
   // Preserve mcpServers at the top level
-  if (flatSettings['mcpServers']) {
-    v2Settings['mcpServers'] = flatSettings['mcpServers'];
-    flatKeys.delete('mcpServers');
+  if (flatSettings["mcpServers"]) {
+    v2Settings["mcpServers"] = flatSettings["mcpServers"];
+    flatKeys.delete("mcpServers");
   }
 
   // Carry over any unrecognized keys
@@ -319,10 +307,10 @@ function migrateSettingsToV2(
     const newValue = flatSettings[remainingKey];
 
     if (
-      typeof existingValue === 'object' &&
+      typeof existingValue === "object" &&
       existingValue !== null &&
       !Array.isArray(existingValue) &&
-      typeof newValue === 'object' &&
+      typeof newValue === "object" &&
       newValue !== null &&
       !Array.isArray(newValue)
     ) {
@@ -342,14 +330,11 @@ function migrateSettingsToV2(
   return v2Settings;
 }
 
-function getNestedProperty(
-  obj: Record<string, unknown>,
-  path: string,
-): unknown {
-  const keys = path.split('.');
+function getNestedProperty(obj: Record<string, unknown>, path: string): unknown {
+  const keys = path.split(".");
   let current: unknown = obj;
   for (const key of keys) {
-    if (typeof current !== 'object' || current === null || !(key in current)) {
+    if (typeof current !== "object" || current === null || !(key in current)) {
       return undefined;
     }
     current = (current as Record<string, unknown>)[key];
@@ -362,13 +347,9 @@ const REVERSE_MIGRATION_MAP: Record<string, string> = Object.fromEntries(
 );
 
 // Dynamically determine the top-level keys from the V2 settings structure.
-const KNOWN_V2_CONTAINERS = new Set(
-  Object.values(MIGRATION_MAP).map((path) => path.split('.')[0]),
-);
+const KNOWN_V2_CONTAINERS = new Set(Object.values(MIGRATION_MAP).map((path) => path.split(".")[0]));
 
-export function migrateSettingsToV1(
-  v2Settings: Record<string, unknown>,
-): Record<string, unknown> {
+export function migrateSettingsToV1(v2Settings: Record<string, unknown>): Record<string, unknown> {
   const v1Settings: Record<string, unknown> = {};
   const v2Keys = new Set(Object.keys(v2Settings));
 
@@ -376,14 +357,14 @@ export function migrateSettingsToV1(
     const value = getNestedProperty(v2Settings, newPath);
     if (value !== undefined) {
       v1Settings[oldKey] = value;
-      v2Keys.delete(newPath.split('.')[0]);
+      v2Keys.delete(newPath.split(".")[0]);
     }
   }
 
   // Preserve mcpServers at the top level
-  if (v2Settings['mcpServers']) {
-    v1Settings['mcpServers'] = v2Settings['mcpServers'];
-    v2Keys.delete('mcpServers');
+  if (v2Settings["mcpServers"]) {
+    v1Settings["mcpServers"] = v2Settings["mcpServers"];
+    v2Keys.delete("mcpServers");
   }
 
   // Carry over any unrecognized keys
@@ -396,7 +377,7 @@ export function migrateSettingsToV1(
     // Don't carry over empty objects that were just containers for migrated settings.
     if (
       KNOWN_V2_CONTAINERS.has(remainingKey) &&
-      typeof value === 'object' &&
+      typeof value === "object" &&
       value !== null &&
       !Array.isArray(value) &&
       Object.keys(value).length === 0
@@ -504,22 +485,22 @@ function findEnvFile(startDir: string): string | null {
   let currentDir = path.resolve(startDir);
   while (true) {
     // prefer gemini-specific .env under GEMINI_DIR
-    const geminiEnvPath = path.join(currentDir, GEMINI_DIR, '.env');
+    const geminiEnvPath = path.join(currentDir, GEMINI_DIR, ".env");
     if (fs.existsSync(geminiEnvPath)) {
       return geminiEnvPath;
     }
-    const envPath = path.join(currentDir, '.env');
+    const envPath = path.join(currentDir, ".env");
     if (fs.existsSync(envPath)) {
       return envPath;
     }
     const parentDir = path.dirname(currentDir);
     if (parentDir === currentDir || !parentDir) {
       // check .env under home as fallback, again preferring gemini-specific .env
-      const homeGeminiEnvPath = path.join(homedir(), GEMINI_DIR, '.env');
+      const homeGeminiEnvPath = path.join(homedir(), GEMINI_DIR, ".env");
       if (fs.existsSync(homeGeminiEnvPath)) {
         return homeGeminiEnvPath;
       }
-      const homeEnvPath = path.join(homedir(), '.env');
+      const homeEnvPath = path.join(homedir(), ".env");
       if (fs.existsSync(homeEnvPath)) {
         return homeEnvPath;
       }
@@ -538,16 +519,16 @@ export function setUpCloudShellEnvironment(envFilePath: string | null): void {
   if (envFilePath && fs.existsSync(envFilePath)) {
     const envFileContent = fs.readFileSync(envFilePath);
     const parsedEnv = dotenv.parse(envFileContent);
-    if (parsedEnv['GOOGLE_CLOUD_PROJECT']) {
+    if (parsedEnv["GOOGLE_CLOUD_PROJECT"]) {
       // .env file takes precedence in Cloud Shell
-      process.env['GOOGLE_CLOUD_PROJECT'] = parsedEnv['GOOGLE_CLOUD_PROJECT'];
+      process.env["GOOGLE_CLOUD_PROJECT"] = parsedEnv["GOOGLE_CLOUD_PROJECT"];
     } else {
       // If not in .env, set to default and override global
-      process.env['GOOGLE_CLOUD_PROJECT'] = 'cloudshell-gca';
+      process.env["GOOGLE_CLOUD_PROJECT"] = "cloudshell-gca";
     }
   } else {
     // If no .env file, set to default and override global
-    process.env['GOOGLE_CLOUD_PROJECT'] = 'cloudshell-gca';
+    process.env["GOOGLE_CLOUD_PROJECT"] = "cloudshell-gca";
   }
 }
 
@@ -559,7 +540,7 @@ export function loadEnvironment(settings: Settings): void {
   }
 
   // Cloud Shell environment variable handling
-  if (process.env['CLOUD_SHELL'] === 'true') {
+  if (process.env["CLOUD_SHELL"] === "true") {
     setUpCloudShellEnvironment(envFilePath);
   }
 
@@ -567,11 +548,10 @@ export function loadEnvironment(settings: Settings): void {
     // Manually parse and load environment variables to handle exclusions correctly.
     // This avoids modifying environment variables that were already set from the shell.
     try {
-      const envFileContent = fs.readFileSync(envFilePath, 'utf-8');
+      const envFileContent = fs.readFileSync(envFilePath, "utf-8");
       const parsedEnv = dotenv.parse(envFileContent);
 
-      const excludedVars =
-        settings?.advanced?.excludedEnvVars || DEFAULT_EXCLUDED_ENV_VARS;
+      const excludedVars = settings?.advanced?.excludedEnvVars || DEFAULT_EXCLUDED_ENV_VARS;
       const isProjectEnvFile = !envFilePath.includes(GEMINI_DIR);
 
       for (const key in parsedEnv) {
@@ -597,9 +577,7 @@ export function loadEnvironment(settings: Settings): void {
  * Loads settings from user and workspace directories.
  * Project settings override user settings.
  */
-export function loadSettings(
-  workspaceDir: string = process.cwd(),
-): LoadedSettings {
+export function loadSettings(workspaceDir: string = process.cwd()): LoadedSettings {
   let systemSettings: Settings = {};
   let systemDefaultSettings: Settings = {};
   let userSettings: Settings = {};
@@ -624,9 +602,7 @@ export function loadSettings(
   // We expect homedir to always exist and be resolvable.
   const realHomeDir = fs.realpathSync(resolvedHomeDir);
 
-  const workspaceSettingsPath = new Storage(
-    workspaceDir,
-  ).getWorkspaceSettingsPath();
+  const workspaceSettingsPath = new Storage(workspaceDir).getWorkspaceSettingsPath();
 
   const loadAndMigrate = (
     filePath: string,
@@ -634,16 +610,12 @@ export function loadSettings(
   ): { settings: Settings; rawJson?: string } => {
     try {
       if (fs.existsSync(filePath)) {
-        const content = fs.readFileSync(filePath, 'utf-8');
+        const content = fs.readFileSync(filePath, "utf-8");
         const rawSettings: unknown = JSON.parse(stripJsonComments(content));
 
-        if (
-          typeof rawSettings !== 'object' ||
-          rawSettings === null ||
-          Array.isArray(rawSettings)
-        ) {
+        if (typeof rawSettings !== "object" || rawSettings === null || Array.isArray(rawSettings)) {
           settingsErrors.push({
-            message: 'Settings file is not a valid JSON object.',
+            message: "Settings file is not a valid JSON object.",
             path: filePath,
           });
           return { settings: {} };
@@ -656,17 +628,9 @@ export function loadSettings(
             if (MIGRATE_V2_OVERWRITE) {
               try {
                 fs.renameSync(filePath, `${filePath}.orig`);
-                fs.writeFileSync(
-                  filePath,
-                  JSON.stringify(migratedSettings, null, 2),
-                  'utf-8',
-                );
+                fs.writeFileSync(filePath, JSON.stringify(migratedSettings, null, 2), "utf-8");
               } catch (e) {
-                coreEvents.emitFeedback(
-                  'error',
-                  'Failed to migrate settings file.',
-                  e,
-                );
+                coreEvents.emitFeedback("error", "Failed to migrate settings file.", e);
               }
             } else {
               migratedInMemoryScopes.add(scope);
@@ -678,10 +642,7 @@ export function loadSettings(
         // Validate settings structure with Zod after migration
         const validationResult = validateSettings(settingsObject);
         if (!validationResult.success && validationResult.error) {
-          const errorMessage = formatValidationError(
-            validationResult.error,
-            filePath,
-          );
+          const errorMessage = formatValidationError(validationResult.error, filePath);
           throw new FatalConfigError(errorMessage);
         }
 
@@ -701,10 +662,7 @@ export function loadSettings(
   };
 
   const systemResult = loadAndMigrate(systemSettingsPath, SettingScope.System);
-  const systemDefaultsResult = loadAndMigrate(
-    systemDefaultsPath,
-    SettingScope.SystemDefaults,
-  );
+  const systemDefaultsResult = loadAndMigrate(systemDefaultsPath, SettingScope.SystemDefaults);
   const userResult = loadAndMigrate(USER_SETTINGS_PATH, SettingScope.User);
 
   let workspaceResult: { settings: Settings; rawJson?: string } = {
@@ -712,16 +670,11 @@ export function loadSettings(
     rawJson: undefined,
   };
   if (realWorkspaceDir !== realHomeDir) {
-    workspaceResult = loadAndMigrate(
-      workspaceSettingsPath,
-      SettingScope.Workspace,
-    );
+    workspaceResult = loadAndMigrate(workspaceSettingsPath, SettingScope.Workspace);
   }
 
   const systemOriginalSettings = structuredClone(systemResult.settings);
-  const systemDefaultsOriginalSettings = structuredClone(
-    systemDefaultsResult.settings,
-  );
+  const systemDefaultsOriginalSettings = structuredClone(systemDefaultsResult.settings);
   const userOriginalSettings = structuredClone(userResult.settings);
   const workspaceOriginalSettings = structuredClone(workspaceResult.settings);
 
@@ -732,14 +685,14 @@ export function loadSettings(
   workspaceSettings = resolveEnvVarsInObject(workspaceResult.settings);
 
   // Support legacy theme names
-  if (userSettings.ui?.theme === 'VS') {
+  if (userSettings.ui?.theme === "VS") {
     userSettings.ui.theme = DefaultLight.name;
-  } else if (userSettings.ui?.theme === 'VS2015') {
+  } else if (userSettings.ui?.theme === "VS2015") {
     userSettings.ui.theme = DefaultDark.name;
   }
-  if (workspaceSettings.ui?.theme === 'VS') {
+  if (workspaceSettings.ui?.theme === "VS") {
     workspaceSettings.ui.theme = DefaultLight.name;
-  } else if (workspaceSettings.ui?.theme === 'VS2015') {
+  } else if (workspaceSettings.ui?.theme === "VS2015") {
     workspaceSettings.ui.theme = DefaultDark.name;
   }
 
@@ -750,8 +703,7 @@ export function loadSettings(
     systemSettings,
     userSettings,
   );
-  const isTrusted =
-    isWorkspaceTrusted(initialTrustCheckSettings as Settings).isTrusted ?? true;
+  const isTrusted = isWorkspaceTrusted(initialTrustCheckSettings as Settings).isTrusted ?? true;
 
   // Create a temporary merged settings object to pass to loadEnvironment.
   const tempMergedSettings = mergeSettings(
@@ -769,11 +721,9 @@ export function loadSettings(
   // Create LoadedSettings first
 
   if (settingsErrors.length > 0) {
-    const errorMessages = settingsErrors.map(
-      (error) => `Error in ${error.path}: ${error.message}`,
-    );
+    const errorMessages = settingsErrors.map((error) => `Error in ${error.path}: ${error.message}`);
     throw new FatalConfigError(
-      `${errorMessages.join('\n')}\nPlease fix the configuration file(s) and try again.`,
+      `${errorMessages.join("\n")}\nPlease fix the configuration file(s) and try again.`,
     );
   }
 
@@ -825,7 +775,7 @@ export function migrateDeprecatedSettings(
       const newExtensionsValue = { ...settings.extensions };
       newExtensionsValue.disabled = undefined;
 
-      loadedSettings.setValue(scope, 'extensions', newExtensionsValue);
+      loadedSettings.setValue(scope, "extensions", newExtensionsValue);
     }
   };
 
@@ -843,9 +793,7 @@ export function saveSettings(settingsFile: SettingsFile): void {
 
     let settingsToSave = settingsFile.originalSettings;
     if (!MIGRATE_V2_OVERWRITE) {
-      settingsToSave = migrateSettingsToV1(
-        settingsToSave as Record<string, unknown>,
-      ) as Settings;
+      settingsToSave = migrateSettingsToV1(settingsToSave as Record<string, unknown>) as Settings;
     }
 
     // Use the format-preserving update function
@@ -855,8 +803,8 @@ export function saveSettings(settingsFile: SettingsFile): void {
     );
   } catch (error) {
     coreEvents.emitFeedback(
-      'error',
-      'There was an error saving your latest settings changes.',
+      "error",
+      "There was an error saving your latest settings changes.",
       error,
     );
   }

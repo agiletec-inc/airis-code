@@ -4,19 +4,19 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { AuthType } from '../core/contentGenerator.js';
-import { defaultModalities } from '../core/modalityDefaults.js';
-import { tokenLimit } from '../core/tokenLimits.js';
-import { DEFAULT_OPENAI_BASE_URL } from '../core/openaiContentGenerator/constants.js';
+import { AuthType } from "../core/contentGenerator.js";
+import { defaultModalities } from "../core/modalityDefaults.js";
+import { DEFAULT_OPENAI_BASE_URL } from "../core/openaiContentGenerator/constants.js";
+import { tokenLimit } from "../core/tokenLimits.js";
+import { createDebugLogger } from "../utils/debugLogger.js";
 import {
+  type AvailableModel,
   type ModelConfig,
   type ModelProvidersConfig,
   type ResolvedModelConfig,
-  type AvailableModel,
-} from './types.js';
-import { createDebugLogger } from '../utils/debugLogger.js';
+} from "./types.js";
 
-const debugLogger = createDebugLogger('MODEL_REGISTRY');
+const debugLogger = createDebugLogger("MODEL_REGISTRY");
 
 /**
  * Validates if a string key is a valid AuthType enum value.
@@ -45,7 +45,7 @@ export class ModelRegistry {
       case AuthType.USE_OPENAI:
         return DEFAULT_OPENAI_BASE_URL;
       default:
-        return '';
+        return "";
     }
   }
 
@@ -59,7 +59,7 @@ export class ModelRegistry {
 
         if (!authType) {
           debugLogger.warn(
-            `Invalid authType key "${rawKey}" in modelProviders config. Expected one of: ${Object.values(AuthType).join(', ')}. Skipping.`,
+            `Invalid authType key "${rawKey}" in modelProviders config. Expected one of: ${Object.values(AuthType).join(", ")}. Skipping.`,
           );
           continue;
         }
@@ -73,10 +73,7 @@ export class ModelRegistry {
    * Register models for an authType.
    * If multiple models have the same id, the first one takes precedence.
    */
-  private registerAuthTypeModels(
-    authType: AuthType,
-    models: ModelConfig[],
-  ): void {
+  private registerAuthTypeModels(authType: AuthType, models: ModelConfig[]): void {
     const modelMap = new Map<string, ResolvedModelConfig>();
 
     for (const config of models) {
@@ -109,10 +106,8 @@ export class ModelRegistry {
       capabilities: model.capabilities,
       authType: model.authType,
       isVision: model.capabilities?.vision ?? false,
-      contextWindowSize:
-        model.generationConfig.contextWindowSize ?? tokenLimit(model.id),
-      modalities:
-        model.generationConfig.modalities ?? defaultModalities(model.id),
+      contextWindowSize: model.generationConfig.contextWindowSize ?? tokenLimit(model.id),
+      modalities: model.generationConfig.modalities ?? defaultModalities(model.id),
       baseUrl: model.baseUrl,
       envKey: model.envKey,
     }));
@@ -121,10 +116,7 @@ export class ModelRegistry {
   /**
    * Get model configuration by authType and modelId
    */
-  getModel(
-    authType: AuthType,
-    modelId: string,
-  ): ResolvedModelConfig | undefined {
+  getModel(authType: AuthType, modelId: string): ResolvedModelConfig | undefined {
     const models = this.modelsByAuthType.get(authType);
     return models?.get(modelId);
   }
@@ -141,9 +133,7 @@ export class ModelRegistry {
    * Get default model for an authType.
    * Returns the first configured model.
    */
-  getDefaultModelForAuthType(
-    authType: AuthType,
-  ): ResolvedModelConfig | undefined {
+  getDefaultModelForAuthType(authType: AuthType): ResolvedModelConfig | undefined {
     const models = this.modelsByAuthType.get(authType);
     if (!models || models.size === 0) return undefined;
     return Array.from(models.values())[0];
@@ -152,10 +142,7 @@ export class ModelRegistry {
   /**
    * Resolve model config by applying defaults
    */
-  private resolveModelConfig(
-    config: ModelConfig,
-    authType: AuthType,
-  ): ResolvedModelConfig {
+  private resolveModelConfig(config: ModelConfig, authType: AuthType): ResolvedModelConfig {
     this.validateModelConfig(config, authType);
 
     return {
@@ -173,9 +160,7 @@ export class ModelRegistry {
    */
   private validateModelConfig(config: ModelConfig, authType: AuthType): void {
     if (!config.id) {
-      throw new Error(
-        `Model config in authType '${authType}' missing required field: id`,
-      );
+      throw new Error(`Model config in authType '${authType}' missing required field: id`);
     }
   }
 
@@ -194,7 +179,7 @@ export class ModelRegistry {
 
         if (!authType) {
           debugLogger.warn(
-            `Invalid authType key "${rawKey}" in modelProviders config. Expected one of: ${Object.values(AuthType).join(', ')}. Skipping.`,
+            `Invalid authType key "${rawKey}" in modelProviders config. Expected one of: ${Object.values(AuthType).join(", ")}. Skipping.`,
           );
           continue;
         }

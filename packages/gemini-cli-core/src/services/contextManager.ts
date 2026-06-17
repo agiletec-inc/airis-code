@@ -4,20 +4,20 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+import type { Config } from "../config/config.js";
+import type { ExtensionLoader } from "../utils/extensionLoader.js";
 import {
-  loadGlobalMemory,
-  loadEnvironmentMemory,
-  loadJitSubdirectoryMemory,
   concatenateInstructions,
-} from '../utils/memoryDiscovery.js';
-import type { ExtensionLoader } from '../utils/extensionLoader.js';
-import type { Config } from '../config/config.js';
+  loadEnvironmentMemory,
+  loadGlobalMemory,
+  loadJitSubdirectoryMemory,
+} from "../utils/memoryDiscovery.js";
 
 export class ContextManager {
   private readonly loadedPaths: Set<string> = new Set();
   private readonly config: Config;
-  private globalMemory: string = '';
-  private environmentMemory: string = '';
+  private globalMemory: string = "";
+  private environmentMemory: string = "";
 
   constructor(config: Config) {
     this.config = config;
@@ -60,10 +60,7 @@ export class ContextManager {
    * Discovers and loads context for a specific accessed path (Tier 3 - JIT).
    * Traverses upwards from the accessed path to the project root.
    */
-  async discoverContext(
-    accessedPath: string,
-    trustedRoots: string[],
-  ): Promise<string> {
+  async discoverContext(accessedPath: string, trustedRoots: string[]): Promise<string> {
     const result = await loadJitSubdirectoryMemory(
       accessedPath,
       trustedRoots,
@@ -72,7 +69,7 @@ export class ContextManager {
     );
 
     if (result.files.length === 0) {
-      return '';
+      return "";
     }
 
     this.markAsLoaded(result.files.map((f) => f.path));
@@ -101,8 +98,8 @@ export class ContextManager {
    */
   reset(): void {
     this.loadedPaths.clear();
-    this.globalMemory = '';
-    this.environmentMemory = '';
+    this.globalMemory = "";
+    this.environmentMemory = "";
   }
 
   getLoadedPaths(): ReadonlySet<string> {

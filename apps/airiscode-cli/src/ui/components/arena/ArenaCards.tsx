@@ -4,12 +4,12 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import type React from 'react';
-import { Box, Text } from 'ink';
-import { theme } from '../../semantic-colors.js';
-import { formatDuration } from '../../utils/formatters.js';
-import { getArenaStatusLabel } from '../../utils/displayUtils.js';
-import type { ArenaAgentCardData } from '../../types.js';
+import { Box, Text } from "ink";
+import type React from "react";
+import { theme } from "../../semantic-colors.js";
+import type { ArenaAgentCardData } from "../../types.js";
+import { getArenaStatusLabel } from "../../utils/displayUtils.js";
+import { formatDuration } from "../../utils/formatters.js";
 
 // ─── Helpers ────────────────────────────────────────────────
 
@@ -20,10 +20,7 @@ interface ArenaAgentCardProps {
   width?: number;
 }
 
-export const ArenaAgentCard: React.FC<ArenaAgentCardProps> = ({
-  agent,
-  width,
-}) => {
+export const ArenaAgentCard: React.FC<ArenaAgentCardProps> = ({ agent, width }) => {
   const { icon, text, color } = getArenaStatusLabel(agent.status);
   const duration = formatDuration(agent.durationMs);
   const tokens = agent.totalTokens.toLocaleString();
@@ -52,11 +49,8 @@ export const ArenaAgentCard: React.FC<ArenaAgentCardProps> = ({
           Tool Calls: {agent.toolCalls}
           {agent.failedToolCalls > 0 && (
             <>
-              {' '}
-              (
-              <Text color={theme.status.success}>
-                ✓ {agent.successfulToolCalls}
-              </Text>
+              {" "}
+              (<Text color={theme.status.success}>✓ {agent.successfulToolCalls}</Text>
               <Text color={theme.text.secondary}> </Text>
               <Text color={theme.status.error}>✕ {agent.failedToolCalls}</Text>)
             </>
@@ -87,14 +81,10 @@ interface ArenaSessionCardProps {
 /**
  * Pad or truncate a string to a fixed visual width.
  */
-function pad(
-  str: string,
-  len: number,
-  align: 'left' | 'right' = 'left',
-): string {
+function pad(str: string, len: number, align: "left" | "right" = "left"): string {
   if (str.length >= len) return str.slice(0, len);
-  const padding = ' '.repeat(len - str.length);
-  return align === 'right' ? padding + str : str + padding;
+  const padding = " ".repeat(len - str.length);
+  return align === "right" ? padding + str : str + padding;
 }
 
 /**
@@ -102,7 +92,7 @@ function pad(
  */
 function truncate(str: string, maxLen: number): string {
   if (str.length <= maxLen) return str;
-  return str.slice(0, maxLen - 1) + '…';
+  return str.slice(0, maxLen - 1) + "…";
 }
 
 /**
@@ -114,14 +104,14 @@ function getDiffStats(diff: string | undefined): {
   additions: number;
   deletions: number;
 } {
-  if (!diff) return { text: '', additions: 0, deletions: 0 };
-  const lines = diff.split('\n');
+  if (!diff) return { text: "", additions: 0, deletions: 0 };
+  const lines = diff.split("\n");
   let additions = 0;
   let deletions = 0;
   for (const line of lines) {
-    if (line.startsWith('+') && !line.startsWith('+++')) {
+    if (line.startsWith("+") && !line.startsWith("+++")) {
       additions++;
-    } else if (line.startsWith('-') && !line.startsWith('---')) {
+    } else if (line.startsWith("-") && !line.startsWith("---")) {
       deletions++;
     }
   }
@@ -138,8 +128,7 @@ export const ArenaSessionCard: React.FC<ArenaSessionCardProps> = ({
 }) => {
   // Truncate task for display
   const maxTaskLen = 60;
-  const displayTask =
-    task.length > maxTaskLen ? task.slice(0, maxTaskLen - 1) + '…' : task;
+  const displayTask = task.length > maxTaskLen ? task.slice(0, maxTaskLen - 1) + "…" : task;
 
   // Column widths for the agent table (unified with Arena Results)
   const colStatus = 14;
@@ -148,13 +137,13 @@ export const ArenaSessionCard: React.FC<ArenaSessionCardProps> = ({
   const colChanges = 10;
 
   const titleLabel =
-    sessionStatus === 'idle'
-      ? 'Agents Status · Idle'
-      : sessionStatus === 'completed'
-        ? 'Arena Complete'
-        : sessionStatus === 'cancelled'
-          ? 'Arena Cancelled'
-          : 'Arena Failed';
+    sessionStatus === "idle"
+      ? "Agents Status · Idle"
+      : sessionStatus === "completed"
+        ? "Arena Complete"
+        : sessionStatus === "cancelled"
+          ? "Arena Cancelled"
+          : "Arena Failed";
 
   return (
     <Box
@@ -215,9 +204,7 @@ export const ArenaSessionCard: React.FC<ArenaSessionCardProps> = ({
 
       {/* Table separator */}
       <Box>
-        <Text color={theme.border.default}>
-          {'─'.repeat((width ?? 60) - 8)}
-        </Text>
+        <Text color={theme.border.default}>{"─".repeat((width ?? 60) - 8)}</Text>
       </Box>
 
       {/* Agent rows */}
@@ -227,33 +214,25 @@ export const ArenaSessionCard: React.FC<ArenaSessionCardProps> = ({
         return (
           <Box key={agent.label}>
             <Box flexGrow={1}>
-              <Text color={theme.text.primary}>
-                {truncate(agent.label, MAX_MODEL_NAME_LENGTH)}
-              </Text>
+              <Text color={theme.text.primary}>{truncate(agent.label, MAX_MODEL_NAME_LENGTH)}</Text>
             </Box>
             <Box width={colStatus} justifyContent="flex-end">
               <Text color={color}>{statusText}</Text>
             </Box>
             <Box width={colTime} justifyContent="flex-end">
               <Text color={theme.text.primary}>
-                {pad(formatDuration(agent.durationMs), colTime - 1, 'right')}
+                {pad(formatDuration(agent.durationMs), colTime - 1, "right")}
               </Text>
             </Box>
             <Box width={colTokens} justifyContent="flex-end">
               <Text color={theme.text.primary}>
-                {pad(
-                  agent.totalTokens.toLocaleString(),
-                  colTokens - 1,
-                  'right',
-                )}
+                {pad(agent.totalTokens.toLocaleString(), colTokens - 1, "right")}
               </Text>
             </Box>
             <Box width={colChanges} justifyContent="flex-end">
               {diffStats.additions > 0 || diffStats.deletions > 0 ? (
                 <Text>
-                  <Text color={theme.status.success}>
-                    +{diffStats.additions}
-                  </Text>
+                  <Text color={theme.status.success}>+{diffStats.additions}</Text>
                   <Text color={theme.text.secondary}>/</Text>
                   <Text color={theme.status.error}>-{diffStats.deletions}</Text>
                 </Text>
@@ -268,20 +247,18 @@ export const ArenaSessionCard: React.FC<ArenaSessionCardProps> = ({
       <Box height={1} />
 
       {/* Hint */}
-      {sessionStatus === 'idle' && (
+      {sessionStatus === "idle" && (
         <Box flexDirection="column">
           <Text color={theme.text.secondary}>
-            Switch to an agent tab to continue, or{' '}
-            <Text color={theme.text.accent}>/arena select</Text> to pick a
-            winner.
+            Switch to an agent tab to continue, or{" "}
+            <Text color={theme.text.accent}>/arena select</Text> to pick a winner.
           </Text>
         </Box>
       )}
-      {sessionStatus === 'completed' && (
+      {sessionStatus === "completed" && (
         <Box>
           <Text color={theme.text.secondary}>
-            Run <Text color={theme.text.accent}>/arena select</Text> to pick a
-            winner.
+            Run <Text color={theme.text.accent}>/arena select</Text> to pick a winner.
           </Text>
         </Box>
       )}

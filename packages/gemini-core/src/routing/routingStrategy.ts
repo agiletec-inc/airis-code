@@ -4,9 +4,9 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import type { Content, PartListUnion } from '@google/genai';
-import type { BaseLlmClient } from '../core/baseLlmClient.js';
-import type { Config } from '../config/config.js';
+import type { Content, PartListUnion } from "@google/genai";
+import type { Config } from "../config/config.js";
+import type { BaseLlmClient } from "../core/baseLlmClient.js";
 
 /**
  * The output of a routing decision. It specifies which model to use and why.

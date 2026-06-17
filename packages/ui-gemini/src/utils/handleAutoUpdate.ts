@@ -4,14 +4,14 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import type { UpdateObject } from '../ui/utils/updateCheck.js';
-import type { LoadedSettings } from '../config/settings.js';
-import { getInstallationInfo, PackageManager } from './installationInfo.js';
-import { updateEventEmitter } from './updateEventEmitter.js';
-import type { HistoryItem } from '../ui/types.js';
-import { MessageType } from '../ui/types.js';
-import { spawnWrapper } from './spawnWrapper.js';
-import type { spawn } from 'node:child_process';
+import type { spawn } from "node:child_process";
+import type { LoadedSettings } from "../config/settings.js";
+import type { HistoryItem } from "../ui/types.js";
+import { MessageType } from "../ui/types.js";
+import type { UpdateObject } from "../ui/utils/updateCheck.js";
+import { getInstallationInfo, PackageManager } from "./installationInfo.js";
+import { spawnWrapper } from "./spawnWrapper.js";
+import { updateEventEmitter } from "./updateEventEmitter.js";
 
 export function handleAutoUpdate(
   info: UpdateObject | null,
@@ -23,8 +23,8 @@ export function handleAutoUpdate(
     return;
   }
 
-  if (settings.merged.tools?.sandbox || process.env['GEMINI_SANDBOX']) {
-    updateEventEmitter.emit('update-info', {
+  if (settings.merged.tools?.sandbox || process.env["GEMINI_SANDBOX"]) {
+    updateEventEmitter.emit("update-info", {
       message: `${info.message}\nAutomatic update is not available in sandbox mode.`,
     });
     return;
@@ -52,45 +52,41 @@ export function handleAutoUpdate(
     combinedMessage += `\n${installationInfo.updateMessage}`;
   }
 
-  updateEventEmitter.emit('update-received', {
+  updateEventEmitter.emit("update-received", {
     message: combinedMessage,
   });
 
-  if (
-    !installationInfo.updateCommand ||
-    settings.merged.general?.disableAutoUpdate
-  ) {
+  if (!installationInfo.updateCommand || settings.merged.general?.disableAutoUpdate) {
     return;
   }
-  const isNightly = info.update.latest.includes('nightly');
+  const isNightly = info.update.latest.includes("nightly");
 
   const updateCommand = installationInfo.updateCommand.replace(
-    '@latest',
-    isNightly ? '@nightly' : `@${info.update.latest}`,
+    "@latest",
+    isNightly ? "@nightly" : `@${info.update.latest}`,
   );
   const updateProcess = spawnFn(updateCommand, {
-    stdio: 'ignore',
+    stdio: "ignore",
     shell: true,
     detached: true,
   });
   // Un-reference the child process to allow the parent to exit independently.
   updateProcess.unref();
 
-  updateProcess.on('close', (code) => {
+  updateProcess.on("close", (code) => {
     if (code === 0) {
-      updateEventEmitter.emit('update-success', {
-        message:
-          'Update successful! The new version will be used on your next run.',
+      updateEventEmitter.emit("update-success", {
+        message: "Update successful! The new version will be used on your next run.",
       });
     } else {
-      updateEventEmitter.emit('update-failed', {
+      updateEventEmitter.emit("update-failed", {
         message: `Automatic update failed. Please try updating manually. (command: ${updateCommand})`,
       });
     }
   });
 
-  updateProcess.on('error', (err) => {
-    updateEventEmitter.emit('update-failed', {
+  updateProcess.on("error", (err) => {
+    updateEventEmitter.emit("update-failed", {
       message: `Automatic update failed. Please try updating manually. (error: ${err.message})`,
     });
   });
@@ -98,7 +94,7 @@ export function handleAutoUpdate(
 }
 
 export function setUpdateHandler(
-  addItem: (item: Omit<HistoryItem, 'id'>, timestamp: number) => void,
+  addItem: (item: Omit<HistoryItem, "id">, timestamp: number) => void,
   setUpdateInfo: (info: UpdateObject | null) => void,
 ) {
   let successfullyInstalled = false;
@@ -152,15 +148,15 @@ export function setUpdateHandler(
     );
   };
 
-  updateEventEmitter.on('update-received', handleUpdateReceived);
-  updateEventEmitter.on('update-failed', handleUpdateFailed);
-  updateEventEmitter.on('update-success', handleUpdateSuccess);
-  updateEventEmitter.on('update-info', handleUpdateInfo);
+  updateEventEmitter.on("update-received", handleUpdateReceived);
+  updateEventEmitter.on("update-failed", handleUpdateFailed);
+  updateEventEmitter.on("update-success", handleUpdateSuccess);
+  updateEventEmitter.on("update-info", handleUpdateInfo);
 
   return () => {
-    updateEventEmitter.off('update-received', handleUpdateReceived);
-    updateEventEmitter.off('update-failed', handleUpdateFailed);
-    updateEventEmitter.off('update-success', handleUpdateSuccess);
-    updateEventEmitter.off('update-info', handleUpdateInfo);
+    updateEventEmitter.off("update-received", handleUpdateReceived);
+    updateEventEmitter.off("update-failed", handleUpdateFailed);
+    updateEventEmitter.off("update-success", handleUpdateSuccess);
+    updateEventEmitter.off("update-info", handleUpdateInfo);
   };
 }

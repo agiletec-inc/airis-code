@@ -4,43 +4,43 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { GoogleAuth } from 'google-auth-library';
-import { GoogleCredentialProvider } from './google-auth-provider.js';
-import type { Mock } from 'vitest';
-import { vi, describe, beforeEach, it, expect } from 'vitest';
-import type { MCPServerConfig } from '../config/config.js';
+import { GoogleAuth } from "google-auth-library";
+import type { Mock } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
+import type { MCPServerConfig } from "../config/config.js";
+import { GoogleCredentialProvider } from "./google-auth-provider.js";
 
-vi.mock('google-auth-library');
+vi.mock("google-auth-library");
 
-describe('GoogleCredentialProvider', () => {
+describe("GoogleCredentialProvider", () => {
   const validConfig = {
-    url: 'https://test.googleapis.com',
+    url: "https://test.googleapis.com",
     oauth: {
-      scopes: ['scope1', 'scope2'],
+      scopes: ["scope1", "scope2"],
     },
   } as MCPServerConfig;
 
-  it('should throw an error if no scopes are provided', () => {
+  it("should throw an error if no scopes are provided", () => {
     const config = {
-      url: 'https://test.googleapis.com',
+      url: "https://test.googleapis.com",
     } as MCPServerConfig;
     expect(() => new GoogleCredentialProvider(config)).toThrow(
-      'Scopes must be provided in the oauth config for Google Credentials provider',
+      "Scopes must be provided in the oauth config for Google Credentials provider",
     );
   });
 
-  it('should use scopes from the config if provided', () => {
+  it("should use scopes from the config if provided", () => {
     new GoogleCredentialProvider(validConfig);
     expect(GoogleAuth).toHaveBeenCalledWith({
-      scopes: ['scope1', 'scope2'],
+      scopes: ["scope1", "scope2"],
     });
   });
 
-  it('should throw an error for a non-allowlisted host', () => {
+  it("should throw an error for a non-allowlisted host", () => {
     const config = {
-      url: 'https://example.com',
+      url: "https://example.com",
       oauth: {
-        scopes: ['scope1', 'scope2'],
+        scopes: ["scope1", "scope2"],
       },
     } as MCPServerConfig;
     expect(() => new GoogleCredentialProvider(config)).toThrow(
@@ -48,31 +48,31 @@ describe('GoogleCredentialProvider', () => {
     );
   });
 
-  it('should allow luci.app', () => {
+  it("should allow luci.app", () => {
     const config = {
-      url: 'https://luci.app',
+      url: "https://luci.app",
       oauth: {
-        scopes: ['scope1', 'scope2'],
+        scopes: ["scope1", "scope2"],
       },
     } as MCPServerConfig;
     new GoogleCredentialProvider(config);
   });
 
-  it('should allow sub.luci.app', () => {
+  it("should allow sub.luci.app", () => {
     const config = {
-      url: 'https://sub.luci.app',
+      url: "https://sub.luci.app",
       oauth: {
-        scopes: ['scope1', 'scope2'],
+        scopes: ["scope1", "scope2"],
       },
     } as MCPServerConfig;
     new GoogleCredentialProvider(config);
   });
 
-  it('should not allow googleapis.com without a subdomain', () => {
+  it("should not allow googleapis.com without a subdomain", () => {
     const config = {
-      url: 'https://googleapis.com',
+      url: "https://googleapis.com",
       oauth: {
-        scopes: ['scope1', 'scope2'],
+        scopes: ["scope1", "scope2"],
       },
     } as MCPServerConfig;
     expect(() => new GoogleCredentialProvider(config)).toThrow(
@@ -80,7 +80,7 @@ describe('GoogleCredentialProvider', () => {
     );
   });
 
-  describe('with provider instance', () => {
+  describe("with provider instance", () => {
     let provider: GoogleCredentialProvider;
     let mockGetAccessToken: Mock;
     let mockClient: {
@@ -99,28 +99,28 @@ describe('GoogleCredentialProvider', () => {
       provider = new GoogleCredentialProvider(validConfig);
     });
 
-    it('should return credentials', async () => {
-      mockGetAccessToken.mockResolvedValue({ token: 'test-token' });
+    it("should return credentials", async () => {
+      mockGetAccessToken.mockResolvedValue({ token: "test-token" });
 
       const credentials = await provider.tokens();
-      expect(credentials?.access_token).toBe('test-token');
+      expect(credentials?.access_token).toBe("test-token");
     });
 
-    it('should return undefined if access token is not available', async () => {
+    it("should return undefined if access token is not available", async () => {
       mockGetAccessToken.mockResolvedValue({ token: null });
 
       const credentials = await provider.tokens();
       expect(credentials).toBeUndefined();
     });
 
-    it('should return a cached token if it is not expired', async () => {
+    it("should return a cached token if it is not expired", async () => {
       vi.useFakeTimers();
       mockClient.credentials = { expiry_date: Date.now() + 3600 * 1000 }; // 1 hour
-      mockGetAccessToken.mockResolvedValue({ token: 'test-token' });
+      mockGetAccessToken.mockResolvedValue({ token: "test-token" });
 
       // first call
       const firstTokens = await provider.tokens();
-      expect(firstTokens?.access_token).toBe('test-token');
+      expect(firstTokens?.access_token).toBe("test-token");
       expect(mockGetAccessToken).toHaveBeenCalledTimes(1);
 
       // second call
@@ -132,79 +132,75 @@ describe('GoogleCredentialProvider', () => {
       vi.useRealTimers();
     });
 
-    it('should fetch a new token if the cached token is expired', async () => {
+    it("should fetch a new token if the cached token is expired", async () => {
       vi.useFakeTimers();
 
       // first call
       mockClient.credentials = { expiry_date: Date.now() + 1000 }; // Expires in 1 second
-      mockGetAccessToken.mockResolvedValue({ token: 'expired-token' });
+      mockGetAccessToken.mockResolvedValue({ token: "expired-token" });
 
       const firstTokens = await provider.tokens();
-      expect(firstTokens?.access_token).toBe('expired-token');
+      expect(firstTokens?.access_token).toBe("expired-token");
       expect(mockGetAccessToken).toHaveBeenCalledTimes(1);
 
       // second call
       vi.advanceTimersByTime(1001); // Advance time past expiry
       mockClient.credentials = { expiry_date: Date.now() + 3600 * 1000 }; // New expiry
-      mockGetAccessToken.mockResolvedValue({ token: 'new-token' });
+      mockGetAccessToken.mockResolvedValue({ token: "new-token" });
 
       const newTokens = await provider.tokens();
-      expect(newTokens?.access_token).toBe('new-token');
+      expect(newTokens?.access_token).toBe("new-token");
       expect(mockGetAccessToken).toHaveBeenCalledTimes(2); // new fetch
 
       vi.useRealTimers();
     });
 
-    it('should return quota project ID', async () => {
-      mockClient['quotaProjectId'] = 'test-project-id';
+    it("should return quota project ID", async () => {
+      mockClient["quotaProjectId"] = "test-project-id";
       const quotaProjectId = await provider.getQuotaProjectId();
-      expect(quotaProjectId).toBe('test-project-id');
+      expect(quotaProjectId).toBe("test-project-id");
     });
 
-    it('should return request headers with quota project ID', async () => {
-      mockClient['quotaProjectId'] = 'test-project-id';
+    it("should return request headers with quota project ID", async () => {
+      mockClient["quotaProjectId"] = "test-project-id";
       const headers = await provider.getRequestHeaders();
       expect(headers).toEqual({
-        'X-Goog-User-Project': 'test-project-id',
+        "X-Goog-User-Project": "test-project-id",
       });
     });
 
-    it('should return empty request headers if quota project ID is missing', async () => {
-      mockClient['quotaProjectId'] = undefined;
+    it("should return empty request headers if quota project ID is missing", async () => {
+      mockClient["quotaProjectId"] = undefined;
       const headers = await provider.getRequestHeaders();
       expect(headers).toEqual({});
     });
 
-    it('should prioritize config headers over quota project ID', async () => {
-      mockClient['quotaProjectId'] = 'quota-project-id';
+    it("should prioritize config headers over quota project ID", async () => {
+      mockClient["quotaProjectId"] = "quota-project-id";
       const configWithHeaders = {
         ...validConfig,
         headers: {
-          'X-Goog-User-Project': 'config-project-id',
+          "X-Goog-User-Project": "config-project-id",
         },
       };
-      const providerWithHeaders = new GoogleCredentialProvider(
-        configWithHeaders,
-      );
+      const providerWithHeaders = new GoogleCredentialProvider(configWithHeaders);
       const headers = await providerWithHeaders.getRequestHeaders();
       expect(headers).toEqual({
-        'X-Goog-User-Project': 'config-project-id',
+        "X-Goog-User-Project": "config-project-id",
       });
     });
-    it('should prioritize config headers over quota project ID (case-insensitive)', async () => {
-      mockClient['quotaProjectId'] = 'quota-project-id';
+    it("should prioritize config headers over quota project ID (case-insensitive)", async () => {
+      mockClient["quotaProjectId"] = "quota-project-id";
       const configWithHeaders = {
         ...validConfig,
         headers: {
-          'x-goog-user-project': 'config-project-id',
+          "x-goog-user-project": "config-project-id",
         },
       };
-      const providerWithHeaders = new GoogleCredentialProvider(
-        configWithHeaders,
-      );
+      const providerWithHeaders = new GoogleCredentialProvider(configWithHeaders);
       const headers = await providerWithHeaders.getRequestHeaders();
       expect(headers).toEqual({
-        'x-goog-user-project': 'config-project-id',
+        "x-goog-user-project": "config-project-id",
       });
     });
   });

@@ -4,13 +4,13 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { HookSystem } from './hookSystem.js';
-import { Config } from '../config/config.js';
-import { HookType } from './types.js';
-import { spawn } from 'node:child_process';
-import type { ChildProcessWithoutNullStreams } from 'node:child_process';
-import type { Readable, Writable } from 'node:stream';
+import type { ChildProcessWithoutNullStreams } from "node:child_process";
+import { spawn } from "node:child_process";
+import type { Readable, Writable } from "node:stream";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { Config } from "../config/config.js";
+import { HookSystem } from "./hookSystem.js";
+import { HookType } from "./types.js";
 
 // Mock type for the child_process spawn
 type MockChildProcessWithoutNullStreams = ChildProcessWithoutNullStreams & {
@@ -20,7 +20,7 @@ type MockChildProcessWithoutNullStreams = ChildProcessWithoutNullStreams & {
 };
 
 // Mock child_process with importOriginal for partial mocking
-vi.mock('node:child_process', async (importOriginal) => {
+vi.mock("node:child_process", async (importOriginal) => {
   const actual = (await importOriginal()) as object;
   return {
     ...actual,
@@ -36,7 +36,7 @@ const mockDebugLogger = vi.hoisted(() => ({
   error: vi.fn(),
 }));
 
-vi.mock('../utils/debugLogger.js', () => ({
+vi.mock("../utils/debugLogger.js", () => ({
   debugLogger: mockDebugLogger,
 }));
 
@@ -48,9 +48,9 @@ const mockConsole = {
   debug: vi.fn(),
 };
 
-vi.stubGlobal('console', mockConsole);
+vi.stubGlobal("console", mockConsole);
 
-describe('HookSystem Integration', () => {
+describe("HookSystem Integration", () => {
   let hookSystem: HookSystem;
   let config: Config;
   let mockSpawn: MockChildProcessWithoutNullStreams;
@@ -60,19 +60,19 @@ describe('HookSystem Integration', () => {
 
     // Create a real config with simple command hook configurations for testing
     config = new Config({
-      model: 'gemini-1.5-flash',
-      targetDir: '/tmp/test-hooks',
-      sessionId: 'test-session',
+      model: "gemini-1.5-flash",
+      targetDir: "/tmp/test-hooks",
+      sessionId: "test-session",
       debugMode: false,
-      cwd: '/tmp/test-hooks',
+      cwd: "/tmp/test-hooks",
       hooks: {
         BeforeTool: [
           {
-            matcher: 'TestTool',
+            matcher: "TestTool",
             hooks: [
               {
                 type: HookType.Command,
-                command: 'echo',
+                command: "echo",
                 timeout: 5000,
               },
             ],
@@ -82,8 +82,7 @@ describe('HookSystem Integration', () => {
     });
 
     // Provide getMessageBus mock for MessageBus integration tests
-    (config as unknown as { getMessageBus: () => unknown }).getMessageBus =
-      () => undefined;
+    (config as unknown as { getMessageBus: () => unknown }).getMessageBus = () => undefined;
 
     hookSystem = new HookSystem(config);
 
@@ -119,13 +118,11 @@ describe('HookSystem Integration', () => {
     // No cleanup needed
   });
 
-  describe('initialize', () => {
-    it('should initialize successfully', async () => {
+  describe("initialize", () => {
+    it("should initialize successfully", async () => {
       await hookSystem.initialize();
 
-      expect(mockDebugLogger.debug).toHaveBeenCalledWith(
-        'Hook system initialized successfully',
-      );
+      expect(mockDebugLogger.debug).toHaveBeenCalledWith("Hook system initialized successfully");
 
       // Verify system is initialized
       const status = hookSystem.getStatus();
@@ -133,31 +130,29 @@ describe('HookSystem Integration', () => {
       // Note: totalHooks might be 0 if hook validation rejects the test hooks
     });
 
-    it('should not initialize twice', async () => {
+    it("should not initialize twice", async () => {
       await hookSystem.initialize();
       await hookSystem.initialize(); // Second call should be no-op
 
       // The system logs both registry initialization and system initialization
-      expect(mockDebugLogger.debug).toHaveBeenCalledWith(
-        'Hook system initialized successfully',
-      );
+      expect(mockDebugLogger.debug).toHaveBeenCalledWith("Hook system initialized successfully");
     });
 
-    it('should handle initialization errors gracefully', async () => {
+    it("should handle initialization errors gracefully", async () => {
       // Create a config with invalid hooks to trigger initialization errors
       const invalidConfig = new Config({
-        model: 'gemini-1.5-flash',
-        targetDir: '/tmp/test-hooks-invalid',
-        sessionId: 'test-session-invalid',
+        model: "gemini-1.5-flash",
+        targetDir: "/tmp/test-hooks-invalid",
+        sessionId: "test-session-invalid",
         debugMode: false,
-        cwd: '/tmp/test-hooks-invalid',
+        cwd: "/tmp/test-hooks-invalid",
         hooks: {
           BeforeTool: [
             {
               hooks: [
                 {
-                  type: 'invalid-type' as HookType, // Invalid hook type for testing
-                  command: './test.sh',
+                  type: "invalid-type" as HookType, // Invalid hook type for testing
+                  command: "./test.sh",
                 },
               ],
             },
@@ -174,22 +169,22 @@ describe('HookSystem Integration', () => {
     });
   });
 
-  describe('getEventHandler', () => {
-    it('should return event bus when initialized', async () => {
+  describe("getEventHandler", () => {
+    it("should return event bus when initialized", async () => {
       await hookSystem.initialize();
 
       // Set up spawn mock behavior for successful execution
       mockSpawn.mockStdoutOn.mockImplementation(
         (event: string, callback: (data: Buffer) => void) => {
-          if (event === 'data') {
-            setTimeout(() => callback(Buffer.from('')), 5); // echo outputs empty
+          if (event === "data") {
+            setTimeout(() => callback(Buffer.from("")), 5); // echo outputs empty
           }
         },
       );
 
       mockSpawn.mockProcessOn.mockImplementation(
         (event: string, callback: (code: number) => void) => {
-          if (event === 'close') {
+          if (event === "close") {
             setTimeout(() => callback(0), 10);
           }
         },
@@ -199,35 +194,33 @@ describe('HookSystem Integration', () => {
       expect(eventBus).toBeDefined();
 
       // Test that the event bus can actually fire events
-      const result = await eventBus.fireBeforeToolEvent('TestTool', {
-        test: 'data',
+      const result = await eventBus.fireBeforeToolEvent("TestTool", {
+        test: "data",
       });
       expect(result.success).toBe(true);
     });
 
-    it('should throw error when not initialized', () => {
-      expect(() => hookSystem.getEventHandler()).toThrow(
-        'Hook system not initialized',
-      );
+    it("should throw error when not initialized", () => {
+      expect(() => hookSystem.getEventHandler()).toThrow("Hook system not initialized");
     });
   });
 
-  describe('hook execution', () => {
-    it('should execute hooks and return results', async () => {
+  describe("hook execution", () => {
+    it("should execute hooks and return results", async () => {
       await hookSystem.initialize();
 
       // Set up spawn mock behavior for successful execution
       mockSpawn.mockStdoutOn.mockImplementation(
         (event: string, callback: (data: Buffer) => void) => {
-          if (event === 'data') {
-            setTimeout(() => callback(Buffer.from('')), 5); // echo outputs empty
+          if (event === "data") {
+            setTimeout(() => callback(Buffer.from("")), 5); // echo outputs empty
           }
         },
       );
 
       mockSpawn.mockProcessOn.mockImplementation(
         (event: string, callback: (code: number) => void) => {
-          if (event === 'close') {
+          if (event === "close") {
             setTimeout(() => callback(0), 10);
           }
         },
@@ -236,8 +229,8 @@ describe('HookSystem Integration', () => {
       const eventBus = hookSystem.getEventHandler();
 
       // Test BeforeTool event with command hook
-      const result = await eventBus.fireBeforeToolEvent('TestTool', {
-        test: 'data',
+      const result = await eventBus.fireBeforeToolEvent("TestTool", {
+        test: "data",
       });
 
       expect(result.success).toBe(true);
@@ -245,14 +238,14 @@ describe('HookSystem Integration', () => {
       expect(result.errors).toHaveLength(0);
     });
 
-    it('should handle no matching hooks', async () => {
+    it("should handle no matching hooks", async () => {
       await hookSystem.initialize();
 
       const eventBus = hookSystem.getEventHandler();
 
       // Test with a tool that doesn't match any hooks
-      const result = await eventBus.fireBeforeToolEvent('UnmatchedTool', {
-        test: 'data',
+      const result = await eventBus.fireBeforeToolEvent("UnmatchedTool", {
+        test: "data",
       });
 
       expect(result.success).toBe(true);
@@ -261,37 +254,37 @@ describe('HookSystem Integration', () => {
     });
   });
 
-  describe('system management', () => {
-    it('should return correct status when initialized', async () => {
+  describe("system management", () => {
+    it("should return correct status when initialized", async () => {
       await hookSystem.initialize();
 
       const status = hookSystem.getStatus();
 
       expect(status.initialized).toBe(true);
       // Note: totalHooks might be 0 if hook validation rejects the test hooks
-      expect(typeof status.totalHooks).toBe('number');
+      expect(typeof status.totalHooks).toBe("number");
     });
 
-    it('should return uninitialized status', () => {
+    it("should return uninitialized status", () => {
       const status = hookSystem.getStatus();
 
       expect(status.initialized).toBe(false);
     });
   });
 
-  describe('hook disabling via settings', () => {
-    it('should not execute disabled hooks from settings', async () => {
+  describe("hook disabling via settings", () => {
+    it("should not execute disabled hooks from settings", async () => {
       // Create config with two hooks, one enabled and one disabled via settings
       const configWithDisabled = new Config({
-        model: 'gemini-1.5-flash',
-        targetDir: '/tmp/test-hooks-disabled',
-        sessionId: 'test-session-disabled',
+        model: "gemini-1.5-flash",
+        targetDir: "/tmp/test-hooks-disabled",
+        sessionId: "test-session-disabled",
         debugMode: false,
-        cwd: '/tmp/test-hooks-disabled',
+        cwd: "/tmp/test-hooks-disabled",
         hooks: {
           BeforeTool: [
             {
-              matcher: 'TestTool',
+              matcher: "TestTool",
               hooks: [
                 {
                   type: HookType.Command,
@@ -310,9 +303,8 @@ describe('HookSystem Integration', () => {
         },
       });
 
-      (
-        configWithDisabled as unknown as { getMessageBus: () => unknown }
-      ).getMessageBus = () => undefined;
+      (configWithDisabled as unknown as { getMessageBus: () => unknown }).getMessageBus = () =>
+        undefined;
 
       const systemWithDisabled = new HookSystem(configWithDisabled);
       await systemWithDisabled.initialize();
@@ -321,24 +313,24 @@ describe('HookSystem Integration', () => {
       let executionCount = 0;
       mockSpawn.mockStdoutOn.mockImplementation(
         (event: string, callback: (data: Buffer) => void) => {
-          if (event === 'data') {
+          if (event === "data") {
             executionCount++;
-            setTimeout(() => callback(Buffer.from('output')), 5);
+            setTimeout(() => callback(Buffer.from("output")), 5);
           }
         },
       );
 
       mockSpawn.mockProcessOn.mockImplementation(
         (event: string, callback: (code: number) => void) => {
-          if (event === 'close') {
+          if (event === "close") {
             setTimeout(() => callback(0), 10);
           }
         },
       );
 
       const eventBus = systemWithDisabled.getEventHandler();
-      const result = await eventBus.fireBeforeToolEvent('TestTool', {
-        test: 'data',
+      const result = await eventBus.fireBeforeToolEvent("TestTool", {
+        test: "data",
       });
 
       expect(result.success).toBe(true);
@@ -347,19 +339,19 @@ describe('HookSystem Integration', () => {
     });
   });
 
-  describe('hook disabling via command', () => {
-    it('should disable hook when setHookEnabled is called', async () => {
+  describe("hook disabling via command", () => {
+    it("should disable hook when setHookEnabled is called", async () => {
       // Create config with a hook
       const configForDisabling = new Config({
-        model: 'gemini-1.5-flash',
-        targetDir: '/tmp/test-hooks-setEnabled',
-        sessionId: 'test-session-setEnabled',
+        model: "gemini-1.5-flash",
+        targetDir: "/tmp/test-hooks-setEnabled",
+        sessionId: "test-session-setEnabled",
         debugMode: false,
-        cwd: '/tmp/test-hooks-setEnabled',
+        cwd: "/tmp/test-hooks-setEnabled",
         hooks: {
           BeforeTool: [
             {
-              matcher: 'TestTool',
+              matcher: "TestTool",
               hooks: [
                 {
                   type: HookType.Command,
@@ -372,9 +364,8 @@ describe('HookSystem Integration', () => {
         },
       });
 
-      (
-        configForDisabling as unknown as { getMessageBus: () => unknown }
-      ).getMessageBus = () => undefined;
+      (configForDisabling as unknown as { getMessageBus: () => unknown }).getMessageBus = () =>
+        undefined;
 
       const systemForDisabling = new HookSystem(configForDisabling);
       await systemForDisabling.initialize();
@@ -383,24 +374,24 @@ describe('HookSystem Integration', () => {
       let executionCount = 0;
       mockSpawn.mockStdoutOn.mockImplementation(
         (event: string, callback: (data: Buffer) => void) => {
-          if (event === 'data') {
+          if (event === "data") {
             executionCount++;
-            setTimeout(() => callback(Buffer.from('output')), 5);
+            setTimeout(() => callback(Buffer.from("output")), 5);
           }
         },
       );
 
       mockSpawn.mockProcessOn.mockImplementation(
         (event: string, callback: (code: number) => void) => {
-          if (event === 'close') {
+          if (event === "close") {
             setTimeout(() => callback(0), 10);
           }
         },
       );
 
       const eventBus = systemForDisabling.getEventHandler();
-      const result1 = await eventBus.fireBeforeToolEvent('TestTool', {
-        test: 'data',
+      const result1 = await eventBus.fireBeforeToolEvent("TestTool", {
+        test: "data",
       });
 
       expect(result1.success).toBe(true);
@@ -413,8 +404,8 @@ describe('HookSystem Integration', () => {
       executionCount = 0;
 
       // Second execution - hook should NOT run
-      const result2 = await eventBus.fireBeforeToolEvent('TestTool', {
-        test: 'data',
+      const result2 = await eventBus.fireBeforeToolEvent("TestTool", {
+        test: "data",
       });
 
       expect(result2.success).toBe(true);
@@ -428,8 +419,8 @@ describe('HookSystem Integration', () => {
       executionCount = 0;
 
       // Third execution - hook should run again
-      const result3 = await eventBus.fireBeforeToolEvent('TestTool', {
-        test: 'data',
+      const result3 = await eventBus.fireBeforeToolEvent("TestTool", {
+        test: "data",
       });
 
       expect(result3.success).toBe(true);

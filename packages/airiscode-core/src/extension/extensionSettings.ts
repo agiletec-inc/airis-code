@@ -4,18 +4,18 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import * as fs from 'node:fs/promises';
-import * as fsSync from 'node:fs';
-import * as dotenv from 'dotenv';
-import * as path from 'node:path';
-import { ExtensionStorage } from './storage.js';
-import type { ExtensionConfig } from './extensionManager.js';
-import prompts from 'prompts';
-import { EXTENSION_SETTINGS_FILENAME } from './variables.js';
-import { KeychainTokenStorage } from '../mcp/token-storage/keychain-token-storage.js';
-import { createDebugLogger } from '../utils/debugLogger.js';
+import * as fsSync from "node:fs";
+import * as fs from "node:fs/promises";
+import * as path from "node:path";
+import * as dotenv from "dotenv";
+import prompts from "prompts";
+import { KeychainTokenStorage } from "../mcp/token-storage/keychain-token-storage.js";
+import { createDebugLogger } from "../utils/debugLogger.js";
+import type { ExtensionConfig } from "./extensionManager.js";
+import { ExtensionStorage } from "./storage.js";
+import { EXTENSION_SETTINGS_FILENAME } from "./variables.js";
 
-const debugLogger = createDebugLogger('EXT_SETTINGS');
+const debugLogger = createDebugLogger("EXT_SETTINGS");
 
 export interface ExtensionSetting {
   name: string;
@@ -32,8 +32,8 @@ export interface ResolvedExtensionSetting {
 }
 
 export enum ExtensionSettingScope {
-  USER = 'user',
-  WORKSPACE = 'workspace',
+  USER = "user",
+  WORKSPACE = "workspace",
 }
 
 export interface ExtensionSetting {
@@ -56,10 +56,7 @@ const getKeychainStorageName = (
   return base;
 };
 
-const getEnvFilePath = (
-  extensionName: string,
-  scope: ExtensionSettingScope,
-): string => {
+const getEnvFilePath = (extensionName: string, scope: ExtensionSettingScope): string => {
   if (scope === ExtensionSettingScope.WORKSPACE) {
     return path.join(process.cwd(), EXTENSION_SETTINGS_FILENAME);
   }
@@ -76,8 +73,7 @@ export async function maybePromptForSettings(
   const { name: extensionName, settings } = extensionConfig;
   if (
     (!settings || settings.length === 0) &&
-    (!previousExtensionConfig?.settings ||
-      previousExtensionConfig.settings.length === 0)
+    (!previousExtensionConfig?.settings || previousExtensionConfig.settings.length === 0)
   ) {
     return;
   }
@@ -94,10 +90,7 @@ export async function maybePromptForSettings(
     return;
   }
 
-  const settingsChanges = getSettingsChanges(
-    settings,
-    previousExtensionConfig?.settings ?? [],
-  );
+  const settingsChanges = getSettingsChanges(settings, previousExtensionConfig?.settings ?? []);
 
   const allSettings: Record<string, string> = { ...previousSettings };
 
@@ -109,9 +102,7 @@ export async function maybePromptForSettings(
     await keychain.deleteSecret(removedSensitiveSetting.envVar);
   }
 
-  for (const setting of settingsChanges.promptForSensitive.concat(
-    settingsChanges.promptForEnv,
-  )) {
+  for (const setting of settingsChanges.promptForSensitive.concat(settingsChanges.promptForEnv)) {
     const answer = await requestSetting(setting);
     allSettings[setting.envVar] = answer;
   }
@@ -135,20 +126,18 @@ export async function maybePromptForSettings(
 }
 
 function formatEnvContent(settings: Record<string, string>): string {
-  let envContent = '';
+  let envContent = "";
   for (const [key, value] of Object.entries(settings)) {
-    const formattedValue = value.includes(' ') ? `"${value}"` : value;
+    const formattedValue = value.includes(" ") ? `"${value}"` : value;
     envContent += `${key}=${formattedValue}\n`;
   }
   return envContent;
 }
 
-export async function promptForSetting(
-  setting: ExtensionSetting,
-): Promise<string> {
+export async function promptForSetting(setting: ExtensionSetting): Promise<string> {
   const response = await prompts({
-    type: setting.sensitive ? 'password' : 'text',
-    name: 'value',
+    type: setting.sensitive ? "password" : "text",
+    name: "value",
     message: `${setting.name}\n${setting.description}`,
   });
   return response.value;
@@ -166,7 +155,7 @@ export async function getScopedEnvContents(
   const envFilePath = getEnvFilePath(extensionName, scope);
   let customEnv: Record<string, string> = {};
   if (fsSync.existsSync(envFilePath)) {
-    const envFile = fsSync.readFileSync(envFilePath, 'utf-8');
+    const envFile = fsSync.readFileSync(envFilePath, "utf-8");
     customEnv = dotenv.parse(envFile);
   }
 
@@ -214,15 +203,11 @@ export async function updateSetting(
 ): Promise<void> {
   const { name: extensionName, settings } = extensionConfig;
   if (!settings || settings.length === 0) {
-    debugLogger.debug(
-      `updateSetting: Extension "${extensionName}" has no settings`,
-    );
+    debugLogger.debug(`updateSetting: Extension "${extensionName}" has no settings`);
     return;
   }
 
-  const settingToUpdate = settings.find(
-    (s) => s.name === settingKey || s.envVar === settingKey,
-  );
+  const settingToUpdate = settings.find((s) => s.name === settingKey || s.envVar === settingKey);
 
   if (!settingToUpdate) {
     debugLogger.debug(
@@ -244,9 +229,9 @@ export async function updateSetting(
   // For non-sensitive settings, we need to read the existing .env file,
   // update the value, and write it back, preserving any other values.
   const envFilePath = getEnvFilePath(extensionName, scope);
-  let envContent = '';
+  let envContent = "";
   if (fsSync.existsSync(envFilePath)) {
-    envContent = await fs.readFile(envFilePath, 'utf-8');
+    envContent = await fs.readFile(envFilePath, "utf-8");
   }
 
   const parsedEnv = dotenv.parse(envContent);
@@ -254,9 +239,7 @@ export async function updateSetting(
 
   // We only want to write back the variables that are not sensitive.
   const nonSensitiveSettings: Record<string, string> = {};
-  const sensitiveEnvVars = new Set(
-    settings.filter((s) => s.sensitive).map((s) => s.envVar),
-  );
+  const sensitiveEnvVars = new Set(settings.filter((s) => s.sensitive).map((s) => s.envVar));
   for (const [key, value] of Object.entries(parsedEnv)) {
     if (!sensitiveEnvVars.has(key)) {
       nonSensitiveSettings[key] = value;
@@ -289,24 +272,15 @@ function getSettingsChanges(
     promptForSensitive: sensitiveNew.filter(
       (s) => !sensitiveOld.some((old) => isSameSetting(s, old)),
     ),
-    removeSensitive: sensitiveOld.filter(
-      (s) => !sensitiveNew.some((neu) => isSameSetting(s, neu)),
-    ),
-    promptForEnv: envNew.filter(
-      (s) => !envOld.some((old) => isSameSetting(s, old)),
-    ),
-    removeEnv: envOld.filter(
-      (s) => !envNew.some((neu) => isSameSetting(s, neu)),
-    ),
+    removeSensitive: sensitiveOld.filter((s) => !sensitiveNew.some((neu) => isSameSetting(s, neu))),
+    promptForEnv: envNew.filter((s) => !envOld.some((old) => isSameSetting(s, old))),
+    removeEnv: envOld.filter((s) => !envNew.some((neu) => isSameSetting(s, neu))),
   };
 }
 
-async function clearSettings(
-  envFilePath: string,
-  keychain: KeychainTokenStorage,
-) {
+async function clearSettings(envFilePath: string, keychain: KeychainTokenStorage) {
   if (fsSync.existsSync(envFilePath)) {
-    await fs.writeFile(envFilePath, '');
+    await fs.writeFile(envFilePath, "");
   }
   if (!(await keychain.isAvailable())) {
     return;

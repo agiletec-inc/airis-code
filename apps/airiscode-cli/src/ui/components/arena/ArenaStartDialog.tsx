@@ -4,15 +4,15 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import type React from 'react';
-import { useMemo, useState } from 'react';
-import { Box, Text } from 'ink';
-import Link from 'ink-link';
-import { useConfig } from '../../contexts/ConfigContext.js';
-import { theme } from '../../semantic-colors.js';
-import { useKeypress } from '../../hooks/useKeypress.js';
-import { MultiSelect } from '../shared/MultiSelect.js';
-import { t } from '../../../i18n/index.js';
+import { Box, Text } from "ink";
+import Link from "ink-link";
+import type React from "react";
+import { useMemo, useState } from "react";
+import { t } from "../../../i18n/index.js";
+import { useConfig } from "../../contexts/ConfigContext.js";
+import { useKeypress } from "../../hooks/useKeypress.js";
+import { theme } from "../../semantic-colors.js";
+import { MultiSelect } from "../shared/MultiSelect.js";
 
 interface ArenaStartDialogProps {
   onClose: () => void;
@@ -20,12 +20,9 @@ interface ArenaStartDialogProps {
 }
 
 const MODEL_PROVIDERS_DOCUMENTATION_URL =
-  'https://qwenlm.github.io/airiscode-docs/en/users/configuration/settings/#modelproviders';
+  "https://qwenlm.github.io/airiscode-docs/en/users/configuration/settings/#modelproviders";
 
-export function ArenaStartDialog({
-  onClose,
-  onConfirm,
-}: ArenaStartDialogProps): React.JSX.Element {
+export function ArenaStartDialog({ onClose, onConfirm }: ArenaStartDialogProps): React.JSX.Element {
   const config = useConfig();
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
@@ -43,16 +40,13 @@ export function ArenaStartDialog({
       };
     });
   }, [config]);
-  const selectableModelCount = modelItems.filter(
-    (item) => !item.disabled,
-  ).length;
+  const selectableModelCount = modelItems.filter((item) => !item.disabled).length;
   const needsMoreModels = selectableModelCount < 2;
-  const shouldShowMoreModelsHint =
-    selectableModelCount >= 2 && selectableModelCount < 3;
+  const shouldShowMoreModelsHint = selectableModelCount >= 2 && selectableModelCount < 3;
 
   useKeypress(
     (key) => {
-      if (key.name === 'escape') {
+      if (key.name === "escape") {
         onClose();
       }
     },
@@ -61,9 +55,7 @@ export function ArenaStartDialog({
 
   const handleConfirm = (values: string[]) => {
     if (values.length < 2) {
-      setErrorMessage(
-        t('Please select at least 2 models to start an Arena session.'),
-      );
+      setErrorMessage(t("Please select at least 2 models to start an Arena session."));
       return;
     }
 
@@ -79,12 +71,12 @@ export function ArenaStartDialog({
       padding={1}
       width="100%"
     >
-      <Text bold>{t('Select Models')}</Text>
+      <Text bold>{t("Select Models")}</Text>
 
       {modelItems.length === 0 ? (
         <Box marginTop={1} flexDirection="column">
           <Text color={theme.status.warning}>
-            {t('No models available. Please configure models first.')}
+            {t("No models available. Please configure models first.")}
           </Text>
         </Box>
       ) : (
@@ -111,15 +103,13 @@ export function ArenaStartDialog({
           {needsMoreModels && (
             <>
               <Text color={theme.status.warning}>
-                {t('Arena requires at least 2 models. To add more:')}
+                {t("Arena requires at least 2 models. To add more:")}
               </Text>
               <Text color={theme.status.warning}>
-                {t(
-                  '  - Run /auth to set up a Coding Plan (includes multiple models)',
-                )}
+                {t("  - Run /auth to set up a Coding Plan (includes multiple models)")}
               </Text>
               <Text color={theme.status.warning}>
-                {t('  - Or configure modelProviders in settings.json')}
+                {t("  - Or configure modelProviders in settings.json")}
               </Text>
             </>
           )}
@@ -130,7 +120,7 @@ export function ArenaStartDialog({
         <>
           <Box marginTop={1}>
             <Text color={theme.text.secondary}>
-              {t('Configure more models with the modelProviders guide:')}
+              {t("Configure more models with the modelProviders guide:")}
             </Text>
           </Box>
           <Box marginTop={0}>
@@ -145,7 +135,7 @@ export function ArenaStartDialog({
 
       <Box marginTop={1} flexDirection="column">
         <Text color={theme.text.secondary}>
-          {t('Space to toggle, Enter to confirm, Esc to cancel')}
+          {t("Space to toggle, Enter to confirm, Esc to cancel")}
         </Text>
       </Box>
     </Box>

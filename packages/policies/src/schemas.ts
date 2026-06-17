@@ -2,8 +2,8 @@
  * Zod schemas for runtime validation of policy profiles
  */
 
-import { z } from 'zod';
-import { ApprovalsLevel, TrustLevel } from './types.js';
+import { z } from "zod";
+import { ApprovalsLevel, TrustLevel } from "./types.js";
 
 /**
  * Zod schema for ApprovalsLevel

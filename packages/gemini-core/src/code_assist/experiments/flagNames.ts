@@ -5,10 +5,8 @@
  */
 
 export const ExperimentFlags = {
-  CONTEXT_COMPRESSION_THRESHOLD:
-    'GeminiCLIContextCompression__threshold_fraction',
-  USER_CACHING: 'GcliUserCaching__user_caching',
+  CONTEXT_COMPRESSION_THRESHOLD: "GeminiCLIContextCompression__threshold_fraction",
+  USER_CACHING: "GcliUserCaching__user_caching",
 } as const;
 
-export type ExperimentFlagName =
-  (typeof ExperimentFlags)[keyof typeof ExperimentFlags];
+export type ExperimentFlagName = (typeof ExperimentFlags)[keyof typeof ExperimentFlags];

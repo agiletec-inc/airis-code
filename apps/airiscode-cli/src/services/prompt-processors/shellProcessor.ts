@@ -6,22 +6,19 @@
 
 import {
   ApprovalMode,
+  checkArgumentSafety,
   checkCommandPermissions,
   escapeShellArg,
+  flatMapTextParts,
   getShellConfiguration,
   ShellExecutionService,
-  flatMapTextParts,
-  checkArgumentSafety,
-} from '@airiscode/core';
+} from "@airiscode/core";
 
-import type { CommandContext } from '../../ui/commands/types.js';
-import type { IPromptProcessor, PromptPipelineContent } from './types.js';
-import {
-  SHELL_INJECTION_TRIGGER,
-  SHORTHAND_ARGS_PLACEHOLDER,
-} from './types.js';
-import { extractInjections, type Injection } from './injectionParser.js';
-import { themeManager } from '../../ui/themes/theme-manager.js';
+import type { CommandContext } from "../../ui/commands/types.js";
+import { themeManager } from "../../ui/themes/theme-manager.js";
+import { extractInjections, type Injection } from "./injectionParser.js";
+import type { IPromptProcessor, PromptPipelineContent } from "./types.js";
+import { SHELL_INJECTION_TRIGGER, SHORTHAND_ARGS_PLACEHOLDER } from "./types.js";
 
 export class ConfirmationRequiredError extends Error {
   constructor(
@@ -29,7 +26,7 @@ export class ConfirmationRequiredError extends Error {
     public commandsToConfirm: string[],
   ) {
     super(message);
-    this.name = 'ConfirmationRequiredError';
+    this.name = "ConfirmationRequiredError";
   }
 }
 
@@ -59,21 +56,17 @@ export class ShellProcessor implements IPromptProcessor {
     prompt: PromptPipelineContent,
     context: CommandContext,
   ): Promise<PromptPipelineContent> {
-    return flatMapTextParts(prompt, (text) =>
-      this.processString(text, context),
-    );
+    return flatMapTextParts(prompt, (text) => this.processString(text, context));
   }
 
   private async processString(
     prompt: string,
     context: CommandContext,
   ): Promise<PromptPipelineContent> {
-    const userArgsRaw = context.invocation?.args || '';
+    const userArgsRaw = context.invocation?.args || "";
 
     if (!prompt.includes(SHELL_INJECTION_TRIGGER)) {
-      return [
-        { text: prompt.replaceAll(SHORTHAND_ARGS_PLACEHOLDER, userArgsRaw) },
-      ];
+      return [{ text: prompt.replaceAll(SHORTHAND_ARGS_PLACEHOLDER, userArgsRaw) }];
     }
 
     const config = context.services.config;
@@ -84,46 +77,35 @@ export class ShellProcessor implements IPromptProcessor {
     }
     const { sessionShellAllowlist } = context.session;
 
-    const injections = extractInjections(
-      prompt,
-      SHELL_INJECTION_TRIGGER,
-      this.commandName,
-    );
+    const injections = extractInjections(prompt, SHELL_INJECTION_TRIGGER, this.commandName);
 
     // If extractInjections found no closed blocks (and didn't throw), treat as raw.
     if (injections.length === 0) {
-      return [
-        { text: prompt.replaceAll(SHORTHAND_ARGS_PLACEHOLDER, userArgsRaw) },
-      ];
+      return [{ text: prompt.replaceAll(SHORTHAND_ARGS_PLACEHOLDER, userArgsRaw) }];
     }
 
     const { shell } = getShellConfiguration();
     const userArgsEscaped = escapeShellArg(userArgsRaw, shell);
 
     // Check safety of the value that will be used for $ARGUMENTS (after removing outer quotes)
-    let userArgsForArgumentsPlaceholder = userArgsRaw.replace(
-      /^'([\s\S]*?)'$/,
-      '$1',
-    );
+    let userArgsForArgumentsPlaceholder = userArgsRaw.replace(/^'([\s\S]*?)'$/, "$1");
     const argumentSafety = checkArgumentSafety(userArgsForArgumentsPlaceholder);
     if (!argumentSafety.isSafe) {
       userArgsForArgumentsPlaceholder = userArgsEscaped;
     }
 
-    const resolvedInjections: ResolvedShellInjection[] = injections.map(
-      (injection) => {
-        const command = injection.content;
+    const resolvedInjections: ResolvedShellInjection[] = injections.map((injection) => {
+      const command = injection.content;
 
-        if (command === '') {
-          return { ...injection, resolvedCommand: undefined };
-        }
+      if (command === "") {
+        return { ...injection, resolvedCommand: undefined };
+      }
 
-        const resolvedCommand = command
-          .replaceAll(SHORTHAND_ARGS_PLACEHOLDER, userArgsEscaped) // Replace {{args}}
-          .replaceAll('$ARGUMENTS', userArgsForArgumentsPlaceholder);
-        return { ...injection, resolvedCommand };
-      },
-    );
+      const resolvedCommand = command
+        .replaceAll(SHORTHAND_ARGS_PLACEHOLDER, userArgsEscaped) // Replace {{args}}
+        .replaceAll("$ARGUMENTS", userArgsForArgumentsPlaceholder);
+      return { ...injection, resolvedCommand };
+    });
 
     const commandsToConfirm = new Set<string>();
     for (const injection of resolvedInjections) {
@@ -137,14 +119,12 @@ export class ShellProcessor implements IPromptProcessor {
 
       // Determine if this command is explicitly auto-approved via PermissionManager
       const pm = config.getPermissionManager?.();
-      const isAllowedBySettings = pm
-        ? (await pm.isCommandAllowed(command)) === 'allow'
-        : false;
+      const isAllowedBySettings = pm ? (await pm.isCommandAllowed(command)) === "allow" : false;
 
       if (!allAllowed) {
         if (isHardDenial) {
           throw new Error(
-            `${this.commandName} cannot be run. Blocked command: "${command}". Reason: ${blockReason || 'Blocked by configuration.'}`,
+            `${this.commandName} cannot be run. Blocked command: "${command}". Reason: ${blockReason || "Blocked by configuration."}`,
           );
         }
 
@@ -165,21 +145,18 @@ export class ShellProcessor implements IPromptProcessor {
     // Handle confirmation requirements.
     if (commandsToConfirm.size > 0) {
       throw new ConfirmationRequiredError(
-        'Shell command confirmation required',
+        "Shell command confirmation required",
         Array.from(commandsToConfirm),
       );
     }
 
-    let processedPrompt = '';
+    let processedPrompt = "";
     let lastIndex = 0;
 
     for (const injection of resolvedInjections) {
       // Append the text segment BEFORE the injection, substituting {{args}} with RAW input.
       const segment = prompt.substring(lastIndex, injection.startIndex);
-      processedPrompt += segment.replaceAll(
-        SHORTHAND_ARGS_PLACEHOLDER,
-        userArgsRaw,
-      );
+      processedPrompt += segment.replaceAll(SHORTHAND_ARGS_PLACEHOLDER, userArgsRaw);
 
       // Execute the resolved command (which already has ESCAPED input).
       if (injection.resolvedCommand) {
@@ -213,10 +190,7 @@ export class ShellProcessor implements IPromptProcessor {
         // Append a status message if the command did not succeed.
         if (executionResult.aborted) {
           processedPrompt += `\n[Shell command '${injection.resolvedCommand}' aborted]`;
-        } else if (
-          executionResult.exitCode !== 0 &&
-          executionResult.exitCode !== null
-        ) {
+        } else if (executionResult.exitCode !== 0 && executionResult.exitCode !== null) {
           processedPrompt += `\n[Shell command '${injection.resolvedCommand}' exited with code ${executionResult.exitCode}]`;
         } else if (executionResult.signal !== null) {
           processedPrompt += `\n[Shell command '${injection.resolvedCommand}' terminated by signal ${executionResult.signal}]`;
@@ -228,10 +202,7 @@ export class ShellProcessor implements IPromptProcessor {
 
     // Append the remaining text AFTER the last injection, substituting {{args}} with RAW input.
     const finalSegment = prompt.substring(lastIndex);
-    processedPrompt += finalSegment.replaceAll(
-      SHORTHAND_ARGS_PLACEHOLDER,
-      userArgsRaw,
-    );
+    processedPrompt += finalSegment.replaceAll(SHORTHAND_ARGS_PLACEHOLDER, userArgsRaw);
 
     return [{ text: processedPrompt }];
   }

@@ -4,10 +4,10 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import type React from 'react';
-import { Text, type TextProps } from 'ink';
-import Gradient from 'ink-gradient';
-import { theme } from '../semantic-colors.js';
+import { Text, type TextProps } from "ink";
+import Gradient from "ink-gradient";
+import type React from "react";
+import { theme } from "../semantic-colors.js";
 
 export const ThemedGradient: React.FC<TextProps> = ({ children, ...props }) => {
   const gradient = theme.ui.gradient;

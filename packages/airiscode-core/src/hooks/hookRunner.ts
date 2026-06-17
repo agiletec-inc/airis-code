@@ -4,26 +4,22 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { spawn } from 'node:child_process';
-import { HookEventName, HookType } from './types.js';
+import { spawn } from "node:child_process";
+import { createDebugLogger } from "../utils/debugLogger.js";
+import { escapeShellArg, getShellConfiguration, type ShellType } from "../utils/shell-utils.js";
 import type {
-  HookConfig,
   CommandHookConfig,
-  InjectHookConfig,
+  HookConfig,
+  HookExecutionResult,
   HookInput,
   HookOutput,
-  HookExecutionResult,
+  InjectHookConfig,
   PreToolUseInput,
   UserPromptSubmitInput,
-} from './types.js';
-import { createDebugLogger } from '../utils/debugLogger.js';
-import {
-  escapeShellArg,
-  getShellConfiguration,
-  type ShellType,
-} from '../utils/shell-utils.js';
+} from "./types.js";
+import { HookEventName, HookType } from "./types.js";
 
-const debugLogger = createDebugLogger('TRUSTED_HOOKS');
+const debugLogger = createDebugLogger("TRUSTED_HOOKS");
 
 /**
  * Default timeout for hook execution (60 seconds)
@@ -63,7 +59,8 @@ export class HookRunner {
 
     // Check if already aborted before starting
     if (signal?.aborted) {
-      const hookId = hookConfig.name || ('command' in hookConfig ? hookConfig.command : 'inject') || 'unknown';
+      const hookId =
+        hookConfig.name || ("command" in hookConfig ? hookConfig.command : "inject") || "unknown";
       return {
         hookConfig,
         eventName,
@@ -76,12 +73,7 @@ export class HookRunner {
     try {
       // Inject hooks return content as systemMessage without spawning a process
       if (hookConfig.type === HookType.Inject) {
-        return this.executeInjectHook(
-          hookConfig as InjectHookConfig,
-          eventName,
-          input,
-          startTime,
-        );
+        return this.executeInjectHook(hookConfig as InjectHookConfig, eventName, input, startTime);
       }
 
       return await this.executeCommandHook(
@@ -93,7 +85,8 @@ export class HookRunner {
       );
     } catch (error) {
       const duration = Date.now() - startTime;
-      const hookId = hookConfig.name || ('command' in hookConfig ? hookConfig.command : 'inject') || 'unknown';
+      const hookId =
+        hookConfig.name || ("command" in hookConfig ? hookConfig.command : "inject") || "unknown";
       const errorMessage = `Hook execution failed for event '${eventName}' (hook: ${hookId}): ${error}`;
       debugLogger.warn(`Hook execution error (non-fatal): ${errorMessage}`);
 
@@ -151,22 +144,13 @@ export class HookRunner {
       }
       const config = hookConfigs[i];
       onHookStart?.(config, i);
-      const result = await this.executeHook(
-        config,
-        eventName,
-        currentInput,
-        signal,
-      );
+      const result = await this.executeHook(config, eventName, currentInput, signal);
       onHookEnd?.(config, result);
       results.push(result);
 
       // If the hook succeeded and has output, use it to modify the input for the next hook
       if (result.success && result.output) {
-        currentInput = this.applyHookOutputToInput(
-          currentInput,
-          result.output,
-          eventName,
-        );
+        currentInput = this.applyHookOutputToInput(currentInput, result.output, eventName);
       }
     }
 
@@ -188,26 +172,22 @@ export class HookRunner {
     if (hookOutput.hookSpecificOutput) {
       switch (eventName) {
         case HookEventName.UserPromptSubmit:
-          if ('additionalContext' in hookOutput.hookSpecificOutput) {
+          if ("additionalContext" in hookOutput.hookSpecificOutput) {
             // For UserPromptSubmit, we could modify the prompt with additional context
-            const additionalContext =
-              hookOutput.hookSpecificOutput['additionalContext'];
-            if (
-              typeof additionalContext === 'string' &&
-              'prompt' in modifiedInput
-            ) {
-              (modifiedInput as UserPromptSubmitInput).prompt +=
-                '\n\n' + additionalContext;
+            const additionalContext = hookOutput.hookSpecificOutput["additionalContext"];
+            if (typeof additionalContext === "string" && "prompt" in modifiedInput) {
+              (modifiedInput as UserPromptSubmitInput).prompt += "\n\n" + additionalContext;
             }
           }
           break;
 
         case HookEventName.PreToolUse:
-          if ('tool_input' in hookOutput.hookSpecificOutput) {
-            const newToolInput = hookOutput.hookSpecificOutput[
-              'tool_input'
-            ] as Record<string, unknown>;
-            if (newToolInput && 'tool_input' in modifiedInput) {
+          if ("tool_input" in hookOutput.hookSpecificOutput) {
+            const newToolInput = hookOutput.hookSpecificOutput["tool_input"] as Record<
+              string,
+              unknown
+            >;
+            if (newToolInput && "tool_input" in modifiedInput) {
               (modifiedInput as PreToolUseInput).tool_input = {
                 ...(modifiedInput as PreToolUseInput).tool_input,
                 ...newToolInput,
@@ -248,27 +228,19 @@ export class HookRunner {
 
     // Simple template variable substitution
     let content = hookConfig.content;
-    content = content.replace(/\$SESSION_ID/g, input.session_id || '');
-    content = content.replace(/\$CWD/g, input.cwd || '');
+    content = content.replace(/\$SESSION_ID/g, input.session_id || "");
+    content = content.replace(/\$CWD/g, input.cwd || "");
     content = content.replace(/\$EVENT/g, eventName);
 
     // For PreToolUse events, substitute tool-specific variables
-    if ('tool_name' in input) {
-      content = content.replace(
-        /\$TOOL_NAME/g,
-        (input as PreToolUseInput).tool_name || '',
-      );
+    if ("tool_name" in input) {
+      content = content.replace(/\$TOOL_NAME/g, (input as PreToolUseInput).tool_name || "");
     }
-    if ('tool_input' in input) {
-      content = content.replace(
-        /\$TOOL_INPUT/g,
-        JSON.stringify((input as any).tool_input || ''),
-      );
+    if ("tool_input" in input) {
+      content = content.replace(/\$TOOL_INPUT/g, JSON.stringify((input as any).tool_input || ""));
     }
 
-    debugLogger.debug(
-      `Inject hook executed for ${eventName}: ${content.slice(0, 100)}...`,
-    );
+    debugLogger.debug(`Inject hook executed for ${eventName}: ${content.slice(0, 100)}...`);
 
     const output: HookOutput = {
       continue: true,
@@ -295,10 +267,8 @@ export class HookRunner {
 
     return new Promise((resolve) => {
       if (!hookConfig.command) {
-        const errorMessage = 'Command hook missing command';
-        debugLogger.warn(
-          `Hook configuration error (non-fatal): ${errorMessage}`,
-        );
+        const errorMessage = "Command hook missing command";
+        debugLogger.warn(`Hook configuration error (non-fatal): ${errorMessage}`);
         resolve({
           hookConfig,
           eventName,
@@ -309,45 +279,37 @@ export class HookRunner {
         return;
       }
 
-      let stdout = '';
-      let stderr = '';
+      let stdout = "";
+      let stderr = "";
       let timedOut = false;
       let aborted = false;
 
       const shellConfig = getShellConfiguration();
-      const command = this.expandCommand(
-        hookConfig.command,
-        input,
-        shellConfig.shell,
-      );
+      const command = this.expandCommand(hookConfig.command, input, shellConfig.shell);
 
       const env = {
         ...process.env,
         GEMINI_PROJECT_DIR: input.cwd,
         CLAUDE_PROJECT_DIR: input.cwd, // For compatibility
         QWEN_PROJECT_DIR: input.cwd, // For AIRIS Code compatibility
-        ...('env' in hookConfig ? hookConfig.env : {}),
+        ...("env" in hookConfig ? hookConfig.env : {}),
       };
 
-      const child = spawn(
-        shellConfig.executable,
-        [...shellConfig.argsPrefix, command],
-        {
-          env,
-          cwd: input.cwd,
-          stdio: ['pipe', 'pipe', 'pipe'],
-          shell: false,
-        },
-      );
+      const child = spawn(shellConfig.executable, [...shellConfig.argsPrefix, command], {
+        env,
+        cwd: input.cwd,
+        stdio: ["pipe", "pipe", "pipe"],
+        shell: false,
+      });
 
       // Helper to kill child process
       const killChild = () => {
         if (!child.killed) {
-          child.kill('SIGTERM');
+          child.kill("SIGTERM");
           // Force kill after 2 seconds
           setTimeout(() => {
             if (!child.killed) {
-              child.kill('SIGKILL');
+              child.kill("SIGKILL");
             }
           }, 2000);
         }
@@ -367,14 +329,14 @@ export class HookRunner {
       };
 
       if (signal) {
-        signal.addEventListener('abort', abortHandler);
+        signal.addEventListener("abort", abortHandler);
       }
 
       // Send input to stdin
       if (child.stdin) {
-        child.stdin.on('error', (err: NodeJS.ErrnoException) => {
+        child.stdin.on("error", (err: NodeJS.ErrnoException) => {
           // Ignore EPIPE errors which happen when the child process closes stdin early
-          if (err.code !== 'EPIPE') {
+          if (err.code !== "EPIPE") {
             debugLogger.debug(`Hook stdin error: ${err}`);
           }
         });
@@ -386,14 +348,14 @@ export class HookRunner {
           child.stdin.end();
         } catch (err) {
           // Ignore EPIPE errors which happen when the child process closes stdin early
-          if (err instanceof Error && 'code' in err && err.code !== 'EPIPE') {
+          if (err instanceof Error && "code" in err && err.code !== "EPIPE") {
             debugLogger.debug(`Hook stdin write error: ${err}`);
           }
         }
       }
 
       // Collect stdout
-      child.stdout?.on('data', (data: Buffer) => {
+      child.stdout?.on("data", (data: Buffer) => {
         if (stdout.length < MAX_OUTPUT_LENGTH) {
           const remaining = MAX_OUTPUT_LENGTH - stdout.length;
           stdout += data.slice(0, remaining).toString();
@@ -406,7 +368,7 @@ export class HookRunner {
       });
 
       // Collect stderr
-      child.stderr?.on('data', (data: Buffer) => {
+      child.stderr?.on("data", (data: Buffer) => {
         if (stderr.length < MAX_OUTPUT_LENGTH) {
           const remaining = MAX_OUTPUT_LENGTH - stderr.length;
           stderr += data.slice(0, remaining).toString();
@@ -419,11 +381,11 @@ export class HookRunner {
       });
 
       // Handle process exit
-      child.on('close', (exitCode) => {
+      child.on("close", (exitCode) => {
         clearTimeout(timeoutHandle);
         // Clean up abort listener
         if (signal) {
-          signal.removeEventListener('abort', abortHandler);
+          signal.removeEventListener("abort", abortHandler);
         }
         const duration = Date.now() - startTime;
 
@@ -432,7 +394,7 @@ export class HookRunner {
             hookConfig,
             eventName,
             success: false,
-            error: new Error('Hook execution cancelled (aborted)'),
+            error: new Error("Hook execution cancelled (aborted)"),
             stdout,
             stderr,
             duration,
@@ -459,19 +421,17 @@ export class HookRunner {
         const isBlockingError = exitCode === 2;
 
         // For exit code 2, only use stderr (ignore stdout)
-        const textToParse = isBlockingError
-          ? stderr.trim()
-          : stdout.trim() || stderr.trim();
+        const textToParse = isBlockingError ? stderr.trim() : stdout.trim() || stderr.trim();
 
         if (textToParse) {
           // Try parsing as JSON to preserve structured output like
           // hookSpecificOutput.additionalContext (applies to both exit 0 and exit 2)
           try {
             let parsed = JSON.parse(textToParse);
-            if (typeof parsed === 'string') {
+            if (typeof parsed === "string") {
               parsed = JSON.parse(parsed);
             }
-            if (parsed && typeof parsed === 'object') {
+            if (parsed && typeof parsed === "object") {
               output = parsed as HookOutput;
             }
           } catch {
@@ -494,17 +454,17 @@ export class HookRunner {
           exitCode: exitCode ?? -1,
           duration,
           ...(killedBySignal && {
-            error: new Error('Hook killed by signal'),
+            error: new Error("Hook killed by signal"),
           }),
         });
       });
 
       // Handle process errors
-      child.on('error', (error) => {
+      child.on("error", (error) => {
         clearTimeout(timeoutHandle);
         // Clean up abort listener
         if (signal) {
-          signal.removeEventListener('abort', abortHandler);
+          signal.removeEventListener("abort", abortHandler);
         }
         const duration = Date.now() - startTime;
 
@@ -524,11 +484,7 @@ export class HookRunner {
   /**
    * Expand command with environment variables and input context
    */
-  private expandCommand(
-    command: string,
-    input: HookInput,
-    shellType: ShellType,
-  ): string {
+  private expandCommand(command: string, input: HookInput, shellType: ShellType): string {
     debugLogger.debug(`Expanding hook command: ${command} (cwd: ${input.cwd})`);
     const escapedCwd = escapeShellArg(input.cwd, shellType);
     return command
@@ -539,28 +495,25 @@ export class HookRunner {
   /**
    * Convert plain text output to structured HookOutput
    */
-  private convertPlainTextToHookOutput(
-    text: string,
-    exitCode: number,
-  ): HookOutput {
+  private convertPlainTextToHookOutput(text: string, exitCode: number): HookOutput {
     if (exitCode === EXIT_CODE_SUCCESS) {
       // Success - treat as system message or additional context
       return {
-        decision: 'allow',
-        reason: 'Hook executed successfully',
+        decision: "allow",
+        reason: "Hook executed successfully",
         systemMessage: text,
       };
     } else if (exitCode === EXIT_CODE_NON_BLOCKING_ERROR) {
       // Non-blocking error (EXIT_CODE_NON_BLOCKING_ERROR = 1)
       return {
-        decision: 'allow',
+        decision: "allow",
         reason: `Non-blocking error: ${text}`,
         systemMessage: `Warning: ${text}`,
       };
     } else {
       // All other non-zero exit codes (including 2) are blocking
       return {
-        decision: 'deny',
+        decision: "deny",
         reason: text,
       };
     }

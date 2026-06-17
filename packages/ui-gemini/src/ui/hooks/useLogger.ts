@@ -4,9 +4,9 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { useState, useEffect } from 'react';
-import type { Storage } from '@airiscode/gemini-cli-core';
-import { sessionId, Logger } from '@airiscode/gemini-cli-core';
+import type { Storage } from "@airiscode/gemini-cli-core";
+import { Logger, sessionId } from "@airiscode/gemini-cli-core";
+import { useEffect, useState } from "react";
 
 /**
  * Hook to manage the logger instance.

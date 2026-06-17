@@ -4,14 +4,14 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import type { Config } from '../../config/config.js';
-import type { BaseLlmClient } from '../../core/baseLlmClient.js';
+import type { Config } from "../../config/config.js";
+import type { BaseLlmClient } from "../../core/baseLlmClient.js";
 import type {
   RoutingContext,
   RoutingDecision,
   RoutingStrategy,
   TerminalStrategy,
-} from '../routingStrategy.js';
+} from "../routingStrategy.js";
 
 /**
  * A strategy that attempts a list of child strategies in order (Chain of Responsibility).
@@ -26,10 +26,7 @@ export class CompositeStrategy implements TerminalStrategy {
    * @param strategies The strategies to try, in order of priority. The last strategy must be terminal.
    * @param name The name of this composite configuration (e.g., 'router' or 'composite').
    */
-  constructor(
-    strategies: [...RoutingStrategy[], TerminalStrategy],
-    name: string = 'composite',
-  ) {
+  constructor(strategies: [...RoutingStrategy[], TerminalStrategy], name: string = "composite") {
     this.strategies = strategies;
     this.name = name;
   }
@@ -43,13 +40,8 @@ export class CompositeStrategy implements TerminalStrategy {
 
     // Separate non-terminal strategies from the terminal one.
     // This separation allows TypeScript to understand the control flow guarantees.
-    const nonTerminalStrategies = this.strategies.slice(
-      0,
-      -1,
-    ) as RoutingStrategy[];
-    const terminalStrategy = this.strategies[
-      this.strategies.length - 1
-    ] as TerminalStrategy;
+    const nonTerminalStrategies = this.strategies.slice(0, -1) as RoutingStrategy[];
+    const terminalStrategy = this.strategies[this.strategies.length - 1] as TerminalStrategy;
 
     // Try non-terminal strategies, allowing them to fail gracefully.
     for (const strategy of nonTerminalStrategies) {
@@ -68,11 +60,7 @@ export class CompositeStrategy implements TerminalStrategy {
 
     // If no other strategy matched, execute the terminal strategy.
     try {
-      const decision = await terminalStrategy.route(
-        context,
-        config,
-        baseLlmClient,
-      );
+      const decision = await terminalStrategy.route(context, config, baseLlmClient);
 
       return this.finalizeDecision(decision, startTime);
     } catch (error) {
@@ -87,10 +75,7 @@ export class CompositeStrategy implements TerminalStrategy {
   /**
    * Helper function to enhance the decision metadata with composite information.
    */
-  private finalizeDecision(
-    decision: RoutingDecision,
-    startTime: number,
-  ): RoutingDecision {
+  private finalizeDecision(decision: RoutingDecision, startTime: number): RoutingDecision {
     const endTime = performance.now();
     const compositeSource = `${this.name}/${decision.metadata.source}`;
 

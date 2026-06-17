@@ -4,11 +4,11 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { debugLogger } from '@airiscode/gemini-cli-core';
-import clipboardy from 'clipboardy';
-import type { SlashCommand } from '../commands/types.js';
-import fs from 'node:fs';
-import type { Writable } from 'node:stream';
+import fs from "node:fs";
+import type { Writable } from "node:stream";
+import { debugLogger } from "@airiscode/gemini-cli-core";
+import clipboardy from "clipboardy";
+import type { SlashCommand } from "../commands/types.js";
 
 /**
  * Checks if a query string potentially represents an '@' command.
@@ -20,7 +20,7 @@ import type { Writable } from 'node:stream';
  */
 export const isAtCommand = (query: string): boolean =>
   // Check if starts with @ OR has a space, then @
-  query.startsWith('@') || /\s@/.test(query);
+  query.startsWith("@") || /\s@/.test(query);
 
 /**
  * Checks if a query string potentially represents an '/' command.
@@ -30,34 +30,32 @@ export const isAtCommand = (query: string): boolean =>
  * @returns True if the query looks like an '/' command, false otherwise.
  */
 export const isSlashCommand = (query: string): boolean => {
-  if (!query.startsWith('/')) {
+  if (!query.startsWith("/")) {
     return false;
   }
 
   // Exclude line comments that start with '//'
-  if (query.startsWith('//')) {
+  if (query.startsWith("//")) {
     return false;
   }
 
   // Exclude block comments that start with '/*'
-  if (query.startsWith('/*')) {
+  if (query.startsWith("/*")) {
     return false;
   }
 
   return true;
 };
 
-const ESC = '\u001B';
-const BEL = '\u0007';
-const ST = '\u001B\\';
+const ESC = "\u001B";
+const BEL = "\u0007";
+const ST = "\u001B\\";
 
 const MAX_OSC52_SEQUENCE_BYTES = 100_000;
 const OSC52_HEADER = `${ESC}]52;c;`;
 const OSC52_FOOTER = BEL;
 const MAX_OSC52_BODY_B64_BYTES =
-  MAX_OSC52_SEQUENCE_BYTES -
-  Buffer.byteLength(OSC52_HEADER) -
-  Buffer.byteLength(OSC52_FOOTER);
+  MAX_OSC52_SEQUENCE_BYTES - Buffer.byteLength(OSC52_HEADER) - Buffer.byteLength(OSC52_FOOTER);
 const MAX_OSC52_DATA_BYTES = Math.floor(MAX_OSC52_BODY_B64_BYTES / 4) * 3;
 
 // Conservative chunk size for GNU screen DCS passthrough.
@@ -68,48 +66,32 @@ type TtyTarget = { stream: Writable; closeAfter: boolean } | null;
 const pickTty = (): TtyTarget => {
   // Prefer the controlling TTY to avoid interleaving escape sequences with piped stdout.
   try {
-    const devTty = fs.createWriteStream('/dev/tty');
+    const devTty = fs.createWriteStream("/dev/tty");
     return { stream: devTty, closeAfter: true };
   } catch {
     // fall through
   }
-  if (process.stderr?.isTTY)
-    return { stream: process.stderr, closeAfter: false };
-  if (process.stdout?.isTTY)
-    return { stream: process.stdout, closeAfter: false };
+  if (process.stderr?.isTTY) return { stream: process.stderr, closeAfter: false };
+  if (process.stdout?.isTTY) return { stream: process.stdout, closeAfter: false };
   return null;
 };
 
 const inTmux = (): boolean =>
-  Boolean(
-    process.env['TMUX'] || (process.env['TERM'] ?? '').startsWith('tmux'),
-  );
+  Boolean(process.env["TMUX"] || (process.env["TERM"] ?? "").startsWith("tmux"));
 
 const inScreen = (): boolean =>
-  Boolean(
-    process.env['STY'] || (process.env['TERM'] ?? '').startsWith('screen'),
-  );
+  Boolean(process.env["STY"] || (process.env["TERM"] ?? "").startsWith("screen"));
 
 const isSSH = (): boolean =>
-  Boolean(
-    process.env['SSH_TTY'] ||
-      process.env['SSH_CONNECTION'] ||
-      process.env['SSH_CLIENT'],
-  );
+  Boolean(process.env["SSH_TTY"] || process.env["SSH_CONNECTION"] || process.env["SSH_CLIENT"]);
 
 const isWSL = (): boolean =>
-  Boolean(
-    process.env['WSL_DISTRO_NAME'] ||
-      process.env['WSLENV'] ||
-      process.env['WSL_INTEROP'],
-  );
+  Boolean(process.env["WSL_DISTRO_NAME"] || process.env["WSLENV"] || process.env["WSL_INTEROP"]);
 
-const isDumbTerm = (): boolean => (process.env['TERM'] ?? '') === 'dumb';
+const isDumbTerm = (): boolean => (process.env["TERM"] ?? "") === "dumb";
 
 const shouldUseOsc52 = (tty: TtyTarget): boolean =>
-  Boolean(tty) &&
-  !isDumbTerm() &&
-  (isSSH() || inTmux() || inScreen() || isWSL());
+  Boolean(tty) && !isDumbTerm() && (isSSH() || inTmux() || inScreen() || isWSL());
 
 const safeUtf8Truncate = (buf: Buffer, maxBytes: number): Buffer => {
   if (buf.length <= maxBytes) return buf;
@@ -120,9 +102,9 @@ const safeUtf8Truncate = (buf: Buffer, maxBytes: number): Buffer => {
 };
 
 const buildOsc52 = (text: string): string => {
-  const raw = Buffer.from(text, 'utf8');
+  const raw = Buffer.from(text, "utf8");
   const safe = safeUtf8Truncate(raw, MAX_OSC52_DATA_BYTES);
-  const b64 = safe.toString('base64');
+  const b64 = safe.toString("base64");
   return `${OSC52_HEADER}${b64}${OSC52_FOOTER}`;
 };
 
@@ -133,7 +115,7 @@ const wrapForTmux = (seq: string): string => {
 };
 
 const wrapForScreen = (seq: string): string => {
-  let out = '';
+  let out = "";
   for (let i = 0; i < seq.length; i += SCREEN_DCS_CHUNK_SIZE) {
     out += `${ESC}P${seq.slice(i, i + SCREEN_DCS_CHUNK_SIZE)}${ST}`;
   }
@@ -151,16 +133,16 @@ const writeAll = (stream: Writable, data: string): Promise<void> =>
       resolve();
     };
     const cleanup = () => {
-      stream.off('error', onError);
-      stream.off('drain', onDrain);
+      stream.off("error", onError);
+      stream.off("drain", onDrain);
       // Writable.write() handlers may not emit 'drain' if the first write succeeded.
     };
-    stream.once('error', onError);
+    stream.once("error", onError);
     if (stream.write(data)) {
       cleanup();
       resolve();
     } else {
-      stream.once('drain', onDrain);
+      stream.once("drain", onDrain);
     }
   });
 
@@ -172,11 +154,7 @@ export const copyToClipboard = async (text: string): Promise<void> => {
 
   if (shouldUseOsc52(tty)) {
     const osc = buildOsc52(text);
-    const payload = inTmux()
-      ? wrapForTmux(osc)
-      : inScreen()
-        ? wrapForScreen(osc)
-        : osc;
+    const payload = inTmux() ? wrapForTmux(osc) : inScreen() ? wrapForScreen(osc) : osc;
 
     await writeAll(tty!.stream, payload);
 
@@ -194,18 +172,18 @@ export const getUrlOpenCommand = (): string => {
   // --- Determine the OS-specific command to open URLs ---
   let openCmd: string;
   switch (process.platform) {
-    case 'darwin':
-      openCmd = 'open';
+    case "darwin":
+      openCmd = "open";
       break;
-    case 'win32':
-      openCmd = 'start';
+    case "win32":
+      openCmd = "start";
       break;
-    case 'linux':
-      openCmd = 'xdg-open';
+    case "linux":
+      openCmd = "xdg-open";
       break;
     default:
       // Default to xdg-open, which appears to be supported for the less popular operating systems.
-      openCmd = 'xdg-open';
+      openCmd = "xdg-open";
       debugLogger.warn(
         `Unknown platform: ${process.platform}. Attempting to open URLs with: ${openCmd}.`,
       );
@@ -224,9 +202,7 @@ export const getUrlOpenCommand = (): string => {
  * @param command The slash command to check
  * @returns true if the command should auto-execute on Enter
  */
-export function isAutoExecutableCommand(
-  command: SlashCommand | undefined | null,
-): boolean {
+export function isAutoExecutableCommand(command: SlashCommand | undefined | null): boolean {
   if (!command) {
     return false;
   }

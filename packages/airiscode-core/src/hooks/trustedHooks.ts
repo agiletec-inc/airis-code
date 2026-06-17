@@ -4,17 +4,13 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import * as fs from 'node:fs';
-import * as path from 'node:path';
-import { Storage } from '../config/storage.js';
-import {
-  getHookKey,
-  type HookDefinition,
-  type HookEventName,
-} from './types.js';
-import { createDebugLogger } from '../utils/debugLogger.js';
+import * as fs from "node:fs";
+import * as path from "node:path";
+import { Storage } from "../config/storage.js";
+import { createDebugLogger } from "../utils/debugLogger.js";
+import { getHookKey, type HookDefinition, type HookEventName } from "./types.js";
 
-const debugLogger = createDebugLogger('TRUSTED_HOOKS');
+const debugLogger = createDebugLogger("TRUSTED_HOOKS");
 
 interface TrustedHooksConfig {
   [projectPath: string]: string[]; // Array of trusted hook keys (name:command)
@@ -25,21 +21,18 @@ export class TrustedHooksManager {
   private trustedHooks: TrustedHooksConfig = {};
 
   constructor() {
-    this.configPath = path.join(
-      Storage.getGlobalQwenDir(),
-      'trusted_hooks.json',
-    );
+    this.configPath = path.join(Storage.getGlobalQwenDir(), "trusted_hooks.json");
     this.load();
   }
 
   private load(): void {
     try {
       if (fs.existsSync(this.configPath)) {
-        const content = fs.readFileSync(this.configPath, 'utf-8');
+        const content = fs.readFileSync(this.configPath, "utf-8");
         this.trustedHooks = JSON.parse(content);
       }
     } catch (error) {
-      debugLogger.warn('Failed to load trusted hooks config', error);
+      debugLogger.warn("Failed to load trusted hooks config", error);
       this.trustedHooks = {};
     }
   }
@@ -50,12 +43,9 @@ export class TrustedHooksManager {
       if (!fs.existsSync(dir)) {
         fs.mkdirSync(dir, { recursive: true });
       }
-      fs.writeFileSync(
-        this.configPath,
-        JSON.stringify(this.trustedHooks, null, 2),
-      );
+      fs.writeFileSync(this.configPath, JSON.stringify(this.trustedHooks, null, 2));
     } catch (error) {
-      debugLogger.warn('Failed to save trusted hooks config', error);
+      debugLogger.warn("Failed to save trusted hooks config", error);
     }
   }
 
@@ -82,7 +72,9 @@ export class TrustedHooksManager {
           const key = getHookKey(hook);
           if (!trustedKeys.has(key)) {
             // Return friendly name or command
-            untrusted.push(hook.name || ('command' in hook ? hook.command : 'inject') || 'unknown-hook');
+            untrusted.push(
+              hook.name || ("command" in hook ? hook.command : "inject") || "unknown-hook",
+            );
           }
         }
       }
@@ -94,10 +86,7 @@ export class TrustedHooksManager {
   /**
    * Trust all provided hooks for a project
    */
-  trustHooks(
-    projectPath: string,
-    hooks: { [K in HookEventName]?: HookDefinition[] },
-  ): void {
+  trustHooks(projectPath: string, hooks: { [K in HookEventName]?: HookDefinition[] }): void {
     const currentTrusted = new Set(this.trustedHooks[projectPath] || []);
 
     for (const eventName of Object.keys(hooks)) {

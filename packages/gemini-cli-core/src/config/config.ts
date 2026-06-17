@@ -4,94 +4,91 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import * as path from 'node:path';
-import { inspect } from 'node:util';
-import process from 'node:process';
-import type {
-  ContentGenerator,
-  ContentGeneratorConfig,
-} from '../core/contentGenerator.js';
+import * as path from "node:path";
+import process from "node:process";
+import { inspect } from "node:util";
+import { ModelAvailabilityService } from "../availability/modelAvailabilityService.js";
+import { BaseLlmClient } from "../core/baseLlmClient.js";
+import { GeminiClient } from "../core/client.js";
+import type { ContentGenerator, ContentGeneratorConfig } from "../core/contentGenerator.js";
 import {
   AuthType,
   createContentGenerator,
   createContentGeneratorConfig,
-} from '../core/contentGenerator.js';
-import { PromptRegistry } from '../prompts/prompt-registry.js';
-import { ResourceRegistry } from '../resources/resource-registry.js';
-import { ToolRegistry } from '../tools/tool-registry.js';
-import { LSTool } from '../tools/ls.js';
-import { ReadFileTool } from '../tools/read-file.js';
-import { GrepTool } from '../tools/grep.js';
-import { canUseRipgrep, RipGrepTool } from '../tools/ripGrep.js';
-import { GlobTool } from '../tools/glob.js';
-import { EditTool } from '../tools/edit.js';
-import { SmartEditTool } from '../tools/smart-edit.js';
-import { ShellTool } from '../tools/shell.js';
-import { WriteFileTool } from '../tools/write-file.js';
-import { WebFetchTool } from '../tools/web-fetch.js';
-import { MemoryTool, setGeminiMdFilename } from '../tools/memoryTool.js';
-import { WebSearchTool } from '../tools/web-search.js';
-import { GeminiClient } from '../core/client.js';
-import { BaseLlmClient } from '../core/baseLlmClient.js';
-import type { HookDefinition, HookEventName } from '../hooks/types.js';
-import { FileDiscoveryService } from '../services/fileDiscoveryService.js';
-import { GitService } from '../services/gitService.js';
-import type { TelemetryTarget } from '../telemetry/index.js';
+} from "../core/contentGenerator.js";
+import { tokenLimit } from "../core/tokenLimits.js";
+import type { FallbackModelHandler } from "../fallback/types.js";
+import type { HookDefinition, HookEventName } from "../hooks/types.js";
+import { ideContextStore } from "../ide/ideContext.js";
+import type { MCPOAuthConfig } from "../mcp/oauth-provider.js";
+import { OutputFormat } from "../output/types.js";
+import { PromptRegistry } from "../prompts/prompt-registry.js";
+import { ResourceRegistry } from "../resources/resource-registry.js";
+import { ModelRouterService } from "../routing/modelRouterService.js";
+import { ContextManager } from "../services/contextManager.js";
+import { FileDiscoveryService } from "../services/fileDiscoveryService.js";
+import type { FileSystemService } from "../services/fileSystemService.js";
+import { StandardFileSystemService } from "../services/fileSystemService.js";
+import { GitService } from "../services/gitService.js";
+import type { ModelConfigServiceConfig } from "../services/modelConfigService.js";
+import { ModelConfigService } from "../services/modelConfigService.js";
+import type { TelemetryTarget } from "../telemetry/index.js";
 import {
-  initializeTelemetry,
-  DEFAULT_TELEMETRY_TARGET,
   DEFAULT_OTLP_ENDPOINT,
+  DEFAULT_TELEMETRY_TARGET,
+  initializeTelemetry,
   uiTelemetryService,
-} from '../telemetry/index.js';
-import { coreEvents } from '../utils/events.js';
-import { tokenLimit } from '../core/tokenLimits.js';
+} from "../telemetry/index.js";
+import { logRipgrepFallback } from "../telemetry/loggers.js";
+import { RipgrepFallbackEvent } from "../telemetry/types.js";
+import { EditTool } from "../tools/edit.js";
+import { GlobTool } from "../tools/glob.js";
+import { GrepTool } from "../tools/grep.js";
+import { LSTool } from "../tools/ls.js";
+import { MemoryTool, setGeminiMdFilename } from "../tools/memoryTool.js";
+import { ReadFileTool } from "../tools/read-file.js";
+import { canUseRipgrep, RipGrepTool } from "../tools/ripGrep.js";
+import { ShellTool } from "../tools/shell.js";
+import { SmartEditTool } from "../tools/smart-edit.js";
+import { ToolRegistry } from "../tools/tool-registry.js";
+import { WebFetchTool } from "../tools/web-fetch.js";
+import { WebSearchTool } from "../tools/web-search.js";
+import { WriteFileTool } from "../tools/write-file.js";
+import { WriteTodosTool } from "../tools/write-todos.js";
+import { shouldAttemptBrowserLaunch } from "../utils/browser.js";
+import { coreEvents } from "../utils/events.js";
+import { DEFAULT_MODEL_CONFIGS } from "./defaultModelConfigs.js";
 import {
   DEFAULT_GEMINI_EMBEDDING_MODEL,
   DEFAULT_GEMINI_FLASH_MODEL,
   DEFAULT_THINKING_MODE,
-} from './models.js';
-import { shouldAttemptBrowserLaunch } from '../utils/browser.js';
-import type { MCPOAuthConfig } from '../mcp/oauth-provider.js';
-import { ideContextStore } from '../ide/ideContext.js';
-import { WriteTodosTool } from '../tools/write-todos.js';
-import type { FileSystemService } from '../services/fileSystemService.js';
-import { StandardFileSystemService } from '../services/fileSystemService.js';
-import { logRipgrepFallback } from '../telemetry/loggers.js';
-import { RipgrepFallbackEvent } from '../telemetry/types.js';
-import type { FallbackModelHandler } from '../fallback/types.js';
-import { ModelAvailabilityService } from '../availability/modelAvailabilityService.js';
-import { ModelRouterService } from '../routing/modelRouterService.js';
-import { OutputFormat } from '../output/types.js';
-import type { ModelConfigServiceConfig } from '../services/modelConfigService.js';
-import { ModelConfigService } from '../services/modelConfigService.js';
-import { DEFAULT_MODEL_CONFIGS } from './defaultModelConfigs.js';
-import { ContextManager } from '../services/contextManager.js';
+} from "./models.js";
 
 // Re-export OAuth config type
-export type { MCPOAuthConfig, AnyToolInvocation };
-import type { AnyToolInvocation } from '../tools/tools.js';
-import { WorkspaceContext } from '../utils/workspaceContext.js';
-import { Storage } from './storage.js';
-import type { ShellExecutionConfig } from '../services/shellExecutionService.js';
-import { FileExclusions } from '../utils/ignorePatterns.js';
-import type { EventEmitter } from 'node:events';
-import { MessageBus } from '../confirmation-bus/message-bus.js';
-import { PolicyEngine } from '../policy/policy-engine.js';
-import type { PolicyEngineConfig } from '../policy/types.js';
-import { HookSystem } from '../hooks/index.js';
-import type { UserTierId } from '../code_assist/types.js';
-import { getCodeAssistServer } from '../code_assist/codeAssist.js';
-import type { Experiments } from '../code_assist/experiments/experiments.js';
-import { AgentRegistry } from '../agents/registry.js';
-import { setGlobalProxy } from '../utils/fetch.js';
-import { DelegateToAgentTool } from '../agents/delegate-to-agent-tool.js';
-import { DELEGATE_TO_AGENT_TOOL_NAME } from '../tools/tool-names.js';
-import { getExperiments } from '../code_assist/experiments/experiments.js';
-import { ExperimentFlags } from '../code_assist/experiments/flagNames.js';
-import { debugLogger } from '../utils/debugLogger.js';
-import { startupProfiler } from '../telemetry/startupProfiler.js';
+export type { AnyToolInvocation, MCPOAuthConfig };
 
-import { ApprovalMode } from '../policy/types.js';
+import type { EventEmitter } from "node:events";
+import { DelegateToAgentTool } from "../agents/delegate-to-agent-tool.js";
+import { AgentRegistry } from "../agents/registry.js";
+import { getCodeAssistServer } from "../code_assist/codeAssist.js";
+import type { Experiments } from "../code_assist/experiments/experiments.js";
+import { getExperiments } from "../code_assist/experiments/experiments.js";
+import { ExperimentFlags } from "../code_assist/experiments/flagNames.js";
+import type { UserTierId } from "../code_assist/types.js";
+import { MessageBus } from "../confirmation-bus/message-bus.js";
+import { HookSystem } from "../hooks/index.js";
+import { PolicyEngine } from "../policy/policy-engine.js";
+import type { PolicyEngineConfig } from "../policy/types.js";
+import { ApprovalMode } from "../policy/types.js";
+import type { ShellExecutionConfig } from "../services/shellExecutionService.js";
+import { startupProfiler } from "../telemetry/startupProfiler.js";
+import { DELEGATE_TO_AGENT_TOOL_NAME } from "../tools/tool-names.js";
+import type { AnyToolInvocation } from "../tools/tools.js";
+import { debugLogger } from "../utils/debugLogger.js";
+import { setGlobalProxy } from "../utils/fetch.js";
+import { FileExclusions } from "../utils/ignorePatterns.js";
+import { WorkspaceContext } from "../utils/workspaceContext.js";
+import { Storage } from "./storage.js";
 
 export interface AccessibilitySettings {
   disableLoadingPhrases?: boolean;
@@ -110,7 +107,7 @@ export interface TelemetrySettings {
   enabled?: boolean;
   target?: TelemetryTarget;
   otlpEndpoint?: string;
-  otlpProtocol?: 'grpc' | 'http';
+  otlpProtocol?: "grpc" | "http";
   logPrompts?: boolean;
   outfile?: string;
   useCollector?: boolean;
@@ -150,30 +147,23 @@ export interface GeminiCLIExtension {
 
 export interface ExtensionInstallMetadata {
   source: string;
-  type: 'git' | 'local' | 'link' | 'github-release';
+  type: "git" | "local" | "link" | "github-release";
   releaseTag?: string; // Only present for github-release installs.
   ref?: string;
   autoUpdate?: boolean;
   allowPreRelease?: boolean;
 }
 
-import type { FileFilteringOptions } from './constants.js';
+import { McpClientManager } from "../tools/mcp-client-manager.js";
+import { type ExtensionLoader, SimpleExtensionLoader } from "../utils/extensionLoader.js";
+import type { FileFilteringOptions } from "./constants.js";
 import {
   DEFAULT_FILE_FILTERING_OPTIONS,
   DEFAULT_MEMORY_FILE_FILTERING_OPTIONS,
-} from './constants.js';
-
-import {
-  type ExtensionLoader,
-  SimpleExtensionLoader,
-} from '../utils/extensionLoader.js';
-import { McpClientManager } from '../tools/mcp-client-manager.js';
+} from "./constants.js";
 
 export type { FileFilteringOptions };
-export {
-  DEFAULT_FILE_FILTERING_OPTIONS,
-  DEFAULT_MEMORY_FILE_FILTERING_OPTIONS,
-};
+export { DEFAULT_FILE_FILTERING_OPTIONS, DEFAULT_MEMORY_FILE_FILTERING_OPTIONS };
 
 export const DEFAULT_TRUNCATE_TOOL_OUTPUT_THRESHOLD = 4_000_000;
 export const DEFAULT_TRUNCATE_TOOL_OUTPUT_LINES = 1000;
@@ -197,7 +187,7 @@ export class MCPServerConfig {
     // When set to 'sse', uses SSEClientTransport
     // When omitted, auto-detects transport type
     // Note: 'httpUrl' is deprecated in favor of 'url' + 'type'
-    readonly type?: 'sse' | 'http',
+    readonly type?: "sse" | "http",
     // Common
     readonly timeout?: number,
     readonly trust?: boolean,
@@ -218,13 +208,13 @@ export class MCPServerConfig {
 }
 
 export enum AuthProviderType {
-  DYNAMIC_DISCOVERY = 'dynamic_discovery',
-  GOOGLE_CREDENTIALS = 'google_credentials',
-  SERVICE_ACCOUNT_IMPERSONATION = 'service_account_impersonation',
+  DYNAMIC_DISCOVERY = "dynamic_discovery",
+  GOOGLE_CREDENTIALS = "google_credentials",
+  SERVICE_ACCOUNT_IMPERSONATION = "service_account_impersonation",
 }
 
 export interface SandboxConfig {
-  command: 'docker' | 'podman' | 'sandbox-exec';
+  command: "docker" | "podman" | "sandbox-exec";
   image: string;
 }
 
@@ -280,7 +270,7 @@ export interface ConfigParameters {
   folderTrust?: boolean;
   ideMode?: boolean;
   loadMemoryFromIncludeDirectories?: boolean;
-  importFormat?: 'tree' | 'flat';
+  importFormat?: "tree" | "flat";
   discoveryMaxDirs?: number;
   compressionThreshold?: number;
   interactive?: boolean;
@@ -394,12 +384,10 @@ export class Config {
   private readonly enableExtensionReloading: boolean;
   fallbackModelHandler?: FallbackModelHandler;
   private quotaErrorOccurred: boolean = false;
-  private readonly summarizeToolOutput:
-    | Record<string, SummarizeToolOutputSettings>
-    | undefined;
+  private readonly summarizeToolOutput: Record<string, SummarizeToolOutputSettings> | undefined;
   private readonly experimentalZedIntegration: boolean = false;
   private readonly loadMemoryFromIncludeDirectories: boolean = false;
-  private readonly importFormat: 'tree' | 'flat';
+  private readonly importFormat: "tree" | "flat";
   private readonly discoveryMaxDirs: number;
   private readonly compressionThreshold: number | undefined;
   private readonly interactive: boolean;
@@ -434,9 +422,7 @@ export class Config {
   private readonly disableYoloMode: boolean;
   private pendingIncludeDirectories: string[];
   private readonly enableHooks: boolean;
-  private readonly hooks:
-    | { [K in HookEventName]?: HookDefinition[] }
-    | undefined;
+  private readonly hooks: { [K in HookEventName]?: HookDefinition[] } | undefined;
   private readonly disabledHooks: string[];
   private experiments: Experiments | undefined;
   private experimentsPromise: Promise<void> | undefined;
@@ -452,8 +438,7 @@ export class Config {
 
   constructor(params: ConfigParameters) {
     this.sessionId = params.sessionId;
-    this.embeddingModel =
-      params.embeddingModel ?? DEFAULT_GEMINI_EMBEDDING_MODEL;
+    this.embeddingModel = params.embeddingModel ?? DEFAULT_GEMINI_EMBEDDING_MODEL;
     this.fileSystemService = new StandardFileSystemService();
     this.sandbox = params.sandbox;
     this.targetDir = path.resolve(params.targetDir);
@@ -472,7 +457,7 @@ export class Config {
     this.mcpServers = params.mcpServers;
     this.allowedMcpServers = params.allowedMcpServers ?? [];
     this.blockedMcpServers = params.blockedMcpServers ?? [];
-    this.userMemory = params.userMemory ?? '';
+    this.userMemory = params.userMemory ?? "";
     this.geminiMdFileCount = params.geminiMdFileCount ?? 0;
     this.geminiMdFilePaths = params.geminiMdFilePaths ?? [];
     this.approvalMode = params.approvalMode ?? ApprovalMode.DEFAULT;
@@ -492,13 +477,11 @@ export class Config {
 
     this.fileFiltering = {
       respectGitIgnore:
-        params.fileFiltering?.respectGitIgnore ??
-        DEFAULT_FILE_FILTERING_OPTIONS.respectGitIgnore,
+        params.fileFiltering?.respectGitIgnore ?? DEFAULT_FILE_FILTERING_OPTIONS.respectGitIgnore,
       respectGeminiIgnore:
         params.fileFiltering?.respectGeminiIgnore ??
         DEFAULT_FILE_FILTERING_OPTIONS.respectGeminiIgnore,
-      enableRecursiveFileSearch:
-        params.fileFiltering?.enableRecursiveFileSearch ?? true,
+      enableRecursiveFileSearch: params.fileFiltering?.enableRecursiveFileSearch ?? true,
       disableFuzzySearch: params.fileFiltering?.disableFuzzySearch ?? false,
     };
     this.checkpointing = params.checkpointing ?? false;
@@ -508,32 +491,28 @@ export class Config {
     this.bugCommand = params.bugCommand;
     this.model = params.model;
     this._activeModel = params.model;
-    this.enableModelAvailabilityService =
-      params.enableModelAvailabilityService ?? false;
+    this.enableModelAvailabilityService = params.enableModelAvailabilityService ?? false;
     this.enableAgents = params.enableAgents ?? false;
     this.experimentalJitContext = params.experimentalJitContext ?? false;
     this.modelAvailabilityService = new ModelAvailabilityService();
     this.previewFeatures = params.previewFeatures ?? undefined;
     this.maxSessionTurns = params.maxSessionTurns ?? -1;
-    this.experimentalZedIntegration =
-      params.experimentalZedIntegration ?? false;
+    this.experimentalZedIntegration = params.experimentalZedIntegration ?? false;
     this.listSessions = params.listSessions ?? false;
     this.deleteSession = params.deleteSession;
     this.listExtensions = params.listExtensions ?? false;
-    this._extensionLoader =
-      params.extensionLoader ?? new SimpleExtensionLoader([]);
+    this._extensionLoader = params.extensionLoader ?? new SimpleExtensionLoader([]);
     this._enabledExtensions = params.enabledExtensions ?? [];
     this.noBrowser = params.noBrowser ?? false;
     this.summarizeToolOutput = params.summarizeToolOutput;
     this.folderTrust = params.folderTrust ?? false;
     this.ideMode = params.ideMode ?? false;
-    this.loadMemoryFromIncludeDirectories =
-      params.loadMemoryFromIncludeDirectories ?? false;
-    this.importFormat = params.importFormat ?? 'tree';
+    this.loadMemoryFromIncludeDirectories = params.loadMemoryFromIncludeDirectories ?? false;
+    this.importFormat = params.importFormat ?? "tree";
     this.discoveryMaxDirs = params.discoveryMaxDirs ?? 200;
     this.compressionThreshold = params.compressionThreshold;
     this.interactive = params.interactive ?? false;
-    this.ptyInfo = params.ptyInfo ?? 'child_process';
+    this.ptyInfo = params.ptyInfo ?? "child_process";
     this.trustedFolder = params.trustedFolder;
     this.useRipgrep = params.useRipgrep ?? true;
     this.enableInteractiveShell = params.enableInteractiveShell ?? false;
@@ -542,11 +521,10 @@ export class Config {
       terminalWidth: params.shellExecutionConfig?.terminalWidth ?? 80,
       terminalHeight: params.shellExecutionConfig?.terminalHeight ?? 24,
       showColor: params.shellExecutionConfig?.showColor ?? false,
-      pager: params.shellExecutionConfig?.pager ?? 'cat',
+      pager: params.shellExecutionConfig?.pager ?? "cat",
     };
     this.truncateToolOutputThreshold =
-      params.truncateToolOutputThreshold ??
-      DEFAULT_TRUNCATE_TOOL_OUTPUT_THRESHOLD;
+      params.truncateToolOutputThreshold ?? DEFAULT_TRUNCATE_TOOL_OUTPUT_THRESHOLD;
     this.truncateToolOutputLines =
       params.truncateToolOutputLines ?? DEFAULT_TRUNCATE_TOOL_OUTPUT_LINES;
     this.enableToolOutputTruncation = params.enableToolOutputTruncation ?? true;
@@ -554,9 +532,7 @@ export class Config {
     this.useWriteTodos = params.useWriteTodos ?? true;
     this.enableHooks = params.enableHooks ?? false;
     this.disabledHooks =
-      (params.hooks && 'disabled' in params.hooks
-        ? params.hooks.disabled
-        : undefined) ?? [];
+      (params.hooks && "disabled" in params.hooks ? params.hooks.disabled : undefined) ?? [];
 
     // Enable MessageBus integration if:
     // 1. Explicitly enabled via setting, OR
@@ -564,22 +540,17 @@ export class Config {
     const hasHooks = params.hooks && Object.keys(params.hooks).length > 0;
     const hooksNeedMessageBus = this.enableHooks && hasHooks;
     this.enableMessageBusIntegration =
-      params.enableMessageBusIntegration ??
-      (hooksNeedMessageBus ? true : false);
+      params.enableMessageBusIntegration ?? (hooksNeedMessageBus ? true : false);
     this.codebaseInvestigatorSettings = {
       enabled: params.codebaseInvestigatorSettings?.enabled ?? true,
       maxNumTurns: params.codebaseInvestigatorSettings?.maxNumTurns ?? 10,
       maxTimeMinutes: params.codebaseInvestigatorSettings?.maxTimeMinutes ?? 3,
-      thinkingBudget:
-        params.codebaseInvestigatorSettings?.thinkingBudget ??
-        DEFAULT_THINKING_MODE,
+      thinkingBudget: params.codebaseInvestigatorSettings?.thinkingBudget ?? DEFAULT_THINKING_MODE,
       model: params.codebaseInvestigatorSettings?.model,
     };
     this.continueOnFailedApiCall = params.continueOnFailedApiCall ?? true;
-    this.enableShellOutputEfficiency =
-      params.enableShellOutputEfficiency ?? true;
-    this.shellToolInactivityTimeout =
-      (params.shellToolInactivityTimeout ?? 300) * 1000; // 5 minutes
+    this.enableShellOutputEfficiency = params.enableShellOutputEfficiency ?? true;
+    this.shellToolInactivityTimeout = (params.shellToolInactivityTimeout ?? 300) * 1000; // 5 minutes
     this.extensionManagement = params.extensionManagement ?? true;
     this.enableExtensionReloading = params.enableExtensionReloading ?? false;
     this.storage = new Storage(this.targetDir);
@@ -613,8 +584,8 @@ export class Config {
         setGlobalProxy(proxy);
       } catch (error) {
         coreEvents.emitFeedback(
-          'error',
-          'Invalid proxy configuration detected. Check debug drawer for more details (F12)',
+          "error",
+          "Invalid proxy configuration detected. Check debug drawer for more details (F12)",
           error,
         );
       }
@@ -655,12 +626,12 @@ export class Config {
    */
   async initialize(): Promise<void> {
     if (this.initialized) {
-      throw Error('Config was already initialized');
+      throw Error("Config was already initialized");
     }
     this.initialized = true;
 
     // Initialize centralized FileDiscoveryService
-    const discoverToolsHandle = startupProfiler.start('discover_tools');
+    const discoverToolsHandle = startupProfiler.start("discover_tools");
     this.getFileService();
     if (this.getCheckpointingEnabled()) {
       await this.getGitService();
@@ -673,12 +644,8 @@ export class Config {
 
     this.toolRegistry = await this.createToolRegistry();
     discoverToolsHandle?.end();
-    this.mcpClientManager = new McpClientManager(
-      this.toolRegistry,
-      this,
-      this.eventEmitter,
-    );
-    const initMcpHandle = startupProfiler.start('initialize_mcp_clients');
+    this.mcpClientManager = new McpClientManager(this.toolRegistry, this, this.eventEmitter);
+    const initMcpHandle = startupProfiler.start("initialize_mcp_clients");
     await Promise.all([
       await this.mcpClientManager.startConfiguredMcpServers(),
       await this.getExtensionLoader().start(this),
@@ -716,10 +683,7 @@ export class Config {
       this.geminiClient.stripThoughtsFromHistory();
     }
 
-    const newContentGeneratorConfig = await createContentGeneratorConfig(
-      this,
-      authMethod,
-    );
+    const newContentGeneratorConfig = await createContentGeneratorConfig(this, authMethod);
     this.contentGenerator = await createContentGenerator(
       newContentGeneratorConfig,
       this,
@@ -749,7 +713,7 @@ export class Config {
           }
         })
         .catch((e) => {
-          debugLogger.error('Failed to fetch experiments', e);
+          debugLogger.error("Failed to fetch experiments", e);
         });
     } else {
       this.experiments = undefined;
@@ -782,13 +746,10 @@ export class Config {
     if (!this.baseLlmClient) {
       // Handle cases where initialization might be deferred or authentication failed
       if (this.contentGenerator) {
-        this.baseLlmClient = new BaseLlmClient(
-          this.getContentGenerator(),
-          this,
-        );
+        this.baseLlmClient = new BaseLlmClient(this.getContentGenerator(), this);
       } else {
         throw new Error(
-          'BaseLlmClient not initialized. Ensure authentication has occurred and ContentGenerator is ready.',
+          "BaseLlmClient not initialized. Ensure authentication has occurred and ContentGenerator is ready.",
         );
       }
     }
@@ -807,7 +768,7 @@ export class Config {
     return this.loadMemoryFromIncludeDirectories;
   }
 
-  getImportFormat(): 'tree' | 'flat' {
+  getImportFormat(): "tree" | "flat" {
     return this.importFormat;
   }
 
@@ -903,12 +864,12 @@ export class Config {
 
   isRestrictiveSandbox(): boolean {
     const sandboxConfig = this.getSandbox();
-    const seatbeltProfile = process.env['SEATBELT_PROFILE'];
+    const seatbeltProfile = process.env["SEATBELT_PROFILE"];
     return (
       !!sandboxConfig &&
-      sandboxConfig.command === 'sandbox-exec' &&
+      sandboxConfig.command === "sandbox-exec" &&
       !!seatbeltProfile &&
-      seatbeltProfile.startsWith('restrictive-')
+      seatbeltProfile.startsWith("restrictive-")
     );
   }
 
@@ -1028,11 +989,11 @@ export class Config {
   }
 
   getGlobalMemory(): string {
-    return this.contextManager?.getGlobalMemory() ?? '';
+    return this.contextManager?.getGlobalMemory() ?? "";
   }
 
   getEnvironmentMemory(): string {
-    return this.contextManager?.getEnvironmentMemory() ?? '';
+    return this.contextManager?.getEnvironmentMemory() ?? "";
   }
 
   getContextManager(): ContextManager | undefined {
@@ -1065,9 +1026,7 @@ export class Config {
 
   setApprovalMode(mode: ApprovalMode): void {
     if (!this.isTrustedFolder() && mode !== ApprovalMode.DEFAULT) {
-      throw new Error(
-        'Cannot enable privileged approval modes in an untrusted folder.',
-      );
+      throw new Error("Cannot enable privileged approval modes in an untrusted folder.");
     }
     this.approvalMode = mode;
   }
@@ -1104,8 +1063,8 @@ export class Config {
     return this.telemetrySettings.otlpEndpoint ?? DEFAULT_OTLP_ENDPOINT;
   }
 
-  getTelemetryOtlpProtocol(): 'grpc' | 'http' {
-    return this.telemetrySettings.otlpProtocol ?? 'grpc';
+  getTelemetryOtlpProtocol(): "grpc" | "http" {
+    return this.telemetrySettings.otlpProtocol ?? "grpc";
   }
 
   getTelemetryTarget(): TelemetryTarget {
@@ -1265,9 +1224,7 @@ export class Config {
     return this.getNoBrowser() || !shouldAttemptBrowserLaunch();
   }
 
-  getSummarizeToolOutputConfig():
-    | Record<string, SummarizeToolOutputSettings>
-    | undefined {
+  getSummarizeToolOutputConfig(): Record<string, SummarizeToolOutputSettings> | undefined {
     return this.summarizeToolOutput;
   }
 
@@ -1331,8 +1288,7 @@ export class Config {
     await this.ensureExperimentsLoaded();
 
     const remoteThreshold =
-      this.experiments?.flags[ExperimentFlags.CONTEXT_COMPRESSION_THRESHOLD]
-        ?.floatValue;
+      this.experiments?.flags[ExperimentFlags.CONTEXT_COMPRESSION_THRESHOLD]?.floatValue;
     if (remoteThreshold === 0) {
       return undefined;
     }
@@ -1348,17 +1304,13 @@ export class Config {
   async getBannerTextNoCapacityIssues(): Promise<string> {
     await this.ensureExperimentsLoaded();
     return (
-      this.experiments?.flags[ExperimentFlags.BANNER_TEXT_NO_CAPACITY_ISSUES]
-        ?.stringValue ?? ''
+      this.experiments?.flags[ExperimentFlags.BANNER_TEXT_NO_CAPACITY_ISSUES]?.stringValue ?? ""
     );
   }
 
   async getBannerTextCapacityIssues(): Promise<string> {
     await this.ensureExperimentsLoaded();
-    return (
-      this.experiments?.flags[ExperimentFlags.BANNER_TEXT_CAPACITY_ISSUES]
-        ?.stringValue ?? ''
-    );
+    return this.experiments?.flags[ExperimentFlags.BANNER_TEXT_CAPACITY_ISSUES]?.stringValue ?? "";
   }
 
   private async ensureExperimentsLoaded(): Promise<void> {
@@ -1368,16 +1320,12 @@ export class Config {
     try {
       await this.experimentsPromise;
     } catch (e) {
-      debugLogger.debug('Failed to fetch experiments', e);
+      debugLogger.debug("Failed to fetch experiments", e);
     }
   }
 
   isInteractiveShellEnabled(): boolean {
-    return (
-      this.interactive &&
-      this.ptyInfo !== 'child_process' &&
-      this.enableInteractiveShell
-    );
+    return this.interactive && this.ptyInfo !== "child_process" && this.enableInteractiveShell;
   }
 
   isInteractive(): boolean {
@@ -1418,10 +1366,8 @@ export class Config {
 
   setShellExecutionConfig(config: ShellExecutionConfig): void {
     this.shellExecutionConfig = {
-      terminalWidth:
-        config.terminalWidth ?? this.shellExecutionConfig.terminalWidth,
-      terminalHeight:
-        config.terminalHeight ?? this.shellExecutionConfig.terminalHeight,
+      terminalWidth: config.terminalWidth ?? this.shellExecutionConfig.terminalWidth,
+      terminalHeight: config.terminalHeight ?? this.shellExecutionConfig.terminalHeight,
       showColor: config.showColor ?? this.shellExecutionConfig.showColor,
       pager: config.pager ?? this.shellExecutionConfig.pager,
     };
@@ -1441,8 +1387,7 @@ export class Config {
   getTruncateToolOutputThreshold(): number {
     return Math.min(
       // Estimate remaining context window in characters (1 token ~= 4 chars).
-      4 *
-        (tokenLimit(this.model) - uiTelemetryService.getLastPromptTokenCount()),
+      4 * (tokenLimit(this.model) - uiTelemetryService.getLastPromptTokenCount()),
       this.truncateToolOutputThreshold,
     );
   }
@@ -1460,9 +1405,7 @@ export class Config {
   }
 
   getOutputFormat(): OutputFormat {
-    return this.outputSettings?.format
-      ? this.outputSettings.format
-      : OutputFormat.TEXT;
+    return this.outputSettings?.format ? this.outputSettings.format : OutputFormat.TEXT;
   }
 
   async getGitService(): Promise<GitService> {
@@ -1512,7 +1455,7 @@ export class Config {
       const toolName = ToolClass.Name || className;
       const coreTools = this.getCoreTools();
       // On some platforms, the className can be minified to _ClassName.
-      const normalizedClassName = className.replace(/^_+/, '');
+      const normalizedClassName = className.replace(/^_+/, "");
 
       let isEnabled = true; // Enabled by default if coreTools is not set.
       if (coreTools) {
@@ -1531,9 +1474,7 @@ export class Config {
         // the tool registry.
         const messageBusEnabled = this.getEnableMessageBusIntegration();
 
-        const toolArgs = messageBusEnabled
-          ? [...args, this.getMessageBus()]
-          : args;
+        const toolArgs = messageBusEnabled ? [...args, this.getMessageBus()] : args;
 
         registry.registerTool(new ToolClass(...toolArgs));
       }
@@ -1577,14 +1518,10 @@ export class Config {
 
     // Register Subagents as Tools
     // Register DelegateToAgentTool if agents are enabled
-    if (
-      this.isAgentsEnabled() ||
-      this.getCodebaseInvestigatorSettings().enabled
-    ) {
+    if (this.isAgentsEnabled() || this.getCodebaseInvestigatorSettings().enabled) {
       // Check if the delegate tool itself is allowed (if allowedTools is set)
       const allowedTools = this.getAllowedTools();
-      const isAllowed =
-        !allowedTools || allowedTools.includes(DELEGATE_TO_AGENT_TOOL_NAME);
+      const isAllowed = !allowedTools || allowedTools.includes(DELEGATE_TO_AGENT_TOOL_NAME);
 
       if (isAllowed) {
         const messageBusEnabled = this.getEnableMessageBusIntegration();
@@ -1640,24 +1577,24 @@ export class Config {
       .map(([flagId, flag]) => {
         const summary: Record<string, unknown> = { flagId };
         if (flag.boolValue !== undefined) {
-          summary['boolValue'] = flag.boolValue;
+          summary["boolValue"] = flag.boolValue;
         }
         if (flag.floatValue !== undefined) {
-          summary['floatValue'] = flag.floatValue;
+          summary["floatValue"] = flag.floatValue;
         }
         if (flag.intValue !== undefined) {
-          summary['intValue'] = flag.intValue;
+          summary["intValue"] = flag.intValue;
         }
         if (flag.stringValue !== undefined) {
-          summary['stringValue'] = flag.stringValue;
+          summary["stringValue"] = flag.stringValue;
         }
         const int32Length = flag.int32ListValue?.values?.length ?? 0;
         if (int32Length > 0) {
-          summary['int32ListLength'] = int32Length;
+          summary["int32ListLength"] = int32Length;
         }
         const stringListLength = flag.stringListValue?.values?.length ?? 0;
         if (stringListLength > 0) {
-          summary['stringListLength'] = stringListLength;
+          summary["stringListLength"] = stringListLength;
         }
         return summary;
       });
@@ -1672,7 +1609,7 @@ export class Config {
       breakLength: 80,
       compact: false,
     });
-    debugLogger.debug('Experiments loaded', summaryString);
+    debugLogger.debug("Experiments loaded", summaryString);
   }
 }
 // Export model constants for use in CLI

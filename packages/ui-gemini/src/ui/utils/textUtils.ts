@@ -4,10 +4,10 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import stripAnsi from 'strip-ansi';
-import ansiRegex from 'ansi-regex';
-import { stripVTControlCharacters } from 'node:util';
-import stringWidth from 'string-width';
+import { stripVTControlCharacters } from "node:util";
+import ansiRegex from "ansi-regex";
+import stringWidth from "string-width";
+import stripAnsi from "strip-ansi";
 
 /**
  * Calculates the maximum width of a multi-line ASCII art string.
@@ -18,7 +18,7 @@ export const getAsciiArtWidth = (asciiArt: string): number => {
   if (!asciiArt) {
     return 0;
   }
-  const lines = asciiArt.split('\n');
+  const lines = asciiArt.split("\n");
   return Math.max(...lines.map((line) => line.length));
 };
 
@@ -42,7 +42,7 @@ export function toCodePoints(str: string): string[] {
     }
   }
   if (isAscii) {
-    return str.split('');
+    return str.split("");
   }
 
   // Cache short strings
@@ -70,7 +70,7 @@ export function cpLen(str: string): number {
 export function cpSlice(str: string, start: number, end?: number): string {
   // Slice by code‑point indices and re‑join.
   const arr = toCodePoints(str).slice(start, end);
-  return arr.join('');
+  return arr.join("");
 }
 
 /**
@@ -116,7 +116,7 @@ export function stripUnsafeCharacters(str: string): string {
       // Preserve all other characters including Unicode/emojis
       return true;
     })
-    .join('');
+    .join("");
 }
 
 // String width caching for performance optimization
@@ -167,18 +167,16 @@ const regex = ansiRegex();
  * original `obj` reference if no changes were necessary.
  */
 export function escapeAnsiCtrlCodes<T>(obj: T): T {
-  if (typeof obj === 'string') {
+  if (typeof obj === "string") {
     if (obj.search(regex) === -1) {
       return obj; // No changes return original string
     }
 
     regex.lastIndex = 0; // needed for global regex
-    return obj.replace(regex, (match) =>
-      JSON.stringify(match).slice(1, -1),
-    ) as T;
+    return obj.replace(regex, (match) => JSON.stringify(match).slice(1, -1)) as T;
   }
 
-  if (obj === null || typeof obj !== 'object') {
+  if (obj === null || typeof obj !== "object") {
     return obj;
   }
 

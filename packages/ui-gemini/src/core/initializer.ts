@@ -5,18 +5,18 @@
  */
 
 import {
+  type Config,
   IdeClient,
   IdeConnectionEvent,
   IdeConnectionType,
-  logIdeConnection,
-  type Config,
-  StartSessionEvent,
   logCliConfiguration,
+  logIdeConnection,
+  StartSessionEvent,
   startupProfiler,
-} from '@airiscode/gemini-cli-core';
-import { type LoadedSettings } from '../config/settings.js';
-import { performInitialAuth } from './auth.js';
-import { validateTheme } from './theme.js';
+} from "@airiscode/gemini-cli-core";
+import { type LoadedSettings } from "../config/settings.js";
+import { performInitialAuth } from "./auth.js";
+import { validateTheme } from "./theme.js";
 
 export interface InitializationResult {
   authError: string | null;
@@ -36,21 +36,15 @@ export async function initializeApp(
   config: Config,
   settings: LoadedSettings,
 ): Promise<InitializationResult> {
-  const authHandle = startupProfiler.start('authenticate');
-  const authError = await performInitialAuth(
-    config,
-    settings.merged.security?.auth?.selectedType,
-  );
+  const authHandle = startupProfiler.start("authenticate");
+  const authError = await performInitialAuth(config, settings.merged.security?.auth?.selectedType);
   authHandle?.end();
   const themeError = validateTheme(settings);
 
   const shouldOpenAuthDialog =
     settings.merged.security?.auth?.selectedType === undefined || !!authError;
 
-  logCliConfiguration(
-    config,
-    new StartSessionEvent(config, config.getToolRegistry()),
-  );
+  logCliConfiguration(config, new StartSessionEvent(config, config.getToolRegistry()));
 
   if (config.getIdeMode()) {
     const ideClient = await IdeClient.getInstance();

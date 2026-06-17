@@ -4,12 +4,12 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { useCallback, useEffect, useRef } from 'react';
-import type { Config, ResumedSessionData } from '@airiscode/gemini-cli-core';
-import type { Part } from '@google/genai';
-import type { HistoryItemWithoutId } from '../types.js';
-import type { UseHistoryManagerReturn } from './useHistoryManager.js';
-import { convertSessionToHistoryFormats } from './useSessionBrowser.js';
+import type { Config, ResumedSessionData } from "@airiscode/gemini-cli-core";
+import type { Part } from "@google/genai";
+import { useCallback, useEffect, useRef } from "react";
+import type { HistoryItemWithoutId } from "../types.js";
+import type { UseHistoryManagerReturn } from "./useHistoryManager.js";
+import { convertSessionToHistoryFormats } from "./useSessionBrowser.js";
 
 interface UseSessionResumeParams {
   config: Config;
@@ -47,7 +47,7 @@ export function useSessionResume({
   const loadHistoryForResume = useCallback(
     (
       uiHistory: HistoryItemWithoutId[],
-      clientHistory: Array<{ role: 'user' | 'model'; parts: Part[] }>,
+      clientHistory: Array<{ role: "user" | "model"; parts: Part[] }>,
       resumedData: ResumedSessionData,
     ) => {
       // Wait for the client.
@@ -81,21 +81,10 @@ export function useSessionResume({
       !hasLoadedResumedSession.current
     ) {
       hasLoadedResumedSession.current = true;
-      const historyData = convertSessionToHistoryFormats(
-        resumedSessionData.conversation.messages,
-      );
-      loadHistoryForResume(
-        historyData.uiHistory,
-        historyData.clientHistory,
-        resumedSessionData,
-      );
+      const historyData = convertSessionToHistoryFormats(resumedSessionData.conversation.messages);
+      loadHistoryForResume(historyData.uiHistory, historyData.clientHistory, resumedSessionData);
     }
-  }, [
-    resumedSessionData,
-    isAuthenticating,
-    isGeminiClientInitialized,
-    loadHistoryForResume,
-  ]);
+  }, [resumedSessionData, isAuthenticating, isGeminiClientInitialized, loadHistoryForResume]);
 
   return { loadHistoryForResume };
 }

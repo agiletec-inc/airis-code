@@ -4,9 +4,9 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import type React from 'react';
-import { Box, Text } from 'ink';
-import type { AnsiLine, AnsiOutput, AnsiToken } from '@airiscode/gemini-cli-core';
+import type { AnsiLine, AnsiOutput, AnsiToken } from "@airiscode/gemini-cli-core";
+import { Box, Text } from "ink";
+import type React from "react";
 
 const DEFAULT_HEIGHT = 24;
 

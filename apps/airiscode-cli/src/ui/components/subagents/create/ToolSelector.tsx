@@ -4,13 +4,13 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { useState, useMemo, useEffect } from 'react';
-import { Box, Text } from 'ink';
-import { RadioButtonSelect } from '../../shared/RadioButtonSelect.js';
-import type { ToolCategory } from '../types.js';
-import { Kind, type Config } from '@airiscode/core';
-import { theme } from '../../../semantic-colors.js';
-import { t } from '../../../../i18n/index.js';
+import { type Config, Kind } from "@airiscode/core";
+import { Box, Text } from "ink";
+import { useEffect, useMemo, useState } from "react";
+import { t } from "../../../../i18n/index.js";
+import { theme } from "../../../semantic-colors.js";
+import { RadioButtonSelect } from "../../shared/RadioButtonSelect.js";
+import type { ToolCategory } from "../types.js";
 
 interface ToolOption {
   label: string;
@@ -27,33 +27,23 @@ interface ToolSelectorProps {
 /**
  * Tool selection with categories.
  */
-export function ToolSelector({
-  tools = [],
-  onSelect,
-  config,
-}: ToolSelectorProps) {
+export function ToolSelector({ tools = [], onSelect, config }: ToolSelectorProps) {
   // Generate tool categories from actual tool registry
-  const {
-    toolCategories,
-    readTools,
-    editTools,
-    executeTools,
-    initialCategory,
-  } = useMemo(() => {
+  const { toolCategories, readTools, editTools, executeTools, initialCategory } = useMemo(() => {
     if (!config) {
       // Fallback categories if config not available
       return {
         toolCategories: [
           {
-            id: 'all',
-            name: t('All Tools (Default)'),
+            id: "all",
+            name: t("All Tools (Default)"),
             tools: [],
           },
         ],
         readTools: [],
         editTools: [],
         executeTools: [],
-        initialCategory: 'all',
+        initialCategory: "all",
       };
     }
 
@@ -74,10 +64,7 @@ export function ToolSelector({
 
     const editTools = allTools
       .filter(
-        (tool) =>
-          tool.kind === Kind.Edit ||
-          tool.kind === Kind.Delete ||
-          tool.kind === Kind.Move,
+        (tool) => tool.kind === Kind.Edit || tool.kind === Kind.Delete || tool.kind === Kind.Move,
       )
       .map((tool) => tool.displayName)
       .sort();
@@ -89,37 +76,37 @@ export function ToolSelector({
 
     const toolCategories = [
       {
-        id: 'all',
-        name: t('All Tools'),
+        id: "all",
+        name: t("All Tools"),
         tools: [],
       },
       {
-        id: 'read',
-        name: t('Read-only Tools'),
+        id: "read",
+        name: t("Read-only Tools"),
         tools: readTools,
       },
       {
-        id: 'edit',
-        name: t('Read & Edit Tools'),
+        id: "edit",
+        name: t("Read & Edit Tools"),
         tools: [...readTools, ...editTools],
       },
       {
-        id: 'execute',
-        name: t('Read & Edit & Execution Tools'),
+        id: "execute",
+        name: t("Read & Edit & Execution Tools"),
         tools: [...readTools, ...editTools, ...executeTools],
       },
-    ].filter((category) => category.id === 'all' || category.tools.length > 0);
+    ].filter((category) => category.id === "all" || category.tools.length > 0);
 
     // Determine initial category based on tools prop
-    let initialCategory = 'all'; // default to first option
+    let initialCategory = "all"; // default to first option
 
     if (tools.length === 0) {
       // Empty array represents all tools
-      initialCategory = 'all';
+      initialCategory = "all";
     } else {
       // Try to match tools array to a category
       const matchingCategory = toolCategories.find((category) => {
-        if (category.id === 'all') return false;
+        if (category.id === "all") return false;
 
         // Check if the tools array exactly matches this category's tools
         const categoryToolsSet = new Set(category.tools);
@@ -146,8 +133,7 @@ export function ToolSelector({
     };
   }, [config, tools]);
 
-  const [selectedCategory, setSelectedCategory] =
-    useState<string>(initialCategory);
+  const [selectedCategory, setSelectedCategory] = useState<string>(initialCategory);
 
   // Update selected category when initialCategory changes (when tools prop changes)
   useEffect(() => {
@@ -167,7 +153,7 @@ export function ToolSelector({
   const handleSelect = (selectedValue: string) => {
     const category = toolCategories.find((cat) => cat.id === selectedValue);
     if (category) {
-      if (category.id === 'all') {
+      if (category.id === "all") {
         onSelect([]); // Empty array for 'all'
       } else {
         onSelect(category.tools);
@@ -176,9 +162,7 @@ export function ToolSelector({
   };
 
   // Get the currently selected category for displaying tools
-  const currentCategory = toolCategories.find(
-    (cat) => cat.id === selectedCategory,
-  );
+  const currentCategory = toolCategories.find((cat) => cat.id === selectedCategory);
 
   return (
     <Box flexDirection="column" gap={1}>
@@ -189,9 +173,7 @@ export function ToolSelector({
             label: option.label,
             value: option.value,
           }))}
-          initialIndex={toolOptions.findIndex(
-            (opt) => opt.value === selectedCategory,
-          )}
+          initialIndex={toolOptions.findIndex((opt) => opt.value === selectedCategory)}
           onSelect={handleSelect}
           onHighlight={handleHighlight}
           isFocused={true}
@@ -201,43 +183,39 @@ export function ToolSelector({
       {/* Show help information or tools for selected category */}
       {currentCategory && (
         <Box flexDirection="column">
-          {currentCategory.id === 'all' ? (
-            <Text color={theme.text.secondary}>
-              {t('All tools selected, including MCP tools')}
-            </Text>
+          {currentCategory.id === "all" ? (
+            <Text color={theme.text.secondary}>{t("All tools selected, including MCP tools")}</Text>
           ) : currentCategory.tools.length > 0 ? (
             <>
-              <Text color={theme.text.secondary}>{t('Selected tools:')}</Text>
+              <Text color={theme.text.secondary}>{t("Selected tools:")}</Text>
               <Box flexDirection="column" marginLeft={2}>
                 {(() => {
                   // Filter the already categorized tools to show only those in current category
-                  const categoryReadTools = currentCategory.tools.filter(
-                    (tool) => readTools.includes(tool),
+                  const categoryReadTools = currentCategory.tools.filter((tool) =>
+                    readTools.includes(tool),
                   );
-                  const categoryEditTools = currentCategory.tools.filter(
-                    (tool) => editTools.includes(tool),
+                  const categoryEditTools = currentCategory.tools.filter((tool) =>
+                    editTools.includes(tool),
                   );
-                  const categoryExecuteTools = currentCategory.tools.filter(
-                    (tool) => executeTools.includes(tool),
+                  const categoryExecuteTools = currentCategory.tools.filter((tool) =>
+                    executeTools.includes(tool),
                   );
 
                   return (
                     <>
                       {categoryReadTools.length > 0 && (
                         <Text color={theme.text.secondary}>
-                          • {t('Read-only tools:')}{' '}
-                          {categoryReadTools.join(', ')}
+                          • {t("Read-only tools:")} {categoryReadTools.join(", ")}
                         </Text>
                       )}
                       {categoryEditTools.length > 0 && (
                         <Text color={theme.text.secondary}>
-                          • {t('Edit tools:')} {categoryEditTools.join(', ')}
+                          • {t("Edit tools:")} {categoryEditTools.join(", ")}
                         </Text>
                       )}
                       {categoryExecuteTools.length > 0 && (
                         <Text color={theme.text.secondary}>
-                          • {t('Execution tools:')}{' '}
-                          {categoryExecuteTools.join(', ')}
+                          • {t("Execution tools:")} {categoryExecuteTools.join(", ")}
                         </Text>
                       )}
                     </>

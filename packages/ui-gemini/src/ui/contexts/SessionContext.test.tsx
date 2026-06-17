@@ -4,14 +4,12 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { type MutableRefObject, Component, type ReactNode } from 'react';
-import { render } from '../../test-utils/render.js';
-
-import { act } from 'react';
-import type { SessionMetrics } from './SessionContext.js';
-import { SessionStatsProvider, useSessionStats } from './SessionContext.js';
-import { describe, it, expect, vi } from 'vitest';
-import { uiTelemetryService } from '@airiscode/gemini-cli-core';
+import { uiTelemetryService } from "@airiscode/gemini-cli-core";
+import { act, Component, type MutableRefObject, type ReactNode } from "react";
+import { describe, expect, it, vi } from "vitest";
+import { render } from "../../test-utils/render.js";
+import type { SessionMetrics } from "./SessionContext.js";
+import { SessionStatsProvider, useSessionStats } from "./SessionContext.js";
 
 class ErrorBoundary extends Component<
   { children: ReactNode; onError: (error: Error) => void },
@@ -52,11 +50,11 @@ const TestHarness = ({
   return null;
 };
 
-describe('SessionStatsContext', () => {
-  it('should provide the correct initial state', () => {
-    const contextRef: MutableRefObject<
-      ReturnType<typeof useSessionStats> | undefined
-    > = { current: undefined };
+describe("SessionStatsContext", () => {
+  it("should provide the correct initial state", () => {
+    const contextRef: MutableRefObject<ReturnType<typeof useSessionStats> | undefined> = {
+      current: undefined,
+    };
 
     const { unmount } = render(
       <SessionStatsProvider>
@@ -72,10 +70,10 @@ describe('SessionStatsContext', () => {
     unmount();
   });
 
-  it('should update metrics when the uiTelemetryService emits an update', () => {
-    const contextRef: MutableRefObject<
-      ReturnType<typeof useSessionStats> | undefined
-    > = { current: undefined };
+  it("should update metrics when the uiTelemetryService emits an update", () => {
+    const contextRef: MutableRefObject<ReturnType<typeof useSessionStats> | undefined> = {
+      current: undefined,
+    };
 
     const { unmount } = render(
       <SessionStatsProvider>
@@ -85,7 +83,7 @@ describe('SessionStatsContext', () => {
 
     const newMetrics: SessionMetrics = {
       models: {
-        'gemini-pro': {
+        "gemini-pro": {
           api: {
             totalRequests: 1,
             totalErrors: 0,
@@ -113,7 +111,7 @@ describe('SessionStatsContext', () => {
           auto_accept: 0,
         },
         byName: {
-          'test-tool': {
+          "test-tool": {
             count: 1,
             success: 1,
             fail: 0,
@@ -134,7 +132,7 @@ describe('SessionStatsContext', () => {
     };
 
     act(() => {
-      uiTelemetryService.emit('update', {
+      uiTelemetryService.emit("update", {
         metrics: newMetrics,
         lastPromptTokenCount: 100,
       });
@@ -146,10 +144,10 @@ describe('SessionStatsContext', () => {
     unmount();
   });
 
-  it('should not update metrics if the data is the same', () => {
-    const contextRef: MutableRefObject<
-      ReturnType<typeof useSessionStats> | undefined
-    > = { current: undefined };
+  it("should not update metrics if the data is the same", () => {
+    const contextRef: MutableRefObject<ReturnType<typeof useSessionStats> | undefined> = {
+      current: undefined,
+    };
 
     let renderCount = 0;
     const CountingTestHarness = () => {
@@ -168,7 +166,7 @@ describe('SessionStatsContext', () => {
 
     const metrics: SessionMetrics = {
       models: {
-        'gemini-pro': {
+        "gemini-pro": {
           api: { totalRequests: 1, totalErrors: 0, totalLatencyMs: 100 },
           tokens: {
             prompt: 10,
@@ -195,13 +193,13 @@ describe('SessionStatsContext', () => {
     };
 
     act(() => {
-      uiTelemetryService.emit('update', { metrics, lastPromptTokenCount: 10 });
+      uiTelemetryService.emit("update", { metrics, lastPromptTokenCount: 10 });
     });
 
     expect(renderCount).toBe(2);
 
     act(() => {
-      uiTelemetryService.emit('update', { metrics, lastPromptTokenCount: 10 });
+      uiTelemetryService.emit("update", { metrics, lastPromptTokenCount: 10 });
     });
 
     expect(renderCount).toBe(2);
@@ -209,7 +207,7 @@ describe('SessionStatsContext', () => {
     const newMetrics = {
       ...metrics,
       models: {
-        'gemini-pro': {
+        "gemini-pro": {
           api: { totalRequests: 2, totalErrors: 0, totalLatencyMs: 200 },
           tokens: {
             prompt: 20,
@@ -223,7 +221,7 @@ describe('SessionStatsContext', () => {
       },
     };
     act(() => {
-      uiTelemetryService.emit('update', {
+      uiTelemetryService.emit("update", {
         metrics: newMetrics,
         lastPromptTokenCount: 20,
       });
@@ -233,10 +231,10 @@ describe('SessionStatsContext', () => {
     unmount();
   });
 
-  it('should throw an error when useSessionStats is used outside of a provider', () => {
+  it("should throw an error when useSessionStats is used outside of a provider", () => {
     const onError = vi.fn();
     // Suppress console.error from React for this test
-    const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+    const consoleSpy = vi.spyOn(console, "error").mockImplementation(() => {});
 
     const { unmount } = render(
       <ErrorBoundary onError={onError}>
@@ -246,7 +244,7 @@ describe('SessionStatsContext', () => {
 
     expect(onError).toHaveBeenCalledWith(
       expect.objectContaining({
-        message: 'useSessionStats must be used within a SessionStatsProvider',
+        message: "useSessionStats must be used within a SessionStatsProvider",
       }),
     );
 

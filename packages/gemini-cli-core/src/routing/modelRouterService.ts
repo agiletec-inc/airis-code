@@ -4,24 +4,16 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import type { Config } from '../config/config.js';
-import {
-  PREVIEW_GEMINI_MODEL,
-  DEFAULT_GEMINI_MODEL,
-} from '../config/models.js';
-import type {
-  RoutingContext,
-  RoutingDecision,
-  TerminalStrategy,
-} from './routingStrategy.js';
-import { DefaultStrategy } from './strategies/defaultStrategy.js';
-import { ClassifierStrategy } from './strategies/classifierStrategy.js';
-import { CompositeStrategy } from './strategies/compositeStrategy.js';
-import { FallbackStrategy } from './strategies/fallbackStrategy.js';
-import { OverrideStrategy } from './strategies/overrideStrategy.js';
-
-import { logModelRouting } from '../telemetry/loggers.js';
-import { ModelRoutingEvent } from '../telemetry/types.js';
+import type { Config } from "../config/config.js";
+import { DEFAULT_GEMINI_MODEL, PREVIEW_GEMINI_MODEL } from "../config/models.js";
+import { logModelRouting } from "../telemetry/loggers.js";
+import { ModelRoutingEvent } from "../telemetry/types.js";
+import type { RoutingContext, RoutingDecision, TerminalStrategy } from "./routingStrategy.js";
+import { ClassifierStrategy } from "./strategies/classifierStrategy.js";
+import { CompositeStrategy } from "./strategies/compositeStrategy.js";
+import { DefaultStrategy } from "./strategies/defaultStrategy.js";
+import { FallbackStrategy } from "./strategies/fallbackStrategy.js";
+import { OverrideStrategy } from "./strategies/overrideStrategy.js";
 
 /**
  * A centralized service for making model routing decisions.
@@ -45,7 +37,7 @@ export class ModelRouterService {
         new ClassifierStrategy(),
         new DefaultStrategy(),
       ],
-      'agent-router',
+      "agent-router",
     );
   }
 
@@ -60,11 +52,7 @@ export class ModelRouterService {
     let decision: RoutingDecision;
 
     try {
-      decision = await this.strategy.route(
-        context,
-        this.config,
-        this.config.getBaseLlmClient(),
-      );
+      decision = await this.strategy.route(context, this.config, this.config.getBaseLlmClient());
 
       // Unified Preview Model Logic:
       // If the decision is to use 'gemini-2.5-pro' and preview features are enabled,
@@ -72,15 +60,15 @@ export class ModelRouterService {
       if (
         decision.model === DEFAULT_GEMINI_MODEL &&
         this.config.getPreviewFeatures() &&
-        !decision.metadata.source.includes('override')
+        !decision.metadata.source.includes("override")
       ) {
         // We ALWAYS attempt to upgrade to Preview Model here.
         // If we are in fallback mode, the 'previewModelBypassMode' flag (handled in handler.ts/geminiChat.ts)
         // will ensure we downgrade to 2.5 Pro for the actual API call if needed.
         // This allows us to "probe" Preview Model periodically (i.e., every new request tries Preview Model first).
         decision.model = PREVIEW_GEMINI_MODEL;
-        decision.metadata.source += ' (Preview Model)';
-        decision.metadata.reasoning += ' (Upgraded to Preview Model)';
+        decision.metadata.source += " (Preview Model)";
+        decision.metadata.reasoning += " (Upgraded to Preview Model)";
       }
 
       const event = new ModelRoutingEvent(
@@ -103,9 +91,9 @@ export class ModelRouterService {
       decision = {
         model: this.config.getModel(),
         metadata: {
-          source: 'router-exception',
+          source: "router-exception",
           latencyMs: Date.now() - startTime,
-          reasoning: 'An exception occurred during routing.',
+          reasoning: "An exception occurred during routing.",
           error: error_message,
         },
       };

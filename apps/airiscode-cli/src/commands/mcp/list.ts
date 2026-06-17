@@ -4,27 +4,21 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+import type { MCPServerConfig } from "@airiscode/core";
+import { createTransport, ExtensionManager, MCPServerStatus } from "@airiscode/core";
+import { Client } from "@modelcontextprotocol/sdk/client/index.js";
 // File for 'qwen mcp list' command
-import type { CommandModule } from 'yargs';
-import { loadSettings } from '../../config/settings.js';
-import { writeStdoutLine } from '../../utils/stdioHelpers.js';
-import type { MCPServerConfig } from '@airiscode/core';
-import {
-  MCPServerStatus,
-  createTransport,
-  ExtensionManager,
-} from '@airiscode/core';
-import { Client } from '@modelcontextprotocol/sdk/client/index.js';
-import { isWorkspaceTrusted } from '../../config/trustedFolders.js';
+import type { CommandModule } from "yargs";
+import { loadSettings } from "../../config/settings.js";
+import { isWorkspaceTrusted } from "../../config/trustedFolders.js";
+import { writeStdoutLine } from "../../utils/stdioHelpers.js";
 
-const COLOR_GREEN = '\u001b[32m';
-const COLOR_YELLOW = '\u001b[33m';
-const COLOR_RED = '\u001b[31m';
-const RESET_COLOR = '\u001b[0m';
+const COLOR_GREEN = "\u001b[32m";
+const COLOR_YELLOW = "\u001b[33m";
+const COLOR_RED = "\u001b[31m";
+const RESET_COLOR = "\u001b[0m";
 
-async function getMcpServersFromConfig(): Promise<
-  Record<string, MCPServerConfig>
-> {
+async function getMcpServersFromConfig(): Promise<Record<string, MCPServerConfig>> {
   const settings = loadSettings();
   const extensionManager = new ExtensionManager({
     isWorkspaceTrusted: !!isWorkspaceTrusted(settings.merged),
@@ -35,17 +29,15 @@ async function getMcpServersFromConfig(): Promise<
   const mcpServers = { ...(settings.merged.mcpServers || {}) };
   for (const extension of extensions) {
     if (extension.isActive) {
-      Object.entries(extension.config.mcpServers || {}).forEach(
-        ([key, server]) => {
-          if (mcpServers[key]) {
-            return;
-          }
-          mcpServers[key] = {
-            ...server,
-            extensionName: extension.config.name,
-          };
-        },
-      );
+      Object.entries(extension.config.mcpServers || {}).forEach(([key, server]) => {
+        if (mcpServers[key]) {
+          return;
+        }
+        mcpServers[key] = {
+          ...server,
+          extensionName: extension.config.name,
+        };
+      });
     }
   }
   return mcpServers;
@@ -56,8 +48,8 @@ async function testMCPConnection(
   config: MCPServerConfig,
 ): Promise<MCPServerStatus> {
   const client = new Client({
-    name: 'mcp-test-client',
-    version: '0.0.1',
+    name: "mcp-test-client",
+    version: "0.0.1",
   });
 
   let transport;
@@ -97,32 +89,32 @@ export async function listMcpServers(): Promise<void> {
   const serverNames = Object.keys(mcpServers);
 
   if (serverNames.length === 0) {
-    writeStdoutLine('No MCP servers configured.');
+    writeStdoutLine("No MCP servers configured.");
     return;
   }
 
-  writeStdoutLine('Configured MCP servers:\n');
+  writeStdoutLine("Configured MCP servers:\n");
 
   for (const serverName of serverNames) {
     const server = mcpServers[serverName];
 
     const status = await getServerStatus(serverName, server);
 
-    let statusIndicator = '';
-    let statusText = '';
+    let statusIndicator = "";
+    let statusText = "";
     switch (status) {
       case MCPServerStatus.CONNECTED:
-        statusIndicator = COLOR_GREEN + '✓' + RESET_COLOR;
-        statusText = 'Connected';
+        statusIndicator = COLOR_GREEN + "✓" + RESET_COLOR;
+        statusText = "Connected";
         break;
       case MCPServerStatus.CONNECTING:
-        statusIndicator = COLOR_YELLOW + '…' + RESET_COLOR;
-        statusText = 'Connecting';
+        statusIndicator = COLOR_YELLOW + "…" + RESET_COLOR;
+        statusText = "Connecting";
         break;
       case MCPServerStatus.DISCONNECTED:
       default:
-        statusIndicator = COLOR_RED + '✗' + RESET_COLOR;
-        statusText = 'Disconnected';
+        statusIndicator = COLOR_RED + "✗" + RESET_COLOR;
+        statusText = "Disconnected";
         break;
     }
 
@@ -132,7 +124,7 @@ export async function listMcpServers(): Promise<void> {
     } else if (server.url) {
       serverInfo += `${server.url} (sse)`;
     } else if (server.command) {
-      serverInfo += `${server.command} ${server.args?.join(' ') || ''} (stdio)`;
+      serverInfo += `${server.command} ${server.args?.join(" ") || ""} (stdio)`;
     }
 
     writeStdoutLine(`${statusIndicator} ${serverInfo} - ${statusText}`);
@@ -140,8 +132,8 @@ export async function listMcpServers(): Promise<void> {
 }
 
 export const listCommand: CommandModule = {
-  command: 'list',
-  describe: 'List all configured MCP servers',
+  command: "list",
+  describe: "List all configured MCP servers",
   handler: async () => {
     await listMcpServers();
   },

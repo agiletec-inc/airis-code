@@ -4,18 +4,14 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import type { Config } from '../config/config.js';
-import { AgentExecutor } from './executor.js';
-import type { AnsiOutput } from '../utils/terminalSerializer.js';
-import { BaseToolInvocation, type ToolResult } from '../tools/tools.js';
-import { ToolErrorType } from '../tools/tool-error.js';
-import type {
-  AgentDefinition,
-  AgentInputs,
-  SubagentActivityEvent,
-} from './types.js';
-import type { MessageBus } from '../confirmation-bus/message-bus.js';
-import { type z } from 'zod';
+import { type z } from "zod";
+import type { Config } from "../config/config.js";
+import type { MessageBus } from "../confirmation-bus/message-bus.js";
+import { ToolErrorType } from "../tools/tool-error.js";
+import { BaseToolInvocation, type ToolResult } from "../tools/tools.js";
+import type { AnsiOutput } from "../utils/terminalSerializer.js";
+import { AgentExecutor } from "./executor.js";
+import type { AgentDefinition, AgentInputs, SubagentActivityEvent } from "./types.js";
 
 const INPUT_PREVIEW_MAX_LENGTH = 50;
 const DESCRIPTION_MAX_LENGTH = 200;
@@ -30,9 +26,10 @@ const DESCRIPTION_MAX_LENGTH = 200;
  * live output stream.
  * 4. Formatting the final result into a {@link ToolResult}.
  */
-export class SubagentInvocation<
-  TOutput extends z.ZodTypeAny,
-> extends BaseToolInvocation<AgentInputs, ToolResult> {
+export class SubagentInvocation<TOutput extends z.ZodTypeAny> extends BaseToolInvocation<
+  AgentInputs,
+  ToolResult
+> {
   /**
    * @param params The validated input parameters for the agent.
    * @param definition The definition object that configures the agent.
@@ -54,11 +51,8 @@ export class SubagentInvocation<
    */
   getDescription(): string {
     const inputSummary = Object.entries(this.params)
-      .map(
-        ([key, value]) =>
-          `${key}: ${String(value).slice(0, INPUT_PREVIEW_MAX_LENGTH)}`,
-      )
-      .join(', ');
+      .map(([key, value]) => `${key}: ${String(value).slice(0, INPUT_PREVIEW_MAX_LENGTH)}`)
+      .join(", ");
 
     const description = `Running subagent '${this.definition.name}' with inputs: { ${inputSummary} }`;
     return description.slice(0, DESCRIPTION_MAX_LENGTH);
@@ -78,7 +72,7 @@ export class SubagentInvocation<
   ): Promise<ToolResult> {
     try {
       if (updateOutput) {
-        updateOutput('Subagent starting...\n');
+        updateOutput("Subagent starting...\n");
       }
 
       // Create an activity callback to bridge the executor's events to the
@@ -86,19 +80,12 @@ export class SubagentInvocation<
       const onActivity = (activity: SubagentActivityEvent): void => {
         if (!updateOutput) return;
 
-        if (
-          activity.type === 'THOUGHT_CHUNK' &&
-          typeof activity.data['text'] === 'string'
-        ) {
-          updateOutput(`🤖💭 ${activity.data['text']}`);
+        if (activity.type === "THOUGHT_CHUNK" && typeof activity.data["text"] === "string") {
+          updateOutput(`🤖💭 ${activity.data["text"]}`);
         }
       };
 
-      const executor = await AgentExecutor.create(
-        this.definition,
-        this.config,
-        onActivity,
-      );
+      const executor = await AgentExecutor.create(this.definition, this.config, onActivity);
 
       const output = await executor.run(this.params, signal);
 
@@ -121,8 +108,7 @@ ${output.result}
         returnDisplay: displayContent,
       };
     } catch (error) {
-      const errorMessage =
-        error instanceof Error ? error.message : String(error);
+      const errorMessage = error instanceof Error ? error.message : String(error);
 
       return {
         llmContent: `Subagent '${this.definition.name}' failed. Error: ${errorMessage}`,

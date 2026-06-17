@@ -4,21 +4,21 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+import type { Config } from "../config/config.js";
 import type {
   Content,
-  GenerateContentConfig,
-  Part,
   EmbedContentParameters,
   FunctionDeclaration,
-  Tool,
+  GenerateContentConfig,
+  Part,
   Schema,
-} from '../types/llm.js';
-import type { Config } from '../config/config.js';
-import type { ContentGenerator } from './contentGenerator.js';
-import { reportError } from '../utils/errorReporting.js';
-import { getErrorMessage } from '../utils/errors.js';
-import { retryWithBackoff } from '../utils/retry.js';
-import { getFunctionCalls } from '../utils/generateContentResponseUtilities.js';
+  Tool,
+} from "../types/llm.js";
+import { reportError } from "../utils/errorReporting.js";
+import { getErrorMessage } from "../utils/errors.js";
+import { getFunctionCalls } from "../utils/generateContentResponseUtilities.js";
+import { retryWithBackoff } from "../utils/retry.js";
+import type { ContentGenerator } from "./contentGenerator.js";
 
 const DEFAULT_MAX_ATTEMPTS = 7;
 
@@ -42,11 +42,7 @@ export interface GenerateJsonOptions {
    */
   config?: Omit<
     GenerateContentConfig,
-    | 'systemInstruction'
-    | 'responseJsonSchema'
-    | 'responseMimeType'
-    | 'tools'
-    | 'abortSignal'
+    "systemInstruction" | "responseJsonSchema" | "responseMimeType" | "tools" | "abortSignal"
   >;
   /** Signal for cancellation. */
   abortSignal: AbortSignal;
@@ -69,18 +65,9 @@ export class BaseLlmClient {
     private readonly config: Config,
   ) {}
 
-  async generateJson(
-    options: GenerateJsonOptions,
-  ): Promise<Record<string, unknown>> {
-    const {
-      contents,
-      schema,
-      model,
-      abortSignal,
-      systemInstruction,
-      promptId,
-      maxAttempts,
-    } = options;
+  async generateJson(options: GenerateJsonOptions): Promise<Record<string, unknown>> {
+    const { contents, schema, model, abortSignal, systemInstruction, promptId, maxAttempts } =
+      options;
 
     const requestConfig: GenerateContentConfig = {
       abortSignal,
@@ -90,8 +77,8 @@ export class BaseLlmClient {
 
     // Convert schema to function declaration
     const functionDeclaration: FunctionDeclaration = {
-      name: 'respond_in_schema',
-      description: 'Provide the response in provided schema',
+      name: "respond_in_schema",
+      description: "Provide the response in provided schema",
       parameters: schema as Schema,
     };
 
@@ -112,7 +99,7 @@ export class BaseLlmClient {
             },
             contents,
           },
-          promptId ?? '',
+          promptId ?? "",
         );
 
       const result = await retryWithBackoff(apiCall, {
@@ -121,9 +108,7 @@ export class BaseLlmClient {
 
       const functionCalls = getFunctionCalls(result);
       if (functionCalls && functionCalls.length > 0) {
-        const functionCall = functionCalls.find(
-          (call) => call.name === 'respond_in_schema',
-        );
+        const functionCall = functionCalls.find((call) => call.name === "respond_in_schema");
         if (functionCall && functionCall.args) {
           return functionCall.args as Record<string, unknown>;
         }
@@ -137,20 +122,18 @@ export class BaseLlmClient {
       // Avoid double reporting for the empty response case handled above
       if (
         error instanceof Error &&
-        error.message === 'API returned an empty response for generateJson.'
+        error.message === "API returned an empty response for generateJson."
       ) {
         throw error;
       }
 
       await reportError(
         error,
-        'Error generating JSON content via API.',
+        "Error generating JSON content via API.",
         contents,
-        'generateJson-api',
+        "generateJson-api",
       );
-      throw new Error(
-        `Failed to generate JSON content: ${getErrorMessage(error)}`,
-      );
+      throw new Error(`Failed to generate JSON content: ${getErrorMessage(error)}`);
     }
   }
 
@@ -163,13 +146,9 @@ export class BaseLlmClient {
       contents: texts,
     };
 
-    const embedContentResponse =
-      await this.contentGenerator.embedContent(embedModelParams);
-    if (
-      !embedContentResponse.embeddings ||
-      embedContentResponse.embeddings.length === 0
-    ) {
-      throw new Error('No embeddings found in API response.');
+    const embedContentResponse = await this.contentGenerator.embedContent(embedModelParams);
+    if (!embedContentResponse.embeddings || embedContentResponse.embeddings.length === 0) {
+      throw new Error("No embeddings found in API response.");
     }
 
     if (embedContentResponse.embeddings.length !== texts.length) {

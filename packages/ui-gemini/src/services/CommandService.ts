@@ -4,9 +4,9 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { debugLogger } from '@airiscode/gemini-cli-core';
-import type { SlashCommand } from '../ui/commands/types.js';
-import type { ICommandLoader } from './types.js';
+import { debugLogger } from "@airiscode/gemini-cli-core";
+import type { SlashCommand } from "../ui/commands/types.js";
+import type { ICommandLoader } from "./types.js";
 
 /**
  * Orchestrates the discovery and loading of all slash commands for the CLI.
@@ -45,20 +45,15 @@ export class CommandService {
    * @param signal An AbortSignal to cancel the loading process.
    * @returns A promise that resolves to a new, fully initialized `CommandService` instance.
    */
-  static async create(
-    loaders: ICommandLoader[],
-    signal: AbortSignal,
-  ): Promise<CommandService> {
-    const results = await Promise.allSettled(
-      loaders.map((loader) => loader.loadCommands(signal)),
-    );
+  static async create(loaders: ICommandLoader[], signal: AbortSignal): Promise<CommandService> {
+    const results = await Promise.allSettled(loaders.map((loader) => loader.loadCommands(signal)));
 
     const allCommands: SlashCommand[] = [];
     for (const result of results) {
-      if (result.status === 'fulfilled') {
+      if (result.status === "fulfilled") {
         allCommands.push(...result.value);
       } else {
-        debugLogger.debug('A command loader failed:', result.reason);
+        debugLogger.debug("A command loader failed:", result.reason);
       }
     }
 

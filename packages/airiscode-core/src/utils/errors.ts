@@ -11,7 +11,7 @@ interface GaxiosError {
 }
 
 export function isNodeError(error: unknown): error is NodeJS.ErrnoException {
-  return error instanceof Error && 'code' in error;
+  return error instanceof Error && "code" in error;
 }
 
 /**
@@ -19,17 +19,17 @@ export function isNodeError(error: unknown): error is NodeJS.ErrnoException {
  * This handles both DOMException-style AbortError and Node.js abort errors.
  */
 export function isAbortError(error: unknown): boolean {
-  if (!error || typeof error !== 'object') {
+  if (!error || typeof error !== "object") {
     return false;
   }
 
   // Check for AbortError by name (standard DOMException and custom AbortError)
-  if (error instanceof Error && error.name === 'AbortError') {
+  if (error instanceof Error && error.name === "AbortError") {
     return true;
   }
 
   // Check for Node.js abort error code
-  if (isNodeError(error) && error.code === 'ABORT_ERR') {
+  if (isNodeError(error) && error.code === "ABORT_ERR") {
     return true;
   }
 
@@ -47,7 +47,7 @@ export function getErrorMessage(error: unknown): string {
   try {
     return String(error);
   } catch {
-    return 'Failed to get error details';
+    return "Failed to get error details";
   }
 }
 
@@ -63,7 +63,7 @@ export function getErrorMessage(error: unknown): string {
  * @returns The HTTP status code (100-599), or undefined if not found.
  */
 export function getErrorStatus(error: unknown): number | undefined {
-  if (typeof error !== 'object' || error === null) {
+  if (typeof error !== "object" || error === null) {
     return undefined;
   }
 
@@ -74,12 +74,9 @@ export function getErrorStatus(error: unknown): number | undefined {
     error?: { code?: unknown };
   };
 
-  const value =
-    err.status ?? err.statusCode ?? err.response?.status ?? err.error?.code;
+  const value = err.status ?? err.statusCode ?? err.response?.status ?? err.error?.code;
 
-  return typeof value === 'number' && value >= 100 && value <= 599
-    ? value
-    : undefined;
+  return typeof value === "number" && value >= 100 && value <= 599 ? value : undefined;
 }
 
 /**
@@ -96,29 +93,26 @@ export function getErrorStatus(error: unknown): number | undefined {
  * @returns A string identifying the error type.
  */
 export function getErrorType(error: unknown): string {
-  if (typeof error !== 'object' || error === null) {
-    return 'unknown';
+  if (typeof error !== "object" || error === null) {
+    return "unknown";
   }
 
   // Prefer the constructor name — SDK subclasses like APIConnectionError,
   // RateLimitError etc. have meaningful names.
   const constructorName =
-    error instanceof Error && error.constructor.name !== 'Error'
+    error instanceof Error && error.constructor.name !== "Error"
       ? error.constructor.name
       : undefined;
 
   // .type is set by OpenAI SDK (e.g. "invalid_request_error")
   const sdkType = (error as { type?: string }).type;
 
-  const baseType =
-    constructorName ??
-    sdkType ??
-    (error instanceof Error ? error.name : 'unknown');
+  const baseType = constructorName ?? sdkType ?? (error instanceof Error ? error.name : "unknown");
 
   // For network errors, append the cause code (e.g. ECONNREFUSED, ETIMEDOUT)
   const cause = error instanceof Error ? error.cause : undefined;
   const causeCode =
-    cause && typeof cause === 'object' && 'code' in cause
+    cause && typeof cause === "object" && "code" in cause
       ? (cause as { code?: string }).code
       : undefined;
 
@@ -182,7 +176,7 @@ interface ResponseData {
 }
 
 export function toFriendlyError(error: unknown): unknown {
-  if (error && typeof error === 'object' && 'response' in error) {
+  if (error && typeof error === "object" && "response" in error) {
     const gaxiosError = error as GaxiosError;
     const data = parseResponseData(gaxiosError);
     if (data.error && data.error.message && data.error.code) {
@@ -205,7 +199,7 @@ export function toFriendlyError(error: unknown): unknown {
 
 function parseResponseData(error: GaxiosError): ResponseData {
   // Inexplicably, Gaxios sometimes doesn't JSONify the response data.
-  if (typeof error.response?.data === 'string') {
+  if (typeof error.response?.data === "string") {
     return JSON.parse(error.response?.data) as ResponseData;
   }
   return error.response?.data as ResponseData;

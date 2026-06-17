@@ -5,16 +5,16 @@
  */
 
 import {
+  type AttributeValue,
   diag,
+  type SpanOptions,
   SpanStatusCode,
   trace,
-  type AttributeValue,
-  type SpanOptions,
-} from '@opentelemetry/api';
-import { safeJsonStringify } from '../utils/safeJsonStringify.js';
+} from "@opentelemetry/api";
+import { safeJsonStringify } from "../utils/safeJsonStringify.js";
 
-const TRACER_NAME = 'gemini-cli';
-const TRACER_VERSION = 'v1';
+const TRACER_NAME = "gemini-cli";
+const TRACER_VERSION = "v1";
 
 /**
  * Metadata for a span.
@@ -52,15 +52,10 @@ export interface SpanMetadata {
  */
 export async function runInDevTraceSpan<R>(
   opts: SpanOptions & { name: string; noAutoEnd?: boolean },
-  fn: ({
-    metadata,
-  }: {
-    metadata: SpanMetadata;
-    endSpan: () => void;
-  }) => Promise<R>,
+  fn: ({ metadata }: { metadata: SpanMetadata; endSpan: () => void }) => Promise<R>,
 ): Promise<R> {
   const { name: spanName, noAutoEnd, ...restOfSpanOpts } = opts;
-  if (process.env['GEMINI_DEV_TRACING'] !== 'true') {
+  if (process.env["GEMINI_DEV_TRACING"] !== "true") {
     // If GEMINI_DEV_TRACING env var not set, we do not trace.
     return fn({
       metadata: {
@@ -82,10 +77,10 @@ export async function runInDevTraceSpan<R>(
     const endSpan = () => {
       try {
         if (meta.input !== undefined) {
-          span.setAttribute('input-json', safeJsonStringify(meta.input));
+          span.setAttribute("input-json", safeJsonStringify(meta.input));
         }
         if (meta.output !== undefined) {
-          span.setAttribute('output-json', safeJsonStringify(meta.output));
+          span.setAttribute("output-json", safeJsonStringify(meta.output));
         }
         for (const [key, value] of Object.entries(meta.attributes)) {
           span.setAttribute(key, value as AttributeValue);
@@ -103,7 +98,7 @@ export async function runInDevTraceSpan<R>(
         }
       } catch (e) {
         // Log the error but don't rethrow, to ensure span.end() is called.
-        diag.error('Error setting span attributes in endSpan', e);
+        diag.error("Error setting span attributes in endSpan", e);
         span.setStatus({
           code: SpanStatusCode.ERROR,
           message: `Error in endSpan: ${getErrorMessage(e)}`,
@@ -142,7 +137,7 @@ function getErrorMessage(e: unknown): string {
   if (e instanceof Error) {
     return e.message;
   }
-  if (typeof e === 'string') {
+  if (typeof e === "string") {
     return e;
   }
   return safeJsonStringify(e);

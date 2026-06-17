@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import type { ClientMetadata } from '../types.js';
+import type { ClientMetadata } from "../types.js";
 
 export interface ListExperimentsRequest {
   project: string;

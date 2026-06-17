@@ -4,26 +4,19 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import type React from 'react';
-import { useCallback, useState } from 'react';
-import { Box, Text } from 'ink';
-import { theme } from '../semantic-colors.js';
-import { RadioButtonSelect } from '../components/shared/RadioButtonSelect.js';
-import type {
-  LoadableSettingScope,
-  LoadedSettings,
-} from '../../config/settings.js';
-import { SettingScope } from '../../config/settings.js';
-import {
-  AuthType,
-  clearCachedCredentialFile,
-  type Config,
-} from '@airiscode/gemini-cli-core';
-import { useKeypress } from '../hooks/useKeypress.js';
-import { AuthState } from '../types.js';
-import { runExitCleanup } from '../../utils/cleanup.js';
-import { validateAuthMethodWithSettings } from './useAuth.js';
-import { RELAUNCH_EXIT_CODE } from '../../utils/processUtils.js';
+import { AuthType, type Config, clearCachedCredentialFile } from "@airiscode/gemini-cli-core";
+import { Box, Text } from "ink";
+import type React from "react";
+import { useCallback, useState } from "react";
+import type { LoadableSettingScope, LoadedSettings } from "../../config/settings.js";
+import { SettingScope } from "../../config/settings.js";
+import { runExitCleanup } from "../../utils/cleanup.js";
+import { RELAUNCH_EXIT_CODE } from "../../utils/processUtils.js";
+import { RadioButtonSelect } from "../components/shared/RadioButtonSelect.js";
+import { useKeypress } from "../hooks/useKeypress.js";
+import { theme } from "../semantic-colors.js";
+import { AuthState } from "../types.js";
+import { validateAuthMethodWithSettings } from "./useAuth.js";
 
 interface AuthDialogProps {
   config: Config;
@@ -43,51 +36,46 @@ export function AuthDialog({
   const [exiting, setExiting] = useState(false);
   let items = [
     {
-      label: 'Login with Google',
+      label: "Login with Google",
       value: AuthType.LOGIN_WITH_GOOGLE,
       key: AuthType.LOGIN_WITH_GOOGLE,
     },
-    ...(process.env['CLOUD_SHELL'] === 'true'
+    ...(process.env["CLOUD_SHELL"] === "true"
       ? [
           {
-            label: 'Use Cloud Shell user credentials',
+            label: "Use Cloud Shell user credentials",
             value: AuthType.COMPUTE_ADC,
             key: AuthType.COMPUTE_ADC,
           },
         ]
-      : process.env['GEMINI_CLI_USE_COMPUTE_ADC'] === 'true'
+      : process.env["GEMINI_CLI_USE_COMPUTE_ADC"] === "true"
         ? [
             {
-              label: 'Use metadata server application default credentials',
+              label: "Use metadata server application default credentials",
               value: AuthType.COMPUTE_ADC,
               key: AuthType.COMPUTE_ADC,
             },
           ]
         : []),
     {
-      label: 'Use Gemini API Key',
+      label: "Use Gemini API Key",
       value: AuthType.USE_GEMINI,
       key: AuthType.USE_GEMINI,
     },
     {
-      label: 'Vertex AI',
+      label: "Vertex AI",
       value: AuthType.USE_VERTEX_AI,
       key: AuthType.USE_VERTEX_AI,
     },
   ];
 
   if (settings.merged.security?.auth?.enforcedType) {
-    items = items.filter(
-      (item) => item.value === settings.merged.security?.auth?.enforcedType,
-    );
+    items = items.filter((item) => item.value === settings.merged.security?.auth?.enforcedType);
   }
 
   let defaultAuthType = null;
-  const defaultAuthTypeEnv = process.env['GEMINI_DEFAULT_AUTH_TYPE'];
-  if (
-    defaultAuthTypeEnv &&
-    Object.values(AuthType).includes(defaultAuthTypeEnv as AuthType)
-  ) {
+  const defaultAuthTypeEnv = process.env["GEMINI_DEFAULT_AUTH_TYPE"];
+  if (defaultAuthTypeEnv && Object.values(AuthType).includes(defaultAuthTypeEnv as AuthType)) {
     defaultAuthType = defaultAuthTypeEnv as AuthType;
   }
 
@@ -100,7 +88,7 @@ export function AuthDialog({
       return item.value === defaultAuthType;
     }
 
-    if (process.env['GEMINI_API_KEY']) {
+    if (process.env["GEMINI_API_KEY"]) {
       return item.value === AuthType.USE_GEMINI;
     }
 
@@ -116,16 +104,12 @@ export function AuthDialog({
         return;
       }
       if (authType) {
-        const isInitialAuthSelection =
-          !settings.merged.security?.auth?.selectedType;
+        const isInitialAuthSelection = !settings.merged.security?.auth?.selectedType;
 
         await clearCachedCredentialFile();
 
-        settings.setValue(scope, 'security.auth.selectedType', authType);
-        if (
-          authType === AuthType.LOGIN_WITH_GOOGLE &&
-          config.isBrowserLaunchSuppressed()
-        ) {
+        settings.setValue(scope, "security.auth.selectedType", authType);
+        if (authType === AuthType.LOGIN_WITH_GOOGLE && config.isBrowserLaunchSuppressed()) {
           setExiting(true);
           setTimeout(async () => {
             await runExitCleanup();
@@ -135,7 +119,7 @@ export function AuthDialog({
         }
 
         if (authType === AuthType.USE_GEMINI) {
-          if (isInitialAuthSelection && process.env['GEMINI_API_KEY']) {
+          if (isInitialAuthSelection && process.env["GEMINI_API_KEY"]) {
             setAuthState(AuthState.Unauthenticated);
             return;
           } else {
@@ -161,7 +145,7 @@ export function AuthDialog({
 
   useKeypress(
     (key) => {
-      if (key.name === 'escape') {
+      if (key.name === "escape") {
         // Prevent exit if there is an error message.
         // This means they user is not authenticated yet.
         if (authError) {
@@ -169,9 +153,7 @@ export function AuthDialog({
         }
         if (settings.merged.security?.auth?.selectedType === undefined) {
           // Prevent exiting if no auth method is set
-          onAuthError(
-            'You must select an auth method to proceed. Press Ctrl+C twice to exit.',
-          );
+          onAuthError("You must select an auth method to proceed. Press Ctrl+C twice to exit.");
           return;
         }
         // eslint-disable-next-line @typescript-eslint/no-floating-promises
@@ -242,9 +224,7 @@ export function AuthDialog({
         </Box>
         <Box marginTop={1}>
           <Text color={theme.text.link}>
-            {
-              'https://github.com/google-gemini/gemini-cli/blob/main/docs/tos-privacy.md'
-            }
+            {"https://github.com/google-gemini/gemini-cli/blob/main/docs/tos-privacy.md"}
           </Text>
         </Box>
       </Box>

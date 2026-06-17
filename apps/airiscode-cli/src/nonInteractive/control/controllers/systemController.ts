@@ -13,22 +13,22 @@
  * - set_model: Switch model (placeholder)
  */
 
-import { BaseController } from './baseController.js';
+import {
+  AuthProviderType,
+  createDebugLogger,
+  type MCPOAuthConfig,
+  MCPServerConfig,
+} from "@airiscode/core";
+import { getAvailableCommands } from "../../../nonInteractiveCliCommands.js";
 import type {
-  ControlRequestPayload,
   CLIControlInitializeRequest,
   CLIControlSetModelRequest,
   CLIMcpServerConfig,
-} from '../../types.js';
-import { getAvailableCommands } from '../../../nonInteractiveCliCommands.js';
-import {
-  createDebugLogger,
-  MCPServerConfig,
-  AuthProviderType,
-  type MCPOAuthConfig,
-} from '@airiscode/core';
+  ControlRequestPayload,
+} from "../../types.js";
+import { BaseController } from "./baseController.js";
 
-const debugLogger = createDebugLogger('SYSTEM_CONTROLLER');
+const debugLogger = createDebugLogger("SYSTEM_CONTROLLER");
 
 export class SystemController extends BaseController {
   /**
@@ -39,26 +39,20 @@ export class SystemController extends BaseController {
     signal: AbortSignal,
   ): Promise<Record<string, unknown>> {
     if (signal.aborted) {
-      throw new Error('Request aborted');
+      throw new Error("Request aborted");
     }
 
     switch (payload.subtype) {
-      case 'initialize':
-        return this.handleInitialize(
-          payload as CLIControlInitializeRequest,
-          signal,
-        );
+      case "initialize":
+        return this.handleInitialize(payload as CLIControlInitializeRequest, signal);
 
-      case 'interrupt':
+      case "interrupt":
         return this.handleInterrupt();
 
-      case 'set_model':
-        return this.handleSetModel(
-          payload as CLIControlSetModelRequest,
-          signal,
-        );
+      case "set_model":
+        return this.handleSetModel(payload as CLIControlSetModelRequest, signal);
 
-      case 'supported_commands':
+      case "supported_commands":
         return this.handleSupportedCommands(signal);
 
       default:
@@ -79,7 +73,7 @@ export class SystemController extends BaseController {
     signal: AbortSignal,
   ): Promise<Record<string, unknown>> {
     if (signal.aborted) {
-      throw new Error('Request aborted');
+      throw new Error("Request aborted");
     }
 
     this.context.config.setSdkMode(true);
@@ -87,13 +81,13 @@ export class SystemController extends BaseController {
     // Process SDK MCP servers
     if (
       payload.sdkMcpServers &&
-      typeof payload.sdkMcpServers === 'object' &&
+      typeof payload.sdkMcpServers === "object" &&
       payload.sdkMcpServers !== null
     ) {
       const sdkServers: Record<string, MCPServerConfig> = {};
       for (const [key, wireConfig] of Object.entries(payload.sdkMcpServers)) {
         const name =
-          typeof wireConfig?.name === 'string' && wireConfig.name.trim().length
+          typeof wireConfig?.name === "string" && wireConfig.name.trim().length
             ? wireConfig.name
             : key;
 
@@ -117,7 +111,7 @@ export class SystemController extends BaseController {
           undefined, // authProviderType
           undefined, // targetAudience
           undefined, // targetServiceAccount
-          'sdk', // type
+          "sdk", // type
         );
       }
 
@@ -125,21 +119,16 @@ export class SystemController extends BaseController {
       if (sdkServerCount > 0) {
         try {
           this.context.config.addMcpServers(sdkServers);
-          debugLogger.debug(
-            `[SystemController] Added ${sdkServerCount} SDK MCP servers to config`,
-          );
+          debugLogger.debug(`[SystemController] Added ${sdkServerCount} SDK MCP servers to config`);
         } catch (error) {
-          debugLogger.error(
-            '[SystemController] Failed to add SDK MCP servers:',
-            error,
-          );
+          debugLogger.error("[SystemController] Failed to add SDK MCP servers:", error);
         }
       }
     }
 
     if (
       payload.mcpServers &&
-      typeof payload.mcpServers === 'object' &&
+      typeof payload.mcpServers === "object" &&
       payload.mcpServers !== null
     ) {
       const externalServers: Record<string, MCPServerConfig> = {};
@@ -161,10 +150,7 @@ export class SystemController extends BaseController {
             `[SystemController] Added ${externalCount} external MCP servers to config`,
           );
         } catch (error) {
-          debugLogger.error(
-            '[SystemController] Failed to add external MCP servers:',
-            error,
-          );
+          debugLogger.error("[SystemController] Failed to add external MCP servers:", error);
         }
       }
     }
@@ -177,10 +163,7 @@ export class SystemController extends BaseController {
           `[SystemController] Added ${payload.agents.length} session subagents to config`,
         );
       } catch (error) {
-        debugLogger.error(
-          '[SystemController] Failed to add session subagents:',
-          error,
-        );
+        debugLogger.error("[SystemController] Failed to add session subagents:", error);
       }
     }
 
@@ -192,7 +175,7 @@ export class SystemController extends BaseController {
     );
 
     return {
-      subtype: 'initialize',
+      subtype: "initialize",
       session_id: this.context.config.getSessionId(),
       capabilities,
     };
@@ -209,9 +192,8 @@ export class SystemController extends BaseController {
     const capabilities: Record<string, unknown> = {
       can_handle_can_use_tool: true,
       can_handle_hook_callback: false,
-      can_set_permission_mode:
-        typeof this.context.config.setApprovalMode === 'function',
-      can_set_model: typeof this.context.config.setModel === 'function',
+      can_set_permission_mode: typeof this.context.config.setApprovalMode === "function",
+      can_set_model: typeof this.context.config.setModel === "function",
       // SDK MCP servers are supported - messages routed through control plane
       can_handle_mcp_message: true,
     };
@@ -223,16 +205,12 @@ export class SystemController extends BaseController {
     serverName: string,
     config?: CLIMcpServerConfig,
   ): MCPServerConfig | null {
-    if (!config || typeof config !== 'object') {
-      debugLogger.warn(
-        `[SystemController] Ignoring invalid MCP server config for '${serverName}'`,
-      );
+    if (!config || typeof config !== "object") {
+      debugLogger.warn(`[SystemController] Ignoring invalid MCP server config for '${serverName}'`);
       return null;
     }
 
-    const authProvider = this.normalizeAuthProviderType(
-      config.authProviderType,
-    );
+    const authProvider = this.normalizeAuthProviderType(config.authProviderType);
     const oauthConfig = this.normalizeOAuthConfig(config.oauth);
 
     return new MCPServerConfig(
@@ -257,9 +235,7 @@ export class SystemController extends BaseController {
     );
   }
 
-  private normalizeAuthProviderType(
-    value?: string,
-  ): AuthProviderType | undefined {
+  private normalizeAuthProviderType(value?: string): AuthProviderType | undefined {
     if (!value) {
       return undefined;
     }
@@ -268,16 +244,12 @@ export class SystemController extends BaseController {
       case AuthProviderType.DYNAMIC_DISCOVERY:
         return value as AuthProviderType;
       default:
-        debugLogger.warn(
-          `[SystemController] Unsupported authProviderType '${value}', skipping`,
-        );
+        debugLogger.warn(`[SystemController] Unsupported authProviderType '${value}', skipping`);
         return undefined;
     }
   }
 
-  private normalizeOAuthConfig(
-    oauth?: CLIMcpServerConfig['oauth'],
-  ): MCPOAuthConfig | undefined {
+  private normalizeOAuthConfig(oauth?: CLIMcpServerConfig["oauth"]): MCPOAuthConfig | undefined {
     if (!oauth) {
       return undefined;
     }
@@ -310,12 +282,12 @@ export class SystemController extends BaseController {
     // Abort the main signal to cancel ongoing operations
     if (this.context.abortSignal && !this.context.abortSignal.aborted) {
       // Note: We can't directly abort the signal, but the onInterrupt callback should handle this
-      debugLogger.debug('[SystemController] Interrupt signal triggered');
+      debugLogger.debug("[SystemController] Interrupt signal triggered");
     }
 
-    debugLogger.debug('[SystemController] Interrupt handled');
+    debugLogger.debug("[SystemController] Interrupt handled");
 
-    return { subtype: 'interrupt' };
+    return { subtype: "interrupt" };
   }
 
   /**
@@ -328,14 +300,14 @@ export class SystemController extends BaseController {
     signal: AbortSignal,
   ): Promise<Record<string, unknown>> {
     if (signal.aborted) {
-      throw new Error('Request aborted');
+      throw new Error("Request aborted");
     }
 
     const model = payload.model;
 
     // Validate model parameter
-    if (typeof model !== 'string' || model.trim() === '') {
-      throw new Error('Invalid model specified for set_model request');
+    if (typeof model !== "string" || model.trim() === "") {
+      throw new Error("Invalid model specified for set_model request");
     }
 
     try {
@@ -345,17 +317,13 @@ export class SystemController extends BaseController {
       debugLogger.info(`[SystemController] Model switched to: ${model}`);
 
       return {
-        subtype: 'set_model',
+        subtype: "set_model",
         model,
       };
     } catch (error) {
-      const errorMessage =
-        error instanceof Error ? error.message : 'Failed to set model';
+      const errorMessage = error instanceof Error ? error.message : "Failed to set model";
 
-      debugLogger.error(
-        `[SystemController] Failed to set model ${model}:`,
-        error,
-      );
+      debugLogger.error(`[SystemController] Failed to set model ${model}:`, error);
 
       throw new Error(errorMessage);
     }
@@ -366,17 +334,15 @@ export class SystemController extends BaseController {
    *
    * Returns list of supported slash commands loaded dynamically
    */
-  private async handleSupportedCommands(
-    signal: AbortSignal,
-  ): Promise<Record<string, unknown>> {
+  private async handleSupportedCommands(signal: AbortSignal): Promise<Record<string, unknown>> {
     if (signal.aborted) {
-      throw new Error('Request aborted');
+      throw new Error("Request aborted");
     }
 
     const slashCommands = await this.loadSlashCommandNames(signal);
 
     return {
-      subtype: 'supported_commands',
+      subtype: "supported_commands",
       commands: slashCommands,
     };
   }
@@ -407,10 +373,7 @@ export class SystemController extends BaseController {
         return [];
       }
 
-      debugLogger.error(
-        '[SystemController] Failed to load slash commands:',
-        error,
-      );
+      debugLogger.error("[SystemController] Failed to load slash commands:", error);
       return [];
     }
   }

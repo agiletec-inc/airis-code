@@ -4,9 +4,9 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { lerp } from '../../utils/math.js';
-import { type LoadedSettings } from '../../config/settings.js';
-import { isAlternateBufferEnabled } from '../hooks/useAlternateBuffer.js';
+import { type LoadedSettings } from "../../config/settings.js";
+import { lerp } from "../../utils/math.js";
+import { isAlternateBufferEnabled } from "../hooks/useAlternateBuffer.js";
 
 const getMainAreaWidthInternal = (terminalWidth: number): number => {
   if (terminalWidth <= 80) {
@@ -23,10 +23,7 @@ const getMainAreaWidthInternal = (terminalWidth: number): number => {
   return Math.round(percentage * terminalWidth * 0.01);
 };
 
-export const calculateMainAreaWidth = (
-  terminalWidth: number,
-  settings: LoadedSettings,
-): number => {
+export const calculateMainAreaWidth = (terminalWidth: number, settings: LoadedSettings): number => {
   if (settings.merged.ui?.useFullWidth !== false) {
     if (isAlternateBufferEnabled(settings)) {
       return terminalWidth - 1;

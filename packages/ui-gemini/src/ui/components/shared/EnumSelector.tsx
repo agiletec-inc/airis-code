@@ -4,11 +4,11 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { useState, useEffect } from 'react';
-import type React from 'react';
-import { Box, Text } from 'ink';
-import { Colors } from '../../colors.js';
-import type { SettingEnumOption } from '../../../config/settingsSchema.js';
+import { Box, Text } from "ink";
+import type React from "react";
+import { useEffect, useState } from "react";
+import type { SettingEnumOption } from "../../../config/settingsSchema.js";
+import { Colors } from "../../colors.js";
 
 interface EnumSelectorProps {
   options: readonly SettingEnumOption[];
@@ -61,23 +61,16 @@ export function EnumSelector({
 
   return (
     <Box flexDirection="row" alignItems="center">
-      <Text
-        color={isActive && canScrollLeft ? Colors.AccentGreen : Colors.Gray}
-      >
-        {canScrollLeft ? '←' : ' '}
+      <Text color={isActive && canScrollLeft ? Colors.AccentGreen : Colors.Gray}>
+        {canScrollLeft ? "←" : " "}
       </Text>
       <Text> </Text>
-      <Text
-        color={isActive ? Colors.AccentGreen : Colors.Foreground}
-        bold={isActive}
-      >
+      <Text color={isActive ? Colors.AccentGreen : Colors.Foreground} bold={isActive}>
         {currentOption.label}
       </Text>
       <Text> </Text>
-      <Text
-        color={isActive && canScrollRight ? Colors.AccentGreen : Colors.Gray}
-      >
-        {canScrollRight ? '→' : ' '}
+      <Text color={isActive && canScrollRight ? Colors.AccentGreen : Colors.Gray}>
+        {canScrollRight ? "→" : " "}
       </Text>
     </Box>
   );

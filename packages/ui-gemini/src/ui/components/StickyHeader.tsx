@@ -4,9 +4,9 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import type React from 'react';
-import { Box } from 'ink';
-import { theme } from '../semantic-colors.js';
+import { Box } from "ink";
+import type React from "react";
+import { theme } from "../semantic-colors.js";
 
 export interface StickyHeaderProps {
   children: React.ReactNode;

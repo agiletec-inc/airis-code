@@ -4,25 +4,25 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import type { Content } from '@google/genai';
-import type { Config } from '../config/config.js';
-import type { GeminiChat } from '../core/geminiChat.js';
-import { type ChatCompressionInfo, CompressionStatus } from '../core/turn.js';
-import { tokenLimit } from '../core/tokenLimits.js';
-import { getCompressionPrompt } from '../core/prompts.js';
-import { getResponseText } from '../utils/partUtils.js';
-import { logChatCompression } from '../telemetry/loggers.js';
-import { makeChatCompressionEvent } from '../telemetry/types.js';
-import { getInitialChatHistory } from '../utils/environmentContext.js';
-import { calculateRequestTokenCount } from '../utils/tokenCalculation.js';
+import type { Content } from "@google/genai";
+import type { Config } from "../config/config.js";
 import {
   DEFAULT_GEMINI_FLASH_LITE_MODEL,
   DEFAULT_GEMINI_FLASH_MODEL,
   DEFAULT_GEMINI_MODEL,
   PREVIEW_GEMINI_MODEL,
-} from '../config/models.js';
-import { firePreCompressHook } from '../core/sessionHookTriggers.js';
-import { PreCompressTrigger } from '../hooks/types.js';
+} from "../config/models.js";
+import type { GeminiChat } from "../core/geminiChat.js";
+import { getCompressionPrompt } from "../core/prompts.js";
+import { firePreCompressHook } from "../core/sessionHookTriggers.js";
+import { tokenLimit } from "../core/tokenLimits.js";
+import { type ChatCompressionInfo, CompressionStatus } from "../core/turn.js";
+import { PreCompressTrigger } from "../hooks/types.js";
+import { logChatCompression } from "../telemetry/loggers.js";
+import { makeChatCompressionEvent } from "../telemetry/types.js";
+import { getInitialChatHistory } from "../utils/environmentContext.js";
+import { getResponseText } from "../utils/partUtils.js";
+import { calculateRequestTokenCount } from "../utils/tokenCalculation.js";
 
 /**
  * Default threshold for compression token count as a fraction of the model's
@@ -42,12 +42,9 @@ export const COMPRESSION_PRESERVE_THRESHOLD = 0.3;
  *
  * Exported for testing purposes.
  */
-export function findCompressSplitPoint(
-  contents: Content[],
-  fraction: number,
-): number {
+export function findCompressSplitPoint(contents: Content[], fraction: number): number {
   if (fraction <= 0 || fraction >= 1) {
-    throw new Error('Fraction must be between 0 and 1');
+    throw new Error("Fraction must be between 0 and 1");
   }
 
   const charCounts = contents.map((content) => JSON.stringify(content).length);
@@ -58,10 +55,7 @@ export function findCompressSplitPoint(
   let cumulativeCharCount = 0;
   for (let i = 0; i < contents.length; i++) {
     const content = contents[i];
-    if (
-      content.role === 'user' &&
-      !content.parts?.some((part) => !!part.functionResponse)
-    ) {
+    if (content.role === "user" && !content.parts?.some((part) => !!part.functionResponse)) {
       if (cumulativeCharCount >= targetCharCount) {
         return i;
       }
@@ -73,10 +67,7 @@ export function findCompressSplitPoint(
   // We found no split points after targetCharCount.
   // Check if it's safe to compress everything.
   const lastContent = contents[contents.length - 1];
-  if (
-    lastContent?.role === 'model' &&
-    !lastContent?.parts?.some((part) => part.functionCall)
-  ) {
+  if (lastContent?.role === "model" && !lastContent?.parts?.some((part) => part.functionCall)) {
     return contents.length;
   }
 
@@ -87,15 +78,15 @@ export function findCompressSplitPoint(
 export function modelStringToModelConfigAlias(model: string): string {
   switch (model) {
     case PREVIEW_GEMINI_MODEL:
-      return 'chat-compression-3-pro';
+      return "chat-compression-3-pro";
     case DEFAULT_GEMINI_MODEL:
-      return 'chat-compression-2.5-pro';
+      return "chat-compression-2.5-pro";
     case DEFAULT_GEMINI_FLASH_MODEL:
-      return 'chat-compression-2.5-flash';
+      return "chat-compression-2.5-flash";
     case DEFAULT_GEMINI_FLASH_LITE_MODEL:
-      return 'chat-compression-2.5-flash-lite';
+      return "chat-compression-2.5-flash-lite";
     default:
-      return 'chat-compression-default';
+      return "chat-compression-default";
   }
 }
 
@@ -111,10 +102,7 @@ export class ChatCompressionService {
     const curatedHistory = chat.getHistory(true);
 
     // Regardless of `force`, don't do anything if the history is empty.
-    if (
-      curatedHistory.length === 0 ||
-      (hasFailedCompressionAttempt && !force)
-    ) {
+    if (curatedHistory.length === 0 || (hasFailedCompressionAttempt && !force)) {
       return {
         newHistory: null,
         info: {
@@ -130,9 +118,7 @@ export class ChatCompressionService {
     const hooksEnabled = config.getEnableHooks();
     const messageBus = config.getMessageBus();
     if (hooksEnabled && messageBus) {
-      const trigger = force
-        ? PreCompressTrigger.Manual
-        : PreCompressTrigger.Auto;
+      const trigger = force ? PreCompressTrigger.Manual : PreCompressTrigger.Auto;
       await firePreCompressHook(messageBus, trigger);
     }
 
@@ -141,8 +127,7 @@ export class ChatCompressionService {
     // Don't compress if not forced and we are under the limit.
     if (!force) {
       const threshold =
-        (await config.getCompressionThreshold()) ??
-        DEFAULT_COMPRESSION_TOKEN_THRESHOLD;
+        (await config.getCompressionThreshold()) ?? DEFAULT_COMPRESSION_TOKEN_THRESHOLD;
       if (originalTokenCount < threshold * tokenLimit(model)) {
         return {
           newHistory: null,
@@ -155,10 +140,7 @@ export class ChatCompressionService {
       }
     }
 
-    const splitPoint = findCompressSplitPoint(
-      curatedHistory,
-      1 - COMPRESSION_PRESERVE_THRESHOLD,
-    );
+    const splitPoint = findCompressSplitPoint(curatedHistory, 1 - COMPRESSION_PRESERVE_THRESHOLD);
 
     const historyToCompress = curatedHistory.slice(0, splitPoint);
     const historyToKeep = curatedHistory.slice(splitPoint);
@@ -179,10 +161,10 @@ export class ChatCompressionService {
       contents: [
         ...historyToCompress,
         {
-          role: 'user',
+          role: "user",
           parts: [
             {
-              text: 'First, reason in your scratchpad. Then, generate the <state_snapshot>.',
+              text: "First, reason in your scratchpad. Then, generate the <state_snapshot>.",
             },
           ],
         },
@@ -192,16 +174,16 @@ export class ChatCompressionService {
       // TODO(joshualitt): wire up a sensible abort signal,
       abortSignal: new AbortController().signal,
     });
-    const summary = getResponseText(summaryResponse) ?? '';
+    const summary = getResponseText(summaryResponse) ?? "";
 
     const extraHistory: Content[] = [
       {
-        role: 'user',
+        role: "user",
         parts: [{ text: summary }],
       },
       {
-        role: 'model',
-        parts: [{ text: 'Got it. Thanks for the additional context!' }],
+        role: "model",
+        parts: [{ text: "Got it. Thanks for the additional context!" }],
       },
       ...historyToKeep,
     ];
@@ -229,8 +211,7 @@ export class ChatCompressionService {
         info: {
           originalTokenCount,
           newTokenCount,
-          compressionStatus:
-            CompressionStatus.COMPRESSION_FAILED_INFLATED_TOKEN_COUNT,
+          compressionStatus: CompressionStatus.COMPRESSION_FAILED_INFLATED_TOKEN_COUNT,
         },
       };
     } else {

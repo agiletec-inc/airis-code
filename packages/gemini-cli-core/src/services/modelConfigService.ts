@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import type { GenerateContentConfig } from '@google/genai';
+import type { GenerateContentConfig } from "@google/genai";
 
 // The primary key for the ModelConfig is the model string. However, we also
 // support a secondary key to limit the override scope, typically an agent name.
@@ -79,9 +79,7 @@ export class ModelConfigService {
     visited = new Set<string>(),
   ): ModelConfigAlias {
     if (visited.has(aliasName)) {
-      throw new Error(
-        `Circular alias dependency: ${[...visited, aliasName].join(' -> ')}`,
-      );
+      throw new Error(`Circular alias dependency: ${[...visited, aliasName].join(" -> ")}`);
     }
     visited.add(aliasName);
 
@@ -112,12 +110,7 @@ export class ModelConfigService {
     generateContentConfig: GenerateContentConfig;
   } {
     const config = this.config || {};
-    const {
-      aliases = {},
-      customAliases = {},
-      overrides = [],
-      customOverrides = [],
-    } = config;
+    const { aliases = {}, customAliases = {}, overrides = [], customOverrides = [] } = config;
     const allAliases = {
       ...aliases,
       ...customAliases,
@@ -156,14 +149,14 @@ export class ModelConfigService {
         }
 
         const isMatch = matchEntries.every(([key, value]) => {
-          if (key === 'model') {
+          if (key === "model") {
             return value === context.model || value === finalContext.model;
           }
-          if (key === 'overrideScope' && value === 'core') {
+          if (key === "overrideScope" && value === "core") {
             // The 'core' overrideScope is special. It should match if the
             // overrideScope is explicitly 'core' or if the overrideScope
             // is not specified.
-            return context.overrideScope === 'core' || !context.overrideScope;
+            return context.overrideScope === "core" || !context.overrideScope;
           }
           return finalContext[key as keyof ModelConfigKey] === value;
         });
@@ -198,10 +191,7 @@ export class ModelConfigService {
         baseModel = match.modelConfig.model;
       }
       if (match.modelConfig.generateContentConfig) {
-        resolvedConfig = this.deepMerge(
-          resolvedConfig,
-          match.modelConfig.generateContentConfig,
-        );
+        resolvedConfig = this.deepMerge(resolvedConfig, match.modelConfig.generateContentConfig);
       }
     }
 
@@ -227,7 +217,7 @@ export class ModelConfigService {
   }
 
   private isObject(item: unknown): item is Record<string, unknown> {
-    return !!item && typeof item === 'object' && !Array.isArray(item);
+    return !!item && typeof item === "object" && !Array.isArray(item);
   }
 
   private deepMerge(

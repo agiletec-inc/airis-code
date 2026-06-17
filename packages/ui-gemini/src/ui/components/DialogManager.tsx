@@ -4,51 +4,47 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { Box, Text } from 'ink';
-import { IdeIntegrationNudge } from '../IdeIntegrationNudge.js';
-import { LoopDetectionConfirmation } from './LoopDetectionConfirmation.js';
-import { FolderTrustDialog } from './FolderTrustDialog.js';
-import { ShellConfirmationDialog } from './ShellConfirmationDialog.js';
-import { ConsentPrompt } from './ConsentPrompt.js';
-import { ThemeDialog } from './ThemeDialog.js';
-import { SettingsDialog } from './SettingsDialog.js';
-import { AuthInProgress } from '../auth/AuthInProgress.js';
-import { AuthDialog } from '../auth/AuthDialog.js';
-import { ApiAuthDialog } from '../auth/ApiAuthDialog.js';
-import { EditorSettingsDialog } from './EditorSettingsDialog.js';
-import { PrivacyNotice } from '../privacy/PrivacyNotice.js';
-import { ProQuotaDialog } from './ProQuotaDialog.js';
-import { runExitCleanup } from '../../utils/cleanup.js';
-import { RELAUNCH_EXIT_CODE } from '../../utils/processUtils.js';
-import { SessionBrowser } from './SessionBrowser.js';
-import { PermissionsModifyTrustDialog } from './PermissionsModifyTrustDialog.js';
-import { ModelDialog } from './ModelDialog.js';
-import { theme } from '../semantic-colors.js';
-import { useUIState } from '../contexts/UIStateContext.js';
-import { useUIActions } from '../contexts/UIActionsContext.js';
-import { useConfig } from '../contexts/ConfigContext.js';
-import { useSettings } from '../contexts/SettingsContext.js';
-import process from 'node:process';
-import { type UseHistoryManagerReturn } from '../hooks/useHistoryManager.js';
-import { IdeTrustChangeDialog } from './IdeTrustChangeDialog.js';
+import process from "node:process";
+import { Box, Text } from "ink";
+import { runExitCleanup } from "../../utils/cleanup.js";
+import { RELAUNCH_EXIT_CODE } from "../../utils/processUtils.js";
+import { ApiAuthDialog } from "../auth/ApiAuthDialog.js";
+import { AuthDialog } from "../auth/AuthDialog.js";
+import { AuthInProgress } from "../auth/AuthInProgress.js";
+import { useConfig } from "../contexts/ConfigContext.js";
+import { useSettings } from "../contexts/SettingsContext.js";
+import { useUIActions } from "../contexts/UIActionsContext.js";
+import { useUIState } from "../contexts/UIStateContext.js";
+import { type UseHistoryManagerReturn } from "../hooks/useHistoryManager.js";
+import { IdeIntegrationNudge } from "../IdeIntegrationNudge.js";
+import { PrivacyNotice } from "../privacy/PrivacyNotice.js";
+import { theme } from "../semantic-colors.js";
+import { ConsentPrompt } from "./ConsentPrompt.js";
+import { EditorSettingsDialog } from "./EditorSettingsDialog.js";
+import { FolderTrustDialog } from "./FolderTrustDialog.js";
+import { IdeTrustChangeDialog } from "./IdeTrustChangeDialog.js";
+import { LoopDetectionConfirmation } from "./LoopDetectionConfirmation.js";
+import { ModelDialog } from "./ModelDialog.js";
+import { PermissionsModifyTrustDialog } from "./PermissionsModifyTrustDialog.js";
+import { ProQuotaDialog } from "./ProQuotaDialog.js";
+import { SessionBrowser } from "./SessionBrowser.js";
+import { SettingsDialog } from "./SettingsDialog.js";
+import { ShellConfirmationDialog } from "./ShellConfirmationDialog.js";
+import { ThemeDialog } from "./ThemeDialog.js";
 
 interface DialogManagerProps {
-  addItem: UseHistoryManagerReturn['addItem'];
+  addItem: UseHistoryManagerReturn["addItem"];
   terminalWidth: number;
 }
 
 // Props for DialogManager
-export const DialogManager = ({
-  addItem,
-  terminalWidth,
-}: DialogManagerProps) => {
+export const DialogManager = ({ addItem, terminalWidth }: DialogManagerProps) => {
   const config = useConfig();
   const settings = useSettings();
 
   const uiState = useUIState();
   const uiActions = useUIActions();
-  const { constrainHeight, terminalHeight, staticExtraHeight, mainAreaWidth } =
-    uiState;
+  const { constrainHeight, terminalHeight, staticExtraHeight, mainAreaWidth } = uiState;
 
   if (uiState.showIdeRestartPrompt) {
     return <IdeTrustChangeDialog reason={uiState.ideTrustRestartReason} />;
@@ -83,15 +79,11 @@ export const DialogManager = ({
     );
   }
   if (uiState.shellConfirmationRequest) {
-    return (
-      <ShellConfirmationDialog request={uiState.shellConfirmationRequest} />
-    );
+    return <ShellConfirmationDialog request={uiState.shellConfirmationRequest} />;
   }
   if (uiState.loopDetectionConfirmationRequest) {
     return (
-      <LoopDetectionConfirmation
-        onComplete={uiState.loopDetectionConfirmationRequest.onComplete}
-      />
+      <LoopDetectionConfirmation onComplete={uiState.loopDetectionConfirmationRequest.onComplete} />
     );
   }
   if (uiState.confirmationRequest) {
@@ -126,9 +118,7 @@ export const DialogManager = ({
           onCancel={uiActions.closeThemeDialog}
           onHighlight={uiActions.handleThemeHighlight}
           settings={settings}
-          availableTerminalHeight={
-            constrainHeight ? terminalHeight - staticExtraHeight : undefined
-          }
+          availableTerminalHeight={constrainHeight ? terminalHeight - staticExtraHeight : undefined}
           terminalWidth={mainAreaWidth}
         />
       </Box>
@@ -157,7 +147,7 @@ export const DialogManager = ({
     return (
       <AuthInProgress
         onTimeout={() => {
-          uiActions.onAuthError('Authentication cancelled.');
+          uiActions.onAuthError("Authentication cancelled.");
         }}
       />
     );
@@ -204,12 +194,7 @@ export const DialogManager = ({
     );
   }
   if (uiState.showPrivacyNotice) {
-    return (
-      <PrivacyNotice
-        onExit={() => uiActions.exitPrivacyNotice()}
-        config={config}
-      />
-    );
+    return <PrivacyNotice onExit={() => uiActions.exitPrivacyNotice()} config={config} />;
   }
   if (uiState.isSessionBrowserOpen) {
     return (

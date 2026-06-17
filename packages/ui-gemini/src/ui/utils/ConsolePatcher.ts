@@ -4,11 +4,11 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import util from 'node:util';
-import type { ConsoleMessageItem } from '../types.js';
+import util from "node:util";
+import type { ConsoleMessageItem } from "../types.js";
 
 interface ConsolePatcherParams {
-  onNewMessage?: (message: Omit<ConsoleMessageItem, 'id'>) => void;
+  onNewMessage?: (message: Omit<ConsoleMessageItem, "id">) => void;
   debugMode: boolean;
   stderr?: boolean;
 }
@@ -27,11 +27,11 @@ export class ConsolePatcher {
   }
 
   patch() {
-    console.log = this.patchConsoleMethod('log');
-    console.warn = this.patchConsoleMethod('warn');
-    console.error = this.patchConsoleMethod('error');
-    console.debug = this.patchConsoleMethod('debug');
-    console.info = this.patchConsoleMethod('info');
+    console.log = this.patchConsoleMethod("log");
+    console.warn = this.patchConsoleMethod("warn");
+    console.error = this.patchConsoleMethod("error");
+    console.debug = this.patchConsoleMethod("debug");
+    console.info = this.patchConsoleMethod("info");
   }
 
   cleanup = () => {
@@ -45,14 +45,14 @@ export class ConsolePatcher {
   private formatArgs = (args: unknown[]): string => util.format(...args);
 
   private patchConsoleMethod =
-    (type: 'log' | 'warn' | 'error' | 'debug' | 'info') =>
+    (type: "log" | "warn" | "error" | "debug" | "info") =>
     (...args: unknown[]) => {
       if (this.params.stderr) {
-        if (type !== 'debug' || this.params.debugMode) {
+        if (type !== "debug" || this.params.debugMode) {
           this.originalConsoleError(this.formatArgs(args));
         }
       } else {
-        if (type !== 'debug' || this.params.debugMode) {
+        if (type !== "debug" || this.params.debugMode) {
           this.params.onNewMessage?.({
             type,
             content: this.formatArgs(args),

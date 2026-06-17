@@ -4,50 +4,47 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import yargs from 'yargs/yargs';
-import { hideBin } from 'yargs/helpers';
-import process from 'node:process';
-import { mcpCommand } from '../commands/mcp.js';
-import type { OutputFormat } from '@airiscode/gemini-cli-core';
-import { extensionsCommand } from '../commands/extensions.js';
-import { hooksCommand } from '../commands/hooks.js';
+import process from "node:process";
+import type { EventEmitter } from "node:stream";
+import type { ExtensionEvents, OutputFormat } from "@airiscode/gemini-cli-core";
 import {
-  Config,
-  setGeminiMdFilename as setServerGeminiMdFilename,
-  getCurrentGeminiMdFilename,
   ApprovalMode,
-  DEFAULT_GEMINI_MODEL_AUTO,
-  DEFAULT_GEMINI_EMBEDDING_MODEL,
+  Config,
   DEFAULT_FILE_FILTERING_OPTIONS,
+  DEFAULT_GEMINI_EMBEDDING_MODEL,
+  DEFAULT_GEMINI_MODEL_AUTO,
   DEFAULT_MEMORY_FILE_FILTERING_OPTIONS,
-  FileDiscoveryService,
-  WRITE_FILE_TOOL_NAME,
-  SHELL_TOOL_NAMES,
-  SHELL_TOOL_NAME,
-  resolveTelemetrySettings,
-  FatalConfigError,
-  getPty,
-  EDIT_TOOL_NAME,
   debugLogger,
-  loadServerHierarchicalMemory,
-  WEB_FETCH_TOOL_NAME,
+  EDIT_TOOL_NAME,
+  FatalConfigError,
+  FileDiscoveryService,
+  getCurrentGeminiMdFilename,
+  getPty,
   getVersion,
-} from '@airiscode/gemini-cli-core';
-import type { Settings } from './settings.js';
-
-import { loadSandboxConfig } from './sandboxConfig.js';
-import { resolvePath } from '../utils/resolvePath.js';
-import { appEvents } from '../utils/events.js';
-import { RESUME_LATEST } from '../utils/sessionUtils.js';
-
-import { isWorkspaceTrusted } from './trustedFolders.js';
-import { createPolicyEngineConfig } from './policy.js';
-import { ExtensionManager } from './extension-manager.js';
-import type { ExtensionEvents } from '@airiscode/gemini-cli-core';
-import { requestConsentNonInteractive } from './extensions/consent.js';
-import { promptForSetting } from './extensions/extensionSettings.js';
-import type { EventEmitter } from 'node:stream';
-import { runExitCleanup } from '../utils/cleanup.js';
+  loadServerHierarchicalMemory,
+  resolveTelemetrySettings,
+  SHELL_TOOL_NAME,
+  SHELL_TOOL_NAMES,
+  setGeminiMdFilename as setServerGeminiMdFilename,
+  WEB_FETCH_TOOL_NAME,
+  WRITE_FILE_TOOL_NAME,
+} from "@airiscode/gemini-cli-core";
+import { hideBin } from "yargs/helpers";
+import yargs from "yargs/yargs";
+import { extensionsCommand } from "../commands/extensions.js";
+import { hooksCommand } from "../commands/hooks.js";
+import { mcpCommand } from "../commands/mcp.js";
+import { runExitCleanup } from "../utils/cleanup.js";
+import { appEvents } from "../utils/events.js";
+import { resolvePath } from "../utils/resolvePath.js";
+import { RESUME_LATEST } from "../utils/sessionUtils.js";
+import { ExtensionManager } from "./extension-manager.js";
+import { requestConsentNonInteractive } from "./extensions/consent.js";
+import { promptForSetting } from "./extensions/extensionSettings.js";
+import { createPolicyEngineConfig } from "./policy.js";
+import { loadSandboxConfig } from "./sandboxConfig.js";
+import type { Settings } from "./settings.js";
+import { isWorkspaceTrusted } from "./trustedFolders.js";
 
 export interface CliArgs {
   query: string | undefined;
@@ -79,108 +76,104 @@ export interface CliArgs {
 export async function parseArguments(settings: Settings): Promise<CliArgs> {
   const rawArgv = hideBin(process.argv);
   const yargsInstance = yargs(rawArgv)
-    .locale('en')
-    .scriptName('gemini')
+    .locale("en")
+    .scriptName("gemini")
     .usage(
-      'Usage: gemini [options] [command]\n\nGemini CLI - Launch an interactive CLI, use -p/--prompt for non-interactive mode',
+      "Usage: gemini [options] [command]\n\nGemini CLI - Launch an interactive CLI, use -p/--prompt for non-interactive mode",
     )
 
-    .option('debug', {
-      alias: 'd',
-      type: 'boolean',
-      description: 'Run in debug mode?',
+    .option("debug", {
+      alias: "d",
+      type: "boolean",
+      description: "Run in debug mode?",
       default: false,
     })
-    .command('$0 [query..]', 'Launch Gemini CLI', (yargsInstance) =>
+    .command("$0 [query..]", "Launch Gemini CLI", (yargsInstance) =>
       yargsInstance
-        .positional('query', {
+        .positional("query", {
           description:
-            'Positional prompt. Defaults to one-shot; use -i/--prompt-interactive for interactive.',
+            "Positional prompt. Defaults to one-shot; use -i/--prompt-interactive for interactive.",
         })
-        .option('model', {
-          alias: 'm',
-          type: 'string',
+        .option("model", {
+          alias: "m",
+          type: "string",
           nargs: 1,
           description: `Model`,
         })
-        .option('prompt', {
-          alias: 'p',
-          type: 'string',
+        .option("prompt", {
+          alias: "p",
+          type: "string",
           nargs: 1,
-          description: 'Prompt. Appended to input on stdin (if any).',
+          description: "Prompt. Appended to input on stdin (if any).",
         })
-        .option('prompt-interactive', {
-          alias: 'i',
-          type: 'string',
+        .option("prompt-interactive", {
+          alias: "i",
+          type: "string",
           nargs: 1,
-          description:
-            'Execute the provided prompt and continue in interactive mode',
+          description: "Execute the provided prompt and continue in interactive mode",
         })
-        .option('sandbox', {
-          alias: 's',
-          type: 'boolean',
-          description: 'Run in sandbox?',
+        .option("sandbox", {
+          alias: "s",
+          type: "boolean",
+          description: "Run in sandbox?",
         })
 
-        .option('yolo', {
-          alias: 'y',
-          type: 'boolean',
+        .option("yolo", {
+          alias: "y",
+          type: "boolean",
           description:
-            'Automatically accept all actions (aka YOLO mode, see https://www.youtube.com/watch?v=xvFZjo5PgG0 for more details)?',
+            "Automatically accept all actions (aka YOLO mode, see https://www.youtube.com/watch?v=xvFZjo5PgG0 for more details)?",
           default: false,
         })
-        .option('approval-mode', {
-          type: 'string',
+        .option("approval-mode", {
+          type: "string",
           nargs: 1,
-          choices: ['default', 'auto_edit', 'yolo'],
+          choices: ["default", "auto_edit", "yolo"],
           description:
-            'Set the approval mode: default (prompt for approval), auto_edit (auto-approve edit tools), yolo (auto-approve all tools)',
+            "Set the approval mode: default (prompt for approval), auto_edit (auto-approve edit tools), yolo (auto-approve all tools)",
         })
-        .option('experimental-acp', {
-          type: 'boolean',
-          description: 'Starts the agent in ACP mode',
+        .option("experimental-acp", {
+          type: "boolean",
+          description: "Starts the agent in ACP mode",
         })
-        .option('allowed-mcp-server-names', {
-          type: 'array',
+        .option("allowed-mcp-server-names", {
+          type: "array",
           string: true,
           nargs: 1,
-          description: 'Allowed MCP server names',
+          description: "Allowed MCP server names",
           coerce: (mcpServerNames: string[]) =>
             // Handle comma-separated values
             mcpServerNames.flatMap((mcpServerName) =>
-              mcpServerName.split(',').map((m) => m.trim()),
+              mcpServerName.split(",").map((m) => m.trim()),
             ),
         })
-        .option('allowed-tools', {
-          type: 'array',
+        .option("allowed-tools", {
+          type: "array",
           string: true,
           nargs: 1,
-          description: 'Tools that are allowed to run without confirmation',
+          description: "Tools that are allowed to run without confirmation",
           coerce: (tools: string[]) =>
             // Handle comma-separated values
-            tools.flatMap((tool) => tool.split(',').map((t) => t.trim())),
+            tools.flatMap((tool) => tool.split(",").map((t) => t.trim())),
         })
-        .option('extensions', {
-          alias: 'e',
-          type: 'array',
+        .option("extensions", {
+          alias: "e",
+          type: "array",
           string: true,
           nargs: 1,
-          description:
-            'A list of extensions to use. If not provided, all extensions are used.',
+          description: "A list of extensions to use. If not provided, all extensions are used.",
           coerce: (extensions: string[]) =>
             // Handle comma-separated values
-            extensions.flatMap((extension) =>
-              extension.split(',').map((e) => e.trim()),
-            ),
+            extensions.flatMap((extension) => extension.split(",").map((e) => e.trim())),
         })
-        .option('list-extensions', {
-          alias: 'l',
-          type: 'boolean',
-          description: 'List all available extensions and exit.',
+        .option("list-extensions", {
+          alias: "l",
+          type: "boolean",
+          description: "List all available extensions and exit.",
         })
-        .option('resume', {
-          alias: 'r',
-          type: 'string',
+        .option("resume", {
+          alias: "r",
+          type: "string",
           // `skipValidation` so that we can distinguish between it being passed with a value, without
           // one, and not being passed at all.
           skipValidation: true,
@@ -191,56 +184,55 @@ export async function parseArguments(settings: Settings): Promise<CliArgs> {
             // When --resume passed without a value (`gemini --resume`): value = "" (string)
             // When --resume not passed at all: this `coerce` function is not called at all, and
             //   `yargsInstance.argv.resume` is undefined.
-            if (value === '') {
+            if (value === "") {
               return RESUME_LATEST;
             }
             return value;
           },
         })
-        .option('list-sessions', {
-          type: 'boolean',
-          description:
-            'List available sessions for the current project and exit.',
+        .option("list-sessions", {
+          type: "boolean",
+          description: "List available sessions for the current project and exit.",
         })
-        .option('delete-session', {
-          type: 'string',
+        .option("delete-session", {
+          type: "string",
           description:
-            'Delete a session by index number (use --list-sessions to see available sessions).',
+            "Delete a session by index number (use --list-sessions to see available sessions).",
         })
-        .option('include-directories', {
-          type: 'array',
+        .option("include-directories", {
+          type: "array",
           string: true,
           nargs: 1,
           description:
-            'Additional directories to include in the workspace (comma-separated or multiple --include-directories)',
+            "Additional directories to include in the workspace (comma-separated or multiple --include-directories)",
           coerce: (dirs: string[]) =>
             // Handle comma-separated values
-            dirs.flatMap((dir) => dir.split(',').map((d) => d.trim())),
+            dirs.flatMap((dir) => dir.split(",").map((d) => d.trim())),
         })
-        .option('screen-reader', {
-          type: 'boolean',
-          description: 'Enable screen reader mode for accessibility.',
+        .option("screen-reader", {
+          type: "boolean",
+          description: "Enable screen reader mode for accessibility.",
         })
-        .option('output-format', {
-          alias: 'o',
-          type: 'string',
+        .option("output-format", {
+          alias: "o",
+          type: "string",
           nargs: 1,
-          description: 'The format of the CLI output.',
-          choices: ['text', 'json', 'stream-json'],
+          description: "The format of the CLI output.",
+          choices: ["text", "json", "stream-json"],
         })
-        .option('fake-responses', {
-          type: 'string',
-          description: 'Path to a file with fake model responses for testing.',
+        .option("fake-responses", {
+          type: "string",
+          description: "Path to a file with fake model responses for testing.",
           hidden: true,
         })
-        .option('record-responses', {
-          type: 'string',
-          description: 'Path to a file to record model responses for testing.',
+        .option("record-responses", {
+          type: "string",
+          description: "Path to a file to record model responses for testing.",
           hidden: true,
         })
         .deprecateOption(
-          'prompt',
-          'Use the positional prompt instead. This flag will be removed in a future version.',
+          "prompt",
+          "Use the positional prompt instead. This flag will be removed in a future version.",
         ),
     )
     // Register MCP subcommands
@@ -253,27 +245,23 @@ export async function parseArguments(settings: Settings): Promise<CliArgs> {
     .check((argv) => {
       // The 'query' positional can be a string (for one arg) or string[] (for multiple).
       // This guard safely checks if any positional argument was provided.
-      const query = argv['query'] as string | string[] | undefined;
-      const hasPositionalQuery = Array.isArray(query)
-        ? query.length > 0
-        : !!query;
+      const query = argv["query"] as string | string[] | undefined;
+      const hasPositionalQuery = Array.isArray(query) ? query.length > 0 : !!query;
 
-      if (argv['prompt'] && hasPositionalQuery) {
-        return 'Cannot use both a positional prompt and the --prompt (-p) flag together';
+      if (argv["prompt"] && hasPositionalQuery) {
+        return "Cannot use both a positional prompt and the --prompt (-p) flag together";
       }
-      if (argv['prompt'] && argv['promptInteractive']) {
-        return 'Cannot use both --prompt (-p) and --prompt-interactive (-i) together';
+      if (argv["prompt"] && argv["promptInteractive"]) {
+        return "Cannot use both --prompt (-p) and --prompt-interactive (-i) together";
       }
-      if (argv['yolo'] && argv['approvalMode']) {
-        return 'Cannot use both --yolo (-y) and --approval-mode together. Use --approval-mode=yolo instead.';
+      if (argv["yolo"] && argv["approvalMode"]) {
+        return "Cannot use both --yolo (-y) and --approval-mode together. Use --approval-mode=yolo instead.";
       }
       if (
-        argv['outputFormat'] &&
-        !['text', 'json', 'stream-json'].includes(
-          argv['outputFormat'] as string,
-        )
+        argv["outputFormat"] &&
+        !["text", "json", "stream-json"].includes(argv["outputFormat"] as string)
       ) {
-        return `Invalid values:\n  Argument: output-format, Given: "${argv['outputFormat']}", Choices: "text", "json", "stream-json"`;
+        return `Invalid values:\n  Argument: output-format, Given: "${argv["outputFormat"]}", Choices: "text", "json", "stream-json"`;
       }
       return true;
     });
@@ -289,9 +277,9 @@ export async function parseArguments(settings: Settings): Promise<CliArgs> {
 
   yargsInstance
     .version(await getVersion()) // This will enable the --version flag based on package.json
-    .alias('v', 'version')
+    .alias("v", "version")
     .help()
-    .alias('h', 'help')
+    .alias("h", "help")
     .strict()
     .demandCommand(0, 0) // Allow base command to run with no subcommands
     .exitProcess(false);
@@ -309,30 +297,28 @@ export async function parseArguments(settings: Settings): Promise<CliArgs> {
   }
 
   // Handle help and version flags manually since we disabled exitProcess
-  if (result['help'] || result['version']) {
+  if (result["help"] || result["version"]) {
     await runExitCleanup();
     process.exit(0);
   }
 
   // Normalize query args: handle both quoted "@path file" and unquoted @path file
   const queryArg = (result as { query?: string | string[] | undefined }).query;
-  const q: string | undefined = Array.isArray(queryArg)
-    ? queryArg.join(' ')
-    : queryArg;
+  const q: string | undefined = Array.isArray(queryArg) ? queryArg.join(" ") : queryArg;
 
   // Route positional args: explicit -i flag -> interactive; else -> one-shot (even for @commands)
-  if (q && !result['prompt']) {
+  if (q && !result["prompt"]) {
     const hasExplicitInteractive =
-      result['promptInteractive'] === '' || !!result['promptInteractive'];
+      result["promptInteractive"] === "" || !!result["promptInteractive"];
     if (hasExplicitInteractive) {
-      result['promptInteractive'] = q;
+      result["promptInteractive"] = q;
     } else {
-      result['prompt'] = q;
+      result["prompt"] = q;
     }
   }
 
   // Keep CliArgs.query as a string for downstream typing
-  (result as Record<string, unknown>)['query'] = q || undefined;
+  (result as Record<string, unknown>)["query"] = q || undefined;
 
   // The import format is now only controlled by settings.memoryImportFormat
   // We no longer accept it as a CLI argument
@@ -354,10 +340,7 @@ export async function parseArguments(settings: Settings): Promise<CliArgs> {
  * @param allowedToolsSet A set of explicitly allowed tool names for quick lookups.
  * @returns A function that takes a tool name and returns `true` if it should be excluded.
  */
-function createToolExclusionFilter(
-  allowedTools: string[],
-  allowedToolsSet: Set<string>,
-) {
+function createToolExclusionFilter(allowedTools: string[], allowedToolsSet: Set<string>) {
   return (tool: string): boolean => {
     if (tool === SHELL_TOOL_NAME) {
       // If any of the allowed tools is ShellTool (even with subcommands), don't exclude it.
@@ -372,9 +355,7 @@ function createToolExclusionFilter(
 export function isDebugMode(argv: CliArgs): boolean {
   return (
     argv.debug ||
-    [process.env['DEBUG'], process.env['DEBUG_MODE']].some(
-      (v) => v === 'true' || v === '1',
-    )
+    [process.env["DEBUG"], process.env["DEBUG_MODE"]].some((v) => v === "true" || v === "1")
   );
 }
 
@@ -387,10 +368,10 @@ export async function loadCliConfig(
   const debugMode = isDebugMode(argv);
 
   if (argv.sandbox) {
-    process.env['GEMINI_SANDBOX'] = 'true';
+    process.env["GEMINI_SANDBOX"] = "true";
   }
 
-  const memoryImportFormat = settings.context?.importFormat || 'tree';
+  const memoryImportFormat = settings.context?.importFormat || "tree";
 
   const ideMode = settings.ide?.enabled ?? false;
 
@@ -435,33 +416,32 @@ export async function loadCliConfig(
   await extensionManager.loadExtensions();
 
   // Call the (now wrapper) loadHierarchicalGeminiMemory which calls the server's version
-  const { memoryContent, fileCount, filePaths } =
-    await loadServerHierarchicalMemory(
-      cwd,
-      [],
-      debugMode,
-      fileService,
-      extensionManager,
-      trustedFolder,
-      memoryImportFormat,
-      memoryFileFiltering,
-      settings.context?.discoveryMaxDirs,
-    );
+  const { memoryContent, fileCount, filePaths } = await loadServerHierarchicalMemory(
+    cwd,
+    [],
+    debugMode,
+    fileService,
+    extensionManager,
+    trustedFolder,
+    memoryImportFormat,
+    memoryFileFiltering,
+    settings.context?.discoveryMaxDirs,
+  );
 
-  const question = argv.promptInteractive || argv.prompt || '';
+  const question = argv.promptInteractive || argv.prompt || "";
 
   // Determine approval mode with backward compatibility
   let approvalMode: ApprovalMode;
   if (argv.approvalMode) {
     // New --approval-mode flag takes precedence
     switch (argv.approvalMode) {
-      case 'yolo':
+      case "yolo":
         approvalMode = ApprovalMode.YOLO;
         break;
-      case 'auto_edit':
+      case "auto_edit":
         approvalMode = ApprovalMode.AUTO_EDIT;
         break;
-      case 'default':
+      case "default":
         approvalMode = ApprovalMode.DEFAULT;
         break;
       default:
@@ -471,23 +451,18 @@ export async function loadCliConfig(
     }
   } else {
     // Fallback to legacy --yolo flag behavior
-    approvalMode =
-      argv.yolo || false ? ApprovalMode.YOLO : ApprovalMode.DEFAULT;
+    approvalMode = argv.yolo || false ? ApprovalMode.YOLO : ApprovalMode.DEFAULT;
   }
 
   // Override approval mode if disableYoloMode is set.
   if (settings.security?.disableYoloMode) {
     if (approvalMode === ApprovalMode.YOLO) {
       debugLogger.error('YOLO mode is disabled by the "disableYolo" setting.');
-      throw new FatalConfigError(
-        'Cannot start in YOLO mode when it is disabled by settings',
-      );
+      throw new FatalConfigError("Cannot start in YOLO mode when it is disabled by settings");
     }
     approvalMode = ApprovalMode.DEFAULT;
   } else if (approvalMode === ApprovalMode.YOLO) {
-    debugLogger.warn(
-      'YOLO mode is enabled. All tool calls will be automatically approved.',
-    );
+    debugLogger.warn("YOLO mode is enabled. All tool calls will be automatically approved.");
   }
 
   // Force approval mode to default if the folder is not trusted.
@@ -506,20 +481,14 @@ export async function loadCliConfig(
     });
   } catch (err) {
     if (err instanceof FatalConfigError) {
-      throw new FatalConfigError(
-        `Invalid telemetry configuration: ${err.message}.`,
-      );
+      throw new FatalConfigError(`Invalid telemetry configuration: ${err.message}.`);
     }
     throw err;
   }
 
-  const policyEngineConfig = await createPolicyEngineConfig(
-    settings,
-    approvalMode,
-  );
+  const policyEngineConfig = await createPolicyEngineConfig(settings, approvalMode);
 
-  const enableMessageBusIntegration =
-    settings.tools?.enableMessageBusIntegration ?? true;
+  const enableMessageBusIntegration = settings.tools?.enableMessageBusIntegration ?? true;
 
   const allowedTools = argv.allowedTools || settings.tools?.allowed || [];
   const allowedToolsSet = new Set(allowedTools);
@@ -541,10 +510,7 @@ export async function loadCliConfig(
     ];
     const autoEditExcludes = [SHELL_TOOL_NAME];
 
-    const toolExclusionFilter = createToolExclusionFilter(
-      allowedTools,
-      allowedToolsSet,
-    );
+    const toolExclusionFilter = createToolExclusionFilter(allowedTools, allowedToolsSet);
 
     switch (approvalMode) {
       case ApprovalMode.DEFAULT:
@@ -571,10 +537,7 @@ export async function loadCliConfig(
 
   const defaultModel = DEFAULT_GEMINI_MODEL_AUTO;
   const resolvedModel: string =
-    argv.model ||
-    process.env['GEMINI_MODEL'] ||
-    settings.model?.name ||
-    defaultModel;
+    argv.model || process.env["GEMINI_MODEL"] || settings.model?.name || defaultModel;
 
   const sandboxConfig = await loadSandboxConfig(settings, argv);
   const screenReader =
@@ -590,8 +553,7 @@ export async function loadCliConfig(
     sandbox: sandboxConfig,
     targetDir: cwd,
     includeDirectories,
-    loadMemoryFromIncludeDirectories:
-      settings.context?.loadMemoryFromIncludeDirectories || false,
+    loadMemoryFromIncludeDirectories: settings.context?.loadMemoryFromIncludeDirectories || false,
     debugMode,
     question,
     previewFeatures: settings.general?.previewFeatures,
@@ -623,10 +585,10 @@ export async function loadCliConfig(
     fileFiltering,
     checkpointing: settings.general?.checkpointing?.enabled,
     proxy:
-      process.env['HTTPS_PROXY'] ||
-      process.env['https_proxy'] ||
-      process.env['HTTP_PROXY'] ||
-      process.env['http_proxy'],
+      process.env["HTTPS_PROXY"] ||
+      process.env["https_proxy"] ||
+      process.env["HTTP_PROXY"] ||
+      process.env["http_proxy"],
     cwd,
     fileDiscoveryService: fileService,
     bugCommand: settings.advanced?.bugCommand,
@@ -640,10 +602,9 @@ export async function loadCliConfig(
     extensionLoader: extensionManager,
     enableExtensionReloading: settings.experimental?.extensionReloading,
     enableAgents: settings.experimental?.enableAgents,
-    enableModelAvailabilityService:
-      settings.experimental?.isModelAvailabilityServiceEnabled,
+    enableModelAvailabilityService: settings.experimental?.isModelAvailabilityServiceEnabled,
     experimentalJitContext: settings.experimental?.jitContext,
-    noBrowser: !!process.env['NO_BROWSER'],
+    noBrowser: !!process.env["NO_BROWSER"],
     summarizeToolOutput: settings.model?.summarizeToolOutput,
     ideMode,
     compressionThreshold: settings.model?.compressionThreshold,
@@ -651,8 +612,7 @@ export async function loadCliConfig(
     interactive,
     trustedFolder,
     useRipgrep: settings.tools?.useRipgrep,
-    enableInteractiveShell:
-      settings.tools?.shell?.enableInteractiveShell ?? true,
+    enableInteractiveShell: settings.tools?.shell?.enableInteractiveShell ?? true,
     shellToolInactivityTimeout: settings.tools?.shell?.inactivityTimeout,
     skipNextSpeakerCheck: settings.model?.skipNextSpeakerCheck,
     enablePromptCompletion: settings.general?.enablePromptCompletion ?? false,
@@ -666,8 +626,7 @@ export async function loadCliConfig(
       format: (argv.outputFormat ?? settings.output?.format) as OutputFormat,
     },
     enableMessageBusIntegration,
-    codebaseInvestigatorSettings:
-      settings.experimental?.codebaseInvestigatorSettings,
+    codebaseInvestigatorSettings: settings.experimental?.codebaseInvestigatorSettings,
     fakeResponses: argv.fakeResponses,
     recordResponses: argv.recordResponses,
     retryFetchErrors: settings.general?.retryFetchErrors ?? false,
@@ -679,13 +638,7 @@ export async function loadCliConfig(
   });
 }
 
-function mergeExcludeTools(
-  settings: Settings,
-  extraExcludes?: string[] | undefined,
-): string[] {
-  const allExcludeTools = new Set([
-    ...(settings.tools?.exclude || []),
-    ...(extraExcludes || []),
-  ]);
+function mergeExcludeTools(settings: Settings, extraExcludes?: string[] | undefined): string[] {
+  const allExcludeTools = new Set([...(settings.tools?.exclude || []), ...(extraExcludes || [])]);
   return [...allExcludeTools];
 }

@@ -4,38 +4,32 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { BaseDeclarativeTool, BaseToolInvocation, Kind } from './tools.js';
-import { ToolNames, ToolDisplayNames } from './tool-names.js';
 import type {
-  ToolResult,
-  ToolResultDisplay,
-  AgentResultDisplay,
-} from './tools.js';
-import { ToolConfirmationOutcome } from './tools.js';
-import type {
-  ToolCallConfirmationDetails,
-  ToolConfirmationPayload,
-} from './tools.js';
-import type { Config } from '../config/config.js';
-import type { SubagentManager } from '../subagents/subagent-manager.js';
-import type { SubagentConfig } from '../subagents/types.js';
-import { AgentTerminateMode } from '../agents/runtime/agent-types.js';
-import { ContextState } from '../agents/runtime/agent-headless.js';
-import {
-  AgentEventEmitter,
-  AgentEventType,
-} from '../agents/runtime/agent-events.js';
-import type {
+  AgentApprovalRequestEvent,
+  AgentErrorEvent,
+  AgentFinishEvent,
   AgentToolCallEvent,
   AgentToolResultEvent,
-  AgentFinishEvent,
-  AgentErrorEvent,
-  AgentApprovalRequestEvent,
-} from '../agents/runtime/agent-events.js';
-import { BuiltinAgentRegistry } from '../subagents/builtin-agents.js';
-import { createDebugLogger } from '../utils/debugLogger.js';
-import { PermissionMode } from '../hooks/types.js';
-import type { StopHookOutput } from '../hooks/types.js';
+} from "../agents/runtime/agent-events.js";
+import { AgentEventEmitter, AgentEventType } from "../agents/runtime/agent-events.js";
+import { ContextState } from "../agents/runtime/agent-headless.js";
+import { AgentTerminateMode } from "../agents/runtime/agent-types.js";
+import type { Config } from "../config/config.js";
+import type { StopHookOutput } from "../hooks/types.js";
+import { PermissionMode } from "../hooks/types.js";
+import { BuiltinAgentRegistry } from "../subagents/builtin-agents.js";
+import type { SubagentManager } from "../subagents/subagent-manager.js";
+import type { SubagentConfig } from "../subagents/types.js";
+import { createDebugLogger } from "../utils/debugLogger.js";
+import { ToolDisplayNames, ToolNames } from "./tool-names.js";
+import type {
+  AgentResultDisplay,
+  ToolCallConfirmationDetails,
+  ToolConfirmationPayload,
+  ToolResult,
+  ToolResultDisplay,
+} from "./tools.js";
+import { BaseDeclarativeTool, BaseToolInvocation, Kind, ToolConfirmationOutcome } from "./tools.js";
 
 export interface AgentParams {
   description: string;
@@ -43,7 +37,7 @@ export interface AgentParams {
   subagent_type: string;
 }
 
-const debugLogger = createDebugLogger('AGENT');
+const debugLogger = createDebugLogger("AGENT");
 
 /**
  * Agent tool that enables primary agents to delegate tasks to specialized agents.
@@ -54,37 +48,36 @@ export class AgentTool extends BaseDeclarativeTool<AgentParams, ToolResult> {
   static readonly Name: string = ToolNames.AGENT;
 
   private subagentManager: SubagentManager;
-  private availableSubagents: SubagentConfig[] =
-    BuiltinAgentRegistry.getBuiltinAgents();
+  private availableSubagents: SubagentConfig[] = BuiltinAgentRegistry.getBuiltinAgents();
   private readonly removeChangeListener: () => void;
 
   constructor(private readonly config: Config) {
     // Initialize with a basic schema first
     const initialSchema = {
-      type: 'object',
+      type: "object",
       properties: {
         description: {
-          type: 'string',
-          description: 'A short (3-5 word) description of the task',
+          type: "string",
+          description: "A short (3-5 word) description of the task",
         },
         prompt: {
-          type: 'string',
-          description: 'The task for the agent to perform',
+          type: "string",
+          description: "The task for the agent to perform",
         },
         subagent_type: {
-          type: 'string',
-          description: 'The type of specialized agent to use for this task',
+          type: "string",
+          description: "The type of specialized agent to use for this task",
         },
       },
-      required: ['description', 'prompt', 'subagent_type'],
+      required: ["description", "prompt", "subagent_type"],
       additionalProperties: false,
-      $schema: 'http://json-schema.org/draft-07/schema#',
+      $schema: "http://json-schema.org/draft-07/schema#",
     };
 
     super(
       AgentTool.Name,
       ToolDisplayNames.AGENT,
-      'Launch a new agent to handle complex, multi-step tasks autonomously.\n\nThe Agent tool launches specialized agents (subprocesses) that autonomously handle complex tasks. Each agent type has specific capabilities and tools available to it.\n\nAvailable agent types and the tools they have access to:\n',
+      "Launch a new agent to handle complex, multi-step tasks autonomously.\n\nThe Agent tool launches specialized agents (subprocesses) that autonomously handle complex tasks. Each agent type has specific capabilities and tools available to it.\n\nAvailable agent types and the tools they have access to:\n",
       Kind.Other,
       initialSchema,
       true, // isOutputMarkdown
@@ -113,7 +106,7 @@ export class AgentTool extends BaseDeclarativeTool<AgentParams, ToolResult> {
       this.availableSubagents = await this.subagentManager.listSubagents();
       this.updateDescriptionAndSchema();
     } catch (error) {
-      debugLogger.warn('Failed to load agents for Agent tool:', error);
+      debugLogger.warn("Failed to load agents for Agent tool:", error);
       this.availableSubagents = BuiltinAgentRegistry.getBuiltinAgents();
       this.updateDescriptionAndSchema();
     } finally {
@@ -129,14 +122,14 @@ export class AgentTool extends BaseDeclarativeTool<AgentParams, ToolResult> {
    * Updates the tool's description and schema based on available subagents.
    */
   private updateDescriptionAndSchema(): void {
-    let subagentDescriptions = '';
+    let subagentDescriptions = "";
     if (this.availableSubagents.length === 0) {
       subagentDescriptions =
-        'No subagents are currently configured. You can create subagents using the /agents command.';
+        "No subagents are currently configured. You can create subagents using the /agents command.";
     } else {
       subagentDescriptions = this.availableSubagents
         .map((subagent) => `- **${subagent.name}**: ${subagent.description}`)
-        .join('\n');
+        .join("\n");
     }
 
     const baseDescription = `Launch a new agent to handle complex, multi-step tasks autonomously.
@@ -225,24 +218,20 @@ assistant: "I'm going to use the ${ToolNames.AGENT} tool to launch the greeting-
     // Validate required fields
     if (
       !params.description ||
-      typeof params.description !== 'string' ||
-      params.description.trim() === ''
+      typeof params.description !== "string" ||
+      params.description.trim() === ""
     ) {
       return 'Parameter "description" must be a non-empty string.';
     }
 
-    if (
-      !params.prompt ||
-      typeof params.prompt !== 'string' ||
-      params.prompt.trim() === ''
-    ) {
+    if (!params.prompt || typeof params.prompt !== "string" || params.prompt.trim() === "") {
       return 'Parameter "prompt" must be a non-empty string.';
     }
 
     if (
       !params.subagent_type ||
-      typeof params.subagent_type !== 'string' ||
-      params.subagent_type.trim() === ''
+      typeof params.subagent_type !== "string" ||
+      params.subagent_type.trim() === ""
     ) {
       return 'Parameter "subagent_type" must be a non-empty string.';
     }
@@ -255,7 +244,7 @@ assistant: "I'm going to use the ${ToolNames.AGENT} tool to launch the greeting-
 
     if (!subagentExists) {
       const availableNames = this.availableSubagents.map((s) => s.name);
-      return `Subagent "${params.subagent_type}" not found. Available subagents: ${availableNames.join(', ')}`;
+      return `Subagent "${params.subagent_type}" not found. Available subagents: ${availableNames.join(", ")}`;
     }
 
     return null;
@@ -273,7 +262,7 @@ assistant: "I'm going to use the ${ToolNames.AGENT} tool to launch the greeting-
 class AgentToolInvocation extends BaseToolInvocation<AgentParams, ToolResult> {
   readonly eventEmitter: AgentEventEmitter = new AgentEventEmitter();
   private currentDisplay: AgentResultDisplay | null = null;
-  private currentToolCalls: AgentResultDisplay['toolCalls'] = [];
+  private currentToolCalls: AgentResultDisplay["toolCalls"] = [];
 
   constructor(
     private readonly config: Config,
@@ -305,13 +294,11 @@ class AgentToolInvocation extends BaseToolInvocation<AgentParams, ToolResult> {
   /**
    * Sets up event listeners for real-time subagent progress updates
    */
-  private setupEventListeners(
-    updateOutput?: (output: ToolResultDisplay) => void,
-  ): void {
+  private setupEventListeners(updateOutput?: (output: ToolResultDisplay) => void): void {
     let pendingConfirmationCallId: string | undefined;
 
     this.eventEmitter.on(AgentEventType.START, () => {
-      this.updateDisplay({ status: 'running' }, updateOutput);
+      this.updateDisplay({ status: "running" }, updateOutput);
     });
 
     this.eventEmitter.on(AgentEventType.TOOL_CALL, (...args: unknown[]) => {
@@ -319,7 +306,7 @@ class AgentToolInvocation extends BaseToolInvocation<AgentParams, ToolResult> {
       const newToolCall = {
         callId: event.callId,
         name: event.name,
-        status: 'executing' as const,
+        status: "executing" as const,
         args: event.args,
         description: event.description,
       };
@@ -341,7 +328,7 @@ class AgentToolInvocation extends BaseToolInvocation<AgentParams, ToolResult> {
       if (toolCallIndex >= 0) {
         this.currentToolCalls![toolCallIndex] = {
           ...this.currentToolCalls![toolCallIndex],
-          status: event.success ? 'success' : 'failed',
+          status: event.success ? "success" : "failed",
           error: event.error,
           responseParts: event.responseParts,
         };
@@ -351,9 +338,7 @@ class AgentToolInvocation extends BaseToolInvocation<AgentParams, ToolResult> {
         // the IDE diff-tab accept resolved the tool via CoreToolScheduler's
         // IDE confirmation handler, which bypasses the UI's onConfirm wrapper.
         const clearPending =
-          pendingConfirmationCallId === event.callId
-            ? { pendingConfirmation: undefined }
-            : {};
+          pendingConfirmationCallId === event.callId ? { pendingConfirmation: undefined } : {};
         if (pendingConfirmationCallId === event.callId) {
           pendingConfirmationCallId = undefined;
         }
@@ -372,7 +357,7 @@ class AgentToolInvocation extends BaseToolInvocation<AgentParams, ToolResult> {
       const event = args[0] as AgentFinishEvent;
       this.updateDisplay(
         {
-          status: event.terminateReason === 'GOAL' ? 'completed' : 'failed',
+          status: event.terminateReason === "GOAL" ? "completed" : "failed",
           terminateReason: event.terminateReason,
         },
         updateOutput,
@@ -383,7 +368,7 @@ class AgentToolInvocation extends BaseToolInvocation<AgentParams, ToolResult> {
       const event = args[0] as AgentErrorEvent;
       this.updateDisplay(
         {
-          status: 'failed',
+          status: "failed",
           terminateReason: event.error,
         },
         updateOutput,
@@ -391,87 +376,71 @@ class AgentToolInvocation extends BaseToolInvocation<AgentParams, ToolResult> {
     });
 
     // Indicate when a tool call is waiting for approval
-    this.eventEmitter.on(
-      AgentEventType.TOOL_WAITING_APPROVAL,
-      (...args: unknown[]) => {
-        const event = args[0] as AgentApprovalRequestEvent;
-        const idx = this.currentToolCalls!.findIndex(
-          (c) => c.callId === event.callId,
-        );
-        if (idx >= 0) {
-          this.currentToolCalls![idx] = {
-            ...this.currentToolCalls![idx],
-            status: 'awaiting_approval',
-          };
-        } else {
-          this.currentToolCalls!.push({
-            callId: event.callId,
-            name: event.name,
-            status: 'awaiting_approval',
-            description: event.description,
-          });
-        }
+    this.eventEmitter.on(AgentEventType.TOOL_WAITING_APPROVAL, (...args: unknown[]) => {
+      const event = args[0] as AgentApprovalRequestEvent;
+      const idx = this.currentToolCalls!.findIndex((c) => c.callId === event.callId);
+      if (idx >= 0) {
+        this.currentToolCalls![idx] = {
+          ...this.currentToolCalls![idx],
+          status: "awaiting_approval",
+        };
+      } else {
+        this.currentToolCalls!.push({
+          callId: event.callId,
+          name: event.name,
+          status: "awaiting_approval",
+          description: event.description,
+        });
+      }
 
-        // Bridge scheduler confirmation details to UI inline prompt
-        pendingConfirmationCallId = event.callId;
-        const details: ToolCallConfirmationDetails = {
-          ...(event.confirmationDetails as Omit<
-            ToolCallConfirmationDetails,
-            'onConfirm'
-          >),
-          onConfirm: async (
-            outcome: ToolConfirmationOutcome,
-            payload?: ToolConfirmationPayload,
-          ) => {
-            // Clear the inline prompt immediately
-            // and optimistically mark the tool as executing for proceed outcomes.
-            pendingConfirmationCallId = undefined;
-            const proceedOutcomes = new Set<ToolConfirmationOutcome>([
-              ToolConfirmationOutcome.ProceedOnce,
-              ToolConfirmationOutcome.ProceedAlways,
-              ToolConfirmationOutcome.ProceedAlwaysServer,
-              ToolConfirmationOutcome.ProceedAlwaysTool,
-              ToolConfirmationOutcome.ProceedAlwaysProject,
-              ToolConfirmationOutcome.ProceedAlwaysUser,
-            ]);
+      // Bridge scheduler confirmation details to UI inline prompt
+      pendingConfirmationCallId = event.callId;
+      const details: ToolCallConfirmationDetails = {
+        ...(event.confirmationDetails as Omit<ToolCallConfirmationDetails, "onConfirm">),
+        onConfirm: async (outcome: ToolConfirmationOutcome, payload?: ToolConfirmationPayload) => {
+          // Clear the inline prompt immediately
+          // and optimistically mark the tool as executing for proceed outcomes.
+          pendingConfirmationCallId = undefined;
+          const proceedOutcomes = new Set<ToolConfirmationOutcome>([
+            ToolConfirmationOutcome.ProceedOnce,
+            ToolConfirmationOutcome.ProceedAlways,
+            ToolConfirmationOutcome.ProceedAlwaysServer,
+            ToolConfirmationOutcome.ProceedAlwaysTool,
+            ToolConfirmationOutcome.ProceedAlwaysProject,
+            ToolConfirmationOutcome.ProceedAlwaysUser,
+          ]);
 
-            if (proceedOutcomes.has(outcome)) {
-              const idx2 = this.currentToolCalls!.findIndex(
-                (c) => c.callId === event.callId,
-              );
-              if (idx2 >= 0) {
-                this.currentToolCalls![idx2] = {
-                  ...this.currentToolCalls![idx2],
-                  status: 'executing',
-                };
-              }
-              this.updateDisplay(
-                {
-                  toolCalls: [...this.currentToolCalls!],
-                  pendingConfirmation: undefined,
-                },
-                updateOutput,
-              );
-            } else {
-              this.updateDisplay(
-                { pendingConfirmation: undefined },
-                updateOutput,
-              );
+          if (proceedOutcomes.has(outcome)) {
+            const idx2 = this.currentToolCalls!.findIndex((c) => c.callId === event.callId);
+            if (idx2 >= 0) {
+              this.currentToolCalls![idx2] = {
+                ...this.currentToolCalls![idx2],
+                status: "executing",
+              };
             }
+            this.updateDisplay(
+              {
+                toolCalls: [...this.currentToolCalls!],
+                pendingConfirmation: undefined,
+              },
+              updateOutput,
+            );
+          } else {
+            this.updateDisplay({ pendingConfirmation: undefined }, updateOutput);
+          }
 
-            await event.respond(outcome, payload);
-          },
-        } as ToolCallConfirmationDetails;
+          await event.respond(outcome, payload);
+        },
+      } as ToolCallConfirmationDetails;
 
-        this.updateDisplay(
-          {
-            toolCalls: [...this.currentToolCalls!],
-            pendingConfirmation: details,
-          },
-          updateOutput,
-        );
-      },
-    );
+      this.updateDisplay(
+        {
+          toolCalls: [...this.currentToolCalls!],
+          pendingConfirmation: details,
+        },
+        updateOutput,
+      );
+    });
   }
 
   getDescription(): string {
@@ -484,17 +453,15 @@ class AgentToolInvocation extends BaseToolInvocation<AgentParams, ToolResult> {
   ): Promise<ToolResult> {
     try {
       // Load the subagent configuration
-      const subagentConfig = await this.subagentManager.loadSubagent(
-        this.params.subagent_type,
-      );
+      const subagentConfig = await this.subagentManager.loadSubagent(this.params.subagent_type);
 
       if (!subagentConfig) {
         const errorDisplay = {
-          type: 'task_execution' as const,
+          type: "task_execution" as const,
           subagentName: this.params.subagent_type,
           taskDescription: this.params.description,
           taskPrompt: this.params.prompt,
-          status: 'failed' as const,
+          status: "failed" as const,
           terminateReason: `Subagent "${this.params.subagent_type}" not found`,
         };
 
@@ -506,11 +473,11 @@ class AgentToolInvocation extends BaseToolInvocation<AgentParams, ToolResult> {
 
       // Initialize the current display state
       this.currentDisplay = {
-        type: 'task_execution' as const,
+        type: "task_execution" as const,
         subagentName: subagentConfig.name,
         taskDescription: this.params.description,
         taskPrompt: this.params.prompt,
-        status: 'running' as const,
+        status: "running" as const,
         subagentColor: subagentConfig.color,
       };
 
@@ -521,15 +488,13 @@ class AgentToolInvocation extends BaseToolInvocation<AgentParams, ToolResult> {
       if (updateOutput) {
         updateOutput(this.currentDisplay);
       }
-      const subagent = await this.subagentManager.createAgentHeadless(
-        subagentConfig,
-        this.config,
-        { eventEmitter: this.eventEmitter },
-      );
+      const subagent = await this.subagentManager.createAgentHeadless(subagentConfig, this.config, {
+        eventEmitter: this.eventEmitter,
+      });
 
       // Create context state with the task prompt
       const contextState = new ContextState();
-      contextState.set('task_prompt', this.params.prompt);
+      contextState.set("task_prompt", this.params.prompt);
 
       // Fire SubagentStart hook before execution
       const hookSystem = this.config.getHookSystem();
@@ -548,12 +513,10 @@ class AgentToolInvocation extends BaseToolInvocation<AgentParams, ToolResult> {
           // Inject additional context from hook output into subagent context
           const additionalContext = startHookOutput?.getAdditionalContext();
           if (additionalContext) {
-            contextState.set('hook_context', additionalContext);
+            contextState.set("hook_context", additionalContext);
           }
         } catch (hookError) {
-          debugLogger.warn(
-            `[Agent] SubagentStart hook failed, continuing execution: ${hookError}`,
-          );
+          debugLogger.warn(`[Agent] SubagentStart hook failed, continuing execution: ${hookError}`);
         }
       }
 
@@ -593,20 +556,15 @@ class AgentToolInvocation extends BaseToolInvocation<AgentParams, ToolResult> {
               signal,
             );
 
-            const typedStopOutput = stopHookOutput as
-              | StopHookOutput
-              | undefined;
+            const typedStopOutput = stopHookOutput as StopHookOutput | undefined;
 
-            if (
-              typedStopOutput?.isBlockingDecision() ||
-              typedStopOutput?.shouldStopExecution()
-            ) {
+            if (typedStopOutput?.isBlockingDecision() || typedStopOutput?.shouldStopExecution()) {
               // Feed the reason back to the subagent and continue execution
               const continueReason = typedStopOutput.getEffectiveReason();
               stopHookActive = true;
 
               const continueContext = new ContextState();
-              continueContext.set('task_prompt', continueReason);
+              continueContext.set("task_prompt", continueReason);
               await subagent.execute(continueContext, signal);
 
               if (signal?.aborted) {
@@ -617,9 +575,7 @@ class AgentToolInvocation extends BaseToolInvocation<AgentParams, ToolResult> {
               continueExecution = false;
             }
           } catch (hookError) {
-            debugLogger.warn(
-              `[TaskTool] SubagentStop hook failed, allowing stop: ${hookError}`,
-            );
+            debugLogger.warn(`[TaskTool] SubagentStop hook failed, allowing stop: ${hookError}`);
             continueExecution = false;
           }
         }
@@ -634,8 +590,8 @@ class AgentToolInvocation extends BaseToolInvocation<AgentParams, ToolResult> {
       if (signal?.aborted) {
         this.updateDisplay(
           {
-            status: 'cancelled',
-            terminateReason: 'Agent was cancelled by user',
+            status: "cancelled",
+            terminateReason: "Agent was cancelled by user",
             executionSummary,
           },
           updateOutput,
@@ -643,7 +599,7 @@ class AgentToolInvocation extends BaseToolInvocation<AgentParams, ToolResult> {
       } else {
         this.updateDisplay(
           {
-            status: success ? 'completed' : 'failed',
+            status: success ? "completed" : "failed",
             terminateReason: terminateMode,
             result: finalText,
             executionSummary,
@@ -657,13 +613,12 @@ class AgentToolInvocation extends BaseToolInvocation<AgentParams, ToolResult> {
         returnDisplay: this.currentDisplay!,
       };
     } catch (error) {
-      const errorMessage =
-        error instanceof Error ? error.message : String(error);
+      const errorMessage = error instanceof Error ? error.message : String(error);
       debugLogger.error(`[AgentTool] Error running subagent: ${errorMessage}`);
 
       const errorDisplay: AgentResultDisplay = {
         ...this.currentDisplay!,
-        status: 'failed',
+        status: "failed",
         terminateReason: `Failed to run subagent: ${errorMessage}`,
       };
 

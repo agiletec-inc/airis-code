@@ -4,46 +4,43 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import * as fs from "node:fs";
+import type { GeminiCLIExtension } from "@airiscode/gemini-cli-core";
+import { beforeEach, describe, expect, it, vi } from "vitest";
+import { ExtensionUpdateState, type ExtensionUpdateStatus } from "../../ui/state/extensions.js";
+import { loadInstallMetadata } from "../extension.js";
+import type { ExtensionManager } from "../extension-manager.js";
+import { copyExtension } from "../extension-manager.js";
+import { checkForExtensionUpdate } from "./github.js";
+import { ExtensionStorage } from "./storage.js";
 import {
-  updateExtension,
-  updateAllUpdatableExtensions,
   checkForAllExtensionUpdates,
-} from './update.js';
-import {
-  ExtensionUpdateState,
-  type ExtensionUpdateStatus,
-} from '../../ui/state/extensions.js';
-import { ExtensionStorage } from './storage.js';
-import { copyExtension } from '../extension-manager.js';
-import { checkForExtensionUpdate } from './github.js';
-import { loadInstallMetadata } from '../extension.js';
-import * as fs from 'node:fs';
-import type { ExtensionManager } from '../extension-manager.js';
-import type { GeminiCLIExtension } from '@airiscode/gemini-cli-core';
+  updateAllUpdatableExtensions,
+  updateExtension,
+} from "./update.js";
 
 // Mock dependencies
-vi.mock('./storage.js', () => ({
+vi.mock("./storage.js", () => ({
   ExtensionStorage: {
     createTmpDir: vi.fn(),
   },
 }));
 
-vi.mock('../extension-manager.js', () => ({
+vi.mock("../extension-manager.js", () => ({
   copyExtension: vi.fn(),
   // We don't need to mock the class implementation if we pass a mock instance
 }));
 
-vi.mock('./github.js', () => ({
+vi.mock("./github.js", () => ({
   checkForExtensionUpdate: vi.fn(),
 }));
 
-vi.mock('../extension.js', () => ({
+vi.mock("../extension.js", () => ({
   loadInstallMetadata: vi.fn(),
 }));
 
-vi.mock('node:fs', async (importOriginal) => {
-  const actual = await importOriginal<typeof import('node:fs')>();
+vi.mock("node:fs", async (importOriginal) => {
+  const actual = await importOriginal<typeof import("node:fs")>();
   return {
     ...actual,
     promises: {
@@ -53,13 +50,13 @@ vi.mock('node:fs', async (importOriginal) => {
   };
 });
 
-describe('Extension Update Logic', () => {
+describe("Extension Update Logic", () => {
   let mockExtensionManager: ExtensionManager;
   let mockDispatch: ReturnType<typeof vi.fn>;
   const mockExtension: GeminiCLIExtension = {
-    name: 'test-extension',
-    version: '1.0.0',
-    path: '/path/to/extension',
+    name: "test-extension",
+    version: "1.0.0",
+    path: "/path/to/extension",
   } as GeminiCLIExtension;
 
   beforeEach(() => {
@@ -71,15 +68,15 @@ describe('Extension Update Logic', () => {
     mockDispatch = vi.fn();
 
     // Default mock behaviors
-    vi.mocked(ExtensionStorage.createTmpDir).mockResolvedValue('/tmp/mock-dir');
+    vi.mocked(ExtensionStorage.createTmpDir).mockResolvedValue("/tmp/mock-dir");
     vi.mocked(loadInstallMetadata).mockReturnValue({
-      source: 'https://example.com/repo.git',
-      type: 'git',
+      source: "https://example.com/repo.git",
+      type: "git",
     });
   });
 
-  describe('updateExtension', () => {
-    it('should return undefined if state is already UPDATING', async () => {
+  describe("updateExtension", () => {
+    it("should return undefined if state is already UPDATING", async () => {
       const result = await updateExtension(
         mockExtension,
         mockExtensionManager,
@@ -90,10 +87,10 @@ describe('Extension Update Logic', () => {
       expect(mockDispatch).not.toHaveBeenCalled();
     });
 
-    it('should throw error and set state to ERROR if install metadata type is unknown', async () => {
+    it("should throw error and set state to ERROR if install metadata type is unknown", async () => {
       vi.mocked(loadInstallMetadata).mockReturnValue({
         type: undefined,
-      } as unknown as import('@airiscode/gemini-cli-core').ExtensionInstallMetadata);
+      } as unknown as import("@airiscode/gemini-cli-core").ExtensionInstallMetadata);
 
       await expect(
         updateExtension(
@@ -102,17 +99,17 @@ describe('Extension Update Logic', () => {
           ExtensionUpdateState.UPDATE_AVAILABLE,
           mockDispatch,
         ),
-      ).rejects.toThrow('type is unknown');
+      ).rejects.toThrow("type is unknown");
 
       expect(mockDispatch).toHaveBeenCalledWith({
-        type: 'SET_STATE',
+        type: "SET_STATE",
         payload: {
           name: mockExtension.name,
           state: ExtensionUpdateState.UPDATING,
         },
       });
       expect(mockDispatch).toHaveBeenCalledWith({
-        type: 'SET_STATE',
+        type: "SET_STATE",
         payload: {
           name: mockExtension.name,
           state: ExtensionUpdateState.ERROR,
@@ -120,10 +117,10 @@ describe('Extension Update Logic', () => {
       });
     });
 
-    it('should throw error and set state to UP_TO_DATE if extension is linked', async () => {
+    it("should throw error and set state to UP_TO_DATE if extension is linked", async () => {
       vi.mocked(loadInstallMetadata).mockReturnValue({
-        type: 'link',
-        source: '',
+        type: "link",
+        source: "",
       });
 
       await expect(
@@ -133,10 +130,10 @@ describe('Extension Update Logic', () => {
           ExtensionUpdateState.UPDATE_AVAILABLE,
           mockDispatch,
         ),
-      ).rejects.toThrow('Extension is linked');
+      ).rejects.toThrow("Extension is linked");
 
       expect(mockDispatch).toHaveBeenCalledWith({
-        type: 'SET_STATE',
+        type: "SET_STATE",
         payload: {
           name: mockExtension.name,
           state: ExtensionUpdateState.UP_TO_DATE,
@@ -144,16 +141,14 @@ describe('Extension Update Logic', () => {
       });
     });
 
-    it('should successfully update extension and set state to UPDATED_NEEDS_RESTART by default', async () => {
+    it("should successfully update extension and set state to UPDATED_NEEDS_RESTART by default", async () => {
       vi.mocked(mockExtensionManager.loadExtensionConfig).mockReturnValue({
-        name: 'test-extension',
-        version: '1.0.0',
+        name: "test-extension",
+        version: "1.0.0",
       });
-      vi.mocked(
-        mockExtensionManager.installOrUpdateExtension,
-      ).mockResolvedValue({
+      vi.mocked(mockExtensionManager.installOrUpdateExtension).mockResolvedValue({
         ...mockExtension,
-        version: '1.1.0',
+        version: "1.1.0",
       });
 
       const result = await updateExtension(
@@ -165,33 +160,31 @@ describe('Extension Update Logic', () => {
 
       expect(mockExtensionManager.installOrUpdateExtension).toHaveBeenCalled();
       expect(mockDispatch).toHaveBeenCalledWith({
-        type: 'SET_STATE',
+        type: "SET_STATE",
         payload: {
           name: mockExtension.name,
           state: ExtensionUpdateState.UPDATED_NEEDS_RESTART,
         },
       });
       expect(result).toEqual({
-        name: 'test-extension',
-        originalVersion: '1.0.0',
-        updatedVersion: '1.1.0',
+        name: "test-extension",
+        originalVersion: "1.0.0",
+        updatedVersion: "1.1.0",
       });
-      expect(fs.promises.rm).toHaveBeenCalledWith('/tmp/mock-dir', {
+      expect(fs.promises.rm).toHaveBeenCalledWith("/tmp/mock-dir", {
         recursive: true,
         force: true,
       });
     });
 
-    it('should set state to UPDATED if enableExtensionReloading is true', async () => {
+    it("should set state to UPDATED if enableExtensionReloading is true", async () => {
       vi.mocked(mockExtensionManager.loadExtensionConfig).mockReturnValue({
-        name: 'test-extension',
-        version: '1.0.0',
+        name: "test-extension",
+        version: "1.0.0",
       });
-      vi.mocked(
-        mockExtensionManager.installOrUpdateExtension,
-      ).mockResolvedValue({
+      vi.mocked(mockExtensionManager.installOrUpdateExtension).mockResolvedValue({
         ...mockExtension,
-        version: '1.1.0',
+        version: "1.1.0",
       });
 
       await updateExtension(
@@ -203,7 +196,7 @@ describe('Extension Update Logic', () => {
       );
 
       expect(mockDispatch).toHaveBeenCalledWith({
-        type: 'SET_STATE',
+        type: "SET_STATE",
         payload: {
           name: mockExtension.name,
           state: ExtensionUpdateState.UPDATED,
@@ -211,14 +204,14 @@ describe('Extension Update Logic', () => {
       });
     });
 
-    it('should rollback and set state to ERROR if installation fails', async () => {
+    it("should rollback and set state to ERROR if installation fails", async () => {
       vi.mocked(mockExtensionManager.loadExtensionConfig).mockReturnValue({
-        name: 'test-extension',
-        version: '1.0.0',
+        name: "test-extension",
+        version: "1.0.0",
       });
-      vi.mocked(
-        mockExtensionManager.installOrUpdateExtension,
-      ).mockRejectedValue(new Error('Install failed'));
+      vi.mocked(mockExtensionManager.installOrUpdateExtension).mockRejectedValue(
+        new Error("Install failed"),
+      );
 
       await expect(
         updateExtension(
@@ -227,14 +220,11 @@ describe('Extension Update Logic', () => {
           ExtensionUpdateState.UPDATE_AVAILABLE,
           mockDispatch,
         ),
-      ).rejects.toThrow('Updated extension not found after installation');
+      ).rejects.toThrow("Updated extension not found after installation");
 
-      expect(copyExtension).toHaveBeenCalledWith(
-        '/tmp/mock-dir',
-        mockExtension.path,
-      );
+      expect(copyExtension).toHaveBeenCalledWith("/tmp/mock-dir", mockExtension.path);
       expect(mockDispatch).toHaveBeenCalledWith({
-        type: 'SET_STATE',
+        type: "SET_STATE",
         payload: {
           name: mockExtension.name,
           state: ExtensionUpdateState.ERROR,
@@ -244,26 +234,27 @@ describe('Extension Update Logic', () => {
     });
   });
 
-  describe('updateAllUpdatableExtensions', () => {
-    it('should update all extensions with UPDATE_AVAILABLE status', async () => {
+  describe("updateAllUpdatableExtensions", () => {
+    it("should update all extensions with UPDATE_AVAILABLE status", async () => {
       const extensions: GeminiCLIExtension[] = [
-        { ...mockExtension, name: 'ext1' },
-        { ...mockExtension, name: 'ext2' },
-        { ...mockExtension, name: 'ext3' },
+        { ...mockExtension, name: "ext1" },
+        { ...mockExtension, name: "ext2" },
+        { ...mockExtension, name: "ext3" },
       ];
       const extensionsState = new Map([
-        ['ext1', { status: ExtensionUpdateState.UPDATE_AVAILABLE }],
-        ['ext2', { status: ExtensionUpdateState.UP_TO_DATE }],
-        ['ext3', { status: ExtensionUpdateState.UPDATE_AVAILABLE }],
+        ["ext1", { status: ExtensionUpdateState.UPDATE_AVAILABLE }],
+        ["ext2", { status: ExtensionUpdateState.UP_TO_DATE }],
+        ["ext3", { status: ExtensionUpdateState.UPDATE_AVAILABLE }],
       ]);
 
       vi.mocked(mockExtensionManager.loadExtensionConfig).mockReturnValue({
-        name: 'ext',
-        version: '1.0.0',
+        name: "ext",
+        version: "1.0.0",
       });
-      vi.mocked(
-        mockExtensionManager.installOrUpdateExtension,
-      ).mockResolvedValue({ ...mockExtension, version: '1.1.0' });
+      vi.mocked(mockExtensionManager.installOrUpdateExtension).mockResolvedValue({
+        ...mockExtension,
+        version: "1.1.0",
+      });
 
       const results = await updateAllUpdatableExtensions(
         extensions,
@@ -273,34 +264,26 @@ describe('Extension Update Logic', () => {
       );
 
       expect(results).toHaveLength(2);
-      expect(results.map((r) => r.name)).toEqual(['ext1', 'ext3']);
-      expect(
-        mockExtensionManager.installOrUpdateExtension,
-      ).toHaveBeenCalledTimes(2);
+      expect(results.map((r) => r.name)).toEqual(["ext1", "ext3"]);
+      expect(mockExtensionManager.installOrUpdateExtension).toHaveBeenCalledTimes(2);
     });
   });
 
-  describe('checkForAllExtensionUpdates', () => {
-    it('should dispatch BATCH_CHECK_START and BATCH_CHECK_END', async () => {
+  describe("checkForAllExtensionUpdates", () => {
+    it("should dispatch BATCH_CHECK_START and BATCH_CHECK_END", async () => {
       await checkForAllExtensionUpdates([], mockExtensionManager, mockDispatch);
 
-      expect(mockDispatch).toHaveBeenCalledWith({ type: 'BATCH_CHECK_START' });
-      expect(mockDispatch).toHaveBeenCalledWith({ type: 'BATCH_CHECK_END' });
+      expect(mockDispatch).toHaveBeenCalledWith({ type: "BATCH_CHECK_START" });
+      expect(mockDispatch).toHaveBeenCalledWith({ type: "BATCH_CHECK_END" });
     });
 
-    it('should set state to NOT_UPDATABLE if no install metadata', async () => {
-      const extensions: GeminiCLIExtension[] = [
-        { ...mockExtension, installMetadata: undefined },
-      ];
+    it("should set state to NOT_UPDATABLE if no install metadata", async () => {
+      const extensions: GeminiCLIExtension[] = [{ ...mockExtension, installMetadata: undefined }];
 
-      await checkForAllExtensionUpdates(
-        extensions,
-        mockExtensionManager,
-        mockDispatch,
-      );
+      await checkForAllExtensionUpdates(extensions, mockExtensionManager, mockDispatch);
 
       expect(mockDispatch).toHaveBeenCalledWith({
-        type: 'SET_STATE',
+        type: "SET_STATE",
         payload: {
           name: mockExtension.name,
           state: ExtensionUpdateState.NOT_UPDATABLE,
@@ -308,29 +291,23 @@ describe('Extension Update Logic', () => {
       });
     });
 
-    it('should check for updates and update state', async () => {
+    it("should check for updates and update state", async () => {
       const extensions: GeminiCLIExtension[] = [
-        { ...mockExtension, installMetadata: { type: 'git', source: '...' } },
+        { ...mockExtension, installMetadata: { type: "git", source: "..." } },
       ];
-      vi.mocked(checkForExtensionUpdate).mockResolvedValue(
-        ExtensionUpdateState.UPDATE_AVAILABLE,
-      );
+      vi.mocked(checkForExtensionUpdate).mockResolvedValue(ExtensionUpdateState.UPDATE_AVAILABLE);
 
-      await checkForAllExtensionUpdates(
-        extensions,
-        mockExtensionManager,
-        mockDispatch,
-      );
+      await checkForAllExtensionUpdates(extensions, mockExtensionManager, mockDispatch);
 
       expect(mockDispatch).toHaveBeenCalledWith({
-        type: 'SET_STATE',
+        type: "SET_STATE",
         payload: {
           name: mockExtension.name,
           state: ExtensionUpdateState.CHECKING_FOR_UPDATES,
         },
       });
       expect(mockDispatch).toHaveBeenCalledWith({
-        type: 'SET_STATE',
+        type: "SET_STATE",
         payload: {
           name: mockExtension.name,
           state: ExtensionUpdateState.UPDATE_AVAILABLE,

@@ -4,30 +4,27 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { act } from 'react';
-import { render } from '../../test-utils/render.js';
-import { waitFor } from '../../test-utils/async.js';
-import type { Config } from '@airiscode/gemini-cli-core';
-import { SessionBrowser } from './SessionBrowser.js';
-import type { SessionBrowserProps } from './SessionBrowser.js';
-import type { SessionInfo } from '../../utils/sessionUtils.js';
+import type { Config } from "@airiscode/gemini-cli-core";
+import { act } from "react";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { waitFor } from "../../test-utils/async.js";
+import { render } from "../../test-utils/render.js";
+import type { SessionInfo } from "../../utils/sessionUtils.js";
+import type { SessionBrowserProps } from "./SessionBrowser.js";
+import { SessionBrowser } from "./SessionBrowser.js";
 
 // Collect key handlers registered via useKeypress so tests can
 // simulate input without going through the full stdin pipeline.
 const keypressHandlers: Array<(key: unknown) => void> = [];
 
-vi.mock('../hooks/useTerminalSize.js', () => ({
+vi.mock("../hooks/useTerminalSize.js", () => ({
   useTerminalSize: () => ({ columns: 80, rows: 24 }),
 }));
 
-vi.mock('../hooks/useKeypress.js', () => ({
+vi.mock("../hooks/useKeypress.js", () => ({
   // The real hook subscribes to the KeypressContext. Here we just
   // capture the handler so tests can call it directly.
-  useKeypress: (
-    handler: (key: unknown) => void,
-    options: { isActive: boolean },
-  ) => {
+  useKeypress: (handler: (key: unknown) => void, options: { isActive: boolean }) => {
     if (options?.isActive) {
       keypressHandlers.push(handler);
     }
@@ -35,9 +32,9 @@ vi.mock('../hooks/useKeypress.js', () => ({
 }));
 
 // Mock the component itself to bypass async loading
-vi.mock('./SessionBrowser.js', async (importOriginal) => {
-  const original = await importOriginal<typeof import('./SessionBrowser.js')>();
-  const React = await import('react');
+vi.mock("./SessionBrowser.js", async (importOriginal) => {
+  const original = await importOriginal<typeof import("./SessionBrowser.js")>();
+  const React = await import("react");
 
   const TestSessionBrowser = (
     props: SessionBrowserProps & {
@@ -84,9 +81,9 @@ const TestSessionBrowser = SessionBrowser as unknown as React.FC<
 const createMockConfig = (overrides: Partial<Config> = {}): Config =>
   ({
     storage: {
-      getProjectTempDir: () => '/tmp/test',
+      getProjectTempDir: () => "/tmp/test",
     },
-    getSessionId: () => 'default-session-id',
+    getSessionId: () => "default-session-id",
     ...overrides,
   }) as Config;
 
@@ -103,17 +100,17 @@ const triggerKey = (
 ) => {
   const handler = keypressHandlers[keypressHandlers.length - 1];
   if (!handler) {
-    throw new Error('No keypress handler registered');
+    throw new Error("No keypress handler registered");
   }
 
   const key = {
-    name: '',
+    name: "",
     ctrl: false,
     meta: false,
     shift: false,
     paste: false,
     insertable: false,
-    sequence: '',
+    sequence: "",
     ...partialKey,
   };
 
@@ -123,23 +120,23 @@ const triggerKey = (
 };
 
 const createSession = (overrides: Partial<SessionInfo>): SessionInfo => ({
-  id: 'session-id',
-  file: 'session-id',
-  fileName: 'session-id.json',
+  id: "session-id",
+  file: "session-id",
+  fileName: "session-id.json",
   startTime: new Date().toISOString(),
   lastUpdated: new Date().toISOString(),
   messageCount: 1,
-  displayName: 'Test Session',
-  firstUserMessage: 'Test Session',
+  displayName: "Test Session",
+  firstUserMessage: "Test Session",
   isCurrentSession: false,
   index: 0,
   ...overrides,
 });
 
-describe('SessionBrowser component', () => {
+describe("SessionBrowser component", () => {
   beforeEach(() => {
     vi.useFakeTimers();
-    vi.setSystemTime(new Date('2025-11-01T12:00:00Z'));
+    vi.setSystemTime(new Date("2025-11-01T12:00:00Z"));
     keypressHandlers.length = 0;
     vi.clearAllMocks();
   });
@@ -149,7 +146,7 @@ describe('SessionBrowser component', () => {
     vi.restoreAllMocks();
   });
 
-  it('shows empty state when no sessions exist', () => {
+  it("shows empty state when no sessions exist", () => {
     const config = createMockConfig();
     const onResumeSession = vi.fn();
     const onDeleteSession = vi.fn().mockResolvedValue(undefined);
@@ -168,20 +165,20 @@ describe('SessionBrowser component', () => {
     expect(lastFrame()).toMatchSnapshot();
   });
 
-  it('renders a list of sessions and marks current session as disabled', () => {
+  it("renders a list of sessions and marks current session as disabled", () => {
     const session1 = createSession({
-      id: 'abc123',
-      file: 'abc123',
-      displayName: 'First conversation about cats',
-      lastUpdated: '2025-01-01T10:05:00Z',
+      id: "abc123",
+      file: "abc123",
+      displayName: "First conversation about cats",
+      lastUpdated: "2025-01-01T10:05:00Z",
       messageCount: 2,
       index: 0,
     });
     const session2 = createSession({
-      id: 'def456',
-      file: 'def456',
-      displayName: 'Second conversation about dogs',
-      lastUpdated: '2025-01-01T11:30:00Z',
+      id: "def456",
+      file: "def456",
+      displayName: "Second conversation about dogs",
+      lastUpdated: "2025-01-01T11:30:00Z",
       messageCount: 5,
       isCurrentSession: true,
       index: 1,
@@ -205,37 +202,37 @@ describe('SessionBrowser component', () => {
     expect(lastFrame()).toMatchSnapshot();
   });
 
-  it('enters search mode, filters sessions, and renders match snippets', async () => {
+  it("enters search mode, filters sessions, and renders match snippets", async () => {
     const searchSession = createSession({
-      id: 'search1',
-      file: 'search1',
-      displayName: 'Query is here and another query.',
-      firstUserMessage: 'Query is here and another query.',
-      fullContent: 'Query is here and another query.',
+      id: "search1",
+      file: "search1",
+      displayName: "Query is here and another query.",
+      firstUserMessage: "Query is here and another query.",
+      fullContent: "Query is here and another query.",
       messages: [
         {
-          role: 'user',
-          content: 'Query is here and another query.',
+          role: "user",
+          content: "Query is here and another query.",
         },
       ],
       index: 0,
-      lastUpdated: '2025-01-01T12:00:00Z',
+      lastUpdated: "2025-01-01T12:00:00Z",
     });
 
     const otherSession = createSession({
-      id: 'other',
-      file: 'other',
-      displayName: 'Nothing interesting here.',
-      firstUserMessage: 'Nothing interesting here.',
-      fullContent: 'Nothing interesting here.',
+      id: "other",
+      file: "other",
+      displayName: "Nothing interesting here.",
+      firstUserMessage: "Nothing interesting here.",
+      fullContent: "Nothing interesting here.",
       messages: [
         {
-          role: 'user',
-          content: 'Nothing interesting here.',
+          role: "user",
+          content: "Nothing interesting here.",
         },
       ],
       index: 1,
-      lastUpdated: '2025-01-01T10:00:00Z',
+      lastUpdated: "2025-01-01T10:00:00Z",
     });
 
     const config = createMockConfig();
@@ -253,40 +250,40 @@ describe('SessionBrowser component', () => {
       />,
     );
 
-    expect(lastFrame()).toContain('Chat Sessions (2 total');
+    expect(lastFrame()).toContain("Chat Sessions (2 total");
 
     // Enter search mode.
-    triggerKey({ sequence: '/', name: '/' });
+    triggerKey({ sequence: "/", name: "/" });
 
     await waitFor(() => {
-      expect(lastFrame()).toContain('Search:');
+      expect(lastFrame()).toContain("Search:");
     });
 
     // Type the query "query".
-    for (const ch of ['q', 'u', 'e', 'r', 'y']) {
+    for (const ch of ["q", "u", "e", "r", "y"]) {
       triggerKey({ sequence: ch, name: ch, ctrl: false, meta: false });
     }
 
     await waitFor(() => {
-      expect(lastFrame()).toContain('Chat Sessions (1 total, filtered');
+      expect(lastFrame()).toContain("Chat Sessions (1 total, filtered");
     });
     expect(lastFrame()).toMatchSnapshot();
   });
 
-  it('handles keyboard navigation and resumes the selected session', () => {
+  it("handles keyboard navigation and resumes the selected session", () => {
     const session1 = createSession({
-      id: 'one',
-      file: 'one',
-      displayName: 'First session',
+      id: "one",
+      file: "one",
+      displayName: "First session",
       index: 0,
-      lastUpdated: '2025-01-02T12:00:00Z',
+      lastUpdated: "2025-01-02T12:00:00Z",
     });
     const session2 = createSession({
-      id: 'two',
-      file: 'two',
-      displayName: 'Second session',
+      id: "two",
+      file: "two",
+      displayName: "Second session",
       index: 1,
-      lastUpdated: '2025-01-01T12:00:00Z',
+      lastUpdated: "2025-01-01T12:00:00Z",
     });
 
     const config = createMockConfig();
@@ -304,35 +301,35 @@ describe('SessionBrowser component', () => {
       />,
     );
 
-    expect(lastFrame()).toContain('Chat Sessions (2 total');
+    expect(lastFrame()).toContain("Chat Sessions (2 total");
 
     // Move selection down.
-    triggerKey({ name: 'down', sequence: '[B' });
+    triggerKey({ name: "down", sequence: "[B" });
 
     // Press Enter.
-    triggerKey({ name: 'return', sequence: '\r' });
+    triggerKey({ name: "return", sequence: "\r" });
 
     expect(onResumeSession).toHaveBeenCalledTimes(1);
     const [resumedSession] = onResumeSession.mock.calls[0];
     expect(resumedSession).toEqual(session2);
   });
 
-  it('does not allow resuming or deleting the current session', () => {
+  it("does not allow resuming or deleting the current session", () => {
     const currentSession = createSession({
-      id: 'current',
-      file: 'current',
-      displayName: 'Current session',
+      id: "current",
+      file: "current",
+      displayName: "Current session",
       isCurrentSession: true,
       index: 0,
-      lastUpdated: '2025-01-02T12:00:00Z',
+      lastUpdated: "2025-01-02T12:00:00Z",
     });
     const otherSession = createSession({
-      id: 'other',
-      file: 'other',
-      displayName: 'Other session',
+      id: "other",
+      file: "other",
+      displayName: "Other session",
       isCurrentSession: false,
       index: 1,
-      lastUpdated: '2025-01-01T12:00:00Z',
+      lastUpdated: "2025-01-01T12:00:00Z",
     });
 
     const config = createMockConfig();
@@ -351,15 +348,15 @@ describe('SessionBrowser component', () => {
     );
 
     // Active selection is at 0 (current session).
-    triggerKey({ name: 'return', sequence: '\r' });
+    triggerKey({ name: "return", sequence: "\r" });
     expect(onResumeSession).not.toHaveBeenCalled();
 
     // Attempt delete.
-    triggerKey({ sequence: 'x', name: 'x' });
+    triggerKey({ sequence: "x", name: "x" });
     expect(onDeleteSession).not.toHaveBeenCalled();
   });
 
-  it('shows an error state when loading sessions fails', () => {
+  it("shows an error state when loading sessions fails", () => {
     const config = createMockConfig();
     const onResumeSession = vi.fn();
     const onDeleteSession = vi.fn().mockResolvedValue(undefined);

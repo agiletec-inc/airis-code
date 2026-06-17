@@ -4,20 +4,20 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import type { Config } from '@airiscode/gemini-cli-core';
+import type { Config } from "@airiscode/gemini-cli-core";
 import {
-  OutputFormat,
-  JsonFormatter,
-  StreamJsonFormatter,
-  JsonStreamEventType,
-  uiTelemetryService,
-  parseAndFormatApiError,
-  FatalTurnLimitedError,
   FatalCancellationError,
   FatalToolExecutionError,
+  FatalTurnLimitedError,
   isFatalToolError,
-} from '@airiscode/gemini-cli-core';
-import { runSyncCleanup } from './cleanup.js';
+  JsonFormatter,
+  JsonStreamEventType,
+  OutputFormat,
+  parseAndFormatApiError,
+  StreamJsonFormatter,
+  uiTelemetryService,
+} from "@airiscode/gemini-cli-core";
+import { runSyncCleanup } from "./cleanup.js";
 
 export function getErrorMessage(error: unknown): string {
   if (error instanceof Error) {
@@ -39,7 +39,7 @@ function extractErrorCode(error: unknown): string | number {
   const errorWithCode = error as ErrorWithCode;
 
   // Prioritize exitCode for FatalError types, fall back to other codes
-  if (typeof errorWithCode.exitCode === 'number') {
+  if (typeof errorWithCode.exitCode === "number") {
     return errorWithCode.exitCode;
   }
   if (errorWithCode.code !== undefined) {
@@ -56,7 +56,7 @@ function extractErrorCode(error: unknown): string | number {
  * Converts an error code to a numeric exit code.
  */
 function getNumericExitCode(errorCode: string | number): number {
-  return typeof errorCode === 'number' ? errorCode : 1;
+  return typeof errorCode === "number" ? errorCode : 1;
 }
 
 /**
@@ -70,10 +70,7 @@ export function handleError(
   config: Config,
   customErrorCode?: string | number,
 ): never {
-  const errorMessage = parseAndFormatApiError(
-    error,
-    config.getContentGeneratorConfig()?.authType,
-  );
+  const errorMessage = parseAndFormatApiError(error, config.getContentGeneratorConfig()?.authType);
 
   if (config.getOutputFormat() === OutputFormat.STREAM_JSON) {
     const streamFormatter = new StreamJsonFormatter();
@@ -83,9 +80,9 @@ export function handleError(
     streamFormatter.emitEvent({
       type: JsonStreamEventType.RESULT,
       timestamp: new Date().toISOString(),
-      status: 'error',
+      status: "error",
       error: {
-        type: error instanceof Error ? error.constructor.name : 'Error',
+        type: error instanceof Error ? error.constructor.name : "Error",
         message: errorMessage,
       },
       stats: streamFormatter.convertToStreamStats(metrics, 0),
@@ -141,9 +138,9 @@ export function handleToolError(
       streamFormatter.emitEvent({
         type: JsonStreamEventType.RESULT,
         timestamp: new Date().toISOString(),
-        status: 'error',
+        status: "error",
         error: {
-          type: errorType ?? 'FatalToolExecutionError',
+          type: errorType ?? "FatalToolExecutionError",
           message: toolExecutionError.message,
         },
         stats: streamFormatter.convertToStreamStats(metrics, 0),
@@ -171,7 +168,7 @@ export function handleToolError(
  * Handles cancellation/abort signals consistently.
  */
 export function handleCancellationError(config: Config): never {
-  const cancellationError = new FatalCancellationError('Operation cancelled.');
+  const cancellationError = new FatalCancellationError("Operation cancelled.");
 
   if (config.getOutputFormat() === OutputFormat.STREAM_JSON) {
     const streamFormatter = new StreamJsonFormatter();
@@ -179,9 +176,9 @@ export function handleCancellationError(config: Config): never {
     streamFormatter.emitEvent({
       type: JsonStreamEventType.RESULT,
       timestamp: new Date().toISOString(),
-      status: 'error',
+      status: "error",
       error: {
-        type: 'FatalCancellationError',
+        type: "FatalCancellationError",
         message: cancellationError.message,
       },
       stats: streamFormatter.convertToStreamStats(metrics, 0),
@@ -211,7 +208,7 @@ export function handleCancellationError(config: Config): never {
  */
 export function handleMaxTurnsExceededError(config: Config): never {
   const maxTurnsError = new FatalTurnLimitedError(
-    'Reached max session turns for this session. Increase the number of turns by specifying maxSessionTurns in settings.json.',
+    "Reached max session turns for this session. Increase the number of turns by specifying maxSessionTurns in settings.json.",
   );
 
   if (config.getOutputFormat() === OutputFormat.STREAM_JSON) {
@@ -220,9 +217,9 @@ export function handleMaxTurnsExceededError(config: Config): never {
     streamFormatter.emitEvent({
       type: JsonStreamEventType.RESULT,
       timestamp: new Date().toISOString(),
-      status: 'error',
+      status: "error",
       error: {
-        type: 'FatalTurnLimitedError',
+        type: "FatalTurnLimitedError",
         message: maxTurnsError.message,
       },
       stats: streamFormatter.convertToStreamStats(metrics, 0),

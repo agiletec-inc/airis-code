@@ -4,32 +4,27 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import type {
-  ContentGenerator,
-  ContentGeneratorConfig,
-} from '../contentGenerator.js';
-import type { Config } from '../../config/config.js';
-import { OpenAIContentGenerator } from './openaiContentGenerator.js';
+import type { Config } from "../../config/config.js";
+import type { ContentGenerator, ContentGeneratorConfig } from "../contentGenerator.js";
+import { OpenAIContentGenerator } from "./openaiContentGenerator.js";
 import {
   DeepSeekOpenAICompatibleProvider,
-  ModelScopeOpenAICompatibleProvider,
-  OpenRouterOpenAICompatibleProvider,
-  OllamaOpenAICompatibleProvider,
-  type OpenAICompatibleProvider,
   DefaultOpenAICompatibleProvider,
-} from './provider/index.js';
-
-export { OpenAIContentGenerator } from './openaiContentGenerator.js';
-export { ContentGenerationPipeline, type PipelineConfig } from './pipeline.js';
-
-export {
-  type OpenAICompatibleProvider,
-  DeepSeekOpenAICompatibleProvider,
-  OpenRouterOpenAICompatibleProvider,
+  ModelScopeOpenAICompatibleProvider,
   OllamaOpenAICompatibleProvider,
-} from './provider/index.js';
+  type OpenAICompatibleProvider,
+  OpenRouterOpenAICompatibleProvider,
+} from "./provider/index.js";
 
-export { OpenAIContentConverter } from './converter.js';
+export { OpenAIContentConverter } from "./converter.js";
+export { OpenAIContentGenerator } from "./openaiContentGenerator.js";
+export { ContentGenerationPipeline, type PipelineConfig } from "./pipeline.js";
+export {
+  DeepSeekOpenAICompatibleProvider,
+  OllamaOpenAICompatibleProvider,
+  type OpenAICompatibleProvider,
+  OpenRouterOpenAICompatibleProvider,
+} from "./provider/index.js";
 
 /**
  * Create an OpenAI-compatible content generator with the appropriate provider
@@ -39,11 +34,7 @@ export function createOpenAIContentGenerator(
   cliConfig: Config,
 ): ContentGenerator {
   const provider = determineProvider(contentGeneratorConfig, cliConfig);
-  return new OpenAIContentGenerator(
-    contentGeneratorConfig,
-    cliConfig,
-    provider,
-  );
+  return new OpenAIContentGenerator(contentGeneratorConfig, cliConfig, provider);
 }
 
 /**
@@ -53,42 +44,29 @@ export function determineProvider(
   contentGeneratorConfig: ContentGeneratorConfig,
   cliConfig: Config,
 ): OpenAICompatibleProvider {
-  const config =
-    contentGeneratorConfig || cliConfig.getContentGeneratorConfig();
+  const config = contentGeneratorConfig || cliConfig.getContentGeneratorConfig();
 
   if (DeepSeekOpenAICompatibleProvider.isDeepSeekProvider(config)) {
-    return new DeepSeekOpenAICompatibleProvider(
-      contentGeneratorConfig,
-      cliConfig,
-    );
+    return new DeepSeekOpenAICompatibleProvider(contentGeneratorConfig, cliConfig);
   }
 
   // Check for OpenRouter provider
   if (OpenRouterOpenAICompatibleProvider.isOpenRouterProvider(config)) {
-    return new OpenRouterOpenAICompatibleProvider(
-      contentGeneratorConfig,
-      cliConfig,
-    );
+    return new OpenRouterOpenAICompatibleProvider(contentGeneratorConfig, cliConfig);
   }
 
   // Check for ModelScope provider
   if (ModelScopeOpenAICompatibleProvider.isModelScopeProvider(config)) {
-    return new ModelScopeOpenAICompatibleProvider(
-      contentGeneratorConfig,
-      cliConfig,
-    );
+    return new ModelScopeOpenAICompatibleProvider(contentGeneratorConfig, cliConfig);
   }
 
   // Check for Ollama provider (local inference)
   if (OllamaOpenAICompatibleProvider.isOllamaProvider(config)) {
-    return new OllamaOpenAICompatibleProvider(
-      contentGeneratorConfig,
-      cliConfig,
-    );
+    return new OllamaOpenAICompatibleProvider(contentGeneratorConfig, cliConfig);
   }
 
   // Default provider for standard OpenAI-compatible APIs
   return new DefaultOpenAICompatibleProvider(contentGeneratorConfig, cliConfig);
 }
 
-export { type ErrorHandler, EnhancedErrorHandler } from './errorHandler.js';
+export { EnhancedErrorHandler, type ErrorHandler } from "./errorHandler.js";

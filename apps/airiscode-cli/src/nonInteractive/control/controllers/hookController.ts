@@ -11,11 +11,8 @@
  * - hook_callback: Process hook callbacks (placeholder for future)
  */
 
-import { BaseController } from './baseController.js';
-import type {
-  ControlRequestPayload,
-  CLIHookCallbackRequest,
-} from '../../types.js';
+import type { CLIHookCallbackRequest, ControlRequestPayload } from "../../types.js";
+import { BaseController } from "./baseController.js";
 
 export class HookController extends BaseController {
   /**
@@ -26,7 +23,7 @@ export class HookController extends BaseController {
     _signal: AbortSignal,
   ): Promise<Record<string, unknown>> {
     switch (payload.subtype) {
-      case 'hook_callback':
+      case "hook_callback":
         return this.handleHookCallback(payload as CLIHookCallbackRequest);
 
       default:
@@ -42,13 +39,11 @@ export class HookController extends BaseController {
   private async handleHookCallback(
     payload: CLIHookCallbackRequest,
   ): Promise<Record<string, unknown>> {
-    this.debugLogger.debug(
-      `[HookController] Hook callback: ${payload.callback_id}`,
-    );
+    this.debugLogger.debug(`[HookController] Hook callback: ${payload.callback_id}`);
 
     // Hook callback processing not yet implemented
     return {
-      result: 'Hook callback processing not yet implemented',
+      result: "Hook callback processing not yet implemented",
       callback_id: payload.callback_id,
       tool_use_id: payload.tool_use_id,
     };

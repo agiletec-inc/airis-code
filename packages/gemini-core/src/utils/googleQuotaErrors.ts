@@ -4,13 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import type {
-  ErrorInfo,
-  GoogleApiError,
-  QuotaFailure,
-  RetryInfo,
-} from './googleErrors.js';
-import { parseGoogleApiError } from './googleErrors.js';
+import type { ErrorInfo, GoogleApiError, QuotaFailure, RetryInfo } from "./googleErrors.js";
+import { parseGoogleApiError } from "./googleErrors.js";
 
 /**
  * A non-retryable error indicating a hard quota limit has been reached (e.g., daily limit).
@@ -21,7 +16,7 @@ export class TerminalQuotaError extends Error {
     override readonly cause: GoogleApiError,
   ) {
     super(message);
-    this.name = 'TerminalQuotaError';
+    this.name = "TerminalQuotaError";
   }
 }
 
@@ -37,7 +32,7 @@ export class RetryableQuotaError extends Error {
     retryDelaySeconds: number,
   ) {
     super(message);
-    this.name = 'RetryableQuotaError';
+    this.name = "RetryableQuotaError";
     this.retryDelayMs = retryDelaySeconds * 1000;
   }
 }
@@ -48,11 +43,11 @@ export class RetryableQuotaError extends Error {
  * @returns The duration in seconds, or null if parsing fails.
  */
 function parseDurationInSeconds(duration: string): number | null {
-  if (duration.endsWith('ms')) {
+  if (duration.endsWith("ms")) {
     const milliseconds = parseFloat(duration.slice(0, -2));
     return isNaN(milliseconds) ? null : milliseconds / 1000;
   }
-  if (duration.endsWith('s')) {
+  if (duration.endsWith("s")) {
     const seconds = parseFloat(duration.slice(0, -1));
     return isNaN(seconds) ? null : seconds;
   }
@@ -99,25 +94,22 @@ export function classifyGoogleError(error: unknown): unknown {
   }
 
   const quotaFailure = googleApiError.details.find(
-    (d): d is QuotaFailure =>
-      d['@type'] === 'type.googleapis.com/google.rpc.QuotaFailure',
+    (d): d is QuotaFailure => d["@type"] === "type.googleapis.com/google.rpc.QuotaFailure",
   );
 
   const errorInfo = googleApiError.details.find(
-    (d): d is ErrorInfo =>
-      d['@type'] === 'type.googleapis.com/google.rpc.ErrorInfo',
+    (d): d is ErrorInfo => d["@type"] === "type.googleapis.com/google.rpc.ErrorInfo",
   );
 
   const retryInfo = googleApiError.details.find(
-    (d): d is RetryInfo =>
-      d['@type'] === 'type.googleapis.com/google.rpc.RetryInfo',
+    (d): d is RetryInfo => d["@type"] === "type.googleapis.com/google.rpc.RetryInfo",
   );
 
   // 1. Check for long-term limits in QuotaFailure or ErrorInfo
   if (quotaFailure) {
     for (const violation of quotaFailure.violations) {
-      const quotaId = violation.quotaId ?? '';
-      if (quotaId.includes('PerDay') || quotaId.includes('Daily')) {
+      const quotaId = violation.quotaId ?? "";
+      if (quotaId.includes("PerDay") || quotaId.includes("Daily")) {
         return new TerminalQuotaError(
           `You have exhausted your daily quota on this model.`,
           googleApiError,
@@ -130,12 +122,12 @@ export function classifyGoogleError(error: unknown): unknown {
     // New Cloud Code API quota handling
     if (errorInfo.domain) {
       const validDomains = [
-        'cloudcode-pa.googleapis.com',
-        'staging-cloudcode-pa.googleapis.com',
-        'autopush-cloudcode-pa.googleapis.com',
+        "cloudcode-pa.googleapis.com",
+        "staging-cloudcode-pa.googleapis.com",
+        "autopush-cloudcode-pa.googleapis.com",
       ];
       if (validDomains.includes(errorInfo.domain)) {
-        if (errorInfo.reason === 'RATE_LIMIT_EXCEEDED') {
+        if (errorInfo.reason === "RATE_LIMIT_EXCEEDED") {
           let delaySeconds = 10; // Default retry of 10s
           if (retryInfo?.retryDelay) {
             const parsedDelay = parseDurationInSeconds(retryInfo.retryDelay);
@@ -143,24 +135,17 @@ export function classifyGoogleError(error: unknown): unknown {
               delaySeconds = parsedDelay;
             }
           }
-          return new RetryableQuotaError(
-            `${googleApiError.message}`,
-            googleApiError,
-            delaySeconds,
-          );
+          return new RetryableQuotaError(`${googleApiError.message}`, googleApiError, delaySeconds);
         }
-        if (errorInfo.reason === 'QUOTA_EXHAUSTED') {
-          return new TerminalQuotaError(
-            `${googleApiError.message}`,
-            googleApiError,
-          );
+        if (errorInfo.reason === "QUOTA_EXHAUSTED") {
+          return new TerminalQuotaError(`${googleApiError.message}`, googleApiError);
         }
       }
     }
 
     // Existing Cloud Code API quota handling
-    const quotaLimit = errorInfo.metadata?.['quota_limit'] ?? '';
-    if (quotaLimit.includes('PerDay') || quotaLimit.includes('Daily')) {
+    const quotaLimit = errorInfo.metadata?.["quota_limit"] ?? "";
+    if (quotaLimit.includes("PerDay") || quotaLimit.includes("Daily")) {
       return new TerminalQuotaError(
         `You have exhausted your daily quota on this model.`,
         googleApiError,
@@ -190,8 +175,8 @@ export function classifyGoogleError(error: unknown): unknown {
   // 3. Check for short-term limits in QuotaFailure or ErrorInfo
   if (quotaFailure) {
     for (const violation of quotaFailure.violations) {
-      const quotaId = violation.quotaId ?? '';
-      if (quotaId.includes('PerMinute')) {
+      const quotaId = violation.quotaId ?? "";
+      if (quotaId.includes("PerMinute")) {
         return new RetryableQuotaError(
           `${googleApiError.message}\nSuggested retry after 60s.`,
           googleApiError,
@@ -202,8 +187,8 @@ export function classifyGoogleError(error: unknown): unknown {
   }
 
   if (errorInfo) {
-    const quotaLimit = errorInfo.metadata?.['quota_limit'] ?? '';
-    if (quotaLimit.includes('PerMinute')) {
+    const quotaLimit = errorInfo.metadata?.["quota_limit"] ?? "";
+    if (quotaLimit.includes("PerMinute")) {
       return new RetryableQuotaError(
         `${errorInfo.reason}\nSuggested retry after 60s.`,
         googleApiError,

@@ -4,23 +4,20 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { debugLogger, type GeminiCLIExtension } from '@airiscode/gemini-cli-core';
-import { getErrorMessage } from '../../utils/errors.js';
+import { debugLogger, type GeminiCLIExtension } from "@airiscode/gemini-cli-core";
+import { useCallback, useEffect, useMemo, useReducer } from "react";
+import { type ExtensionUpdateInfo } from "../../config/extension.js";
+import type { ExtensionManager } from "../../config/extension-manager.js";
+import { checkForAllExtensionUpdates, updateExtension } from "../../config/extensions/update.js";
+import { checkExhaustive } from "../../utils/checks.js";
+import { getErrorMessage } from "../../utils/errors.js";
 import {
   ExtensionUpdateState,
   extensionUpdatesReducer,
   initialExtensionUpdatesState,
-} from '../state/extensions.js';
-import { useCallback, useEffect, useMemo, useReducer } from 'react';
-import type { UseHistoryManagerReturn } from './useHistoryManager.js';
-import { MessageType, type ConfirmationRequest } from '../types.js';
-import {
-  checkForAllExtensionUpdates,
-  updateExtension,
-} from '../../config/extensions/update.js';
-import { type ExtensionUpdateInfo } from '../../config/extension.js';
-import { checkExhaustive } from '../../utils/checks.js';
-import type { ExtensionManager } from '../../config/extension-manager.js';
+} from "../state/extensions.js";
+import { type ConfirmationRequest, MessageType } from "../types.js";
+import type { UseHistoryManagerReturn } from "./useHistoryManager.js";
 
 type ConfirmationRequestWrapper = {
   prompt: React.ReactNode;
@@ -28,17 +25,17 @@ type ConfirmationRequestWrapper = {
 };
 
 type ConfirmationRequestAction =
-  | { type: 'add'; request: ConfirmationRequestWrapper }
-  | { type: 'remove'; request: ConfirmationRequestWrapper };
+  | { type: "add"; request: ConfirmationRequestWrapper }
+  | { type: "remove"; request: ConfirmationRequestWrapper };
 
 function confirmationRequestsReducer(
   state: ConfirmationRequestWrapper[],
   action: ConfirmationRequestAction,
 ): ConfirmationRequestWrapper[] {
   switch (action.type) {
-    case 'add':
+    case "add":
       return [...state, action.request];
-    case 'remove':
+    case "remove":
       return state.filter((r) => r !== action.request);
     default:
       checkExhaustive(action);
@@ -46,10 +43,10 @@ function confirmationRequestsReducer(
 }
 
 export const useConfirmUpdateRequests = () => {
-  const [
-    confirmUpdateExtensionRequests,
-    dispatchConfirmUpdateExtensionRequests,
-  ] = useReducer(confirmationRequestsReducer, []);
+  const [confirmUpdateExtensionRequests, dispatchConfirmUpdateExtensionRequests] = useReducer(
+    confirmationRequestsReducer,
+    [],
+  );
   const addConfirmUpdateExtensionRequest = useCallback(
     (original: ConfirmationRequest) => {
       const wrappedRequest = {
@@ -57,14 +54,14 @@ export const useConfirmUpdateRequests = () => {
         onConfirm: (confirmed: boolean) => {
           // Remove it from the outstanding list of requests by identity.
           dispatchConfirmUpdateExtensionRequests({
-            type: 'remove',
+            type: "remove",
             request: wrappedRequest,
           });
           original.onConfirm(confirmed);
         },
       };
       dispatchConfirmUpdateExtensionRequests({
-        type: 'add',
+        type: "add",
         request: wrappedRequest,
       });
     },
@@ -79,7 +76,7 @@ export const useConfirmUpdateRequests = () => {
 
 export const useExtensionUpdates = (
   extensionManager: ExtensionManager,
-  addItem: UseHistoryManagerReturn['addItem'],
+  addItem: UseHistoryManagerReturn["addItem"],
   enableExtensionReloading: boolean,
 ) => {
   const [extensionsUpdateState, dispatchExtensionStateUpdate] = useReducer(
@@ -90,20 +87,14 @@ export const useExtensionUpdates = (
 
   useEffect(() => {
     const extensionsToCheck = extensions.filter((extension) => {
-      const currentStatus = extensionsUpdateState.extensionStatuses.get(
-        extension.name,
-      );
+      const currentStatus = extensionsUpdateState.extensionStatuses.get(extension.name);
       if (!currentStatus) return true;
       const currentState = currentStatus.status;
       return !currentState || currentState === ExtensionUpdateState.UNKNOWN;
     });
     if (extensionsToCheck.length === 0) return;
     // eslint-disable-next-line @typescript-eslint/no-floating-promises
-    checkForAllExtensionUpdates(
-      extensionsToCheck,
-      extensionManager,
-      dispatchExtensionStateUpdate,
-    );
+    checkForAllExtensionUpdates(extensionsToCheck, extensionManager, dispatchExtensionStateUpdate);
   }, [
     extensions,
     extensionManager,
@@ -118,7 +109,7 @@ export const useExtensionUpdates = (
     const scheduledUpdate = extensionsUpdateState.scheduledUpdate;
     if (scheduledUpdate) {
       dispatchExtensionStateUpdate({
-        type: 'CLEAR_SCHEDULED_UPDATE',
+        type: "CLEAR_SCHEDULED_UPDATE",
       });
     }
 
@@ -139,13 +130,8 @@ export const useExtensionUpdates = (
     let shouldNotifyOfUpdates = false;
     const updatePromises: Array<Promise<ExtensionUpdateInfo | undefined>> = [];
     for (const extension of extensions) {
-      const currentState = extensionsUpdateState.extensionStatuses.get(
-        extension.name,
-      );
-      if (
-        !currentState ||
-        currentState.status !== ExtensionUpdateState.UPDATE_AVAILABLE
-      ) {
+      const currentState = extensionsUpdateState.extensionStatuses.get(extension.name);
+      if (!currentState || currentState.status !== ExtensionUpdateState.UPDATE_AVAILABLE) {
         continue;
       }
       const shouldUpdate = shouldDoUpdate(extension);
@@ -154,7 +140,7 @@ export const useExtensionUpdates = (
         if (!currentState.notified) {
           // Mark as processed immediately to avoid re-triggering.
           dispatchExtensionStateUpdate({
-            type: 'SET_NOTIFIED',
+            type: "SET_NOTIFIED",
             payload: { name: extension.name, notified: true },
           });
           shouldNotifyOfUpdates = true;
@@ -191,7 +177,7 @@ export const useExtensionUpdates = (
       }
     }
     if (shouldNotifyOfUpdates) {
-      const s = extensionsWithUpdatesCount > 1 ? 's' : '';
+      const s = extensionsWithUpdatesCount > 1 ? "s" : "";
       addItem(
         {
           type: MessageType.INFO,
@@ -213,20 +199,11 @@ export const useExtensionUpdates = (
         });
       });
     }
-  }, [
-    extensions,
-    extensionManager,
-    extensionsUpdateState,
-    addItem,
-    enableExtensionReloading,
-  ]);
+  }, [extensions, extensionManager, extensionsUpdateState, addItem, enableExtensionReloading]);
 
   const extensionsUpdateStateComputed = useMemo(() => {
     const result = new Map<string, ExtensionUpdateState>();
-    for (const [
-      key,
-      value,
-    ] of extensionsUpdateState.extensionStatuses.entries()) {
+    for (const [key, value] of extensionsUpdateState.extensionStatuses.entries()) {
       result.set(key, value.status);
     }
     return result;

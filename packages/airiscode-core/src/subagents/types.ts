@@ -13,10 +13,10 @@
 
 import type {
   ModelConfig,
-  RunConfig,
   PromptConfig,
+  RunConfig,
   ToolConfig,
-} from '../agents/runtime/agent-types.js';
+} from "../agents/runtime/agent-types.js";
 
 /**
  * Represents the storage level for a subagent configuration.
@@ -26,12 +26,7 @@ import type {
  * - 'extension': Provided by an installed extension
  * - 'builtin': Built-in agents embedded in the codebase, always available (lowest priority)
  */
-export type SubagentLevel =
-  | 'session'
-  | 'project'
-  | 'user'
-  | 'extension'
-  | 'builtin';
+export type SubagentLevel = "session" | "project" | "user" | "extension" | "builtin";
 
 /**
  * Core configuration for a subagent as stored in Markdown files.
@@ -138,10 +133,10 @@ export interface ListSubagentsOptions {
   hasTool?: string;
 
   /** Sort order for results */
-  sortBy?: 'name' | 'lastModified' | 'level';
+  sortBy?: "name" | "lastModified" | "level";
 
   /** Sort direction */
-  sortOrder?: 'asc' | 'desc';
+  sortOrder?: "asc" | "desc";
 
   /** Force refresh from disk, bypassing cache. Defaults to false. */
   force?: boolean;
@@ -171,7 +166,7 @@ export class SubagentError extends Error {
     readonly subagentName?: string,
   ) {
     super(message);
-    this.name = 'SubagentError';
+    this.name = "SubagentError";
   }
 }
 
@@ -179,14 +174,13 @@ export class SubagentError extends Error {
  * Error codes for subagent operations.
  */
 export const SubagentErrorCode = {
-  NOT_FOUND: 'NOT_FOUND',
-  ALREADY_EXISTS: 'ALREADY_EXISTS',
-  INVALID_CONFIG: 'INVALID_CONFIG',
-  INVALID_NAME: 'INVALID_NAME',
-  FILE_ERROR: 'FILE_ERROR',
-  VALIDATION_ERROR: 'VALIDATION_ERROR',
-  TOOL_NOT_FOUND: 'TOOL_NOT_FOUND',
+  NOT_FOUND: "NOT_FOUND",
+  ALREADY_EXISTS: "ALREADY_EXISTS",
+  INVALID_CONFIG: "INVALID_CONFIG",
+  INVALID_NAME: "INVALID_NAME",
+  FILE_ERROR: "FILE_ERROR",
+  VALIDATION_ERROR: "VALIDATION_ERROR",
+  TOOL_NOT_FOUND: "TOOL_NOT_FOUND",
 } as const;
 
-export type SubagentErrorCode =
-  (typeof SubagentErrorCode)[keyof typeof SubagentErrorCode];
+export type SubagentErrorCode = (typeof SubagentErrorCode)[keyof typeof SubagentErrorCode];

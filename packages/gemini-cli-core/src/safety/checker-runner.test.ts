@@ -4,42 +4,39 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { spawn } from 'node:child_process';
-import { CheckerRunner } from './checker-runner.js';
-import { ContextBuilder } from './context-builder.js';
-import { CheckerRegistry } from './registry.js';
-import {
-  type InProcessCheckerConfig,
-  InProcessCheckerType,
-} from '../policy/types.js';
-import type { SafetyCheckResult } from './protocol.js';
-import { SafetyCheckDecision } from './protocol.js';
-import type { Config } from '../config/config.js';
+import { spawn } from "node:child_process";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import type { Config } from "../config/config.js";
+import { type InProcessCheckerConfig, InProcessCheckerType } from "../policy/types.js";
+import { CheckerRunner } from "./checker-runner.js";
+import { ContextBuilder } from "./context-builder.js";
+import type { SafetyCheckResult } from "./protocol.js";
+import { SafetyCheckDecision } from "./protocol.js";
+import { CheckerRegistry } from "./registry.js";
 
 // Mock dependencies
-vi.mock('./registry.js');
-vi.mock('./context-builder.js');
-vi.mock('node:child_process');
+vi.mock("./registry.js");
+vi.mock("./context-builder.js");
+vi.mock("node:child_process");
 
-describe('CheckerRunner', () => {
+describe("CheckerRunner", () => {
   let runner: CheckerRunner;
   let mockContextBuilder: ContextBuilder;
   let mockRegistry: CheckerRegistry;
 
-  const mockToolCall = { name: 'test_tool', args: {} };
+  const mockToolCall = { name: "test_tool", args: {} };
   const mockInProcessConfig: InProcessCheckerConfig = {
-    type: 'in-process',
+    type: "in-process",
     name: InProcessCheckerType.ALLOWED_PATH,
   };
 
   beforeEach(() => {
     mockContextBuilder = new ContextBuilder({} as Config);
-    mockRegistry = new CheckerRegistry('/mock/dist');
+    mockRegistry = new CheckerRegistry("/mock/dist");
     CheckerRegistry.prototype.resolveInProcess = vi.fn();
 
     runner = new CheckerRunner(mockContextBuilder, mockRegistry, {
-      checkersPath: '/mock/dist',
+      checkersPath: "/mock/dist",
     });
   });
 
@@ -47,7 +44,7 @@ describe('CheckerRunner', () => {
     vi.restoreAllMocks();
   });
 
-  it('should run in-process checker successfully', async () => {
+  it("should run in-process checker successfully", async () => {
     const mockResult: SafetyCheckResult = {
       decision: SafetyCheckDecision.ALLOW,
     };
@@ -56,35 +53,33 @@ describe('CheckerRunner', () => {
     };
     vi.mocked(mockRegistry.resolveInProcess).mockReturnValue(mockChecker);
     vi.mocked(mockContextBuilder.buildFullContext).mockReturnValue({
-      environment: { cwd: '/tmp', workspaces: [] },
+      environment: { cwd: "/tmp", workspaces: [] },
     });
 
     const result = await runner.runChecker(mockToolCall, mockInProcessConfig);
 
     expect(result).toEqual(mockResult);
-    expect(mockRegistry.resolveInProcess).toHaveBeenCalledWith(
-      InProcessCheckerType.ALLOWED_PATH,
-    );
+    expect(mockRegistry.resolveInProcess).toHaveBeenCalledWith(InProcessCheckerType.ALLOWED_PATH);
     expect(mockChecker.check).toHaveBeenCalled();
   });
 
-  it('should handle in-process checker errors', async () => {
+  it("should handle in-process checker errors", async () => {
     const mockChecker = {
-      check: vi.fn().mockRejectedValue(new Error('Checker failed')),
+      check: vi.fn().mockRejectedValue(new Error("Checker failed")),
     };
     vi.mocked(mockRegistry.resolveInProcess).mockReturnValue(mockChecker);
     vi.mocked(mockContextBuilder.buildFullContext).mockReturnValue({
-      environment: { cwd: '/tmp', workspaces: [] },
+      environment: { cwd: "/tmp", workspaces: [] },
     });
 
     const result = await runner.runChecker(mockToolCall, mockInProcessConfig);
 
     expect(result.decision).toBe(SafetyCheckDecision.DENY);
-    expect(result.reason).toContain('Failed to run in-process checker');
-    expect(result.reason).toContain('Checker failed');
+    expect(result.reason).toContain("Failed to run in-process checker");
+    expect(result.reason).toContain("Checker failed");
   });
 
-  it('should respect timeout for in-process checkers', async () => {
+  it("should respect timeout for in-process checkers", async () => {
     vi.useFakeTimers();
     const mockChecker = {
       check: vi.fn().mockImplementation(async () => {
@@ -94,7 +89,7 @@ describe('CheckerRunner', () => {
     };
     vi.mocked(mockRegistry.resolveInProcess).mockReturnValue(mockChecker);
     vi.mocked(mockContextBuilder.buildFullContext).mockReturnValue({
-      environment: { cwd: '/tmp', workspaces: [] },
+      environment: { cwd: "/tmp", workspaces: [] },
     });
 
     const runPromise = runner.runChecker(mockToolCall, mockInProcessConfig);
@@ -102,34 +97,32 @@ describe('CheckerRunner', () => {
 
     const result = await runPromise;
     expect(result.decision).toBe(SafetyCheckDecision.DENY);
-    expect(result.reason).toContain('timed out');
+    expect(result.reason).toContain("timed out");
 
     vi.useRealTimers();
   });
 
-  it('should use minimal context when requested', async () => {
+  it("should use minimal context when requested", async () => {
     const configWithContext: InProcessCheckerConfig = {
       ...mockInProcessConfig,
-      required_context: ['environment'],
+      required_context: ["environment"],
     };
     const mockChecker = {
       check: vi.fn().mockResolvedValue({ decision: SafetyCheckDecision.ALLOW }),
     };
     vi.mocked(mockRegistry.resolveInProcess).mockReturnValue(mockChecker);
     vi.mocked(mockContextBuilder.buildMinimalContext).mockReturnValue({
-      environment: { cwd: '/tmp', workspaces: [] },
+      environment: { cwd: "/tmp", workspaces: [] },
     });
 
     await runner.runChecker(mockToolCall, configWithContext);
 
-    expect(mockContextBuilder.buildMinimalContext).toHaveBeenCalledWith([
-      'environment',
-    ]);
+    expect(mockContextBuilder.buildMinimalContext).toHaveBeenCalledWith(["environment"]);
     expect(mockContextBuilder.buildFullContext).not.toHaveBeenCalled();
   });
 
-  it('should pass config to in-process checker via toolCall', async () => {
-    const mockConfig = { included_args: ['foo'] };
+  it("should pass config to in-process checker via toolCall", async () => {
+    const mockConfig = { included_args: ["foo"] };
     const configWithConfig: InProcessCheckerConfig = {
       ...mockInProcessConfig,
       config: mockConfig,
@@ -142,7 +135,7 @@ describe('CheckerRunner', () => {
     };
     vi.mocked(mockRegistry.resolveInProcess).mockReturnValue(mockChecker);
     vi.mocked(mockContextBuilder.buildFullContext).mockReturnValue({
-      environment: { cwd: '/tmp', workspaces: [] },
+      environment: { cwd: "/tmp", workspaces: [] },
     });
 
     await runner.runChecker(mockToolCall, configWithConfig);
@@ -155,27 +148,23 @@ describe('CheckerRunner', () => {
     );
   });
 
-  describe('External Checkers', () => {
+  describe("External Checkers", () => {
     const mockExternalConfig = {
-      type: 'external' as const,
-      name: 'python-checker',
+      type: "external" as const,
+      name: "python-checker",
     };
 
-    it('should spawn external checker directly', async () => {
-      const mockCheckerPath = '/mock/dist/python-checker';
+    it("should spawn external checker directly", async () => {
+      const mockCheckerPath = "/mock/dist/python-checker";
       vi.mocked(mockRegistry.resolveExternal).mockReturnValue(mockCheckerPath);
       vi.mocked(mockContextBuilder.buildFullContext).mockReturnValue({
-        environment: { cwd: '/tmp', workspaces: [] },
+        environment: { cwd: "/tmp", workspaces: [] },
       });
 
       const mockStdout = {
         on: vi.fn().mockImplementation((event, callback) => {
-          if (event === 'data') {
-            callback(
-              Buffer.from(
-                JSON.stringify({ decision: SafetyCheckDecision.ALLOW }),
-              ),
-            );
+          if (event === "data") {
+            callback(Buffer.from(JSON.stringify({ decision: SafetyCheckDecision.ALLOW })));
           }
         }),
       };
@@ -184,7 +173,7 @@ describe('CheckerRunner', () => {
         stdout: mockStdout,
         stderr: { on: vi.fn() },
         on: vi.fn().mockImplementation((event, callback) => {
-          if (event === 'close') {
+          if (event === "close") {
             // Defer the close callback slightly to allow stdout 'data' to be registered
             setTimeout(() => callback(0), 0);
           }
@@ -197,19 +186,15 @@ describe('CheckerRunner', () => {
       const result = await runner.runChecker(mockToolCall, mockExternalConfig);
 
       expect(result.decision).toBe(SafetyCheckDecision.ALLOW);
-      expect(spawn).toHaveBeenCalledWith(
-        mockCheckerPath,
-        [],
-        expect.anything(),
-      );
+      expect(spawn).toHaveBeenCalledWith(mockCheckerPath, [], expect.anything());
     });
 
-    it('should include checker name in timeout error message', async () => {
+    it("should include checker name in timeout error message", async () => {
       vi.useFakeTimers();
-      const mockCheckerPath = '/mock/dist/python-checker';
+      const mockCheckerPath = "/mock/dist/python-checker";
       vi.mocked(mockRegistry.resolveExternal).mockReturnValue(mockCheckerPath);
       vi.mocked(mockContextBuilder.buildFullContext).mockReturnValue({
-        environment: { cwd: '/tmp', workspaces: [] },
+        environment: { cwd: "/tmp", workspaces: [] },
       });
 
       const mockChildProcess = {
@@ -227,19 +212,17 @@ describe('CheckerRunner', () => {
 
       const result = await runPromise;
       expect(result.decision).toBe(SafetyCheckDecision.DENY);
-      expect(result.reason).toContain(
-        'Safety checker "python-checker" timed out',
-      );
+      expect(result.reason).toContain('Safety checker "python-checker" timed out');
 
       vi.useRealTimers();
     });
 
-    it('should send SIGKILL if process ignores SIGTERM', async () => {
+    it("should send SIGKILL if process ignores SIGTERM", async () => {
       vi.useFakeTimers();
-      const mockCheckerPath = '/mock/dist/python-checker';
+      const mockCheckerPath = "/mock/dist/python-checker";
       vi.mocked(mockRegistry.resolveExternal).mockReturnValue(mockCheckerPath);
       vi.mocked(mockContextBuilder.buildFullContext).mockReturnValue({
-        environment: { cwd: '/tmp', workspaces: [] },
+        environment: { cwd: "/tmp", workspaces: [] },
       });
 
       const mockChildProcess = {
@@ -258,24 +241,24 @@ describe('CheckerRunner', () => {
       vi.advanceTimersByTime(5001);
 
       // Should have sent SIGTERM
-      expect(mockChildProcess.kill).toHaveBeenCalledWith('SIGTERM');
+      expect(mockChildProcess.kill).toHaveBeenCalledWith("SIGTERM");
 
       // Advance past cleanup timeout (5000ms)
       vi.advanceTimersByTime(5000);
 
       // Should have sent SIGKILL
-      expect(mockChildProcess.kill).toHaveBeenCalledWith('SIGKILL');
+      expect(mockChildProcess.kill).toHaveBeenCalledWith("SIGKILL");
 
       // Clean up promise
       await runPromise;
       vi.useRealTimers();
     });
 
-    it('should include checker name in non-zero exit code error message', async () => {
-      const mockCheckerPath = '/mock/dist/python-checker';
+    it("should include checker name in non-zero exit code error message", async () => {
+      const mockCheckerPath = "/mock/dist/python-checker";
       vi.mocked(mockRegistry.resolveExternal).mockReturnValue(mockCheckerPath);
       vi.mocked(mockContextBuilder.buildFullContext).mockReturnValue({
-        environment: { cwd: '/tmp', workspaces: [] },
+        environment: { cwd: "/tmp", workspaces: [] },
       });
 
       const mockChildProcess = {
@@ -283,7 +266,7 @@ describe('CheckerRunner', () => {
         stdout: { on: vi.fn() },
         stderr: { on: vi.fn() },
         on: vi.fn().mockImplementation((event, callback) => {
-          if (event === 'close') {
+          if (event === "close") {
             callback(1); // Exit code 1
           }
         }),
@@ -295,9 +278,7 @@ describe('CheckerRunner', () => {
       const result = await runner.runChecker(mockToolCall, mockExternalConfig);
 
       expect(result.decision).toBe(SafetyCheckDecision.DENY);
-      expect(result.reason).toContain(
-        'Safety checker "python-checker" exited with code 1',
-      );
+      expect(result.reason).toContain('Safety checker "python-checker" exited with code 1');
     });
   });
 });

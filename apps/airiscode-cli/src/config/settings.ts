@@ -4,42 +4,39 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import * as fs from 'node:fs';
-import * as path from 'node:path';
-import { homedir, platform } from 'node:os';
-import * as dotenv from 'dotenv';
-import process from 'node:process';
+import * as fs from "node:fs";
+import { homedir, platform } from "node:os";
+import * as path from "node:path";
+import process from "node:process";
 import {
-  FatalConfigError,
   AIRISCODE_DIR,
+  createDebugLogger,
+  FatalConfigError,
   getErrorMessage,
   Storage,
-  createDebugLogger,
-} from '@airiscode/core';
-import stripJsonComments from 'strip-json-comments';
-import { DefaultLight } from '../ui/themes/default-light.js';
-import { DefaultDark } from '../ui/themes/default.js';
-import { isWorkspaceTrusted } from './trustedFolders.js';
+} from "@airiscode/core";
+import * as dotenv from "dotenv";
+import stripJsonComments from "strip-json-comments";
+import { DefaultDark } from "../ui/themes/default.js";
+import { DefaultLight } from "../ui/themes/default-light.js";
+import { updateSettingsFilePreservingFormat } from "../utils/commentJson.js";
+import { customDeepMerge } from "../utils/deepMerge.js";
+import { resolveEnvVarsInObject } from "../utils/envVarResolver.js";
+import { setNestedPropertySafe } from "../utils/settingsUtils.js";
+import { writeWithBackupSync } from "../utils/writeWithBackup.js";
+import { needsMigration, runMigrations } from "./migration/index.js";
+import { V1_TO_V2_MIGRATION_MAP, V2_CONTAINER_KEYS } from "./migration/versions/v1-to-v2-shared.js";
 import {
-  type Settings,
+  getSettingsSchema,
   type MemoryImportFormat,
   type MergeStrategy,
-  type SettingsSchema,
   type SettingDefinition,
-  getSettingsSchema,
-} from './settingsSchema.js';
-import { resolveEnvVarsInObject } from '../utils/envVarResolver.js';
-import { setNestedPropertySafe } from '../utils/settingsUtils.js';
-import { customDeepMerge } from '../utils/deepMerge.js';
-import { updateSettingsFilePreservingFormat } from '../utils/commentJson.js';
-import { runMigrations, needsMigration } from './migration/index.js';
-import {
-  V1_TO_V2_MIGRATION_MAP,
-  V2_CONTAINER_KEYS,
-} from './migration/versions/v1-to-v2-shared.js';
-import { writeWithBackupSync } from '../utils/writeWithBackup.js';
+  type Settings,
+  type SettingsSchema,
+} from "./settingsSchema.js";
+import { isWorkspaceTrusted } from "./trustedFolders.js";
 
-const debugLogger = createDebugLogger('SETTINGS');
+const debugLogger = createDebugLogger("SETTINGS");
 
 function getMergeStrategyForPath(path: string[]): MergeStrategy | undefined {
   let current: SettingDefinition | undefined = undefined;
@@ -56,16 +53,16 @@ function getMergeStrategyForPath(path: string[]): MergeStrategy | undefined {
   return current?.mergeStrategy;
 }
 
-export type { Settings, MemoryImportFormat };
+export type { MemoryImportFormat, Settings };
 
-export const SETTINGS_DIRECTORY_NAME = '.airiscode';
+export const SETTINGS_DIRECTORY_NAME = ".airiscode";
 export const USER_SETTINGS_PATH = Storage.getGlobalSettingsPath();
 export const USER_SETTINGS_DIR = path.dirname(USER_SETTINGS_PATH);
-export const DEFAULT_EXCLUDED_ENV_VARS = ['DEBUG', 'DEBUG_MODE'];
+export const DEFAULT_EXCLUDED_ENV_VARS = ["DEBUG", "DEBUG_MODE"];
 
 // Settings version to track migration state
 export const SETTINGS_VERSION = 3;
-export const SETTINGS_VERSION_KEY = '$version';
+export const SETTINGS_VERSION_KEY = "$version";
 
 /**
  * Migrate legacy tool permission settings (tools.core / tools.allowed / tools.exclude)
@@ -82,39 +79,37 @@ export const SETTINGS_VERSION_KEY = '$version';
 export function migrateLegacyPermissions(
   settings: Record<string, unknown>,
 ): Record<string, unknown> | null {
-  const tools = settings['tools'] as Record<string, unknown> | undefined;
+  const tools = settings["tools"] as Record<string, unknown> | undefined;
   if (!tools) return null;
 
   const hasLegacy =
-    Array.isArray(tools['core']) ||
-    Array.isArray(tools['allowed']) ||
-    Array.isArray(tools['exclude']);
+    Array.isArray(tools["core"]) ||
+    Array.isArray(tools["allowed"]) ||
+    Array.isArray(tools["exclude"]);
 
   if (!hasLegacy) return null;
 
   const result = structuredClone(settings) as Record<string, unknown>;
-  const resultTools = result['tools'] as Record<string, unknown>;
-  const permissions = (result['permissions'] as Record<string, unknown>) ?? {};
-  result['permissions'] = permissions;
+  const resultTools = result["tools"] as Record<string, unknown>;
+  const permissions = (result["permissions"] as Record<string, unknown>) ?? {};
+  result["permissions"] = permissions;
 
   const mergeInto = (key: string, items: string[]) => {
-    const existing = Array.isArray(permissions[key])
-      ? (permissions[key] as string[])
-      : [];
+    const existing = Array.isArray(permissions[key]) ? (permissions[key] as string[]) : [];
     const merged = Array.from(new Set([...existing, ...items]));
     permissions[key] = merged;
   };
 
   // tools.allowed → permissions.allow
-  if (Array.isArray(resultTools['allowed'])) {
-    mergeInto('allow', resultTools['allowed'] as string[]);
-    delete resultTools['allowed'];
+  if (Array.isArray(resultTools["allowed"])) {
+    mergeInto("allow", resultTools["allowed"] as string[]);
+    delete resultTools["allowed"];
   }
 
   // tools.exclude → permissions.deny
-  if (Array.isArray(resultTools['exclude'])) {
-    mergeInto('deny', resultTools['exclude'] as string[]);
-    delete resultTools['exclude'];
+  if (Array.isArray(resultTools["exclude"])) {
+    mergeInto("deny", resultTools["exclude"] as string[]);
+    delete resultTools["exclude"];
   }
 
   // tools.core → permissions.allow (explicit enables)
@@ -127,44 +122,41 @@ export function migrateLegacyPermissions(
   // Instead we just migrate to allow (auto-approve) and let the coreTools
   // semantics continue to work through the Config.getCoreTools() path until
   // the old API is fully removed.
-  if (Array.isArray(resultTools['core'])) {
-    mergeInto('allow', resultTools['core'] as string[]);
-    delete resultTools['core'];
+  if (Array.isArray(resultTools["core"])) {
+    mergeInto("allow", resultTools["core"] as string[]);
+    delete resultTools["core"];
   }
 
   return result;
 }
 
 export function getSystemSettingsPath(): string {
-  if (process.env['AIRISCODE_SYSTEM_SETTINGS_PATH']) {
-    return process.env['AIRISCODE_SYSTEM_SETTINGS_PATH'];
+  if (process.env["AIRISCODE_SYSTEM_SETTINGS_PATH"]) {
+    return process.env["AIRISCODE_SYSTEM_SETTINGS_PATH"];
   }
-  if (platform() === 'darwin') {
-    return '/Library/Application Support/AirisCode/settings.json';
-  } else if (platform() === 'win32') {
-    return 'C:\\ProgramData\\airiscode\\settings.json';
+  if (platform() === "darwin") {
+    return "/Library/Application Support/AirisCode/settings.json";
+  } else if (platform() === "win32") {
+    return "C:\\ProgramData\\airiscode\\settings.json";
   } else {
-    return '/etc/airiscode/settings.json';
+    return "/etc/airiscode/settings.json";
   }
 }
 
 export function getSystemDefaultsPath(): string {
-  if (process.env['AIRISCODE_SYSTEM_DEFAULTS_PATH']) {
-    return process.env['AIRISCODE_SYSTEM_DEFAULTS_PATH'];
+  if (process.env["AIRISCODE_SYSTEM_DEFAULTS_PATH"]) {
+    return process.env["AIRISCODE_SYSTEM_DEFAULTS_PATH"];
   }
-  return path.join(
-    path.dirname(getSystemSettingsPath()),
-    'system-defaults.json',
-  );
+  return path.join(path.dirname(getSystemSettingsPath()), "system-defaults.json");
 }
 
-export type { DnsResolutionOrder } from './settingsSchema.js';
+export type { DnsResolutionOrder } from "./settingsSchema.js";
 
 export enum SettingScope {
-  User = 'User',
-  Workspace = 'Workspace',
-  System = 'System',
-  SystemDefaults = 'SystemDefaults',
+  User = "User",
+  Workspace = "Workspace",
+  System = "System",
+  SystemDefaults = "SystemDefaults",
 }
 
 export interface CheckpointingSettings {
@@ -193,7 +185,7 @@ function getSettingsFileKeyWarnings(
   settingsFilePath: string,
 ): string[] {
   const version = settings[SETTINGS_VERSION_KEY];
-  if (typeof version !== 'number' || version < SETTINGS_VERSION) {
+  if (typeof version !== "number" || version < SETTINGS_VERSION) {
     return [];
   }
 
@@ -215,7 +207,7 @@ function getSettingsFileKeyWarnings(
     // it's likely already in V2 format. Don't warn.
     if (
       V2_CONTAINER_KEYS.has(oldKey) &&
-      typeof oldValue === 'object' &&
+      typeof oldValue === "object" &&
       oldValue !== null &&
       !Array.isArray(oldValue)
     ) {
@@ -241,9 +233,7 @@ function getSettingsFileKeyWarnings(
       continue;
     }
 
-    debugLogger.warn(
-      `Unknown setting '${key}' will be ignored in ${settingsFilePath}.`,
-    );
+    debugLogger.warn(`Unknown setting '${key}' will be ignored in ${settingsFilePath}.`);
   }
 
   return warnings;
@@ -270,15 +260,9 @@ export function getSettingsWarnings(loadedSettings: LoadedSettings): string[] {
       continue;
       // File not present / not loaded.
     }
-    const settingsObject = settingsFile.originalSettings as unknown as Record<
-      string,
-      unknown
-    >;
+    const settingsObject = settingsFile.originalSettings as unknown as Record<string, unknown>;
 
-    for (const warning of getSettingsFileKeyWarnings(
-      settingsObject,
-      settingsFile.path,
-    )) {
+    for (const warning of getSettingsFileKeyWarnings(settingsObject, settingsFile.path)) {
       warningSet.add(warning);
     }
   }
@@ -385,10 +369,10 @@ export class LoadedSettings {
  */
 export function createMinimalSettings(): LoadedSettings {
   const emptySettingsFile: SettingsFile = {
-    path: '',
+    path: "",
     settings: {},
     originalSettings: {},
-    rawJson: '{}',
+    rawJson: "{}",
   };
   return new LoadedSettings(
     emptySettingsFile,
@@ -414,8 +398,8 @@ function findEnvFile(settings: Settings, startDir: string): string | null {
 
   // Pre-compute user-level .env paths for fast comparison
   const userLevelPaths = new Set([
-    path.normalize(path.join(homeDir, '.env')),
-    path.normalize(path.join(homeDir, AIRISCODE_DIR, '.env')),
+    path.normalize(path.join(homeDir, ".env")),
+    path.normalize(path.join(homeDir, AIRISCODE_DIR, ".env")),
   ]);
 
   // Determine if we can use this .env file based on trust settings
@@ -425,12 +409,12 @@ function findEnvFile(settings: Settings, startDir: string): string | null {
   let currentDir = path.resolve(startDir);
   while (true) {
     // Prefer gemini-specific .env under AIRISCODE_DIR
-    const geminiEnvPath = path.join(currentDir, AIRISCODE_DIR, '.env');
+    const geminiEnvPath = path.join(currentDir, AIRISCODE_DIR, ".env");
     if (fs.existsSync(geminiEnvPath) && canUseEnvFile(geminiEnvPath)) {
       return geminiEnvPath;
     }
 
-    const envPath = path.join(currentDir, '.env');
+    const envPath = path.join(currentDir, ".env");
     if (fs.existsSync(envPath) && canUseEnvFile(envPath)) {
       return envPath;
     }
@@ -438,11 +422,11 @@ function findEnvFile(settings: Settings, startDir: string): string | null {
     const parentDir = path.dirname(currentDir);
     if (parentDir === currentDir || !parentDir) {
       // At home directory - check fallback .env files
-      const homeGeminiEnvPath = path.join(homeDir, AIRISCODE_DIR, '.env');
+      const homeGeminiEnvPath = path.join(homeDir, AIRISCODE_DIR, ".env");
       if (fs.existsSync(homeGeminiEnvPath)) {
         return homeGeminiEnvPath;
       }
-      const homeEnvPath = path.join(homeDir, '.env');
+      const homeEnvPath = path.join(homeDir, ".env");
       if (fs.existsSync(homeEnvPath)) {
         return homeEnvPath;
       }
@@ -461,16 +445,16 @@ export function setUpCloudShellEnvironment(envFilePath: string | null): void {
   if (envFilePath && fs.existsSync(envFilePath)) {
     const envFileContent = fs.readFileSync(envFilePath);
     const parsedEnv = dotenv.parse(envFileContent);
-    if (parsedEnv['GOOGLE_CLOUD_PROJECT']) {
+    if (parsedEnv["GOOGLE_CLOUD_PROJECT"]) {
       // .env file takes precedence in Cloud Shell
-      process.env['GOOGLE_CLOUD_PROJECT'] = parsedEnv['GOOGLE_CLOUD_PROJECT'];
+      process.env["GOOGLE_CLOUD_PROJECT"] = parsedEnv["GOOGLE_CLOUD_PROJECT"];
     } else {
       // If not in .env, set to default and override global
-      process.env['GOOGLE_CLOUD_PROJECT'] = 'cloudshell-gca';
+      process.env["GOOGLE_CLOUD_PROJECT"] = "cloudshell-gca";
     }
   } else {
     // If no .env file, set to default and override global
-    process.env['GOOGLE_CLOUD_PROJECT'] = 'cloudshell-gca';
+    process.env["GOOGLE_CLOUD_PROJECT"] = "cloudshell-gca";
   }
 }
 /**
@@ -487,7 +471,7 @@ export function loadEnvironment(settings: Settings): void {
   const envFilePath = findEnvFile(settings, process.cwd());
 
   // Cloud Shell environment variable handling
-  if (process.env['CLOUD_SHELL'] === 'true') {
+  if (process.env["CLOUD_SHELL"] === "true") {
     setUpCloudShellEnvironment(envFilePath);
   }
 
@@ -495,11 +479,10 @@ export function loadEnvironment(settings: Settings): void {
   // Only set if not already present in process.env (no-override mode)
   if (envFilePath) {
     try {
-      const envFileContent = fs.readFileSync(envFilePath, 'utf-8');
+      const envFileContent = fs.readFileSync(envFilePath, "utf-8");
       const parsedEnv = dotenv.parse(envFileContent);
 
-      const excludedVars =
-        settings?.advanced?.excludedEnvVars || DEFAULT_EXCLUDED_ENV_VARS;
+      const excludedVars = settings?.advanced?.excludedEnvVars || DEFAULT_EXCLUDED_ENV_VARS;
       const isProjectEnvFile = !envFilePath.includes(AIRISCODE_DIR);
 
       for (const key in parsedEnv) {
@@ -524,7 +507,7 @@ export function loadEnvironment(settings: Settings): void {
   // Only set if not already present (no-override, after .env is loaded)
   if (settings.env) {
     for (const [key, value] of Object.entries(settings.env)) {
-      if (!Object.hasOwn(process.env, key) && typeof value === 'string') {
+      if (!Object.hasOwn(process.env, key) && typeof value === "string") {
         process.env[key] = value;
       }
     }
@@ -535,9 +518,7 @@ export function loadEnvironment(settings: Settings): void {
  * Loads settings from user and workspace directories.
  * Project settings override user settings.
  */
-export function loadSettings(
-  workspaceDir: string = process.cwd(),
-): LoadedSettings {
+export function loadSettings(workspaceDir: string = process.cwd()): LoadedSettings {
   let systemSettings: Settings = {};
   let systemDefaultSettings: Settings = {};
   let userSettings: Settings = {};
@@ -562,9 +543,7 @@ export function loadSettings(
   // We expect homedir to always exist and be resolvable.
   const realHomeDir = fs.realpathSync(resolvedHomeDir);
 
-  const workspaceSettingsPath = new Storage(
-    workspaceDir,
-  ).getWorkspaceSettingsPath();
+  const workspaceSettingsPath = new Storage(workspaceDir).getWorkspaceSettingsPath();
 
   const loadAndMigrate = (
     filePath: string,
@@ -572,16 +551,12 @@ export function loadSettings(
   ): { settings: Settings; rawJson?: string; migrationWarnings?: string[] } => {
     try {
       if (fs.existsSync(filePath)) {
-        const content = fs.readFileSync(filePath, 'utf-8');
+        const content = fs.readFileSync(filePath, "utf-8");
         const rawSettings: unknown = JSON.parse(stripJsonComments(content));
 
-        if (
-          typeof rawSettings !== 'object' ||
-          rawSettings === null ||
-          Array.isArray(rawSettings)
-        ) {
+        if (typeof rawSettings !== "object" || rawSettings === null || Array.isArray(rawSettings)) {
           settingsErrors.push({
-            message: 'Settings file is not a valid JSON object.',
+            message: "Settings file is not a valid JSON object.",
             path: filePath,
           });
           return { settings: {} };
@@ -590,18 +565,14 @@ export function loadSettings(
         let settingsObject = rawSettings as Record<string, unknown>;
         const hasVersionKey = SETTINGS_VERSION_KEY in settingsObject;
         const versionValue = settingsObject[SETTINGS_VERSION_KEY];
-        const hasInvalidVersion =
-          hasVersionKey && typeof versionValue !== 'number';
+        const hasInvalidVersion = hasVersionKey && typeof versionValue !== "number";
         const hasLegacyNumericVersion =
-          typeof versionValue === 'number' && versionValue < SETTINGS_VERSION;
+          typeof versionValue === "number" && versionValue < SETTINGS_VERSION;
         let migrationWarnings: string[] | undefined;
 
         const persistSettingsObject = (warningPrefix: string) => {
           try {
-            writeWithBackupSync(
-              filePath,
-              JSON.stringify(settingsObject, null, 2),
-            );
+            writeWithBackupSync(filePath, JSON.stringify(settingsObject, null, 2));
           } catch (e) {
             debugLogger.error(`${warningPrefix}: ${getErrorMessage(e)}`);
           }
@@ -610,12 +581,9 @@ export function loadSettings(
         if (needsMigration(settingsObject)) {
           const migrationResult = runMigrations(settingsObject, scope);
           if (migrationResult.executedMigrations.length > 0) {
-            settingsObject = migrationResult.settings as Record<
-              string,
-              unknown
-            >;
+            settingsObject = migrationResult.settings as Record<string, unknown>;
             migrationWarnings = migrationResult.warnings;
-            persistSettingsObject('Error migrating settings file on disk');
+            persistSettingsObject("Error migrating settings file on disk");
           } else if (hasLegacyNumericVersion || hasInvalidVersion) {
             // Migration was deemed needed but nothing executed. Normalize version metadata
             // to avoid repeated no-op checks on startup.
@@ -623,17 +591,13 @@ export function loadSettings(
             debugLogger.warn(
               `Settings version metadata in ${filePath} could not be migrated by any registered migration. Normalizing ${SETTINGS_VERSION_KEY} to ${SETTINGS_VERSION}.`,
             );
-            persistSettingsObject('Error normalizing settings version on disk');
+            persistSettingsObject("Error normalizing settings version on disk");
           }
-        } else if (
-          !hasVersionKey ||
-          hasInvalidVersion ||
-          hasLegacyNumericVersion
-        ) {
+        } else if (!hasVersionKey || hasInvalidVersion || hasLegacyNumericVersion) {
           // No migration needed/executable, but version metadata is missing or invalid.
           // Normalize it to current version to avoid repeated startup work.
           settingsObject[SETTINGS_VERSION_KEY] = SETTINGS_VERSION;
-          persistSettingsObject('Error normalizing settings version on disk');
+          persistSettingsObject("Error normalizing settings version on disk");
         }
 
         return {
@@ -652,10 +616,7 @@ export function loadSettings(
   };
 
   const systemResult = loadAndMigrate(systemSettingsPath, SettingScope.System);
-  const systemDefaultsResult = loadAndMigrate(
-    systemDefaultsPath,
-    SettingScope.SystemDefaults,
-  );
+  const systemDefaultsResult = loadAndMigrate(systemDefaultsPath, SettingScope.SystemDefaults);
   const userResult = loadAndMigrate(USER_SETTINGS_PATH, SettingScope.User);
 
   let workspaceResult: {
@@ -667,25 +628,19 @@ export function loadSettings(
     rawJson: undefined,
   };
   if (realWorkspaceDir !== realHomeDir) {
-    workspaceResult = loadAndMigrate(
-      workspaceSettingsPath,
-      SettingScope.Workspace,
-    );
+    workspaceResult = loadAndMigrate(workspaceSettingsPath, SettingScope.Workspace);
   }
 
   // Load workspace-local settings (.airiscode/settings.local.json)
   // This file is gitignored and has higher priority than workspace settings
   let workspaceLocalSettings: Settings = {};
   if (realWorkspaceDir !== realHomeDir) {
-    const localSettingsPath = path.join(
-      path.dirname(workspaceSettingsPath),
-      'settings.local.json',
-    );
+    const localSettingsPath = path.join(path.dirname(workspaceSettingsPath), "settings.local.json");
     try {
       if (fs.existsSync(localSettingsPath)) {
-        const content = fs.readFileSync(localSettingsPath, 'utf-8');
+        const content = fs.readFileSync(localSettingsPath, "utf-8");
         const parsed = JSON.parse(stripJsonComments(content));
-        if (typeof parsed === 'object' && parsed !== null && !Array.isArray(parsed)) {
+        if (typeof parsed === "object" && parsed !== null && !Array.isArray(parsed)) {
           workspaceLocalSettings = parsed as Settings;
           debugLogger.debug(`Loaded local settings from ${localSettingsPath}`);
         }
@@ -696,9 +651,7 @@ export function loadSettings(
   }
 
   const systemOriginalSettings = structuredClone(systemResult.settings);
-  const systemDefaultsOriginalSettings = structuredClone(
-    systemDefaultsResult.settings,
-  );
+  const systemDefaultsOriginalSettings = structuredClone(systemDefaultsResult.settings);
   const userOriginalSettings = structuredClone(userResult.settings);
   const workspaceOriginalSettings = structuredClone(workspaceResult.settings);
 
@@ -718,14 +671,14 @@ export function loadSettings(
   }
 
   // Support legacy theme names
-  if (userSettings.ui?.theme === 'VS') {
+  if (userSettings.ui?.theme === "VS") {
     userSettings.ui.theme = DefaultLight.name;
-  } else if (userSettings.ui?.theme === 'VS2015') {
+  } else if (userSettings.ui?.theme === "VS2015") {
     userSettings.ui.theme = DefaultDark.name;
   }
-  if (workspaceSettings.ui?.theme === 'VS') {
+  if (workspaceSettings.ui?.theme === "VS") {
     workspaceSettings.ui.theme = DefaultLight.name;
-  } else if (workspaceSettings.ui?.theme === 'VS2015') {
+  } else if (workspaceSettings.ui?.theme === "VS2015") {
     workspaceSettings.ui.theme = DefaultDark.name;
   }
 
@@ -736,8 +689,7 @@ export function loadSettings(
     systemSettings,
     userSettings,
   );
-  const isTrusted =
-    isWorkspaceTrusted(initialTrustCheckSettings as Settings).isTrusted ?? true;
+  const isTrusted = isWorkspaceTrusted(initialTrustCheckSettings as Settings).isTrusted ?? true;
 
   // Create a temporary merged settings object to pass to loadEnvironment.
   const tempMergedSettings = mergeSettings(
@@ -755,11 +707,9 @@ export function loadSettings(
   // Create LoadedSettings first
 
   if (settingsErrors.length > 0) {
-    const errorMessages = settingsErrors.map(
-      (error) => `Error in ${error.path}: ${error.message}`,
-    );
+    const errorMessages = settingsErrors.map((error) => `Error in ${error.path}: ${error.message}`);
     throw new FatalConfigError(
-      `${errorMessages.join('\n')}\nPlease fix the configuration file(s) and try again.`,
+      `${errorMessages.join("\n")}\nPlease fix the configuration file(s) and try again.`,
     );
   }
 
@@ -802,10 +752,7 @@ export function loadSettings(
   );
 }
 
-function createSettingsUpdate(
-  key: string,
-  value: unknown,
-): Record<string, unknown> {
+function createSettingsUpdate(key: string, value: unknown): Record<string, unknown> {
   const root: Record<string, unknown> = {};
   setNestedPropertySafe(root, key, value);
   return root;
@@ -813,10 +760,7 @@ function createSettingsUpdate(
 
 export function saveSettings(
   settingsFile: SettingsFile,
-  updates: Record<string, unknown> = settingsFile.originalSettings as Record<
-    string,
-    unknown
-  >,
+  updates: Record<string, unknown> = settingsFile.originalSettings as Record<string, unknown>,
 ): void {
   try {
     // Ensure the directory exists
@@ -828,7 +772,7 @@ export function saveSettings(
     // Use the format-preserving update function
     updateSettingsFilePreservingFormat(settingsFile.path, updates);
   } catch (error) {
-    debugLogger.error('Error saving user settings file.');
+    debugLogger.error("Error saving user settings file.");
     debugLogger.error(error instanceof Error ? error.message : String(error));
     throw error;
   }

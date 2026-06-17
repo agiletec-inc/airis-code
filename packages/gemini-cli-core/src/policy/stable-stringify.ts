@@ -60,15 +60,15 @@ export function stableStringify(obj: unknown): string {
   const stringify = (currentObj: unknown, ancestors: Set<unknown>): string => {
     // Handle primitives and null
     if (currentObj === undefined) {
-      return 'null'; // undefined in arrays becomes null in JSON
+      return "null"; // undefined in arrays becomes null in JSON
     }
     if (currentObj === null) {
-      return 'null';
+      return "null";
     }
-    if (typeof currentObj === 'function') {
-      return 'null'; // functions in arrays become null in JSON
+    if (typeof currentObj === "function") {
+      return "null"; // functions in arrays become null in JSON
     }
-    if (typeof currentObj !== 'object') {
+    if (typeof currentObj !== "object") {
       return JSON.stringify(currentObj);
     }
 
@@ -82,12 +82,12 @@ export function stableStringify(obj: unknown): string {
     try {
       // Check for toJSON method and use it if present
       const objWithToJSON = currentObj as { toJSON?: () => unknown };
-      if (typeof objWithToJSON.toJSON === 'function') {
+      if (typeof objWithToJSON.toJSON === "function") {
         try {
           const jsonValue = objWithToJSON.toJSON();
           // The result of toJSON needs to be stringified recursively
           if (jsonValue === null) {
-            return 'null';
+            return "null";
           }
           return stringify(jsonValue, ancestors);
         } catch {
@@ -98,12 +98,12 @@ export function stableStringify(obj: unknown): string {
       if (Array.isArray(currentObj)) {
         const items = currentObj.map((item) => {
           // undefined and functions in arrays become null
-          if (item === undefined || typeof item === 'function') {
-            return 'null';
+          if (item === undefined || typeof item === "function") {
+            return "null";
           }
           return stringify(item, ancestors);
         });
-        return '[' + items.join(',') + ']';
+        return "[" + items.join(",") + "]";
       }
 
       // Handle objects - sort keys and filter out undefined/function values
@@ -113,12 +113,12 @@ export function stableStringify(obj: unknown): string {
       for (const key of sortedKeys) {
         const value = (currentObj as Record<string, unknown>)[key];
         // Skip undefined and function values in objects (per JSON spec)
-        if (value !== undefined && typeof value !== 'function') {
-          pairs.push(JSON.stringify(key) + ':' + stringify(value, ancestors));
+        if (value !== undefined && typeof value !== "function") {
+          pairs.push(JSON.stringify(key) + ":" + stringify(value, ancestors));
         }
       }
 
-      return '{' + pairs.join(',') + '}';
+      return "{" + pairs.join(",") + "}";
     } finally {
       ancestors.delete(currentObj);
     }

@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import type { WebSearchProvider, WebSearchResult } from './types.js';
+import type { WebSearchProvider, WebSearchResult } from "./types.js";
 
 /**
  * Base implementation for web search providers.
@@ -24,10 +24,7 @@ export abstract class BaseWebSearchProvider implements WebSearchProvider {
    * @param signal Abort signal for cancellation
    * @returns Promise resolving to search results
    */
-  protected abstract performSearch(
-    query: string,
-    signal: AbortSignal,
-  ): Promise<WebSearchResult>;
+  protected abstract performSearch(query: string, signal: AbortSignal): Promise<WebSearchResult>;
 
   /**
    * Execute a web search with error handling.
@@ -37,18 +34,13 @@ export abstract class BaseWebSearchProvider implements WebSearchProvider {
    */
   async search(query: string, signal: AbortSignal): Promise<WebSearchResult> {
     if (!this.isAvailable()) {
-      throw new Error(
-        `[${this.name}] Provider is not available. Please check your configuration.`,
-      );
+      throw new Error(`[${this.name}] Provider is not available. Please check your configuration.`);
     }
 
     try {
       return await this.performSearch(query, signal);
     } catch (error: unknown) {
-      if (
-        error instanceof Error &&
-        error.message.startsWith(`[${this.name}]`)
-      ) {
+      if (error instanceof Error && error.message.startsWith(`[${this.name}]`)) {
         throw error;
       }
       const message = error instanceof Error ? error.message : String(error);

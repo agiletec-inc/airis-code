@@ -12,6 +12,7 @@
  * and the NativeLspService implementation.
  */
 
+import type { NativeLspService } from "./NativeLspService.js";
 import type {
   LspCallHierarchyIncomingCall,
   LspCallHierarchyItem,
@@ -28,9 +29,7 @@ import type {
   LspReference,
   LspSymbolInformation,
   LspWorkspaceEdit,
-} from './types.js';
-
-import type { NativeLspService } from './NativeLspService.js';
+} from "./types.js";
 
 /**
  * Adapter class that implements LspClient by delegating to NativeLspService.
@@ -58,10 +57,7 @@ export class NativeLspClient implements LspClient {
    * @param limit - Maximum number of results to return
    * @returns Promise resolving to array of symbol information
    */
-  workspaceSymbols(
-    query: string,
-    limit?: number,
-  ): Promise<LspSymbolInformation[]> {
+  workspaceSymbols(query: string, limit?: number): Promise<LspSymbolInformation[]> {
     return this.service.workspaceSymbols(query, limit);
   }
 
@@ -96,12 +92,7 @@ export class NativeLspClient implements LspClient {
     includeDeclaration?: boolean,
     limit?: number,
   ): Promise<LspReference[]> {
-    return this.service.references(
-      location,
-      serverName,
-      includeDeclaration,
-      limit,
-    );
+    return this.service.references(location, serverName, includeDeclaration, limit);
   }
 
   /**
@@ -111,10 +102,7 @@ export class NativeLspClient implements LspClient {
    * @param serverName - Optional specific LSP server to query
    * @returns Promise resolving to hover result or null if not available
    */
-  hover(
-    location: LspLocation,
-    serverName?: string,
-  ): Promise<LspHoverResult | null> {
+  hover(location: LspLocation, serverName?: string): Promise<LspHoverResult | null> {
     return this.service.hover(location, serverName);
   }
 
@@ -216,10 +204,7 @@ export class NativeLspClient implements LspClient {
    * @param limit - Maximum number of file diagnostics to return
    * @returns Promise resolving to array of file diagnostics
    */
-  workspaceDiagnostics(
-    serverName?: string,
-    limit?: number,
-  ): Promise<LspFileDiagnostics[]> {
+  workspaceDiagnostics(serverName?: string, limit?: number): Promise<LspFileDiagnostics[]> {
     return this.service.workspaceDiagnostics(serverName, limit);
   }
 
@@ -250,10 +235,7 @@ export class NativeLspClient implements LspClient {
    * @param serverName - Optional specific LSP server context
    * @returns Promise resolving to true if edit was applied successfully
    */
-  applyWorkspaceEdit(
-    edit: LspWorkspaceEdit,
-    serverName?: string,
-  ): Promise<boolean> {
+  applyWorkspaceEdit(edit: LspWorkspaceEdit, serverName?: string): Promise<boolean> {
     return this.service.applyWorkspaceEdit(edit, serverName);
   }
 }

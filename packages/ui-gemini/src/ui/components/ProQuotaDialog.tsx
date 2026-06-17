@@ -4,17 +4,16 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import type React from 'react';
-import { Box, Text } from 'ink';
-import { RadioButtonSelect } from './shared/RadioButtonSelect.js';
-import { theme } from '../semantic-colors.js';
-
 import {
   DEFAULT_GEMINI_FLASH_LITE_MODEL,
   DEFAULT_GEMINI_FLASH_MODEL,
   DEFAULT_GEMINI_MODEL,
   UserTierId,
-} from '@airiscode/gemini-cli-core';
+} from "@airiscode/gemini-cli-core";
+import { Box, Text } from "ink";
+import type React from "react";
+import { theme } from "../semantic-colors.js";
+import { RadioButtonSelect } from "./shared/RadioButtonSelect.js";
 
 interface ProQuotaDialogProps {
   failedModel: string;
@@ -22,9 +21,7 @@ interface ProQuotaDialogProps {
   message: string;
   isTerminalQuotaError: boolean;
   isModelNotFoundError?: boolean;
-  onChoice: (
-    choice: 'retry_later' | 'retry_once' | 'retry_always' | 'upgrade',
-  ) => void;
+  onChoice: (choice: "retry_later" | "retry_once" | "retry_always" | "upgrade") => void;
   userTier: UserTierId | undefined;
 }
 
@@ -38,8 +35,7 @@ export function ProQuotaDialog({
   userTier,
 }: ProQuotaDialogProps): React.JSX.Element {
   // Use actual user tier if available; otherwise, default to FREE tier behavior (safe default)
-  const isPaidTier =
-    userTier === UserTierId.LEGACY || userTier === UserTierId.STANDARD;
+  const isPaidTier = userTier === UserTierId.LEGACY || userTier === UserTierId.STANDARD;
   let items;
   // flash and flash lite don't have options to switch or upgrade.
   if (
@@ -48,14 +44,14 @@ export function ProQuotaDialog({
   ) {
     items = [
       {
-        label: 'Keep trying',
-        value: 'retry_once' as const,
-        key: 'retry_once',
+        label: "Keep trying",
+        value: "retry_once" as const,
+        key: "retry_once",
       },
       {
-        label: 'Stop',
-        value: 'retry_later' as const,
-        key: 'retry_later',
+        label: "Stop",
+        value: "retry_later" as const,
+        key: "retry_later",
       },
     ];
   } else if (isModelNotFoundError || (isTerminalQuotaError && isPaidTier)) {
@@ -63,13 +59,13 @@ export function ProQuotaDialog({
     items = [
       {
         label: `Switch to ${fallbackModel}`,
-        value: 'retry_always' as const,
-        key: 'retry_always',
+        value: "retry_always" as const,
+        key: "retry_always",
       },
       {
         label: `Stop`,
-        value: 'retry_later' as const,
-        key: 'retry_later',
+        value: "retry_later" as const,
+        key: "retry_later",
       },
     ];
   } else if (isTerminalQuotaError && !isPaidTier) {
@@ -77,44 +73,42 @@ export function ProQuotaDialog({
     items = [
       {
         label: `Switch to ${fallbackModel}`,
-        value: 'retry_always' as const,
-        key: 'retry_always',
+        value: "retry_always" as const,
+        key: "retry_always",
       },
       {
-        label: 'Upgrade for higher limits',
-        value: 'upgrade' as const,
-        key: 'upgrade',
+        label: "Upgrade for higher limits",
+        value: "upgrade" as const,
+        key: "upgrade",
       },
       {
         label: `Stop`,
-        value: 'retry_later' as const,
-        key: 'retry_later',
+        value: "retry_later" as const,
+        key: "retry_later",
       },
     ];
   } else {
     // capacity error
     items = [
       {
-        label: 'Keep trying',
-        value: 'retry_once' as const,
-        key: 'retry_once',
+        label: "Keep trying",
+        value: "retry_once" as const,
+        key: "retry_once",
       },
       {
         label: `Switch to ${fallbackModel}`,
-        value: 'retry_always' as const,
-        key: 'retry_always',
+        value: "retry_always" as const,
+        key: "retry_always",
       },
       {
-        label: 'Stop',
-        value: 'retry_later' as const,
-        key: 'retry_later',
+        label: "Stop",
+        value: "retry_later" as const,
+        key: "retry_later",
       },
     ];
   }
 
-  const handleSelect = (
-    choice: 'retry_later' | 'retry_once' | 'retry_always' | 'upgrade',
-  ) => {
+  const handleSelect = (choice: "retry_later" | "retry_once" | "retry_always" | "upgrade") => {
     onChoice(choice);
   };
 
@@ -128,8 +122,8 @@ export function ProQuotaDialog({
       </Box>
       <Text color={theme.text.primary}>
         {fallbackModel === DEFAULT_GEMINI_MODEL && !isModelNotFoundError
-          ? 'Note: We will periodically retry Preview Model to see if congestion has cleared.'
-          : 'Note: You can always use /model to select a different option.'}
+          ? "Note: We will periodically retry Preview Model to see if congestion has cleared."
+          : "Note: You can always use /model to select a different option."}
       </Text>
     </Box>
   );

@@ -4,13 +4,13 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { isNodeError } from '../utils/errors.js';
-import * as fs from 'node:fs';
-import * as path from 'node:path';
-import * as process from 'node:process';
-import { createDebugLogger } from './debugLogger.js';
+import * as fs from "node:fs";
+import * as path from "node:path";
+import * as process from "node:process";
+import { isNodeError } from "../utils/errors.js";
+import { createDebugLogger } from "./debugLogger.js";
 
-const debugLogger = createDebugLogger('WORKSPACE');
+const debugLogger = createDebugLogger("WORKSPACE");
 
 export type Unsubscribe = () => void;
 
@@ -59,7 +59,7 @@ export class WorkspaceContext {
         listener();
       } catch (e) {
         // Don't let one listener break others.
-        debugLogger.error('Error in WorkspaceContext listener:', e);
+        debugLogger.error("Error in WorkspaceContext listener:", e);
       }
     }
   }
@@ -84,13 +84,8 @@ export class WorkspaceContext {
     }
   }
 
-  private resolveAndValidateDir(
-    directory: string,
-    basePath: string = process.cwd(),
-  ): string {
-    const absolutePath = path.isAbsolute(directory)
-      ? directory
-      : path.resolve(basePath, directory);
+  private resolveAndValidateDir(directory: string, basePath: string = process.cwd()): string {
+    const absolutePath = path.isAbsolute(directory) ? directory : path.resolve(basePath, directory);
 
     if (!fs.existsSync(absolutePath)) {
       throw new Error(`Directory does not exist: ${absolutePath}`);
@@ -128,9 +123,7 @@ export class WorkspaceContext {
       resolved = this.resolveAndValidateDir(directory);
     } catch {
       // If we can't resolve it, try matching by raw string (e.g. directory was deleted)
-      resolved = path.isAbsolute(directory)
-        ? directory
-        : path.resolve(process.cwd(), directory);
+      resolved = path.isAbsolute(directory) ? directory : path.resolve(process.cwd(), directory);
     }
 
     if (this.initialDirectories.has(resolved)) {
@@ -208,7 +201,7 @@ export class WorkspaceContext {
     } catch (e: unknown) {
       if (
         isNodeError(e) &&
-        e.code === 'ENOENT' &&
+        e.code === "ENOENT" &&
         e.path &&
         // realpathSync does not set e.path correctly for symlinks to
         // non-existent files.
@@ -226,7 +219,7 @@ export class WorkspaceContext {
    */
   private isFileSymlink(filePath: string): boolean {
     try {
-      return !fs.readlinkSync(filePath).endsWith('/');
+      return !fs.readlinkSync(filePath).endsWith("/");
     } catch (_error) {
       return false;
     }
@@ -239,14 +232,7 @@ export class WorkspaceContext {
  * @param rootDirectory The absolute root directory
  * @returns True if the path is within the root directory, false otherwise
  */
-export function isPathWithinRoot(
-  pathToCheck: string,
-  rootDirectory: string,
-): boolean {
+export function isPathWithinRoot(pathToCheck: string, rootDirectory: string): boolean {
   const relative = path.relative(rootDirectory, pathToCheck);
-  return (
-    !relative.startsWith(`..${path.sep}`) &&
-    relative !== '..' &&
-    !path.isAbsolute(relative)
-  );
+  return !relative.startsWith(`..${path.sep}`) && relative !== ".." && !path.isAbsolute(relative);
 }

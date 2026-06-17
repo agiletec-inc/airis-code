@@ -4,14 +4,14 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import * as fs from 'node:fs/promises';
-import * as path from 'node:path';
-import { debugLogger, type Config } from '@airiscode/gemini-cli-core';
-import type { Settings, SessionRetentionSettings } from '../config/settings.js';
-import { getAllSessionFiles, type SessionFileEntry } from './sessionUtils.js';
+import * as fs from "node:fs/promises";
+import * as path from "node:path";
+import { type Config, debugLogger } from "@airiscode/gemini-cli-core";
+import type { SessionRetentionSettings, Settings } from "../config/settings.js";
+import { getAllSessionFiles, type SessionFileEntry } from "./sessionUtils.js";
 
 // Constants
-export const DEFAULT_MIN_RETENTION = '1d' as string;
+export const DEFAULT_MIN_RETENTION = "1d" as string;
 const MIN_MAX_COUNT = 1;
 const MULTIPLIERS = {
   h: 60 * 60 * 1000, // hours to ms
@@ -53,13 +53,10 @@ export async function cleanupExpiredSessions(
     }
 
     const retentionConfig = settings.general.sessionRetention;
-    const chatsDir = path.join(config.storage.getProjectTempDir(), 'chats');
+    const chatsDir = path.join(config.storage.getProjectTempDir(), "chats");
 
     // Validate retention configuration
-    const validationErrorMessage = validateRetentionConfig(
-      config,
-      retentionConfig,
-    );
+    const validationErrorMessage = validateRetentionConfig(config, retentionConfig);
     if (validationErrorMessage) {
       // Log validation errors to console for visibility
       console.error(`Session cleanup disabled: ${validationErrorMessage}`);
@@ -75,10 +72,7 @@ export async function cleanupExpiredSessions(
     }
 
     // Determine which sessions to delete (corrupted and expired)
-    const sessionsToDelete = await identifySessionsToDelete(
-      allFiles,
-      retentionConfig,
-    );
+    const sessionsToDelete = await identifySessionsToDelete(allFiles, retentionConfig);
 
     // Delete all sessions that need to be deleted
     for (const sessionToDelete of sessionsToDelete) {
@@ -88,9 +82,7 @@ export async function cleanupExpiredSessions(
 
         if (config.getDebugMode()) {
           if (sessionToDelete.sessionInfo === null) {
-            debugLogger.debug(
-              `Deleted corrupted session file: ${sessionToDelete.fileName}`,
-            );
+            debugLogger.debug(`Deleted corrupted session file: ${sessionToDelete.fileName}`);
           } else {
             debugLogger.debug(
               `Deleted expired session: ${sessionToDelete.sessionInfo.id} (${sessionToDelete.sessionInfo.lastUpdated})`,
@@ -100,11 +92,7 @@ export async function cleanupExpiredSessions(
         result.deleted++;
       } catch (error) {
         // Ignore ENOENT errors (file already deleted)
-        if (
-          error instanceof Error &&
-          'code' in error &&
-          error.code === 'ENOENT'
-        ) {
+        if (error instanceof Error && "code" in error && error.code === "ENOENT") {
           // File already deleted, do nothing.
         } else {
           // Log error directly to console
@@ -112,11 +100,8 @@ export async function cleanupExpiredSessions(
             sessionToDelete.sessionInfo === null
               ? sessionToDelete.fileName
               : sessionToDelete.sessionInfo.id;
-          const errorMessage =
-            error instanceof Error ? error.message : 'Unknown error';
-          console.error(
-            `Failed to delete session ${sessionId}: ${errorMessage}`,
-          );
+          const errorMessage = error instanceof Error ? error.message : "Unknown error";
+          console.error(`Failed to delete session ${sessionId}: ${errorMessage}`);
           result.failed++;
         }
       }
@@ -131,8 +116,7 @@ export async function cleanupExpiredSessions(
     }
   } catch (error) {
     // Global error handler - don't let cleanup failures break startup
-    const errorMessage =
-      error instanceof Error ? error.message : 'Unknown error';
+    const errorMessage = error instanceof Error ? error.message : "Unknown error";
     console.error(`Session cleanup failed: ${errorMessage}`);
     result.failed++;
   }
@@ -150,9 +134,7 @@ async function identifySessionsToDelete(
   const sessionsToDelete: SessionFileEntry[] = [];
 
   // All corrupted files should be deleted
-  sessionsToDelete.push(
-    ...allFiles.filter((entry) => entry.sessionInfo === null),
-  );
+  sessionsToDelete.push(...allFiles.filter((entry) => entry.sessionInfo === null));
 
   // Now handle valid sessions based on retention policy
   const validSessions = allFiles.filter((entry) => entry.sessionInfo !== null);
@@ -188,9 +170,7 @@ async function identifySessionsToDelete(
   );
 
   // Calculate how many deletable sessions to keep (accounting for the active session)
-  const hasActiveSession = sortedValidSessions.some(
-    (e) => e.sessionInfo!.isCurrentSession,
-  );
+  const hasActiveSession = sortedValidSessions.some((e) => e.sessionInfo!.isCurrentSession);
   const maxDeletableSessions =
     retentionConfig.maxCount && hasActiveSession
       ? Math.max(0, retentionConfig.maxCount - 1)
@@ -237,9 +217,7 @@ function parseRetentionPeriod(period: string): number {
 
   // Reject zero values as they're semantically invalid
   if (value === 0) {
-    throw new Error(
-      `Invalid retention period: ${period}. Value must be greater than 0`,
-    );
+    throw new Error(`Invalid retention period: ${period}. Value must be greater than 0`);
   }
 
   return value * MULTIPLIERS[unit as keyof typeof MULTIPLIERS];
@@ -253,7 +231,7 @@ function validateRetentionConfig(
   retentionConfig: SessionRetentionSettings,
 ): string | null {
   if (!retentionConfig.enabled) {
-    return 'Retention not enabled';
+    return "Retention not enabled";
   }
 
   // Validate maxAge if provided
@@ -292,7 +270,7 @@ function validateRetentionConfig(
 
   // At least one retention method must be specified
   if (!retentionConfig.maxAge && retentionConfig.maxCount === undefined) {
-    return 'Either maxAge or maxCount must be specified';
+    return "Either maxAge or maxCount must be specified";
   }
 
   return null;

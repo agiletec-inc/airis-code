@@ -4,9 +4,12 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import path from 'node:path';
-import fs from 'node:fs';
-import os from 'node:os';
+import fs from "node:fs";
+import os from "node:os";
+import path from "node:path";
+import process from "node:process";
+import { CodebaseInvestigatorAgent } from "../agents/codebase-investigator.js";
+import type { Config } from "../config/config.js";
 import {
   EDIT_TOOL_NAME,
   GLOB_TOOL_NAME,
@@ -16,14 +19,11 @@ import {
   SHELL_TOOL_NAME,
   WRITE_FILE_TOOL_NAME,
   WRITE_TODOS_TOOL_NAME,
-} from '../tools/tool-names.js';
-import process from 'node:process';
-import { isGitRepository } from '../utils/gitUtils.js';
-import { CodebaseInvestigatorAgent } from '../agents/codebase-investigator.js';
-import type { Config } from '../config/config.js';
-import { GEMINI_DIR } from '../utils/paths.js';
-import { debugLogger } from '../utils/debugLogger.js';
-import { WriteTodosTool } from '../tools/write-todos.js';
+} from "../tools/tool-names.js";
+import { WriteTodosTool } from "../tools/write-todos.js";
+import { debugLogger } from "../utils/debugLogger.js";
+import { isGitRepository } from "../utils/gitUtils.js";
+import { GEMINI_DIR } from "../utils/paths.js";
 
 export function resolvePathFromEnv(envVar?: string): {
   isSwitch: boolean;
@@ -38,9 +38,9 @@ export function resolvePathFromEnv(envVar?: string): {
 
   const lowerEnvVar = trimmedEnvVar.toLowerCase();
   // Check if the input is a common boolean-like string.
-  if (['0', 'false', '1', 'true'].includes(lowerEnvVar)) {
+  if (["0", "false", "1", "true"].includes(lowerEnvVar)) {
     // If so, identify it as a "switch" and return its value.
-    const isDisabled = ['0', 'false'].includes(lowerEnvVar);
+    const isDisabled = ["0", "false"].includes(lowerEnvVar);
     return { isSwitch: true, value: lowerEnvVar, isDisabled };
   }
 
@@ -48,20 +48,17 @@ export function resolvePathFromEnv(envVar?: string): {
   let customPath = trimmedEnvVar;
 
   // Safely expand the tilde (~) character to the user's home directory.
-  if (customPath.startsWith('~/') || customPath === '~') {
+  if (customPath.startsWith("~/") || customPath === "~") {
     try {
       const home = os.homedir(); // This is the call that can throw an error.
-      if (customPath === '~') {
+      if (customPath === "~") {
         customPath = home;
       } else {
         customPath = path.join(home, customPath.slice(2));
       }
     } catch (error) {
       // If os.homedir() fails, we catch the error instead of crashing.
-      debugLogger.warn(
-        `Could not resolve home directory for path: ${trimmedEnvVar}`,
-        error,
-      );
+      debugLogger.warn(`Could not resolve home directory for path: ${trimmedEnvVar}`, error);
       // Return null to indicate the path resolution failed.
       return { isSwitch: false, value: null, isDisabled: false };
     }
@@ -75,18 +72,13 @@ export function resolvePathFromEnv(envVar?: string): {
   };
 }
 
-export function getCoreSystemPrompt(
-  config: Config,
-  userMemory?: string,
-): string {
+export function getCoreSystemPrompt(config: Config, userMemory?: string): string {
   // A flag to indicate whether the system prompt override is active.
   let systemMdEnabled = false;
   // The default path for the system prompt file. This can be overridden.
-  let systemMdPath = path.resolve(path.join(GEMINI_DIR, 'system.md'));
+  let systemMdPath = path.resolve(path.join(GEMINI_DIR, "system.md"));
   // Resolve the environment variable to get either a path or a switch value.
-  const systemMdResolution = resolvePathFromEnv(
-    process.env['GEMINI_SYSTEM_MD'],
-  );
+  const systemMdResolution = resolvePathFromEnv(process.env["GEMINI_SYSTEM_MD"]);
 
   // Proceed only if the environment variable is set and is not disabled.
   if (systemMdResolution.value && !systemMdResolution.isDisabled) {
@@ -114,7 +106,7 @@ export function getCoreSystemPrompt(
 
   let basePrompt: string;
   if (systemMdEnabled) {
-    basePrompt = fs.readFileSync(systemMdPath, 'utf8');
+    basePrompt = fs.readFileSync(systemMdPath, "utf8");
   } else {
     const promptConfig = {
       preamble: `You are an interactive CLI agent specializing in software engineering tasks. Your primary goal is to help users safely and efficiently, adhering strictly to the following instructions and utilizing your available tools.`,
@@ -205,7 +197,7 @@ IT IS CRITICAL TO FOLLOW THESE GUIDELINES TO AVOID EXCESSIVE TOKEN CONSUMPTION.
 - After the command runs, inspect the temp files (e.g. '<temp_dir>/out.log' and '<temp_dir>/err.log') using commands like 'grep', 'tail', 'head', ... (or platform equivalents). Remove the temp files when done.
 `;
   }
-  return '';
+  return "";
 })()}
 
 ## Tone and Style (CLI Interaction)
@@ -241,8 +233,8 @@ ${(function () {
       sandbox: `
 ${(function () {
   // Determine sandbox status based on environment variables
-  const isSandboxExec = process.env['SANDBOX'] === 'sandbox-exec';
-  const isGenericSandbox = !!process.env['SANDBOX']; // Check if SANDBOX is set to any non-empty value
+  const isSandboxExec = process.env["SANDBOX"] === "sandbox-exec";
+  const isGenericSandbox = !!process.env["SANDBOX"]; // Check if SANDBOX is set to any non-empty value
 
   if (isSandboxExec) {
     return `
@@ -281,33 +273,30 @@ ${(function () {
 - Never push changes to a remote repository without being asked explicitly by the user.
 `;
   }
-  return '';
+  return "";
 })()}`,
       finalReminder: `
 # Final Reminder
 Your core function is efficient and safe assistance. Balance extreme conciseness with the crucial need for clarity, especially regarding safety and potential system modifications. Always prioritize user control and project conventions. Never make assumptions about the contents of files; instead use '${READ_FILE_TOOL_NAME}' to ensure you aren't making broad assumptions. Finally, you are an agent - please keep going until the user's query is completely resolved.`,
     };
 
-    const orderedPrompts: Array<keyof typeof promptConfig> = [
-      'preamble',
-      'coreMandates',
-    ];
+    const orderedPrompts: Array<keyof typeof promptConfig> = ["preamble", "coreMandates"];
 
     if (enableCodebaseInvestigator && enableWriteTodosTool) {
-      orderedPrompts.push('primaryWorkflows_prefix_ci_todo');
+      orderedPrompts.push("primaryWorkflows_prefix_ci_todo");
     } else if (enableCodebaseInvestigator) {
-      orderedPrompts.push('primaryWorkflows_prefix_ci');
+      orderedPrompts.push("primaryWorkflows_prefix_ci");
     } else if (enableWriteTodosTool) {
-      orderedPrompts.push('primaryWorkflows_todo');
+      orderedPrompts.push("primaryWorkflows_todo");
     } else {
-      orderedPrompts.push('primaryWorkflows_prefix');
+      orderedPrompts.push("primaryWorkflows_prefix");
     }
     orderedPrompts.push(
-      'primaryWorkflows_suffix',
-      'operationalGuidelines',
-      'sandbox',
-      'git',
-      'finalReminder',
+      "primaryWorkflows_suffix",
+      "operationalGuidelines",
+      "sandbox",
+      "git",
+      "finalReminder",
     );
 
     // By default, all prompts are enabled. A prompt is disabled if its corresponding
@@ -315,16 +304,14 @@ Your core function is efficient and safe assistance. Balance extreme conciseness
     const enabledPrompts = orderedPrompts.filter((key) => {
       const envVar = process.env[`GEMINI_PROMPT_${key.toUpperCase()}`];
       const lowerEnvVar = envVar?.trim().toLowerCase();
-      return lowerEnvVar !== '0' && lowerEnvVar !== 'false';
+      return lowerEnvVar !== "0" && lowerEnvVar !== "false";
     });
 
-    basePrompt = enabledPrompts.map((key) => promptConfig[key]).join('\n');
+    basePrompt = enabledPrompts.map((key) => promptConfig[key]).join("\n");
   }
 
   // if GEMINI_WRITE_SYSTEM_MD is set (and not 0|false), write base system prompt to file
-  const writeSystemMdResolution = resolvePathFromEnv(
-    process.env['GEMINI_WRITE_SYSTEM_MD'],
-  );
+  const writeSystemMdResolution = resolvePathFromEnv(process.env["GEMINI_WRITE_SYSTEM_MD"]);
 
   // Check if the feature is enabled. This proceeds only if the environment
   // variable is set and is not explicitly '0' or 'false'.
@@ -338,9 +325,7 @@ Your core function is efficient and safe assistance. Balance extreme conciseness
   }
 
   const memorySuffix =
-    userMemory && userMemory.trim().length > 0
-      ? `\n\n---\n\n${userMemory.trim()}`
-      : '';
+    userMemory && userMemory.trim().length > 0 ? `\n\n---\n\n${userMemory.trim()}` : "";
 
   return `${basePrompt}${memorySuffix}`;
 }

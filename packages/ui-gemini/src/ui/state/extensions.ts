@@ -4,19 +4,19 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import type { ExtensionUpdateInfo } from '../../config/extension.js';
-import { checkExhaustive } from '../../utils/checks.js';
+import type { ExtensionUpdateInfo } from "../../config/extension.js";
+import { checkExhaustive } from "../../utils/checks.js";
 
 export enum ExtensionUpdateState {
-  CHECKING_FOR_UPDATES = 'checking for updates',
-  UPDATED_NEEDS_RESTART = 'updated, needs restart',
-  UPDATED = 'updated',
-  UPDATING = 'updating',
-  UPDATE_AVAILABLE = 'update available',
-  UP_TO_DATE = 'up to date',
-  ERROR = 'error',
-  NOT_UPDATABLE = 'not updatable',
-  UNKNOWN = 'unknown',
+  CHECKING_FOR_UPDATES = "checking for updates",
+  UPDATED_NEEDS_RESTART = "updated, needs restart",
+  UPDATED = "updated",
+  UPDATING = "updating",
+  UPDATE_AVAILABLE = "update available",
+  UP_TO_DATE = "up to date",
+  ERROR = "error",
+  NOT_UPDATABLE = "not updatable",
+  UNKNOWN = "unknown",
 }
 
 export interface ExtensionUpdateStatus {
@@ -53,25 +53,25 @@ export const initialExtensionUpdatesState: ExtensionUpdatesState = {
 
 export type ExtensionUpdateAction =
   | {
-      type: 'SET_STATE';
+      type: "SET_STATE";
       payload: { name: string; state: ExtensionUpdateState };
     }
   | {
-      type: 'SET_NOTIFIED';
+      type: "SET_NOTIFIED";
       payload: { name: string; notified: boolean };
     }
-  | { type: 'BATCH_CHECK_START' }
-  | { type: 'BATCH_CHECK_END' }
-  | { type: 'SCHEDULE_UPDATE'; payload: ScheduleUpdateArgs }
-  | { type: 'CLEAR_SCHEDULED_UPDATE' }
-  | { type: 'RESTARTED'; payload: { name: string } };
+  | { type: "BATCH_CHECK_START" }
+  | { type: "BATCH_CHECK_END" }
+  | { type: "SCHEDULE_UPDATE"; payload: ScheduleUpdateArgs }
+  | { type: "CLEAR_SCHEDULED_UPDATE" }
+  | { type: "RESTARTED"; payload: { name: string } };
 
 export function extensionUpdatesReducer(
   state: ExtensionUpdatesState,
   action: ExtensionUpdateAction,
 ): ExtensionUpdatesState {
   switch (action.type) {
-    case 'SET_STATE': {
+    case "SET_STATE": {
       const existing = state.extensionStatuses.get(action.payload.name);
       if (existing?.status === action.payload.state) {
         return state;
@@ -83,7 +83,7 @@ export function extensionUpdatesReducer(
       });
       return { ...state, extensionStatuses: newStatuses };
     }
-    case 'SET_NOTIFIED': {
+    case "SET_NOTIFIED": {
       const existing = state.extensionStatuses.get(action.payload.name);
       if (!existing || existing.notified === action.payload.notified) {
         return state;
@@ -95,38 +95,35 @@ export function extensionUpdatesReducer(
       });
       return { ...state, extensionStatuses: newStatuses };
     }
-    case 'BATCH_CHECK_START':
+    case "BATCH_CHECK_START":
       return {
         ...state,
         batchChecksInProgress: state.batchChecksInProgress + 1,
       };
-    case 'BATCH_CHECK_END':
+    case "BATCH_CHECK_END":
       return {
         ...state,
         batchChecksInProgress: state.batchChecksInProgress - 1,
       };
-    case 'SCHEDULE_UPDATE':
+    case "SCHEDULE_UPDATE":
       return {
         ...state,
         // If there is a pre-existing scheduled update, we merge them.
         scheduledUpdate: {
           all: state.scheduledUpdate?.all || action.payload.all,
-          names: [
-            ...(state.scheduledUpdate?.names ?? []),
-            ...(action.payload.names ?? []),
-          ],
+          names: [...(state.scheduledUpdate?.names ?? []), ...(action.payload.names ?? [])],
           onCompleteCallbacks: [
             ...(state.scheduledUpdate?.onCompleteCallbacks ?? []),
             action.payload.onComplete,
           ],
         },
       };
-    case 'CLEAR_SCHEDULED_UPDATE':
+    case "CLEAR_SCHEDULED_UPDATE":
       return {
         ...state,
         scheduledUpdate: null,
       };
-    case 'RESTARTED': {
+    case "RESTARTED": {
       const existing = state.extensionStatuses.get(action.payload.name);
       if (existing?.status !== ExtensionUpdateState.UPDATED_NEEDS_RESTART) {
         return state;

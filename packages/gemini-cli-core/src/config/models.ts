@@ -4,10 +4,10 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-export const PREVIEW_GEMINI_MODEL = 'gemini-3-pro-preview';
-export const DEFAULT_GEMINI_MODEL = 'gemini-2.5-pro';
-export const DEFAULT_GEMINI_FLASH_MODEL = 'gemini-2.5-flash';
-export const DEFAULT_GEMINI_FLASH_LITE_MODEL = 'gemini-2.5-flash-lite';
+export const PREVIEW_GEMINI_MODEL = "gemini-3-pro-preview";
+export const DEFAULT_GEMINI_MODEL = "gemini-2.5-pro";
+export const DEFAULT_GEMINI_FLASH_MODEL = "gemini-2.5-flash";
+export const DEFAULT_GEMINI_FLASH_LITE_MODEL = "gemini-2.5-flash-lite";
 
 export const VALID_GEMINI_MODELS = new Set([
   PREVIEW_GEMINI_MODEL,
@@ -16,14 +16,14 @@ export const VALID_GEMINI_MODELS = new Set([
   DEFAULT_GEMINI_FLASH_LITE_MODEL,
 ]);
 
-export const DEFAULT_GEMINI_MODEL_AUTO = 'auto';
+export const DEFAULT_GEMINI_MODEL_AUTO = "auto";
 
 // Model aliases for user convenience.
-export const GEMINI_MODEL_ALIAS_PRO = 'pro';
-export const GEMINI_MODEL_ALIAS_FLASH = 'flash';
-export const GEMINI_MODEL_ALIAS_FLASH_LITE = 'flash-lite';
+export const GEMINI_MODEL_ALIAS_PRO = "pro";
+export const GEMINI_MODEL_ALIAS_FLASH = "flash";
+export const GEMINI_MODEL_ALIAS_FLASH_LITE = "flash-lite";
 
-export const DEFAULT_GEMINI_EMBEDDING_MODEL = 'gemini-embedding-001';
+export const DEFAULT_GEMINI_EMBEDDING_MODEL = "gemini-embedding-001";
 
 // Cap the thinking at 8192 to prevent run-away thinking loops.
 export const DEFAULT_THINKING_MODE = 8192;
@@ -43,9 +43,7 @@ export function resolveModel(
   switch (requestedModel) {
     case DEFAULT_GEMINI_MODEL_AUTO:
     case GEMINI_MODEL_ALIAS_PRO: {
-      return previewFeaturesEnabled
-        ? PREVIEW_GEMINI_MODEL
-        : DEFAULT_GEMINI_MODEL;
+      return previewFeaturesEnabled ? PREVIEW_GEMINI_MODEL : DEFAULT_GEMINI_MODEL;
     }
     case GEMINI_MODEL_ALIAS_FLASH: {
       return DEFAULT_GEMINI_FLASH_MODEL;
@@ -87,7 +85,7 @@ export function getEffectiveModel(
 
   // If a "lite" model is requested, honor it. This allows for variations of
   // lite models without needing to list them all as constants.
-  if (resolvedModel.includes('lite')) {
+  if (resolvedModel.includes("lite")) {
     return resolvedModel;
   }
 

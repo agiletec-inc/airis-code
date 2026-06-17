@@ -4,23 +4,18 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import type { ToolInvocation } from './tools.js';
+import type { MessageBus } from "../confirmation-bus/message-bus.js";
+import { WRITE_TODOS_TOOL_NAME } from "./tool-names.js";
+import type { ToolInvocation } from "./tools.js";
 import {
   BaseDeclarativeTool,
   BaseToolInvocation,
   Kind,
   type Todo,
   type ToolResult,
-} from './tools.js';
-import type { MessageBus } from '../confirmation-bus/message-bus.js';
-import { WRITE_TODOS_TOOL_NAME } from './tool-names.js';
+} from "./tools.js";
 
-const TODO_STATUSES = [
-  'pending',
-  'in_progress',
-  'completed',
-  'cancelled',
-] as const;
+const TODO_STATUSES = ["pending", "in_progress", "completed", "cancelled"] as const;
 
 // Inspired by langchain/deepagents.
 export const WRITE_TODOS_DESCRIPTION = `This tool can help you list out the current subtasks that are required to be completed for a given user request. The list of subtasks helps you keep track of the current task, organize complex queries and help ensure that you don't miss any steps. With this list, the user can also see the current progress you are making in executing a given task.
@@ -95,10 +90,7 @@ export interface WriteTodosToolParams {
   todos: Todo[];
 }
 
-class WriteTodosToolInvocation extends BaseToolInvocation<
-  WriteTodosToolParams,
-  ToolResult
-> {
+class WriteTodosToolInvocation extends BaseToolInvocation<WriteTodosToolParams, ToolResult> {
   constructor(
     params: WriteTodosToolParams,
     messageBus?: MessageBus,
@@ -111,7 +103,7 @@ class WriteTodosToolInvocation extends BaseToolInvocation<
   getDescription(): string {
     const count = this.params.todos?.length ?? 0;
     if (count === 0) {
-      return 'Cleared todo list';
+      return "Cleared todo list";
     }
     return `Set ${count} todo(s)`;
   }
@@ -122,15 +114,13 @@ class WriteTodosToolInvocation extends BaseToolInvocation<
   ): Promise<ToolResult> {
     const todos = this.params.todos ?? [];
     const todoListString = todos
-      .map(
-        (todo, index) => `${index + 1}. [${todo.status}] ${todo.description}`,
-      )
-      .join('\n');
+      .map((todo, index) => `${index + 1}. [${todo.status}] ${todo.description}`)
+      .join("\n");
 
     const llmContent =
       todos.length > 0
         ? `Successfully updated the todo list. The current list is now:\n${todoListString}`
-        : 'Successfully cleared the todo list.';
+        : "Successfully cleared the todo list.";
 
     return {
       llmContent,
@@ -139,71 +129,57 @@ class WriteTodosToolInvocation extends BaseToolInvocation<
   }
 }
 
-export class WriteTodosTool extends BaseDeclarativeTool<
-  WriteTodosToolParams,
-  ToolResult
-> {
+export class WriteTodosTool extends BaseDeclarativeTool<WriteTodosToolParams, ToolResult> {
   static readonly Name = WRITE_TODOS_TOOL_NAME;
 
   constructor() {
-    super(
-      WriteTodosTool.Name,
-      'WriteTodos',
-      WRITE_TODOS_DESCRIPTION,
-      Kind.Other,
-      {
-        type: 'object',
-        properties: {
-          todos: {
-            type: 'array',
-            description:
-              'The complete list of todo items. This will replace the existing list.',
-            items: {
-              type: 'object',
-              description: 'A single todo item.',
-              properties: {
-                description: {
-                  type: 'string',
-                  description: 'The description of the task.',
-                },
-                status: {
-                  type: 'string',
-                  description: 'The current status of the task.',
-                  enum: TODO_STATUSES,
-                },
+    super(WriteTodosTool.Name, "WriteTodos", WRITE_TODOS_DESCRIPTION, Kind.Other, {
+      type: "object",
+      properties: {
+        todos: {
+          type: "array",
+          description: "The complete list of todo items. This will replace the existing list.",
+          items: {
+            type: "object",
+            description: "A single todo item.",
+            properties: {
+              description: {
+                type: "string",
+                description: "The description of the task.",
               },
-              required: ['description', 'status'],
+              status: {
+                type: "string",
+                description: "The current status of the task.",
+                enum: TODO_STATUSES,
+              },
             },
+            required: ["description", "status"],
           },
         },
-        required: ['todos'],
       },
-    );
+      required: ["todos"],
+    });
   }
 
-  protected override validateToolParamValues(
-    params: WriteTodosToolParams,
-  ): string | null {
+  protected override validateToolParamValues(params: WriteTodosToolParams): string | null {
     const todos = params?.todos;
     if (!params || !Array.isArray(todos)) {
-      return '`todos` parameter must be an array';
+      return "`todos` parameter must be an array";
     }
 
     for (const todo of todos) {
-      if (typeof todo !== 'object' || todo === null) {
-        return 'Each todo item must be an object';
+      if (typeof todo !== "object" || todo === null) {
+        return "Each todo item must be an object";
       }
-      if (typeof todo.description !== 'string' || !todo.description.trim()) {
-        return 'Each todo must have a non-empty description string';
+      if (typeof todo.description !== "string" || !todo.description.trim()) {
+        return "Each todo must have a non-empty description string";
       }
       if (!TODO_STATUSES.includes(todo.status)) {
-        return `Each todo must have a valid status (${TODO_STATUSES.join(', ')})`;
+        return `Each todo must have a valid status (${TODO_STATUSES.join(", ")})`;
       }
     }
 
-    const inProgressCount = todos.filter(
-      (todo: Todo) => todo.status === 'in_progress',
-    ).length;
+    const inProgressCount = todos.filter((todo: Todo) => todo.status === "in_progress").length;
 
     if (inProgressCount > 1) {
       return 'Invalid parameters: Only one task can be "in_progress" at a time.';
@@ -218,11 +194,6 @@ export class WriteTodosTool extends BaseDeclarativeTool<
     _toolName?: string,
     _displayName?: string,
   ): ToolInvocation<WriteTodosToolParams, ToolResult> {
-    return new WriteTodosToolInvocation(
-      params,
-      _messageBus,
-      _toolName,
-      _displayName,
-    );
+    return new WriteTodosToolInvocation(params, _messageBus, _toolName, _displayName);
   }
 }

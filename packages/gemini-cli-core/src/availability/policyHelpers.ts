@@ -4,27 +4,24 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import type { GenerateContentConfig } from '@google/genai';
-import type { Config } from '../config/config.js';
+import type { GenerateContentConfig } from "@google/genai";
+import type { Config } from "../config/config.js";
+import { DEFAULT_GEMINI_MODEL, getEffectiveModel } from "../config/models.js";
+import type { ModelSelectionResult } from "./modelAvailabilityService.js";
 import type {
   FailureKind,
   FallbackAction,
   ModelPolicy,
   ModelPolicyChain,
   RetryAvailabilityContext,
-} from './modelPolicy.js';
-import { createDefaultPolicy, getModelPolicyChain } from './policyCatalog.js';
-import { DEFAULT_GEMINI_MODEL, getEffectiveModel } from '../config/models.js';
-import type { ModelSelectionResult } from './modelAvailabilityService.js';
+} from "./modelPolicy.js";
+import { createDefaultPolicy, getModelPolicyChain } from "./policyCatalog.js";
 
 /**
  * Resolves the active policy chain for the given config, ensuring the
  * user-selected active model is represented.
  */
-export function resolvePolicyChain(
-  config: Config,
-  preferredModel?: string,
-): ModelPolicyChain {
+export function resolvePolicyChain(config: Config, preferredModel?: string): ModelPolicyChain {
   const chain = getModelPolicyChain({
     previewEnabled: !!config.getPreviewFeatures(),
     userTier: config.getUserTier(),
@@ -33,13 +30,9 @@ export function resolvePolicyChain(
   // Switch to getActiveModel()
   const activeModel =
     preferredModel ??
-    getEffectiveModel(
-      config.isInFallbackMode(),
-      config.getModel(),
-      config.getPreviewFeatures(),
-    );
+    getEffectiveModel(config.isInFallbackMode(), config.getModel(), config.getPreviewFeatures());
 
-  if (activeModel === 'auto') {
+  if (activeModel === "auto") {
     return [...chain];
   }
 
@@ -75,11 +68,8 @@ export function buildFallbackPolicyContext(
   };
 }
 
-export function resolvePolicyAction(
-  failureKind: FailureKind,
-  policy: ModelPolicy,
-): FallbackAction {
-  return policy.actions?.[failureKind] ?? 'prompt';
+export function resolvePolicyAction(failureKind: FailureKind, policy: ModelPolicy): FallbackAction {
+  return policy.actions?.[failureKind] ?? "prompt";
 }
 
 /**
@@ -127,8 +117,7 @@ export function selectModelForAvailability(
 
   if (selection.selectedModel) return selection;
 
-  const backupModel =
-    chain.find((p) => p.isLastResort)?.model ?? DEFAULT_GEMINI_MODEL;
+  const backupModel = chain.find((p) => p.isLastResort)?.model ?? DEFAULT_GEMINI_MODEL;
 
   return { selectedModel: backupModel, skipped: [] };
 }
@@ -155,11 +144,10 @@ export function applyModelSelection(
 
   // If model changed, re-resolve config
   if (finalModel !== requestedModel) {
-    const { generateContentConfig } =
-      config.modelConfigService.getResolvedConfig({
-        overrideScope,
-        model: finalModel,
-      });
+    const { generateContentConfig } = config.modelConfigService.getResolvedConfig({
+      overrideScope,
+      model: finalModel,
+    });
 
     finalConfig = currentConfig
       ? { ...currentConfig, ...generateContentConfig }
@@ -189,12 +177,12 @@ export function applyAvailabilityTransition(
   const transition = context.policy.stateTransitions?.[failureKind];
   if (!transition) return;
 
-  if (transition === 'terminal') {
+  if (transition === "terminal") {
     context.service.markTerminal(
       context.policy.model,
-      failureKind === 'terminal' ? 'quota' : 'capacity',
+      failureKind === "terminal" ? "quota" : "capacity",
     );
-  } else if (transition === 'sticky_retry') {
+  } else if (transition === "sticky_retry") {
     context.service.markRetryOncePerTurn(context.policy.model);
   }
 }

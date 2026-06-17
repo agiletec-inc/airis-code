@@ -4,11 +4,11 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import type React from 'react';
-import { Box } from 'ink';
-import { MarkdownDisplay } from '../../utils/MarkdownDisplay.js';
-import { useUIState } from '../../contexts/UIStateContext.js';
-import { useAlternateBuffer } from '../../hooks/useAlternateBuffer.js';
+import { Box } from "ink";
+import type React from "react";
+import { useUIState } from "../../contexts/UIStateContext.js";
+import { useAlternateBuffer } from "../../hooks/useAlternateBuffer.js";
+import { MarkdownDisplay } from "../../utils/MarkdownDisplay.js";
 
 interface GeminiMessageContentProps {
   text: string;
@@ -31,7 +31,7 @@ export const GeminiMessageContent: React.FC<GeminiMessageContentProps> = ({
 }) => {
   const { renderMarkdown } = useUIState();
   const isAlternateBuffer = useAlternateBuffer();
-  const originalPrefix = '✦ ';
+  const originalPrefix = "✦ ";
   const prefixWidth = originalPrefix.length;
 
   return (
@@ -39,9 +39,7 @@ export const GeminiMessageContent: React.FC<GeminiMessageContentProps> = ({
       <MarkdownDisplay
         text={text}
         isPending={isPending}
-        availableTerminalHeight={
-          isAlternateBuffer ? undefined : availableTerminalHeight
-        }
+        availableTerminalHeight={isAlternateBuffer ? undefined : availableTerminalHeight}
         terminalWidth={terminalWidth}
         renderMarkdown={renderMarkdown}
       />

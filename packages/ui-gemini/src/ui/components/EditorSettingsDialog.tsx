@@ -4,32 +4,23 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import type React from 'react';
-import { useState } from 'react';
-import { Box, Text } from 'ink';
-import { theme } from '../semantic-colors.js';
 import {
-  editorSettingsManager,
-  type EditorDisplay,
-} from '../editors/editorSettingsManager.js';
-import { RadioButtonSelect } from './shared/RadioButtonSelect.js';
-import type {
-  LoadableSettingScope,
-  LoadedSettings,
-} from '../../config/settings.js';
-import { SettingScope } from '../../config/settings.js';
-import {
+  EDITOR_DISPLAY_NAMES,
   type EditorType,
   isEditorAvailable,
-  EDITOR_DISPLAY_NAMES,
-} from '@airiscode/gemini-cli-core';
-import { useKeypress } from '../hooks/useKeypress.js';
+} from "@airiscode/gemini-cli-core";
+import { Box, Text } from "ink";
+import type React from "react";
+import { useState } from "react";
+import type { LoadableSettingScope, LoadedSettings } from "../../config/settings.js";
+import { SettingScope } from "../../config/settings.js";
+import { type EditorDisplay, editorSettingsManager } from "../editors/editorSettingsManager.js";
+import { useKeypress } from "../hooks/useKeypress.js";
+import { theme } from "../semantic-colors.js";
+import { RadioButtonSelect } from "./shared/RadioButtonSelect.js";
 
 interface EditorDialogProps {
-  onSelect: (
-    editorType: EditorType | undefined,
-    scope: LoadableSettingScope,
-  ) => void;
+  onSelect: (editorType: EditorType | undefined, scope: LoadableSettingScope) => void;
   settings: LoadedSettings;
   onExit: () => void;
 }
@@ -39,33 +30,25 @@ export function EditorSettingsDialog({
   settings,
   onExit,
 }: EditorDialogProps): React.JSX.Element {
-  const [selectedScope, setSelectedScope] = useState<LoadableSettingScope>(
-    SettingScope.User,
-  );
-  const [focusedSection, setFocusedSection] = useState<'editor' | 'scope'>(
-    'editor',
-  );
+  const [selectedScope, setSelectedScope] = useState<LoadableSettingScope>(SettingScope.User);
+  const [focusedSection, setFocusedSection] = useState<"editor" | "scope">("editor");
   useKeypress(
     (key) => {
-      if (key.name === 'tab') {
-        setFocusedSection((prev) => (prev === 'editor' ? 'scope' : 'editor'));
+      if (key.name === "tab") {
+        setFocusedSection((prev) => (prev === "editor" ? "scope" : "editor"));
       }
-      if (key.name === 'escape') {
+      if (key.name === "escape") {
         onExit();
       }
     },
     { isActive: true },
   );
 
-  const editorItems: EditorDisplay[] =
-    editorSettingsManager.getAvailableEditorDisplays();
+  const editorItems: EditorDisplay[] = editorSettingsManager.getAvailableEditorDisplays();
 
-  const currentPreference =
-    settings.forScope(selectedScope).settings.general?.preferredEditor;
+  const currentPreference = settings.forScope(selectedScope).settings.general?.preferredEditor;
   let editorIndex = currentPreference
-    ? editorItems.findIndex(
-        (item: EditorDisplay) => item.type === currentPreference,
-      )
+    ? editorItems.findIndex((item: EditorDisplay) => item.type === currentPreference)
     : 0;
   if (editorIndex === -1) {
     console.error(`Editor is not supported: ${currentPreference}`);
@@ -78,19 +61,19 @@ export function EditorSettingsDialog({
     key: string;
   }> = [
     {
-      label: 'User Settings',
+      label: "User Settings",
       value: SettingScope.User,
       key: SettingScope.User,
     },
     {
-      label: 'Workspace Settings',
+      label: "Workspace Settings",
       value: SettingScope.Workspace,
       key: SettingScope.Workspace,
     },
   ];
 
-  const handleEditorSelect = (editorType: EditorType | 'not_set') => {
-    if (editorType === 'not_set') {
+  const handleEditorSelect = (editorType: EditorType | "not_set") => {
+    if (editorType === "not_set") {
       onSelect(undefined, selectedScope);
       return;
     }
@@ -99,34 +82,25 @@ export function EditorSettingsDialog({
 
   const handleScopeSelect = (scope: LoadableSettingScope) => {
     setSelectedScope(scope);
-    setFocusedSection('editor');
+    setFocusedSection("editor");
   };
 
-  let otherScopeModifiedMessage = '';
+  let otherScopeModifiedMessage = "";
   const otherScope =
-    selectedScope === SettingScope.User
-      ? SettingScope.Workspace
-      : SettingScope.User;
-  if (
-    settings.forScope(otherScope).settings.general?.preferredEditor !==
-    undefined
-  ) {
+    selectedScope === SettingScope.User ? SettingScope.Workspace : SettingScope.User;
+  if (settings.forScope(otherScope).settings.general?.preferredEditor !== undefined) {
     otherScopeModifiedMessage =
-      settings.forScope(selectedScope).settings.general?.preferredEditor !==
-      undefined
+      settings.forScope(selectedScope).settings.general?.preferredEditor !== undefined
         ? `(Also modified in ${otherScope})`
         : `(Modified in ${otherScope})`;
   }
 
-  let mergedEditorName = 'None';
+  let mergedEditorName = "None";
   if (
     settings.merged.general?.preferredEditor &&
     isEditorAvailable(settings.merged.general?.preferredEditor)
   ) {
-    mergedEditorName =
-      EDITOR_DISPLAY_NAMES[
-        settings.merged.general?.preferredEditor as EditorType
-      ];
+    mergedEditorName = EDITOR_DISPLAY_NAMES[settings.merged.general?.preferredEditor as EditorType];
   }
 
   return (
@@ -138,8 +112,8 @@ export function EditorSettingsDialog({
       width="100%"
     >
       <Box flexDirection="column" width="45%" paddingRight={2}>
-        <Text bold={focusedSection === 'editor'}>
-          {focusedSection === 'editor' ? '> ' : '  '}Select Editor{' '}
+        <Text bold={focusedSection === "editor"}>
+          {focusedSection === "editor" ? "> " : "  "}Select Editor{" "}
           <Text color={theme.text.secondary}>{otherScopeModifiedMessage}</Text>
         </Text>
         <RadioButtonSelect
@@ -151,19 +125,19 @@ export function EditorSettingsDialog({
           }))}
           initialIndex={editorIndex}
           onSelect={handleEditorSelect}
-          isFocused={focusedSection === 'editor'}
+          isFocused={focusedSection === "editor"}
           key={selectedScope}
         />
 
         <Box marginTop={1} flexDirection="column">
-          <Text bold={focusedSection === 'scope'}>
-            {focusedSection === 'scope' ? '> ' : '  '}Apply To
+          <Text bold={focusedSection === "scope"}>
+            {focusedSection === "scope" ? "> " : "  "}Apply To
           </Text>
           <RadioButtonSelect
             items={scopeItems}
             initialIndex={0}
             onSelect={handleScopeSelect}
-            isFocused={focusedSection === 'scope'}
+            isFocused={focusedSection === "scope"}
           />
         </Box>
 
@@ -180,19 +154,12 @@ export function EditorSettingsDialog({
         </Text>
         <Box flexDirection="column" gap={1} marginTop={1}>
           <Text color={theme.text.secondary}>
-            These editors are currently supported. Please note that some editors
-            cannot be used in sandbox mode.
+            These editors are currently supported. Please note that some editors cannot be used in
+            sandbox mode.
           </Text>
           <Text color={theme.text.secondary}>
-            Your preferred editor is:{' '}
-            <Text
-              color={
-                mergedEditorName === 'None'
-                  ? theme.status.error
-                  : theme.text.link
-              }
-              bold
-            >
+            Your preferred editor is:{" "}
+            <Text color={mergedEditorName === "None" ? theme.status.error : theme.text.link} bold>
               {mergedEditorName}
             </Text>
             .

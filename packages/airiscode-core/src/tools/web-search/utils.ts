@@ -20,8 +20,8 @@ export function buildContentWithSources(
 ): string {
   if (!sources.length) return content;
   const sourceList = sources
-    .map((s, i) => `[${i + 1}] ${s.title || 'Untitled'} (${s.url})`)
-    .join('\n');
+    .map((s, i) => `[${i + 1}] ${s.title || "Untitled"} (${s.url})`)
+    .join("\n");
   return `${content}\n\nSources:\n${sourceList}`;
 }
 
@@ -38,5 +38,5 @@ export function buildSummary(
   return sources
     .slice(0, maxResults)
     .map((s, i) => `${i + 1}. ${s.title} - ${s.url}`)
-    .join('\n');
+    .join("\n");
 }

@@ -4,23 +4,19 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import type { Config } from '@airiscode/core';
+import readline from "node:readline";
+import { PassThrough } from "node:stream";
+import type { Config } from "@airiscode/core";
 import {
+  createDebugLogger,
   KittySequenceOverflowEvent,
   logKittySequenceOverflow,
-  createDebugLogger,
-} from '@airiscode/core';
-import { useStdin } from 'ink';
-import type React from 'react';
-import {
-  createContext,
-  useCallback,
-  useContext,
-  useEffect,
-  useRef,
-} from 'react';
-import readline from 'node:readline';
-import { PassThrough } from 'node:stream';
+} from "@airiscode/core";
+import { useStdin } from "ink";
+import type React from "react";
+import { createContext, useCallback, useContext, useEffect, useRef } from "react";
+import { FOCUS_IN, FOCUS_OUT } from "../hooks/useFocus.js";
+import { clipboardHasImage } from "../utils/clipboardUtils.js";
 import {
   BACKSLASH_ENTER_DETECTION_WINDOW_MS,
   CHAR_CODE_ESC,
@@ -29,18 +25,15 @@ import {
   KITTY_KEYCODE_ENTER,
   KITTY_KEYCODE_NUMPAD_ENTER,
   KITTY_KEYCODE_TAB,
-  MAX_KITTY_SEQUENCE_LENGTH,
   KITTY_MODIFIER_BASE,
   KITTY_MODIFIER_EVENT_TYPES_OFFSET,
-  MODIFIER_SHIFT_BIT,
+  MAX_KITTY_SEQUENCE_LENGTH,
   MODIFIER_ALT_BIT,
   MODIFIER_CTRL_BIT,
-} from '../utils/platformConstants.js';
-import { clipboardHasImage } from '../utils/clipboardUtils.js';
+  MODIFIER_SHIFT_BIT,
+} from "../utils/platformConstants.js";
 
-import { FOCUS_IN, FOCUS_OUT } from '../hooks/useFocus.js';
-
-const ESC = '\u001B';
+const ESC = "\u001B";
 export const PASTE_MODE_PREFIX = `${ESC}[200~`;
 export const PASTE_MODE_SUFFIX = `${ESC}[201~`;
 export const DRAG_COMPLETION_TIMEOUT_MS = 100; // Broadcast full path after 100ms if no more input
@@ -55,37 +48,37 @@ export const DOUBLE_QUOTE = '"';
 // Kitty keypad private-use keycodes (0xE000-0xE026)
 // Reference: https://sw.kovidgoyal.net/kitty/keyboard-protocol/#functional-key-definitions
 const KITTY_KEYPAD_PRINTABLE_KEYCODE_TO_CHAR: Record<number, string> = {
-  57399: '0',
-  57400: '1',
-  57401: '2',
-  57402: '3',
-  57403: '4',
-  57404: '5',
-  57405: '6',
-  57406: '7',
-  57407: '8',
-  57408: '9',
-  57409: '.',
-  57410: '/',
-  57411: '*',
-  57412: '-',
-  57413: '+',
+  57399: "0",
+  57400: "1",
+  57401: "2",
+  57402: "3",
+  57403: "4",
+  57404: "5",
+  57405: "6",
+  57406: "7",
+  57407: "8",
+  57408: "9",
+  57409: ".",
+  57410: "/",
+  57411: "*",
+  57412: "-",
+  57413: "+",
   // 57414 is keypad Enter - handled separately via CSI~ sequence
-  57415: '=',
-  57416: ',',
+  57415: "=",
+  57416: ",",
 };
 
 const KITTY_KEYPAD_FUNCTIONAL_KEYCODE_TO_NAME: Record<number, string> = {
-  57417: 'left',
-  57418: 'right',
-  57419: 'up',
-  57420: 'down',
-  57421: 'pageup',
-  57422: 'pagedown',
-  57423: 'home',
-  57424: 'end',
-  57425: 'insert',
-  57426: 'delete',
+  57417: "left",
+  57418: "right",
+  57419: "up",
+  57420: "down",
+  57421: "pageup",
+  57422: "pagedown",
+  57423: "home",
+  57424: "end",
+  57425: "insert",
+  57426: "delete",
 };
 
 export interface Key {
@@ -107,17 +100,13 @@ interface KeypressContextValue {
   pasteWorkaround: boolean;
 }
 
-const KeypressContext = createContext<KeypressContextValue | undefined>(
-  undefined,
-);
-const debugLogger = createDebugLogger('KEYPRESS');
+const KeypressContext = createContext<KeypressContextValue | undefined>(undefined);
+const debugLogger = createDebugLogger("KEYPRESS");
 
 export function useKeypressContext() {
   const context = useContext(KeypressContext);
   if (!context) {
-    throw new Error(
-      'useKeypressContext must be used within a KeypressProvider',
-    );
+    throw new Error("useKeypressContext must be used within a KeypressProvider");
   }
   return context;
 }
@@ -167,7 +156,7 @@ export function KeypressProvider({
 
     let isPaste = false;
     let pasteBuffer = Buffer.alloc(0);
-    const kittySequenceBufferRef = { current: '' };
+    const kittySequenceBufferRef = { current: "" };
     let kittySequenceTimeout: NodeJS.Timeout | null = null;
     let backslashTimeout: NodeJS.Timeout | null = null;
     let waitingForEnterAfterBackslash = false;
@@ -194,15 +183,13 @@ export function KeypressProvider({
           while (kittySequenceBufferRef.current) {
             const parsed = parseKittyPrefix(kittySequenceBufferRef.current);
             if (parsed) {
-              kittySequenceBufferRef.current =
-                kittySequenceBufferRef.current.slice(parsed.length);
+              kittySequenceBufferRef.current = kittySequenceBufferRef.current.slice(parsed.length);
               broadcast(parsed.key);
               continue;
             }
             const plain = parsePlainTextPrefix(kittySequenceBufferRef.current);
             if (plain) {
-              kittySequenceBufferRef.current =
-                kittySequenceBufferRef.current.slice(plain.length);
+              kittySequenceBufferRef.current = kittySequenceBufferRef.current.slice(plain.length);
               broadcast(plain.key);
               continue;
             }
@@ -212,11 +199,11 @@ export function KeypressProvider({
           if (kittySequenceBufferRef.current) {
             if (debugKeystrokeLogging) {
               debugLogger.debug(
-                '[DEBUG] Kitty buffer timeout, clearing:',
+                "[DEBUG] Kitty buffer timeout, clearing:",
                 kittySequenceBufferRef.current,
               );
             }
-            kittySequenceBufferRef.current = '';
+            kittySequenceBufferRef.current = "";
           }
         }
       }, KITTY_SEQUENCE_TIMEOUT_MS);
@@ -224,16 +211,12 @@ export function KeypressProvider({
 
     const clearKittyBufferAndTimeout = () => {
       clearKittyTimeout();
-      kittySequenceBufferRef.current = '';
+      kittySequenceBufferRef.current = "";
     };
 
     const createPrintableKey = (char: string): Key => {
       const printableName =
-        char === ' '
-          ? 'space'
-          : /^[A-Za-z]$/.test(char)
-            ? char.toLowerCase()
-            : char;
+        char === " " ? "space" : /^[A-Za-z]$/.test(char) ? char.toLowerCase() : char;
 
       return {
         name: printableName,
@@ -253,9 +236,7 @@ export function KeypressProvider({
     // Parse a single complete kitty/parameterized/legacy sequence from the start
     // of the buffer and return both the parsed Key and the number of characters
     // consumed. This enables peel-and-continue parsing for batched input.
-    const parseKittyPrefix = (
-      buffer: string,
-    ): { key: Key; length: number } | null => {
+    const parseKittyPrefix = (buffer: string): { key: Key; length: number } | null => {
       // In older terminals ESC [ Z was used as Cursor Backward Tabulation (CBT)
       // In newer terminals the same functionality of key combination for moving
       // backward through focusable elements is Shift+Tab, hence we will
@@ -271,7 +252,7 @@ export function KeypressProvider({
       if (m) {
         return {
           key: {
-            name: 'tab',
+            name: "tab",
             ctrl: false,
             meta: false,
             shift: true,
@@ -297,7 +278,7 @@ export function KeypressProvider({
         const ctrl = (bits & MODIFIER_CTRL_BIT) === MODIFIER_CTRL_BIT;
         return {
           key: {
-            name: 'tab',
+            name: "tab",
             ctrl,
             meta: alt,
             // Reverse tab implies Shift behavior; force shift regardless of mods
@@ -326,18 +307,18 @@ export function KeypressProvider({
         const ctrl = (bits & MODIFIER_CTRL_BIT) === MODIFIER_CTRL_BIT;
         const sym = m[2];
         const symbolToName: { [k: string]: string } = {
-          A: 'up',
-          B: 'down',
-          C: 'right',
-          D: 'left',
-          H: 'home',
-          F: 'end',
-          P: 'f1',
-          Q: 'f2',
-          R: 'f3',
-          S: 'f4',
+          A: "up",
+          B: "down",
+          C: "right",
+          D: "left",
+          H: "home",
+          F: "end",
+          P: "f1",
+          Q: "f2",
+          R: "f3",
+          S: "f4",
         };
-        const name = symbolToName[sym] || '';
+        const name = symbolToName[sym] || "";
         if (!name) return null;
         return {
           key: {
@@ -370,33 +351,32 @@ export function KeypressProvider({
           modifiers -= KITTY_MODIFIER_EVENT_TYPES_OFFSET;
         }
         const modifierBits = modifiers - KITTY_MODIFIER_BASE;
-        const shift =
-          (modifierBits & MODIFIER_SHIFT_BIT) === MODIFIER_SHIFT_BIT;
+        const shift = (modifierBits & MODIFIER_SHIFT_BIT) === MODIFIER_SHIFT_BIT;
         const alt = (modifierBits & MODIFIER_ALT_BIT) === MODIFIER_ALT_BIT;
         const ctrl = (modifierBits & MODIFIER_CTRL_BIT) === MODIFIER_CTRL_BIT;
         const terminator = m[3];
 
         // Tilde-coded functional keys (Delete, Insert, PageUp/Down, Home/End)
-        if (terminator === '~') {
+        if (terminator === "~") {
           let name: string | null = null;
           switch (keyCode) {
             case 1:
-              name = 'home';
+              name = "home";
               break;
             case 2:
-              name = 'insert';
+              name = "insert";
               break;
             case 3:
-              name = 'delete';
+              name = "delete";
               break;
             case 4:
-              name = 'end';
+              name = "end";
               break;
             case 5:
-              name = 'pageup';
+              name = "pageup";
               break;
             case 6:
-              name = 'pagedown';
+              name = "pagedown";
               break;
             default:
               break;
@@ -418,11 +398,11 @@ export function KeypressProvider({
         }
 
         const kittyKeyCodeToName: { [key: number]: string } = {
-          [CHAR_CODE_ESC]: 'escape',
-          [KITTY_KEYCODE_TAB]: 'tab',
-          [KITTY_KEYCODE_BACKSPACE]: 'backspace',
-          [KITTY_KEYCODE_ENTER]: 'return',
-          [KITTY_KEYCODE_NUMPAD_ENTER]: 'return',
+          [CHAR_CODE_ESC]: "escape",
+          [KITTY_KEYCODE_TAB]: "tab",
+          [KITTY_KEYCODE_BACKSPACE]: "backspace",
+          [KITTY_KEYCODE_ENTER]: "return",
+          [KITTY_KEYCODE_NUMPAD_ENTER]: "return",
         };
 
         const name = kittyKeyCodeToName[keyCode];
@@ -481,7 +461,7 @@ export function KeypressProvider({
         // such as keypad events, so exclude that range from generic printable
         // conversion and handle mapped keys explicitly above.
         if (
-          terminator === 'u' &&
+          terminator === "u" &&
           !ctrl &&
           keyCode >= 32 &&
           keyCode !== 127 &&
@@ -499,11 +479,7 @@ export function KeypressProvider({
         }
 
         // Ctrl+letters
-        if (
-          ctrl &&
-          keyCode >= 'a'.charCodeAt(0) &&
-          keyCode <= 'z'.charCodeAt(0)
-        ) {
+        if (ctrl && keyCode >= "a".charCodeAt(0) && keyCode <= "z".charCodeAt(0)) {
           const letter = String.fromCharCode(keyCode);
           return {
             key: {
@@ -527,12 +503,12 @@ export function KeypressProvider({
       if (m) {
         const sym = m[1];
         const nameMap: { [key: string]: string } = {
-          A: 'up',
-          B: 'down',
-          C: 'right',
-          D: 'left',
-          H: 'home',
-          F: 'end',
+          A: "up",
+          B: "down",
+          C: "right",
+          D: "left",
+          H: "home",
+          F: "end",
         };
         const name = nameMap[sym]!;
         return {
@@ -570,9 +546,7 @@ export function KeypressProvider({
       return null;
     };
 
-    const parsePlainTextPrefix = (
-      buffer: string,
-    ): { key: Key; length: number } | null => {
+    const parsePlainTextPrefix = (buffer: string): { key: Key; length: number } | null => {
       if (!buffer || buffer.startsWith(ESC)) {
         return null;
       }
@@ -607,15 +581,15 @@ export function KeypressProvider({
       if (key.sequence === FOCUS_IN || key.sequence === FOCUS_OUT) {
         return;
       }
-      if (key.name === 'paste-start') {
+      if (key.name === "paste-start") {
         isPaste = true;
         return;
       }
-      if (key.name === 'paste-end') {
+      if (key.name === "paste-end") {
         isPaste = false;
         if (pasteBuffer.toString().length > 0) {
           broadcast({
-            name: '',
+            name: "",
             ctrl: false,
             meta: false,
             shift: false,
@@ -625,7 +599,7 @@ export function KeypressProvider({
         } else {
           const hasImage = await clipboardHasImage();
           broadcast({
-            name: '',
+            name: "",
             ctrl: false,
             meta: false,
             shift: false,
@@ -648,7 +622,7 @@ export function KeypressProvider({
       // Modern terminals use bracketed paste mode (PASTE_MODE_PREFIX) for file drops,
       // which is handled above. This prevents input lag on quote keystrokes.
 
-      if (key.name === 'return' && waitingForEnterAfterBackslash) {
+      if (key.name === "return" && waitingForEnterAfterBackslash) {
         if (backslashTimeout) {
           clearTimeout(backslashTimeout);
           backslashTimeout = null;
@@ -657,12 +631,12 @@ export function KeypressProvider({
         broadcast({
           ...key,
           shift: true,
-          sequence: '\r', // Corrected escaping for newline
+          sequence: "\r", // Corrected escaping for newline
         });
         return;
       }
 
-      if (key.sequence === '\\' && !key.name) {
+      if (key.sequence === "\\" && !key.name) {
         // Corrected escaping for backslash
         waitingForEnterAfterBackslash = true;
         backslashTimeout = setTimeout(() => {
@@ -673,15 +647,15 @@ export function KeypressProvider({
         return;
       }
 
-      if (waitingForEnterAfterBackslash && key.name !== 'return') {
+      if (waitingForEnterAfterBackslash && key.name !== "return") {
         if (backslashTimeout) {
           clearTimeout(backslashTimeout);
           backslashTimeout = null;
         }
         waitingForEnterAfterBackslash = false;
         broadcast({
-          name: '',
-          sequence: '\\',
+          name: "",
+          sequence: "\\",
           ctrl: false,
           meta: false,
           shift: false,
@@ -689,25 +663,22 @@ export function KeypressProvider({
         });
       }
 
-      if (['up', 'down', 'left', 'right'].includes(key.name)) {
+      if (["up", "down", "left", "right"].includes(key.name)) {
         broadcast(key);
         return;
       }
 
-      if (
-        (key.ctrl && key.name === 'c') ||
-        key.sequence === `${ESC}${KITTY_CTRL_C}`
-      ) {
+      if ((key.ctrl && key.name === "c") || key.sequence === `${ESC}${KITTY_CTRL_C}`) {
         if (kittySequenceBufferRef.current && debugKeystrokeLogging) {
           debugLogger.debug(
-            '[DEBUG] Kitty buffer cleared on Ctrl+C:',
+            "[DEBUG] Kitty buffer cleared on Ctrl+C:",
             kittySequenceBufferRef.current,
           );
         }
         clearKittyBufferAndTimeout();
         if (key.sequence === `${ESC}${KITTY_CTRL_C}`) {
           broadcast({
-            name: 'c',
+            name: "c",
             ctrl: true,
             meta: false,
             shift: false,
@@ -734,10 +705,7 @@ export function KeypressProvider({
           startKittyTimeout();
 
           if (debugKeystrokeLogging) {
-            debugLogger.debug(
-              '[DEBUG] Kitty buffer accumulating:',
-              kittySequenceBufferRef.current,
-            );
+            debugLogger.debug("[DEBUG] Kitty buffer accumulating:", kittySequenceBufferRef.current);
           }
 
           // Try to peel off as many complete sequences as are available at the
@@ -749,26 +717,18 @@ export function KeypressProvider({
             const parsed = parseKittyPrefix(kittySequenceBufferRef.current);
             if (parsed) {
               if (debugKeystrokeLogging) {
-                const parsedSequence = kittySequenceBufferRef.current.slice(
-                  0,
-                  parsed.length,
-                );
+                const parsedSequence = kittySequenceBufferRef.current.slice(0, parsed.length);
                 if (kittySequenceBufferRef.current.length > parsed.length) {
                   debugLogger.debug(
-                    '[DEBUG] Kitty sequence parsed successfully (prefix):',
+                    "[DEBUG] Kitty sequence parsed successfully (prefix):",
                     parsedSequence,
                   );
                 } else {
-                  debugLogger.debug(
-                    '[DEBUG] Kitty sequence parsed successfully:',
-                    parsedSequence,
-                  );
+                  debugLogger.debug("[DEBUG] Kitty sequence parsed successfully:", parsedSequence);
                 }
               }
               // Consume the parsed prefix and broadcast it.
-              updateKittyBuffer(
-                kittySequenceBufferRef.current.slice(parsed.length),
-              );
+              updateKittyBuffer(kittySequenceBufferRef.current.slice(parsed.length));
               if (!kittySequenceBufferRef.current) {
                 clearKittyTimeout();
               }
@@ -783,18 +743,11 @@ export function KeypressProvider({
             if (completeUnsupportedCsiLength) {
               if (debugKeystrokeLogging) {
                 debugLogger.debug(
-                  '[DEBUG] Dropping unsupported complete CSI sequence:',
-                  kittySequenceBufferRef.current.slice(
-                    0,
-                    completeUnsupportedCsiLength,
-                  ),
+                  "[DEBUG] Dropping unsupported complete CSI sequence:",
+                  kittySequenceBufferRef.current.slice(0, completeUnsupportedCsiLength),
                 );
               }
-              updateKittyBuffer(
-                kittySequenceBufferRef.current.slice(
-                  completeUnsupportedCsiLength,
-                ),
-              );
+              updateKittyBuffer(kittySequenceBufferRef.current.slice(completeUnsupportedCsiLength));
               if (!kittySequenceBufferRef.current) {
                 clearKittyTimeout();
               }
@@ -802,19 +755,15 @@ export function KeypressProvider({
               continue;
             }
 
-            const plainTextPrefix = parsePlainTextPrefix(
-              kittySequenceBufferRef.current,
-            );
+            const plainTextPrefix = parsePlainTextPrefix(kittySequenceBufferRef.current);
             if (plainTextPrefix) {
               if (debugKeystrokeLogging) {
                 debugLogger.debug(
-                  '[DEBUG] Recovered plain text after kitty sequence:',
+                  "[DEBUG] Recovered plain text after kitty sequence:",
                   plainTextPrefix.key.sequence,
                 );
               }
-              updateKittyBuffer(
-                kittySequenceBufferRef.current.slice(plainTextPrefix.length),
-              );
+              updateKittyBuffer(kittySequenceBufferRef.current.slice(plainTextPrefix.length));
               if (!kittySequenceBufferRef.current) {
                 clearKittyTimeout();
               }
@@ -824,20 +773,15 @@ export function KeypressProvider({
             }
 
             // Look for the next potential CSI start beyond index 0
-            const nextStart = kittySequenceBufferRef.current.indexOf(
-              `${ESC}[`,
-              1,
-            );
+            const nextStart = kittySequenceBufferRef.current.indexOf(`${ESC}[`, 1);
             if (nextStart > 0) {
               if (debugKeystrokeLogging) {
                 debugLogger.debug(
-                  '[DEBUG] Skipping incomplete/invalid CSI prefix:',
+                  "[DEBUG] Skipping incomplete/invalid CSI prefix:",
                   kittySequenceBufferRef.current.slice(0, nextStart),
                 );
               }
-              updateKittyBuffer(
-                kittySequenceBufferRef.current.slice(nextStart),
-              );
+              updateKittyBuffer(kittySequenceBufferRef.current.slice(nextStart));
               if (!kittySequenceBufferRef.current) {
                 clearKittyTimeout();
               }
@@ -849,18 +793,16 @@ export function KeypressProvider({
           if (bufferedInputHandled) return;
 
           if (config?.getDebugMode() || debugKeystrokeLogging) {
-            const codes = Array.from(kittySequenceBufferRef.current).map(
-              (ch: string) => ch.charCodeAt(0),
+            const codes = Array.from(kittySequenceBufferRef.current).map((ch: string) =>
+              ch.charCodeAt(0),
             );
-            debugLogger.warn('Kitty sequence buffer has char codes:', codes);
+            debugLogger.warn("Kitty sequence buffer has char codes:", codes);
           }
 
-          if (
-            kittySequenceBufferRef.current.length > MAX_KITTY_SEQUENCE_LENGTH
-          ) {
+          if (kittySequenceBufferRef.current.length > MAX_KITTY_SEQUENCE_LENGTH) {
             if (debugKeystrokeLogging) {
               debugLogger.debug(
-                '[DEBUG] Kitty buffer overflow, clearing:',
+                "[DEBUG] Kitty buffer overflow, clearing:",
                 kittySequenceBufferRef.current,
               );
             }
@@ -878,7 +820,7 @@ export function KeypressProvider({
         }
       }
 
-      if (key.name === 'return' && key.sequence === `${ESC}\r`) {
+      if (key.name === "return" && key.sequence === `${ESC}\r`) {
         key.meta = true;
       }
       broadcast({ ...key, paste: isPaste });
@@ -892,8 +834,8 @@ export function KeypressProvider({
     };
 
     const createPasteKeyEvent = (
-      name: 'paste-start' | 'paste-end' | '' = '',
-      sequence: string = '',
+      name: "paste-start" | "paste-end" | "" = "",
+      sequence: string = "",
     ): Key => ({
       name,
       ctrl: false,
@@ -917,24 +859,22 @@ export function KeypressProvider({
         const prefixPos = data.indexOf(pasteModePrefixBuffer, cursor);
         const suffixPos = data.indexOf(pasteModeSuffixBuffer, cursor);
         const hasPrefix =
-          prefixPos !== -1 &&
-          prefixPos + pasteModePrefixBuffer.length <= data.length;
+          prefixPos !== -1 && prefixPos + pasteModePrefixBuffer.length <= data.length;
         const hasSuffix =
-          suffixPos !== -1 &&
-          suffixPos + pasteModeSuffixBuffer.length <= data.length;
+          suffixPos !== -1 && suffixPos + pasteModeSuffixBuffer.length <= data.length;
 
         let markerPos = -1;
         let markerLength = 0;
-        let markerType: 'prefix' | 'suffix' | null = null;
+        let markerType: "prefix" | "suffix" | null = null;
 
         if (hasPrefix && (!hasSuffix || prefixPos < suffixPos)) {
           markerPos = prefixPos;
           markerLength = pasteModePrefixBuffer.length;
-          markerType = 'prefix';
+          markerType = "prefix";
         } else if (hasSuffix) {
           markerPos = suffixPos;
           markerLength = pasteModeSuffixBuffer.length;
-          markerType = 'suffix';
+          markerType = "suffix";
         }
 
         if (markerPos === -1) {
@@ -945,10 +885,10 @@ export function KeypressProvider({
         if (nextData.length > 0) {
           keypressStream.write(nextData);
         }
-        if (markerType === 'prefix') {
-          handleKeypress(undefined, createPasteKeyEvent('paste-start'));
-        } else if (markerType === 'suffix') {
-          handleKeypress(undefined, createPasteKeyEvent('paste-end'));
+        if (markerType === "prefix") {
+          handleKeypress(undefined, createPasteKeyEvent("paste-start"));
+        } else if (markerType === "suffix") {
+          handleKeypress(undefined, createPasteKeyEvent("paste-end"));
         }
         cursor = markerPos + markerLength;
       }
@@ -967,9 +907,9 @@ export function KeypressProvider({
         keypressStream.write(rawDataBuffer);
       } else {
         // Flush raw data buffer as a paste event
-        handleKeypress(undefined, createPasteKeyEvent('paste-start'));
+        handleKeypress(undefined, createPasteKeyEvent("paste-start"));
         keypressStream.write(rawDataBuffer);
-        handleKeypress(undefined, createPasteKeyEvent('paste-end'));
+        handleKeypress(undefined, createPasteKeyEvent("paste-end"));
       }
 
       rawDataBuffer = Buffer.alloc(0);
@@ -977,7 +917,7 @@ export function KeypressProvider({
     };
 
     const handleRawKeypress = (_data: Buffer) => {
-      const data = Buffer.isBuffer(_data) ? _data : Buffer.from(_data, 'utf8');
+      const data = Buffer.isBuffer(_data) ? _data : Buffer.from(_data, "utf8");
 
       // Buffer the incoming data
       rawDataBuffer = Buffer.concat([rawDataBuffer, data]);
@@ -987,8 +927,7 @@ export function KeypressProvider({
       // On some Windows terminals, during a paste, the terminal might send a
       // single return character chunk. In this case, we need to wait a time period
       // to know if it is part of a paste or just a return character.
-      const isReturnChar =
-        rawDataBuffer.length <= 2 && rawDataBuffer.includes(0x0d);
+      const isReturnChar = rawDataBuffer.length <= 2 && rawDataBuffer.includes(0x0d);
       if (isReturnChar) {
         rawFlushTimeout = setTimeout(flushRawBuffer, 100);
       } else {
@@ -1004,20 +943,20 @@ export function KeypressProvider({
         escapeCodeTimeout: 0,
       });
       readline.emitKeypressEvents(keypressStream, rl);
-      keypressStream.on('keypress', handleKeypress);
-      stdin.on('data', handleRawKeypress);
+      keypressStream.on("keypress", handleKeypress);
+      stdin.on("data", handleRawKeypress);
     } else {
       rl = readline.createInterface({ input: stdin, escapeCodeTimeout: 0 });
       readline.emitKeypressEvents(stdin, rl);
-      stdin.on('keypress', handleKeypress);
+      stdin.on("keypress", handleKeypress);
     }
 
     return () => {
       if (usePassthrough) {
-        keypressStream.removeListener('keypress', handleKeypress);
-        stdin.removeListener('data', handleRawKeypress);
+        keypressStream.removeListener("keypress", handleKeypress);
+        stdin.removeListener("data", handleRawKeypress);
       } else {
-        stdin.removeListener('keypress', handleKeypress);
+        stdin.removeListener("keypress", handleKeypress);
       }
 
       rl.close();
@@ -1042,7 +981,7 @@ export function KeypressProvider({
       // Flush any pending paste data to avoid data loss on exit.
       if (isPaste) {
         broadcast({
-          name: '',
+          name: "",
           ctrl: false,
           meta: false,
           shift: false,
@@ -1063,9 +1002,7 @@ export function KeypressProvider({
   ]);
 
   return (
-    <KeypressContext.Provider
-      value={{ subscribe, unsubscribe, pasteWorkaround }}
-    >
+    <KeypressContext.Provider value={{ subscribe, unsubscribe, pasteWorkaround }}>
       {children}
     </KeypressContext.Provider>
   );

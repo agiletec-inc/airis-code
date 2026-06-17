@@ -4,12 +4,12 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { HybridTokenStorage } from '../mcp/token-storage/hybrid-token-storage.js';
-import type { OAuthCredentials } from '../mcp/token-storage/types.js';
-import { debugLogger } from '../utils/debugLogger.js';
+import { HybridTokenStorage } from "../mcp/token-storage/hybrid-token-storage.js";
+import type { OAuthCredentials } from "../mcp/token-storage/types.js";
+import { debugLogger } from "../utils/debugLogger.js";
 
-const KEYCHAIN_SERVICE_NAME = 'gemini-cli-api-key';
-const DEFAULT_API_KEY_ENTRY = 'default-api-key';
+const KEYCHAIN_SERVICE_NAME = "gemini-cli-api-key";
+const DEFAULT_API_KEY_ENTRY = "default-api-key";
 
 const storage = new HybridTokenStorage(KEYCHAIN_SERVICE_NAME);
 
@@ -27,7 +27,7 @@ export async function loadApiKey(): Promise<string | null> {
     return null;
   } catch (error: unknown) {
     // Log other errors but don't crash, just return null so user can re-enter key
-    debugLogger.error('Failed to load API key from storage:', error);
+    debugLogger.error("Failed to load API key from storage:", error);
     return null;
   }
 }
@@ -35,15 +35,13 @@ export async function loadApiKey(): Promise<string | null> {
 /**
  * Save API key
  */
-export async function saveApiKey(
-  apiKey: string | null | undefined,
-): Promise<void> {
-  if (!apiKey || apiKey.trim() === '') {
+export async function saveApiKey(apiKey: string | null | undefined): Promise<void> {
+  if (!apiKey || apiKey.trim() === "") {
     try {
       await storage.deleteCredentials(DEFAULT_API_KEY_ENTRY);
     } catch (error: unknown) {
       // Ignore errors when deleting, as it might not exist
-      debugLogger.warn('Failed to delete API key from storage:', error);
+      debugLogger.warn("Failed to delete API key from storage:", error);
     }
     return;
   }
@@ -53,7 +51,7 @@ export async function saveApiKey(
     serverName: DEFAULT_API_KEY_ENTRY,
     token: {
       accessToken: apiKey,
-      tokenType: 'ApiKey',
+      tokenType: "ApiKey",
     },
     updatedAt: Date.now(),
   };
@@ -68,6 +66,6 @@ export async function clearApiKey(): Promise<void> {
   try {
     await storage.deleteCredentials(DEFAULT_API_KEY_ENTRY);
   } catch (error: unknown) {
-    debugLogger.error('Failed to clear API key from storage:', error);
+    debugLogger.error("Failed to clear API key from storage:", error);
   }
 }

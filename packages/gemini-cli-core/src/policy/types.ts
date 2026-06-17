@@ -4,48 +4,40 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import type { SafetyCheckInput } from '../safety/protocol.js';
+import type { SafetyCheckInput } from "../safety/protocol.js";
 
 export enum PolicyDecision {
-  ALLOW = 'allow',
-  DENY = 'deny',
-  ASK_USER = 'ask_user',
+  ALLOW = "allow",
+  DENY = "deny",
+  ASK_USER = "ask_user",
 }
 
 /**
  * Valid sources for hook execution
  */
-export type HookSource = 'project' | 'user' | 'system' | 'extension';
+export type HookSource = "project" | "user" | "system" | "extension";
 
 /**
  * Array of valid hook source values for runtime validation
  */
-const VALID_HOOK_SOURCES: HookSource[] = [
-  'project',
-  'user',
-  'system',
-  'extension',
-];
+const VALID_HOOK_SOURCES: HookSource[] = ["project", "user", "system", "extension"];
 
 /**
  * Safely extract and validate hook source from input
  * Returns 'project' as default if the value is invalid or missing
  */
 export function getHookSource(input: Record<string, unknown>): HookSource {
-  const source = input['hook_source'];
-  if (
-    typeof source === 'string' &&
-    VALID_HOOK_SOURCES.includes(source as HookSource)
-  ) {
+  const source = input["hook_source"];
+  if (typeof source === "string" && VALID_HOOK_SOURCES.includes(source as HookSource)) {
     return source as HookSource;
   }
-  return 'project';
+  return "project";
 }
 
 export enum ApprovalMode {
-  DEFAULT = 'default',
-  AUTO_EDIT = 'autoEdit',
-  YOLO = 'yolo',
+  DEFAULT = "default",
+  AUTO_EDIT = "autoEdit",
+  YOLO = "yolo",
 }
 
 /**
@@ -67,32 +59,30 @@ export interface AllowedPathConfig {
  * Base interface for external checkers.
  */
 export interface ExternalCheckerConfig {
-  type: 'external';
+  type: "external";
   name: string;
   config?: unknown;
-  required_context?: Array<keyof SafetyCheckInput['context']>;
+  required_context?: Array<keyof SafetyCheckInput["context"]>;
 }
 
 export enum InProcessCheckerType {
-  ALLOWED_PATH = 'allowed-path',
+  ALLOWED_PATH = "allowed-path",
 }
 
 /**
  * Base interface for in-process checkers.
  */
 export interface InProcessCheckerConfig {
-  type: 'in-process';
+  type: "in-process";
   name: InProcessCheckerType;
   config?: AllowedPathConfig;
-  required_context?: Array<keyof SafetyCheckInput['context']>;
+  required_context?: Array<keyof SafetyCheckInput["context"]>;
 }
 
 /**
  * A discriminated union for all safety checker configurations.
  */
-export type SafetyCheckerConfig =
-  | ExternalCheckerConfig
-  | InProcessCheckerConfig;
+export type SafetyCheckerConfig = ExternalCheckerConfig | InProcessCheckerConfig;
 
 export interface PolicyRule {
   /**

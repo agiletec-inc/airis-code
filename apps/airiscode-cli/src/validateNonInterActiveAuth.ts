@@ -4,14 +4,14 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import type { Config } from '@airiscode/core';
-import { OutputFormat } from '@airiscode/core';
-import { validateAuthMethod } from './config/auth.js';
-import { type LoadedSettings } from './config/settings.js';
-import { JsonOutputAdapter } from './nonInteractive/io/JsonOutputAdapter.js';
-import { StreamJsonOutputAdapter } from './nonInteractive/io/StreamJsonOutputAdapter.js';
-import { runExitCleanup } from './utils/cleanup.js';
-import { writeStderrLine } from './utils/stdioHelpers.js';
+import type { Config } from "@airiscode/core";
+import { OutputFormat } from "@airiscode/core";
+import { validateAuthMethod } from "./config/auth.js";
+import { type LoadedSettings } from "./config/settings.js";
+import { JsonOutputAdapter } from "./nonInteractive/io/JsonOutputAdapter.js";
+import { StreamJsonOutputAdapter } from "./nonInteractive/io/StreamJsonOutputAdapter.js";
+import { runExitCleanup } from "./utils/cleanup.js";
+import { writeStderrLine } from "./utils/stdioHelpers.js";
 
 export async function validateNonInteractiveAuth(
   useExternalAuth: boolean | undefined,
@@ -20,12 +20,10 @@ export async function validateNonInteractiveAuth(
 ): Promise<Config> {
   try {
     // Get the actual authType from config which has already resolved CLI args, env vars, and settings
-    const authType = nonInteractiveConfig
-      .getModelsConfig()
-      .getCurrentAuthType();
+    const authType = nonInteractiveConfig.getModelsConfig().getCurrentAuthType();
     if (!authType) {
       throw new Error(
-        'No auth type is selected. Please configure an auth type (e.g. via settings or `--auth-type`) before running in non-interactive mode.',
+        "No auth type is selected. Please configure an auth type (e.g. via settings or `--auth-type`) before running in non-interactive mode.",
       );
     }
     const resolvedAuthType: NonNullable<typeof authType> = authType;
@@ -49,10 +47,7 @@ export async function validateNonInteractiveAuth(
     const outputFormat = nonInteractiveConfig.getOutputFormat();
 
     // In JSON and STREAM_JSON modes, emit error result and exit
-    if (
-      outputFormat === OutputFormat.JSON ||
-      outputFormat === OutputFormat.STREAM_JSON
-    ) {
+    if (outputFormat === OutputFormat.JSON || outputFormat === OutputFormat.STREAM_JSON) {
       let adapter;
       if (outputFormat === OutputFormat.JSON) {
         adapter = new JsonOutputAdapter(nonInteractiveConfig);
@@ -62,8 +57,7 @@ export async function validateNonInteractiveAuth(
           nonInteractiveConfig.getIncludePartialMessages(),
         );
       }
-      const errorMessage =
-        error instanceof Error ? error.message : String(error);
+      const errorMessage = error instanceof Error ? error.message : String(error);
       adapter.emitResult({
         isError: true,
         errorMessage,

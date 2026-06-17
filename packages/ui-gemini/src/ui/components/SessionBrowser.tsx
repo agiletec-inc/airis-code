@@ -4,20 +4,16 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import type React from 'react';
-import { useState, useCallback, useMemo, useEffect, useRef } from 'react';
-import { Box, Text } from 'ink';
-import { Colors } from '../colors.js';
-import { useTerminalSize } from '../hooks/useTerminalSize.js';
-import { useKeypress } from '../hooks/useKeypress.js';
-import path from 'node:path';
-import type { Config } from '@airiscode/gemini-cli-core';
-import type { SessionInfo, TextMatch } from '../../utils/sessionUtils.js';
-import {
-  cleanMessage,
-  formatRelativeTime,
-  getSessionFiles,
-} from '../../utils/sessionUtils.js';
+import path from "node:path";
+import type { Config } from "@airiscode/gemini-cli-core";
+import { Box, Text } from "ink";
+import type React from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import type { SessionInfo, TextMatch } from "../../utils/sessionUtils.js";
+import { cleanMessage, formatRelativeTime, getSessionFiles } from "../../utils/sessionUtils.js";
+import { Colors } from "../colors.js";
+import { useKeypress } from "../hooks/useKeypress.js";
+import { useTerminalSize } from "../hooks/useTerminalSize.js";
 
 /**
  * Props for the main SessionBrowser component.
@@ -66,7 +62,7 @@ export interface SessionBrowserState {
 
   // Sort state
   /** Current sort criteria */
-  sortOrder: 'date' | 'messages' | 'name';
+  sortOrder: "date" | "messages" | "name";
   /** Whether sort order is reversed */
   sortReverse: boolean;
 
@@ -96,9 +92,7 @@ export interface SessionBrowserState {
   /** Update search mode state */
   setIsSearchMode: React.Dispatch<React.SetStateAction<boolean>>;
   /** Update sort order */
-  setSortOrder: React.Dispatch<
-    React.SetStateAction<'date' | 'messages' | 'name'>
-  >;
+  setSortOrder: React.Dispatch<React.SetStateAction<"date" | "messages" | "name">>;
   /** Update sort reverse flag */
   setSortReverse: React.Dispatch<React.SetStateAction<boolean>>;
   setHasLoadedFullContent: React.Dispatch<React.SetStateAction<boolean>>;
@@ -128,11 +122,7 @@ const SessionBrowserLoading = (): React.JSX.Element => (
 /**
  * Error state component displayed when session loading fails.
  */
-const SessionBrowserError = ({
-  state,
-}: {
-  state: SessionBrowserState;
-}): React.JSX.Element => (
+const SessionBrowserError = ({ state }: { state: SessionBrowserState }): React.JSX.Element => (
   <Box flexDirection="column" paddingX={1}>
     <Text color={Colors.AccentRed}>Error: {state.error}</Text>
     <Text color={Colors.Gray}>Press q to exit</Text>
@@ -158,18 +148,16 @@ const SessionBrowserEmpty = (): React.JSX.Element => (
  */
 const sortSessions = (
   sessions: SessionInfo[],
-  sortBy: 'date' | 'messages' | 'name',
+  sortBy: "date" | "messages" | "name",
   reverse: boolean,
 ): SessionInfo[] => {
   const sorted = [...sessions].sort((a, b) => {
     switch (sortBy) {
-      case 'date':
-        return (
-          new Date(b.lastUpdated).getTime() - new Date(a.lastUpdated).getTime()
-        );
-      case 'messages':
+      case "date":
+        return new Date(b.lastUpdated).getTime() - new Date(a.lastUpdated).getTime();
+      case "messages":
         return b.messageCount - a.messageCount;
-      case 'name':
+      case "name":
         return a.displayName.localeCompare(b.displayName);
       default:
         return 0;
@@ -187,7 +175,7 @@ const sortSessions = (
  * @returns Array of TextMatch objects containing match context and metadata
  */
 const findTextMatches = (
-  messages: Array<{ role: 'user' | 'assistant'; content: string }>,
+  messages: Array<{ role: "user" | "assistant"; content: string }>,
   query: string,
 ): TextMatch[] => {
   if (!query.trim()) return [];
@@ -215,8 +203,8 @@ const findTextMatches = (
       const match = snippet.slice(relativeMatchStart, relativeMatchEnd);
       let after = snippet.slice(relativeMatchEnd);
 
-      if (contextStart > 0) before = '…' + before;
-      if (contextEnd < m.length) after = after + '…';
+      if (contextStart > 0) before = "…" + before;
+      if (contextEnd < m.length) after = after + "…";
 
       matches.push({ before, match, after, role: message.role });
       startIndex = matchIndex + 1;
@@ -233,10 +221,7 @@ const findTextMatches = (
  * @param query - Search query string (case-insensitive)
  * @returns Filtered array of sessions that match the query
  */
-const filterSessions = (
-  sessions: SessionInfo[],
-  query: string,
-): SessionInfo[] => {
+const filterSessions = (sessions: SessionInfo[], query: string): SessionInfo[] => {
   if (!query.trim()) {
     return sessions.map((session) => ({
       ...session,
@@ -252,9 +237,7 @@ const filterSessions = (
       session.id.toLowerCase().includes(lowerQuery) ||
       session.firstUserMessage.toLowerCase().includes(lowerQuery);
 
-    const contentMatch = session.fullContent
-      ?.toLowerCase()
-      .includes(lowerQuery);
+    const contentMatch = session.fullContent?.toLowerCase().includes(lowerQuery);
 
     if (titleMatch || contentMatch) {
       if (session.messages) {
@@ -271,11 +254,7 @@ const filterSessions = (
 /**
  * Search input display component.
  */
-const SearchModeDisplay = ({
-  state,
-}: {
-  state: SessionBrowserState;
-}): React.JSX.Element => (
+const SearchModeDisplay = ({ state }: { state: SessionBrowserState }): React.JSX.Element => (
   <Box marginTop={1}>
     <Text color={Colors.Gray}>Search: </Text>
     <Text color={Colors.AccentPurple}>{state.searchQuery}</Text>
@@ -286,18 +265,14 @@ const SearchModeDisplay = ({
 /**
  * Header component showing session count and sort information.
  */
-const SessionListHeader = ({
-  state,
-}: {
-  state: SessionBrowserState;
-}): React.JSX.Element => (
+const SessionListHeader = ({ state }: { state: SessionBrowserState }): React.JSX.Element => (
   <Box flexDirection="row" justifyContent="space-between">
     <Text color={Colors.AccentPurple}>
       Chat Sessions ({state.totalSessions} total
-      {state.searchQuery ? `, filtered` : ''})
+      {state.searchQuery ? `, filtered` : ""})
     </Text>
     <Text color={Colors.Gray}>
-      sorted by {state.sortOrder} {state.sortReverse ? 'asc' : 'desc'}
+      sorted by {state.sortOrder} {state.sortReverse ? "asc" : "desc"}
     </Text>
   </Box>
 );
@@ -309,20 +284,20 @@ const NavigationHelp = (): React.JSX.Element => (
   <Box flexDirection="column">
     <Text color={Colors.Gray}>
       <Kbd name="Navigate" shortcut="↑/↓" />
-      {'   '}
+      {"   "}
       <Kbd name="Resume" shortcut="Enter" />
-      {'   '}
+      {"   "}
       <Kbd name="Search" shortcut="/" />
-      {'   '}
+      {"   "}
       <Kbd name="Delete" shortcut="x" />
-      {'   '}
+      {"   "}
       <Kbd name="Quit" shortcut="q" />
     </Text>
     <Text color={Colors.Gray}>
       <Kbd name="Sort" shortcut="s" />
-      {'         '}
+      {"         "}
       <Kbd name="Reverse" shortcut="r" />
-      {'      '}
+      {"      "}
       <Kbd name="First/Last" shortcut="g/G" />
     </Text>
   </Box>
@@ -331,13 +306,9 @@ const NavigationHelp = (): React.JSX.Element => (
 /**
  * Table header component with column labels and scroll indicators.
  */
-const SessionTableHeader = ({
-  state,
-}: {
-  state: SessionBrowserState;
-}): React.JSX.Element => (
+const SessionTableHeader = ({ state }: { state: SessionBrowserState }): React.JSX.Element => (
   <Box flexDirection="row" marginTop={1}>
-    <Text>{state.scrollOffset > 0 ? <Text>▲ </Text> : '  '}</Text>
+    <Text>{state.scrollOffset > 0 ? <Text>▲ </Text> : "  "}</Text>
 
     <Box width={5} flexShrink={0}>
       <Text color={Colors.Gray} bold>
@@ -359,7 +330,7 @@ const SessionTableHeader = ({
     <Text color={Colors.Gray}> │ </Text>
     <Box flexShrink={0}>
       <Text color={Colors.Gray} bold>
-        {state.searchQuery ? 'Match' : 'Name'}
+        {state.searchQuery ? "Match" : "Name"}
       </Text>
     </Box>
   </Box>
@@ -368,11 +339,7 @@ const SessionTableHeader = ({
 /**
  * No results display component for empty search results.
  */
-const NoResultsDisplay = ({
-  state,
-}: {
-  state: SessionBrowserState;
-}): React.JSX.Element => (
+const NoResultsDisplay = ({ state }: { state: SessionBrowserState }): React.JSX.Element => (
   <Box marginTop={1}>
     <Text color={Colors.Gray} dimColor>
       No sessions found matching &apos;{state.searchQuery}&apos;.
@@ -395,15 +362,13 @@ const MatchSnippetDisplay = ({
   }
 
   const firstMatch = session.matchSnippets[0];
-  const rolePrefix = firstMatch.role === 'user' ? 'You:   ' : 'Gemini:';
-  const roleColor = textColor(
-    firstMatch.role === 'user' ? Colors.AccentGreen : Colors.AccentBlue,
-  );
+  const rolePrefix = firstMatch.role === "user" ? "You:   " : "Gemini:";
+  const roleColor = textColor(firstMatch.role === "user" ? Colors.AccentGreen : Colors.AccentBlue);
 
   return (
     <>
       <Text color={roleColor} bold>
-        {rolePrefix}{' '}
+        {rolePrefix}{" "}
       </Text>
       {firstMatch.before}
       <Text color={textColor(Colors.AccentRed)} bold>
@@ -426,10 +391,9 @@ const SessionItem = ({
   session: SessionInfo;
   state: SessionBrowserState;
   terminalWidth: number;
-  formatRelativeTime: (dateString: string, style: 'short' | 'long') => string;
+  formatRelativeTime: (dateString: string, style: "short" | "long") => string;
 }): React.JSX.Element => {
-  const originalIndex =
-    state.startIndex + state.visibleSessions.indexOf(session);
+  const originalIndex = state.startIndex + state.visibleSessions.indexOf(session);
   const isActive = originalIndex === state.activeIndex;
   const isDisabled = session.isCurrentSession;
   const textColor = (c: string = Colors.Foreground) => {
@@ -439,24 +403,18 @@ const SessionItem = ({
     return isActive ? Colors.AccentPurple : c;
   };
 
-  const prefix = isActive ? '❯ ' : '  ';
-  let additionalInfo = '';
+  const prefix = isActive ? "❯ " : "  ";
+  let additionalInfo = "";
   let matchDisplay = null;
 
   // Add "(current)" label for the current session
   if (session.isCurrentSession) {
-    additionalInfo = ' (current)';
+    additionalInfo = " (current)";
   }
 
   // Show match snippets if searching and matches exist
-  if (
-    state.searchQuery &&
-    session.matchSnippets &&
-    session.matchSnippets.length > 0
-  ) {
-    matchDisplay = (
-      <MatchSnippetDisplay session={session} textColor={textColor} />
-    );
+  if (state.searchQuery && session.matchSnippets && session.matchSnippets.length > 0) {
+    matchDisplay = <MatchSnippetDisplay session={session} textColor={textColor} />;
 
     if (session.matchCount && session.matchCount > 1) {
       additionalInfo += ` (+${session.matchCount - 1} more)`;
@@ -477,7 +435,7 @@ const SessionItem = ({
         (No messages)
       </Text>
     ) : session.displayName.length > availableMessageWidth ? (
-      session.displayName.slice(0, availableMessageWidth - 1) + '…'
+      session.displayName.slice(0, availableMessageWidth - 1) + "…"
     ) : (
       session.displayName
     ));
@@ -493,8 +451,8 @@ const SessionItem = ({
         </Text>
       </Box>
       <Text color={textColor(Colors.Gray)} dimColor={isDisabled}>
-        {' '}
-        │{' '}
+        {" "}
+        │{" "}
       </Text>
       <Box width={4}>
         <Text color={textColor()} dimColor={isDisabled}>
@@ -502,17 +460,17 @@ const SessionItem = ({
         </Text>
       </Box>
       <Text color={textColor(Colors.Gray)} dimColor={isDisabled}>
-        {' '}
-        │{' '}
+        {" "}
+        │{" "}
       </Text>
       <Box width={4}>
         <Text color={textColor()} dimColor={isDisabled}>
-          {formatRelativeTime(session.lastUpdated, 'short')}
+          {formatRelativeTime(session.lastUpdated, "short")}
         </Text>
       </Box>
       <Text color={textColor(Colors.Gray)} dimColor={isDisabled}>
-        {' '}
-        │{' '}
+        {" "}
+        │{" "}
       </Text>
       <Box flexGrow={1}>
         <Text color={textColor(Colors.Comment)} dimColor={isDisabled}>
@@ -536,7 +494,7 @@ const SessionList = ({
   formatRelativeTime,
 }: {
   state: SessionBrowserState;
-  formatRelativeTime: (dateString: string, style: 'short' | 'long') => string;
+  formatRelativeTime: (dateString: string, style: "short" | "long") => string;
 }): React.JSX.Element => (
   <Box flexDirection="column">
     {/* Table Header */}
@@ -575,11 +533,9 @@ export const useSessionBrowserState = (
   const [error, setError] = useState<string | null>(initialError);
   const [activeIndex, setActiveIndex] = useState(0);
   const [scrollOffset, setScrollOffset] = useState(0);
-  const [sortOrder, setSortOrder] = useState<'date' | 'messages' | 'name'>(
-    'date',
-  );
+  const [sortOrder, setSortOrder] = useState<"date" | "messages" | "name">("date");
   const [sortReverse, setSortReverse] = useState(false);
-  const [searchQuery, setSearchQuery] = useState('');
+  const [searchQuery, setSearchQuery] = useState("");
   const [isSearchMode, setIsSearchMode] = useState(false);
   const [hasLoadedFullContent, setHasLoadedFullContent] = useState(false);
   const loadingFullContentRef = useRef(false);
@@ -650,17 +606,12 @@ const useLoadSessions = (config: Config, state: SessionBrowserState) => {
   useEffect(() => {
     const loadSessions = async () => {
       try {
-        const chatsDir = path.join(config.storage.getProjectTempDir(), 'chats');
-        const sessionData = await getSessionFiles(
-          chatsDir,
-          config.getSessionId(),
-        );
+        const chatsDir = path.join(config.storage.getProjectTempDir(), "chats");
+        const sessionData = await getSessionFiles(chatsDir, config.getSessionId());
         setSessions(sessionData);
         setLoading(false);
       } catch (err) {
-        setError(
-          err instanceof Error ? err.message : 'Failed to load sessions',
-        );
+        setError(err instanceof Error ? err.message : "Failed to load sessions");
         setLoading(false);
       }
     };
@@ -673,57 +624,32 @@ const useLoadSessions = (config: Config, state: SessionBrowserState) => {
     const loadFullContent = async () => {
       if (isSearchMode && !hasLoadedFullContent) {
         try {
-          const chatsDir = path.join(
-            config.storage.getProjectTempDir(),
-            'chats',
-          );
-          const sessionData = await getSessionFiles(
-            chatsDir,
-            config.getSessionId(),
-            { includeFullContent: true },
-          );
+          const chatsDir = path.join(config.storage.getProjectTempDir(), "chats");
+          const sessionData = await getSessionFiles(chatsDir, config.getSessionId(), {
+            includeFullContent: true,
+          });
           setSessions(sessionData);
           setHasLoadedFullContent(true);
         } catch (err) {
-          setError(
-            err instanceof Error
-              ? err.message
-              : 'Failed to load full session content',
-          );
+          setError(err instanceof Error ? err.message : "Failed to load full session content");
         }
       }
     };
 
     // eslint-disable-next-line @typescript-eslint/no-floating-promises
     loadFullContent();
-  }, [
-    isSearchMode,
-    hasLoadedFullContent,
-    config,
-    setSessions,
-    setHasLoadedFullContent,
-    setError,
-  ]);
+  }, [isSearchMode, hasLoadedFullContent, config, setSessions, setHasLoadedFullContent, setError]);
 };
 
 /**
  * Hook to handle selection movement.
  */
 export const useMoveSelection = (state: SessionBrowserState) => {
-  const {
-    totalSessions,
-    activeIndex,
-    scrollOffset,
-    setActiveIndex,
-    setScrollOffset,
-  } = state;
+  const { totalSessions, activeIndex, scrollOffset, setActiveIndex, setScrollOffset } = state;
 
   return useCallback(
     (delta: number) => {
-      const newIndex = Math.max(
-        0,
-        Math.min(totalSessions - 1, activeIndex + delta),
-      );
+      const newIndex = Math.max(0, Math.min(totalSessions - 1, activeIndex + delta));
       setActiveIndex(newIndex);
 
       // Adjust scroll offset if needed
@@ -744,11 +670,7 @@ export const useCycleSortOrder = (state: SessionBrowserState) => {
   const { sortOrder, setSortOrder } = state;
 
   return useCallback(() => {
-    const orders: Array<'date' | 'messages' | 'name'> = [
-      'date',
-      'messages',
-      'name',
-    ];
+    const orders: Array<"date" | "messages" | "name"> = ["date", "messages", "name"];
     const currentIndex = orders.indexOf(sortOrder);
     const nextIndex = (currentIndex + 1) % orders.length;
     setSortOrder(orders[nextIndex]);
@@ -770,21 +692,16 @@ export const useSessionBrowserInput = (
     (key) => {
       if (state.isSearchMode) {
         // Search-specific input handling.  Only control/symbols here.
-        if (key.name === 'escape') {
+        if (key.name === "escape") {
           state.setIsSearchMode(false);
-          state.setSearchQuery('');
+          state.setSearchQuery("");
           state.setActiveIndex(0);
           state.setScrollOffset(0);
-        } else if (key.name === 'backspace') {
+        } else if (key.name === "backspace") {
           state.setSearchQuery((prev) => prev.slice(0, -1));
           state.setActiveIndex(0);
           state.setScrollOffset(0);
-        } else if (
-          key.sequence &&
-          !key.ctrl &&
-          !key.meta &&
-          key.sequence.length === 1
-        ) {
+        } else if (key.sequence && !key.ctrl && !key.meta && key.sequence.length === 1) {
           state.setSearchQuery((prev) => prev + key.sequence);
           state.setActiveIndex(0);
           state.setScrollOffset(0);
@@ -792,86 +709,68 @@ export const useSessionBrowserInput = (
       } else {
         // Navigation mode input handling.  We're keeping the letter-based controls for non-search
         // mode only, because the letters need to act as input for the search.
-        if (key.sequence === 'g') {
+        if (key.sequence === "g") {
           state.setActiveIndex(0);
           state.setScrollOffset(0);
-        } else if (key.sequence === 'G') {
+        } else if (key.sequence === "G") {
           state.setActiveIndex(state.totalSessions - 1);
-          state.setScrollOffset(
-            Math.max(0, state.totalSessions - SESSIONS_PER_PAGE),
-          );
+          state.setScrollOffset(Math.max(0, state.totalSessions - SESSIONS_PER_PAGE));
         }
         // Sorting controls.
-        else if (key.sequence === 's') {
+        else if (key.sequence === "s") {
           cycleSortOrder();
-        } else if (key.sequence === 'r') {
+        } else if (key.sequence === "r") {
           state.setSortReverse(!state.sortReverse);
         }
         // Searching and exit controls.
-        else if (key.sequence === '/') {
+        else if (key.sequence === "/") {
           state.setIsSearchMode(true);
-        } else if (
-          key.sequence === 'q' ||
-          key.sequence === 'Q' ||
-          key.name === 'escape'
-        ) {
+        } else if (key.sequence === "q" || key.sequence === "Q" || key.name === "escape") {
           onExit();
         }
         // Delete session control.
-        else if (key.sequence === 'x' || key.sequence === 'X') {
-          const selectedSession =
-            state.filteredAndSortedSessions[state.activeIndex];
+        else if (key.sequence === "x" || key.sequence === "X") {
+          const selectedSession = state.filteredAndSortedSessions[state.activeIndex];
           if (selectedSession && !selectedSession.isCurrentSession) {
             onDeleteSession(selectedSession)
               .then(() => {
                 // Remove the session from the state
-                state.setSessions(
-                  state.sessions.filter((s) => s.id !== selectedSession.id),
-                );
+                state.setSessions(state.sessions.filter((s) => s.id !== selectedSession.id));
 
                 // Adjust active index if needed
-                if (
-                  state.activeIndex >=
-                  state.filteredAndSortedSessions.length - 1
-                ) {
-                  state.setActiveIndex(
-                    Math.max(0, state.filteredAndSortedSessions.length - 2),
-                  );
+                if (state.activeIndex >= state.filteredAndSortedSessions.length - 1) {
+                  state.setActiveIndex(Math.max(0, state.filteredAndSortedSessions.length - 2));
                 }
               })
               .catch((error) => {
                 state.setError(
-                  `Failed to delete session: ${error instanceof Error ? error.message : 'Unknown error'}`,
+                  `Failed to delete session: ${error instanceof Error ? error.message : "Unknown error"}`,
                 );
               });
           }
         }
         // less-like u/d controls.
-        else if (key.sequence === 'u') {
+        else if (key.sequence === "u") {
           moveSelection(-Math.round(SESSIONS_PER_PAGE / 2));
-        } else if (key.sequence === 'd') {
+        } else if (key.sequence === "d") {
           moveSelection(Math.round(SESSIONS_PER_PAGE / 2));
         }
       }
 
       // Handling regardless of search mode.
-      if (
-        key.name === 'return' &&
-        state.filteredAndSortedSessions[state.activeIndex]
-      ) {
-        const selectedSession =
-          state.filteredAndSortedSessions[state.activeIndex];
+      if (key.name === "return" && state.filteredAndSortedSessions[state.activeIndex]) {
+        const selectedSession = state.filteredAndSortedSessions[state.activeIndex];
         // Don't allow resuming the current session
         if (!selectedSession.isCurrentSession) {
           onResumeSession(selectedSession);
         }
-      } else if (key.name === 'up') {
+      } else if (key.name === "up") {
         moveSelection(-1);
-      } else if (key.name === 'down') {
+      } else if (key.name === "down") {
         moveSelection(1);
-      } else if (key.name === 'pageup') {
+      } else if (key.name === "pageup") {
         moveSelection(-SESSIONS_PER_PAGE);
-      } else if (key.name === 'pagedown') {
+      } else if (key.name === "pagedown") {
         moveSelection(SESSIONS_PER_PAGE);
       }
     },
@@ -879,11 +778,7 @@ export const useSessionBrowserInput = (
   );
 };
 
-export function SessionBrowserView({
-  state,
-}: {
-  state: SessionBrowserState;
-}): React.JSX.Element {
+export function SessionBrowserView({ state }: { state: SessionBrowserState }): React.JSX.Element {
   if (state.loading) {
     return <SessionBrowserLoading />;
   }

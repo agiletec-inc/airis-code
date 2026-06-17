@@ -4,11 +4,11 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { Box } from 'ink';
-import { type ReactNode } from 'react';
-import { theme } from '../semantic-colors.js';
-import { MarkdownDisplay } from '../utils/MarkdownDisplay.js';
-import { RadioButtonSelect } from './shared/RadioButtonSelect.js';
+import { Box } from "ink";
+import { type ReactNode } from "react";
+import { theme } from "../semantic-colors.js";
+import { MarkdownDisplay } from "../utils/MarkdownDisplay.js";
+import { RadioButtonSelect } from "./shared/RadioButtonSelect.js";
 
 type ConsentPromptProps = {
   // If a simple string is given, it will render using markdown by default.
@@ -28,20 +28,16 @@ export const ConsentPrompt = (props: ConsentPromptProps) => {
       paddingY={1}
       paddingX={2}
     >
-      {typeof prompt === 'string' ? (
-        <MarkdownDisplay
-          isPending={true}
-          text={prompt}
-          terminalWidth={terminalWidth}
-        />
+      {typeof prompt === "string" ? (
+        <MarkdownDisplay isPending={true} text={prompt} terminalWidth={terminalWidth} />
       ) : (
         prompt
       )}
       <Box marginTop={1}>
         <RadioButtonSelect
           items={[
-            { label: 'Yes', value: true, key: 'Yes' },
-            { label: 'No', value: false, key: 'No' },
+            { label: "Yes", value: true, key: "Yes" },
+            { label: "No", value: false, key: "No" },
           ]}
           onSelect={onConfirm}
         />

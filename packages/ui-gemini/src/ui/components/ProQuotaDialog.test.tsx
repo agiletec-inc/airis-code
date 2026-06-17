@@ -4,31 +4,30 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { render } from '../../test-utils/render.js';
-import { act } from 'react';
-import { describe, it, expect, vi, beforeEach, type Mock } from 'vitest';
-import { ProQuotaDialog } from './ProQuotaDialog.js';
-import { RadioButtonSelect } from './shared/RadioButtonSelect.js';
-
 import {
+  DEFAULT_GEMINI_FLASH_MODEL,
   PREVIEW_GEMINI_MODEL,
   UserTierId,
-  DEFAULT_GEMINI_FLASH_MODEL,
-} from '@airiscode/gemini-cli-core';
+} from "@airiscode/gemini-cli-core";
+import { act } from "react";
+import { beforeEach, describe, expect, it, type Mock, vi } from "vitest";
+import { render } from "../../test-utils/render.js";
+import { ProQuotaDialog } from "./ProQuotaDialog.js";
+import { RadioButtonSelect } from "./shared/RadioButtonSelect.js";
 
 // Mock the child component to make it easier to test the parent
-vi.mock('./shared/RadioButtonSelect.js', () => ({
+vi.mock("./shared/RadioButtonSelect.js", () => ({
   RadioButtonSelect: vi.fn(),
 }));
 
-describe('ProQuotaDialog', () => {
+describe("ProQuotaDialog", () => {
   const mockOnChoice = vi.fn();
 
   beforeEach(() => {
     vi.clearAllMocks();
   });
 
-  describe('for flash model failures', () => {
+  describe("for flash model failures", () => {
     it('should render "Keep trying" and "Stop" options', () => {
       const { unmount } = render(
         <ProQuotaDialog
@@ -45,14 +44,14 @@ describe('ProQuotaDialog', () => {
         expect.objectContaining({
           items: [
             {
-              label: 'Keep trying',
-              value: 'retry_once',
-              key: 'retry_once',
+              label: "Keep trying",
+              value: "retry_once",
+              key: "retry_once",
             },
             {
-              label: 'Stop',
-              value: 'retry_later',
-              key: 'retry_later',
+              label: "Stop",
+              value: "retry_later",
+              key: "retry_later",
             },
           ],
         }),
@@ -62,9 +61,9 @@ describe('ProQuotaDialog', () => {
     });
   });
 
-  describe('for non-flash model failures', () => {
-    describe('when it is a terminal quota error', () => {
-      it('should render switch and stop options for paid tiers', () => {
+  describe("for non-flash model failures", () => {
+    describe("when it is a terminal quota error", () => {
+      it("should render switch and stop options for paid tiers", () => {
         const { unmount } = render(
           <ProQuotaDialog
             failedModel="gemini-2.5-pro"
@@ -81,14 +80,14 @@ describe('ProQuotaDialog', () => {
           expect.objectContaining({
             items: [
               {
-                label: 'Switch to gemini-2.5-flash',
-                value: 'retry_always',
-                key: 'retry_always',
+                label: "Switch to gemini-2.5-flash",
+                value: "retry_always",
+                key: "retry_always",
               },
               {
-                label: 'Stop',
-                value: 'retry_later',
-                key: 'retry_later',
+                label: "Stop",
+                value: "retry_later",
+                key: "retry_later",
               },
             ],
           }),
@@ -97,7 +96,7 @@ describe('ProQuotaDialog', () => {
         unmount();
       });
 
-      it('should render switch, upgrade, and stop options for free tier', () => {
+      it("should render switch, upgrade, and stop options for free tier", () => {
         const { unmount } = render(
           <ProQuotaDialog
             failedModel="gemini-2.5-pro"
@@ -114,19 +113,19 @@ describe('ProQuotaDialog', () => {
           expect.objectContaining({
             items: [
               {
-                label: 'Switch to gemini-2.5-flash',
-                value: 'retry_always',
-                key: 'retry_always',
+                label: "Switch to gemini-2.5-flash",
+                value: "retry_always",
+                key: "retry_always",
               },
               {
-                label: 'Upgrade for higher limits',
-                value: 'upgrade',
-                key: 'upgrade',
+                label: "Upgrade for higher limits",
+                value: "upgrade",
+                key: "upgrade",
               },
               {
-                label: 'Stop',
-                value: 'retry_later',
-                key: 'retry_later',
+                label: "Stop",
+                value: "retry_later",
+                key: "retry_later",
               },
             ],
           }),
@@ -136,8 +135,8 @@ describe('ProQuotaDialog', () => {
       });
     });
 
-    describe('when it is a capacity error', () => {
-      it('should render keep trying, switch, and stop options', () => {
+    describe("when it is a capacity error", () => {
+      it("should render keep trying, switch, and stop options", () => {
         const { unmount } = render(
           <ProQuotaDialog
             failedModel="gemini-2.5-pro"
@@ -154,16 +153,16 @@ describe('ProQuotaDialog', () => {
           expect.objectContaining({
             items: [
               {
-                label: 'Keep trying',
-                value: 'retry_once',
-                key: 'retry_once',
+                label: "Keep trying",
+                value: "retry_once",
+                key: "retry_once",
               },
               {
-                label: 'Switch to gemini-2.5-flash',
-                value: 'retry_always',
-                key: 'retry_always',
+                label: "Switch to gemini-2.5-flash",
+                value: "retry_always",
+                key: "retry_always",
               },
-              { label: 'Stop', value: 'retry_later', key: 'retry_later' },
+              { label: "Stop", value: "retry_later", key: "retry_later" },
             ],
           }),
           undefined,
@@ -172,8 +171,8 @@ describe('ProQuotaDialog', () => {
       });
     });
 
-    describe('when it is a model not found error', () => {
-      it('should render switch and stop options regardless of tier', () => {
+    describe("when it is a model not found error", () => {
+      it("should render switch and stop options regardless of tier", () => {
         const { unmount } = render(
           <ProQuotaDialog
             failedModel="gemini-3-pro-preview"
@@ -190,14 +189,14 @@ describe('ProQuotaDialog', () => {
           expect.objectContaining({
             items: [
               {
-                label: 'Switch to gemini-2.5-pro',
-                value: 'retry_always',
-                key: 'retry_always',
+                label: "Switch to gemini-2.5-pro",
+                value: "retry_always",
+                key: "retry_always",
               },
               {
-                label: 'Stop',
-                value: 'retry_later',
-                key: 'retry_later',
+                label: "Stop",
+                value: "retry_later",
+                key: "retry_later",
               },
             ],
           }),
@@ -206,7 +205,7 @@ describe('ProQuotaDialog', () => {
         unmount();
       });
 
-      it('should render switch and stop options for paid tier as well', () => {
+      it("should render switch and stop options for paid tier as well", () => {
         const { unmount } = render(
           <ProQuotaDialog
             failedModel="gemini-3-pro-preview"
@@ -223,14 +222,14 @@ describe('ProQuotaDialog', () => {
           expect.objectContaining({
             items: [
               {
-                label: 'Switch to gemini-2.5-pro',
-                value: 'retry_always',
-                key: 'retry_always',
+                label: "Switch to gemini-2.5-pro",
+                value: "retry_always",
+                key: "retry_always",
               },
               {
-                label: 'Stop',
-                value: 'retry_later',
-                key: 'retry_later',
+                label: "Stop",
+                value: "retry_later",
+                key: "retry_later",
               },
             ],
           }),
@@ -241,8 +240,8 @@ describe('ProQuotaDialog', () => {
     });
   });
 
-  describe('onChoice handling', () => {
-    it('should call onChoice with the selected value', () => {
+  describe("onChoice handling", () => {
+    it("should call onChoice with the selected value", () => {
       const { unmount } = render(
         <ProQuotaDialog
           failedModel="gemini-2.5-pro"
@@ -256,16 +255,16 @@ describe('ProQuotaDialog', () => {
 
       const onSelect = (RadioButtonSelect as Mock).mock.calls[0][0].onSelect;
       act(() => {
-        onSelect('retry_always');
+        onSelect("retry_always");
       });
 
-      expect(mockOnChoice).toHaveBeenCalledWith('retry_always');
+      expect(mockOnChoice).toHaveBeenCalledWith("retry_always");
       unmount();
     });
   });
 
-  describe('footer note', () => {
-    it('should show a special note for PREVIEW_GEMINI_MODEL', () => {
+  describe("footer note", () => {
+    it("should show a special note for PREVIEW_GEMINI_MODEL", () => {
       const { lastFrame, unmount } = render(
         <ProQuotaDialog
           failedModel={PREVIEW_GEMINI_MODEL}
@@ -279,12 +278,12 @@ describe('ProQuotaDialog', () => {
 
       const output = lastFrame();
       expect(output).toContain(
-        'Note: We will periodically retry Preview Model to see if congestion has cleared.',
+        "Note: We will periodically retry Preview Model to see if congestion has cleared.",
       );
       unmount();
     });
 
-    it('should show the default note for other models', () => {
+    it("should show the default note for other models", () => {
       const { lastFrame, unmount } = render(
         <ProQuotaDialog
           failedModel="gemini-2.5-pro"
@@ -297,9 +296,7 @@ describe('ProQuotaDialog', () => {
       );
 
       const output = lastFrame();
-      expect(output).toContain(
-        'Note: You can always use /model to select a different option.',
-      );
+      expect(output).toContain("Note: You can always use /model to select a different option.");
       unmount();
     });
   });

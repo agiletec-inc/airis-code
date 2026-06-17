@@ -18,31 +18,28 @@
  * 5. Defaults - Built-in default values
  */
 
-import { AuthType } from '../core/contentGenerator.js';
-import type { ContentGeneratorConfig } from '../core/contentGenerator.js';
+import type { ContentGeneratorConfig } from "../core/contentGenerator.js";
+import { AuthType } from "../core/contentGenerator.js";
 import {
+  type ConfigLayer,
+  type ConfigSources,
+  cliSource,
+  computedSource,
+  defaultSource,
+  envLayer,
+  layer,
+  modelProvidersSource,
   resolveField,
   resolveOptionalField,
-  layer,
-  envLayer,
-  cliSource,
   settingsSource,
-  modelProvidersSource,
-  defaultSource,
-  computedSource,
-  type ConfigSources,
-  type ConfigLayer,
-} from '../utils/configResolver.js';
-import {
-  AUTH_ENV_MAPPINGS,
-  DEFAULT_MODELS,
-  MODEL_GENERATION_CONFIG_FIELDS,
-} from './constants.js';
-import type { ModelConfig as ModelProviderConfig } from './types.js';
+} from "../utils/configResolver.js";
+import { AUTH_ENV_MAPPINGS, DEFAULT_MODELS, MODEL_GENERATION_CONFIG_FIELDS } from "./constants.js";
+import type { ModelConfig as ModelProviderConfig } from "./types.js";
+
 export {
-  validateModelConfig,
   type ModelConfigValidationResult,
-} from '../core/contentGenerator.js';
+  validateModelConfig,
+} from "../core/contentGenerator.js";
 
 /**
  * CLI-provided configuration values
@@ -113,9 +110,7 @@ export interface ModelConfigResolutionResult {
  * @param input - All configuration sources
  * @returns Resolved configuration with source tracking
  */
-export function resolveModelConfig(
-  input: ModelConfigSourcesInput,
-): ModelConfigResolutionResult {
+export function resolveModelConfig(input: ModelConfigSourcesInput): ModelConfigResolutionResult {
   const { authType, cli, settings, env, modelProvider, proxy } = input;
   const warnings: string[] = [];
   const sources: ConfigSources = {};
@@ -134,29 +129,22 @@ export function resolveModelConfig(
 
   if (authType && modelProvider) {
     modelLayers.push(
-      layer(
-        modelProvider.id,
-        modelProvidersSource(authType, modelProvider.id, 'model.id'),
-      ),
+      layer(modelProvider.id, modelProvidersSource(authType, modelProvider.id, "model.id")),
     );
   }
   if (cli?.model) {
-    modelLayers.push(layer(cli.model, cliSource('--model')));
+    modelLayers.push(layer(cli.model, cliSource("--model")));
   }
   for (const envKey of envMapping.model) {
     modelLayers.push(envLayer(env, envKey));
   }
   if (settings?.model) {
-    modelLayers.push(layer(settings.model, settingsSource('model.name')));
+    modelLayers.push(layer(settings.model, settingsSource("model.name")));
   }
 
-  const defaultModel = authType ? DEFAULT_MODELS[authType] : '';
-  const modelResult = resolveField(
-    modelLayers,
-    defaultModel,
-    defaultSource(defaultModel),
-  );
-  sources['model'] = modelResult.source;
+  const defaultModel = authType ? DEFAULT_MODELS[authType] : "";
+  const modelResult = resolveField(modelLayers, defaultModel, defaultSource(defaultModel));
+  sources["model"] = modelResult.source;
 
   // ---- API Key ----
   const apiKeyLayers: Array<ConfigLayer<string>> = [];
@@ -167,28 +155,26 @@ export function resolveModelConfig(
     if (apiKeyFromEnv) {
       apiKeyLayers.push(
         layer(apiKeyFromEnv, {
-          kind: 'env',
+          kind: "env",
           envKey: modelProvider.envKey,
-          via: modelProvidersSource(authType, modelProvider.id, 'envKey'),
+          via: modelProvidersSource(authType, modelProvider.id, "envKey"),
         }),
       );
     }
   }
   if (cli?.apiKey) {
-    apiKeyLayers.push(layer(cli.apiKey, cliSource('--openaiApiKey')));
+    apiKeyLayers.push(layer(cli.apiKey, cliSource("--openaiApiKey")));
   }
   for (const envKey of envMapping.apiKey) {
     apiKeyLayers.push(envLayer(env, envKey));
   }
   if (settings?.apiKey) {
-    apiKeyLayers.push(
-      layer(settings.apiKey, settingsSource('security.auth.apiKey')),
-    );
+    apiKeyLayers.push(layer(settings.apiKey, settingsSource("security.auth.apiKey")));
   }
 
   const apiKeyResult = resolveOptionalField(apiKeyLayers);
   if (apiKeyResult) {
-    sources['apiKey'] = apiKeyResult.source;
+    sources["apiKey"] = apiKeyResult.source;
   }
 
   // ---- Base URL ----
@@ -196,38 +182,29 @@ export function resolveModelConfig(
 
   if (authType && modelProvider?.baseUrl) {
     baseUrlLayers.push(
-      layer(
-        modelProvider.baseUrl,
-        modelProvidersSource(authType, modelProvider.id, 'baseUrl'),
-      ),
+      layer(modelProvider.baseUrl, modelProvidersSource(authType, modelProvider.id, "baseUrl")),
     );
   }
   if (cli?.baseUrl) {
-    baseUrlLayers.push(layer(cli.baseUrl, cliSource('--openaiBaseUrl')));
+    baseUrlLayers.push(layer(cli.baseUrl, cliSource("--openaiBaseUrl")));
   }
   for (const envKey of envMapping.baseUrl) {
     baseUrlLayers.push(envLayer(env, envKey));
   }
   if (settings?.baseUrl) {
-    baseUrlLayers.push(
-      layer(settings.baseUrl, settingsSource('security.auth.baseUrl')),
-    );
+    baseUrlLayers.push(layer(settings.baseUrl, settingsSource("security.auth.baseUrl")));
   }
 
   const baseUrlResult = resolveOptionalField(baseUrlLayers);
   if (baseUrlResult) {
-    sources['baseUrl'] = baseUrlResult.source;
+    sources["baseUrl"] = baseUrlResult.source;
   }
 
   // ---- API Key Env Key (for error messages) ----
   let apiKeyEnvKey: string | undefined;
   if (authType && modelProvider?.envKey) {
     apiKeyEnvKey = modelProvider.envKey;
-    sources['apiKeyEnvKey'] = modelProvidersSource(
-      authType,
-      modelProvider.id,
-      'envKey',
-    );
+    sources["apiKeyEnvKey"] = modelProvidersSource(authType, modelProvider.id, "envKey");
   }
 
   // ---- Generation Config (from settings or modelProvider) ----
@@ -242,7 +219,7 @@ export function resolveModelConfig(
   // Build final config
   const config: ContentGeneratorConfig = {
     authType,
-    model: modelResult.value || '',
+    model: modelResult.value || "",
     apiKey: apiKeyResult?.value,
     apiKeyEnvKey,
     baseUrl: baseUrlResult?.value,
@@ -252,11 +229,11 @@ export function resolveModelConfig(
 
   // Add proxy source
   if (proxy) {
-    sources['proxy'] = computedSource('Config.getProxy()');
+    sources["proxy"] = computedSource("Config.getProxy()");
   }
 
   // Add authType source
-  sources['authType'] = computedSource('provided by caller');
+  sources["authType"] = computedSource("provided by caller");
 
   return { config, sources, warnings };
 }
@@ -278,11 +255,7 @@ function resolveGenerationConfig(
     if (authType && modelProviderConfig && field in modelProviderConfig) {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       (result as any)[field] = modelProviderConfig[field];
-      sources[field] = modelProvidersSource(
-        authType,
-        modelId || '',
-        `generationConfig.${field}`,
-      );
+      sources[field] = modelProvidersSource(authType, modelId || "", `generationConfig.${field}`);
     } else if (settingsConfig && field in settingsConfig) {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       (result as any)[field] = settingsConfig[field];

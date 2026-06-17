@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { isApiError, isStructuredError } from './quotaErrorDetection.js';
+import { isApiError, isStructuredError } from "./quotaErrorDetection.js";
 
 // Known rate-limit error codes across providers.
 // 429  - Standard HTTP "Too Many Requests" (OpenAI, etc.)
@@ -32,10 +32,7 @@ export interface RetryInfo {
  * @param extraCodes - Additional error codes to treat as rate-limit errors,
  *   merged with the built-in set at call time (not mutating the default set).
  */
-export function isRateLimitError(
-  error: unknown,
-  extraCodes?: readonly number[],
-): boolean {
+export function isRateLimitError(error: unknown, extraCodes?: readonly number[]): boolean {
   const code = getErrorCode(error);
   if (code === null) return false;
   if (RATE_LIMIT_ERROR_CODES.has(code)) return true;
@@ -52,14 +49,9 @@ function getErrorCode(error: unknown): number | null {
 
   // JSON in string / Error.message — check BEFORE isStructuredError because
   // Error instances also satisfy isStructuredError (both have .message).
-  const msg =
-    error instanceof Error
-      ? error.message
-      : typeof error === 'string'
-        ? error
-        : null;
+  const msg = error instanceof Error ? error.message : typeof error === "string" ? error : null;
   if (msg) {
-    const i = msg.indexOf('{');
+    const i = msg.indexOf("{");
     if (i !== -1) {
       try {
         const p = JSON.parse(msg.substring(i)) as unknown;
@@ -72,13 +64,13 @@ function getErrorCode(error: unknown): number | null {
 
   // StructuredError (.status) — plain objects from Gemini SDK
   if (isStructuredError(error)) {
-    return typeof error.status === 'number' ? error.status : null;
+    return typeof error.status === "number" ? error.status : null;
   }
 
   // HttpError (.status on Error)
-  if (error instanceof Error && 'status' in error) {
+  if (error instanceof Error && "status" in error) {
     const s = (error as { status?: unknown }).status;
-    if (typeof s === 'number') return s;
+    if (typeof s === "number") return s;
   }
 
   return null;

@@ -1,12 +1,9 @@
-import { useCallback } from 'react';
-import { useStdin } from 'ink';
-import type { EditorType } from '@airiscode/core';
-import {
-  editorCommands,
-  commandExists as coreCommandExists,
-} from '@airiscode/core';
-import { spawnSync } from 'child_process';
-import { useSettings } from '../contexts/SettingsContext.js';
+import type { EditorType } from "@airiscode/core";
+import { commandExists as coreCommandExists, editorCommands } from "@airiscode/core";
+import { spawnSync } from "child_process";
+import { useStdin } from "ink";
+import { useCallback } from "react";
+import { useSettings } from "../contexts/SettingsContext.js";
 
 /**
  * Cache for command existence checks to avoid repeated execSync calls.
@@ -31,15 +28,14 @@ function commandExists(cmd: string): boolean {
  */
 function getExecutableCommand(editorType: EditorType): string {
   const commandConfig = editorCommands[editorType];
-  const commands =
-    process.platform === 'win32' ? commandConfig.win32 : commandConfig.default;
+  const commands = process.platform === "win32" ? commandConfig.win32 : commandConfig.default;
 
   const availableCommand = commands.find((cmd) => commandExists(cmd));
 
   if (!availableCommand) {
     throw new Error(
       `No available editor command found for ${editorType}. ` +
-        `Tried: ${commands.join(', ')}. ` +
+        `Tried: ${commands.join(", ")}. ` +
         `Please install one of these editors or set a different preferredEditor in settings.`,
     );
   }
@@ -57,12 +53,12 @@ function getEditorCommand(preferredEditor?: EditorType): string {
 
   // Platform-specific defaults with UI preference for macOS
   switch (process.platform) {
-    case 'darwin':
-      return 'open -t'; // TextEdit in plain text mode
-    case 'win32':
-      return 'notepad';
+    case "darwin":
+      return "open -t"; // TextEdit in plain text mode
+    case "win32":
+      return "notepad";
     default:
-      return process.env['VISUAL'] || process.env['EDITOR'] || 'vi';
+      return process.env["VISUAL"] || process.env["EDITOR"] || "vi";
   }
 }
 
@@ -76,19 +72,17 @@ export function useLaunchEditor() {
 
   const launchEditor = useCallback(
     async (filePath: string): Promise<void> => {
-      const preferredEditor = settings.merged.general?.preferredEditor as
-        | EditorType
-        | undefined;
+      const preferredEditor = settings.merged.general?.preferredEditor as EditorType | undefined;
       const editor = getEditorCommand(preferredEditor);
 
       // Handle different editor command formats
       let editorCommand: string;
       let editorArgs: string[];
 
-      if (editor === 'open -t') {
+      if (editor === "open -t") {
         // macOS TextEdit in plain text mode
-        editorCommand = 'open';
-        editorArgs = ['-t', filePath];
+        editorCommand = "open";
+        editorArgs = ["-t", filePath];
       } else {
         // Standard editor command
         editorCommand = editor;
@@ -102,16 +96,16 @@ export function useLaunchEditor() {
 
         // On Windows, .cmd and .bat files need shell: true
         const needsShell =
-          process.platform === 'win32' &&
-          (editorCommand.endsWith('.cmd') || editorCommand.endsWith('.bat'));
+          process.platform === "win32" &&
+          (editorCommand.endsWith(".cmd") || editorCommand.endsWith(".bat"));
 
         const { status, error } = spawnSync(editorCommand, editorArgs, {
-          stdio: 'inherit',
+          stdio: "inherit",
           shell: needsShell,
         });
 
         if (error) throw error;
-        if (typeof status === 'number' && status !== 0) {
+        if (typeof status === "number" && status !== 0) {
           throw new Error(`Editor exited with status ${status}`);
         }
       } finally {

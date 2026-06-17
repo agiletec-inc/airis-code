@@ -4,25 +4,21 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { useState, useCallback } from 'react';
-import type { ApprovalMode, Config } from '@airiscode/core';
-import type { LoadedSettings, SettingScope } from '../../config/settings.js';
+import type { ApprovalMode, Config } from "@airiscode/core";
+import { useCallback, useState } from "react";
+import type { LoadedSettings, SettingScope } from "../../config/settings.js";
 
 interface UseApprovalModeCommandReturn {
   isApprovalModeDialogOpen: boolean;
   openApprovalModeDialog: () => void;
-  handleApprovalModeSelect: (
-    mode: ApprovalMode | undefined,
-    scope: SettingScope,
-  ) => void;
+  handleApprovalModeSelect: (mode: ApprovalMode | undefined, scope: SettingScope) => void;
 }
 
 export const useApprovalModeCommand = (
   loadedSettings: LoadedSettings,
   config: Config,
 ): UseApprovalModeCommandReturn => {
-  const [isApprovalModeDialogOpen, setIsApprovalModeDialogOpen] =
-    useState(false);
+  const [isApprovalModeDialogOpen, setIsApprovalModeDialogOpen] = useState(false);
 
   const openApprovalModeDialog = useCallback(() => {
     setIsApprovalModeDialogOpen(true);
@@ -38,10 +34,8 @@ export const useApprovalModeCommand = (
         }
 
         // Set the mode in the current session and persist to settings
-        loadedSettings.setValue(scope, 'tools.approvalMode', mode);
-        config.setApprovalMode(
-          loadedSettings.merged.tools?.approvalMode ?? mode,
-        );
+        loadedSettings.setValue(scope, "tools.approvalMode", mode);
+        config.setApprovalMode(loadedSettings.merged.tools?.approvalMode ?? mode);
       } finally {
         setIsApprovalModeDialogOpen(false);
       }

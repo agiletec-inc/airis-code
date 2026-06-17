@@ -10,19 +10,16 @@
  * which instructs the LLM to respond in the user's preferred language.
  */
 
-import * as fs from 'node:fs';
-import * as path from 'node:path';
-import { Storage } from '@airiscode/core';
-import {
-  detectSystemLanguage,
-  getLanguageNameFromLocale,
-} from '../i18n/index.js';
+import * as fs from "node:fs";
+import * as path from "node:path";
+import { Storage } from "@airiscode/core";
+import { detectSystemLanguage, getLanguageNameFromLocale } from "../i18n/index.js";
 
-const LLM_OUTPUT_LANGUAGE_RULE_FILENAME = 'output-language.md';
-const LLM_OUTPUT_LANGUAGE_MARKER_PREFIX = 'airiscode:llm-output-language:';
+const LLM_OUTPUT_LANGUAGE_RULE_FILENAME = "output-language.md";
+const LLM_OUTPUT_LANGUAGE_MARKER_PREFIX = "airiscode:llm-output-language:";
 
 /** Special value meaning "detect from system settings" */
-export const OUTPUT_LANGUAGE_AUTO = 'auto';
+export const OUTPUT_LANGUAGE_AUTO = "auto";
 
 /**
  * Checks if a value represents the "auto" setting.
@@ -41,7 +38,7 @@ export function normalizeOutputLanguage(language: string): string {
   const fullName = getLanguageNameFromLocale(lowered);
   // getLanguageNameFromLocale returns 'English' as default for unknown codes.
   // Only use the result if it's a known code or explicitly 'en'.
-  if (fullName !== 'English' || lowered === 'en') {
+  if (fullName !== "English" || lowered === "en") {
     return fullName;
   }
   return language;
@@ -50,9 +47,7 @@ export function normalizeOutputLanguage(language: string): string {
 /**
  * Resolves the output language, converting 'auto' to the detected system language.
  */
-export function resolveOutputLanguage(
-  value: string | undefined | null,
-): string {
+export function resolveOutputLanguage(value: string | undefined | null): string {
   if (isAutoLanguage(value)) {
     const detectedLocale = detectSystemLanguage();
     return getLanguageNameFromLocale(detectedLocale);
@@ -64,10 +59,7 @@ export function resolveOutputLanguage(
  * Returns the path to the LLM output language rule file (~/.airiscode/output-language.md).
  */
 function getOutputLanguageFilePath(): string {
-  return path.join(
-    Storage.getGlobalQwenDir(),
-    LLM_OUTPUT_LANGUAGE_RULE_FILENAME,
-  );
+  return path.join(Storage.getGlobalQwenDir(), LLM_OUTPUT_LANGUAGE_RULE_FILENAME);
 }
 
 /**
@@ -76,9 +68,9 @@ function getOutputLanguageFilePath(): string {
  */
 function sanitizeForMarker(language: string): string {
   return language
-    .replace(/[\r\n]/g, ' ')
-    .replace(/--!?>/g, '')
-    .replace(/--/g, '');
+    .replace(/[\r\n]/g, " ")
+    .replace(/--!?>/g, "")
+    .replace(/--/g, "");
 }
 
 /**
@@ -114,7 +106,7 @@ function parseOutputLanguageFromContent(content: string): string | null {
   // Primary: machine-readable marker (e.g., <!-- airiscode:llm-output-language: 中文 -->)
   const markerRegex = new RegExp(
     String.raw`<!--\s*${LLM_OUTPUT_LANGUAGE_MARKER_PREFIX}\s*(.*?)\s*-->`,
-    'i',
+    "i",
   );
   const markerMatch = content.match(markerRegex);
   if (markerMatch?.[1]?.trim()) {
@@ -122,9 +114,7 @@ function parseOutputLanguageFromContent(content: string): string | null {
   }
 
   // Fallback: legacy heading format (e.g., # CRITICAL: Chinese Output Language Rule)
-  const headingMatch = content.match(
-    /^#.*?CRITICAL:\s*(.*?)\s+Output Language Rule\b/im,
-  );
+  const headingMatch = content.match(/^#.*?CRITICAL:\s*(.*?)\s+Output Language Rule\b/im);
   if (headingMatch?.[1]?.trim()) {
     return headingMatch[1].trim();
   }
@@ -142,7 +132,7 @@ function readOutputLanguageFromFile(): string | null {
     return null;
   }
   try {
-    const content = fs.readFileSync(filePath, 'utf-8');
+    const content = fs.readFileSync(filePath, "utf-8");
     return parseOutputLanguageFromContent(content);
   } catch {
     return null;
@@ -157,7 +147,7 @@ export function writeOutputLanguageFile(language: string): void {
   const content = generateOutputLanguageFileContent(language);
   const dir = path.dirname(filePath);
   fs.mkdirSync(dir, { recursive: true });
-  fs.writeFileSync(filePath, content, 'utf-8');
+  fs.writeFileSync(filePath, content, "utf-8");
 }
 
 /**

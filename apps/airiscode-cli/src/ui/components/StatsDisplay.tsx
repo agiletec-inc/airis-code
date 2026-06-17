@@ -4,22 +4,22 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import type React from 'react';
-import { Box, Text } from 'ink';
-import Gradient from 'ink-gradient';
-import { theme } from '../semantic-colors.js';
-import { formatDuration } from '../utils/formatters.js';
-import type { ModelMetrics } from '../contexts/SessionContext.js';
-import { useSessionStats } from '../contexts/SessionContext.js';
+import { Box, Text } from "ink";
+import Gradient from "ink-gradient";
+import type React from "react";
+import { t } from "../../i18n/index.js";
+import type { ModelMetrics } from "../contexts/SessionContext.js";
+import { useSessionStats } from "../contexts/SessionContext.js";
+import { theme } from "../semantic-colors.js";
+import { computeSessionStats } from "../utils/computeStats.js";
 import {
   getStatusColor,
   TOOL_SUCCESS_RATE_HIGH,
   TOOL_SUCCESS_RATE_MEDIUM,
   USER_AGREEMENT_RATE_HIGH,
   USER_AGREEMENT_RATE_MEDIUM,
-} from '../utils/displayUtils.js';
-import { computeSessionStats } from '../utils/computeStats.js';
-import { t } from '../../i18n/index.js';
+} from "../utils/displayUtils.js";
+import { formatDuration } from "../utils/formatters.js";
 
 // A more flexible and powerful StatRow component
 interface StatRowProps {
@@ -86,22 +86,22 @@ const ModelUsageTable: React.FC<{
       <Box>
         <Box width={nameWidth}>
           <Text bold color={theme.text.primary}>
-            {t('Model Usage')}
+            {t("Model Usage")}
           </Text>
         </Box>
         <Box width={requestsWidth} justifyContent="flex-end">
           <Text bold color={theme.text.primary}>
-            {t('Reqs')}
+            {t("Reqs")}
           </Text>
         </Box>
         <Box width={inputTokensWidth} justifyContent="flex-end">
           <Text bold color={theme.text.primary}>
-            {t('Input Tokens')}
+            {t("Input Tokens")}
           </Text>
         </Box>
         <Box width={outputTokensWidth} justifyContent="flex-end">
           <Text bold color={theme.text.primary}>
-            {t('Output Tokens')}
+            {t("Output Tokens")}
           </Text>
         </Box>
       </Box>
@@ -120,17 +120,13 @@ const ModelUsageTable: React.FC<{
       {Object.entries(models).map(([name, modelMetrics]) => (
         <Box key={name}>
           <Box width={nameWidth}>
-            <Text color={theme.text.primary}>{name.replace('-001', '')}</Text>
+            <Text color={theme.text.primary}>{name.replace("-001", "")}</Text>
           </Box>
           <Box width={requestsWidth} justifyContent="flex-end">
-            <Text color={theme.text.primary}>
-              {modelMetrics.api.totalRequests}
-            </Text>
+            <Text color={theme.text.primary}>{modelMetrics.api.totalRequests}</Text>
           </Box>
           <Box width={inputTokensWidth} justifyContent="flex-end">
-            <Text color={theme.status.warning}>
-              {modelMetrics.tokens.prompt.toLocaleString()}
-            </Text>
+            <Text color={theme.status.warning}>{modelMetrics.tokens.prompt.toLocaleString()}</Text>
           </Box>
           <Box width={outputTokensWidth} justifyContent="flex-end">
             <Text color={theme.status.warning}>
@@ -142,14 +138,13 @@ const ModelUsageTable: React.FC<{
       {cacheEfficiency > 0 && (
         <Box flexDirection="column" marginTop={1}>
           <Text color={theme.text.primary}>
-            <Text color={theme.status.success}>{t('Savings Highlight:')}</Text>{' '}
+            <Text color={theme.status.success}>{t("Savings Highlight:")}</Text>{" "}
             {totalCachedTokens.toLocaleString()} ({cacheEfficiency.toFixed(1)}
-            %){' '}
-            {t('of input tokens were served from the cache, reducing costs.')}
+            %) {t("of input tokens were served from the cache, reducing costs.")}
           </Text>
           <Box height={1} />
           <Text color={theme.text.secondary}>
-            » {t('Tip: For a full token breakdown, run `/stats model`.')}
+            » {t("Tip: For a full token breakdown, run `/stats model`.")}
           </Text>
         </Box>
       )}
@@ -163,11 +158,7 @@ interface StatsDisplayProps {
   width?: number;
 }
 
-export const StatsDisplay: React.FC<StatsDisplayProps> = ({
-  duration,
-  title,
-  width,
-}) => {
+export const StatsDisplay: React.FC<StatsDisplayProps> = ({ duration, title, width }) => {
   const { stats } = useSessionStats();
   const { metrics } = stats;
   const { models, tools, files } = metrics;
@@ -182,10 +173,7 @@ export const StatsDisplay: React.FC<StatsDisplayProps> = ({
     yellow: USER_AGREEMENT_RATE_MEDIUM,
   };
   const successColor = getStatusColor(computed.successRate, successThresholds);
-  const agreementColor = getStatusColor(
-    computed.agreementRate,
-    agreementThresholds,
-  );
+  const agreementColor = getStatusColor(computed.agreementRate, agreementThresholds);
 
   const renderTitle = () => {
     if (title) {
@@ -203,7 +191,7 @@ export const StatsDisplay: React.FC<StatsDisplayProps> = ({
     }
     return (
       <Text bold color={theme.text.accent}>
-        {t('Session Stats')}
+        {t("Session Stats")}
       </Text>
     );
   };
@@ -220,68 +208,56 @@ export const StatsDisplay: React.FC<StatsDisplayProps> = ({
       {renderTitle()}
       <Box height={1} />
 
-      <Section title={t('Interaction Summary')}>
-        <StatRow title={t('Session ID:')}>
+      <Section title={t("Interaction Summary")}>
+        <StatRow title={t("Session ID:")}>
           <Text color={theme.text.primary}>{stats.sessionId}</Text>
         </StatRow>
-        <StatRow title={t('Tool Calls:')}>
+        <StatRow title={t("Tool Calls:")}>
           <Text color={theme.text.primary}>
-            {tools.totalCalls} ({' '}
-            <Text color={theme.status.success}>✓ {tools.totalSuccess}</Text>{' '}
+            {tools.totalCalls} ( <Text color={theme.status.success}>✓ {tools.totalSuccess}</Text>{" "}
             <Text color={theme.status.error}>x {tools.totalFail}</Text> )
           </Text>
         </StatRow>
-        <StatRow title={t('Success Rate:')}>
+        <StatRow title={t("Success Rate:")}>
           <Text color={successColor}>{computed.successRate.toFixed(1)}%</Text>
         </StatRow>
         {computed.totalDecisions > 0 && (
-          <StatRow title={t('User Agreement:')}>
+          <StatRow title={t("User Agreement:")}>
             <Text color={agreementColor}>
-              {computed.agreementRate.toFixed(1)}%{' '}
+              {computed.agreementRate.toFixed(1)}%{" "}
               <Text color={theme.text.secondary}>
-                ({computed.totalDecisions} {t('reviewed')})
+                ({computed.totalDecisions} {t("reviewed")})
               </Text>
             </Text>
           </StatRow>
         )}
-        {files &&
-          (files.totalLinesAdded > 0 || files.totalLinesRemoved > 0) && (
-            <StatRow title={t('Code Changes:')}>
-              <Text color={theme.text.primary}>
-                <Text color={theme.status.success}>
-                  +{files.totalLinesAdded}
-                </Text>{' '}
-                <Text color={theme.status.error}>
-                  -{files.totalLinesRemoved}
-                </Text>
-              </Text>
-            </StatRow>
-          )}
+        {files && (files.totalLinesAdded > 0 || files.totalLinesRemoved > 0) && (
+          <StatRow title={t("Code Changes:")}>
+            <Text color={theme.text.primary}>
+              <Text color={theme.status.success}>+{files.totalLinesAdded}</Text>{" "}
+              <Text color={theme.status.error}>-{files.totalLinesRemoved}</Text>
+            </Text>
+          </StatRow>
+        )}
       </Section>
 
-      <Section title={t('Performance')}>
-        <StatRow title={t('Wall Time:')}>
+      <Section title={t("Performance")}>
+        <StatRow title={t("Wall Time:")}>
           <Text color={theme.text.primary}>{duration}</Text>
         </StatRow>
-        <StatRow title={t('Agent Active:')}>
-          <Text color={theme.text.primary}>
-            {formatDuration(computed.agentActiveTime)}
-          </Text>
+        <StatRow title={t("Agent Active:")}>
+          <Text color={theme.text.primary}>{formatDuration(computed.agentActiveTime)}</Text>
         </StatRow>
-        <SubStatRow title={t('API Time:')}>
+        <SubStatRow title={t("API Time:")}>
           <Text color={theme.text.primary}>
-            {formatDuration(computed.totalApiTime)}{' '}
-            <Text color={theme.text.secondary}>
-              ({computed.apiTimePercent.toFixed(1)}%)
-            </Text>
+            {formatDuration(computed.totalApiTime)}{" "}
+            <Text color={theme.text.secondary}>({computed.apiTimePercent.toFixed(1)}%)</Text>
           </Text>
         </SubStatRow>
-        <SubStatRow title={t('Tool Time:')}>
+        <SubStatRow title={t("Tool Time:")}>
           <Text color={theme.text.primary}>
-            {formatDuration(computed.totalToolTime)}{' '}
-            <Text color={theme.text.secondary}>
-              ({computed.toolTimePercent.toFixed(1)}%)
-            </Text>
+            {formatDuration(computed.totalToolTime)}{" "}
+            <Text color={theme.text.secondary}>({computed.toolTimePercent.toFixed(1)}%)</Text>
           </Text>
         </SubStatRow>
       </Section>

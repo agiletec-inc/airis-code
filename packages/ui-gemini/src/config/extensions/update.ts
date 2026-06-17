@@ -4,18 +4,18 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+import * as fs from "node:fs";
+import { debugLogger, type GeminiCLIExtension } from "@airiscode/gemini-cli-core";
 import {
   type ExtensionUpdateAction,
   ExtensionUpdateState,
   type ExtensionUpdateStatus,
-} from '../../ui/state/extensions.js';
-import { loadInstallMetadata } from '../extension.js';
-import { checkForExtensionUpdate } from './github.js';
-import { debugLogger, type GeminiCLIExtension } from '@airiscode/gemini-cli-core';
-import * as fs from 'node:fs';
-import { getErrorMessage } from '../../utils/errors.js';
-import { copyExtension, type ExtensionManager } from '../extension-manager.js';
-import { ExtensionStorage } from './storage.js';
+} from "../../ui/state/extensions.js";
+import { getErrorMessage } from "../../utils/errors.js";
+import { loadInstallMetadata } from "../extension.js";
+import { copyExtension, type ExtensionManager } from "../extension-manager.js";
+import { checkForExtensionUpdate } from "./github.js";
+import { ExtensionStorage } from "./storage.js";
 
 export interface ExtensionUpdateInfo {
   name: string;
@@ -34,23 +34,21 @@ export async function updateExtension(
     return undefined;
   }
   dispatchExtensionStateUpdate({
-    type: 'SET_STATE',
+    type: "SET_STATE",
     payload: { name: extension.name, state: ExtensionUpdateState.UPDATING },
   });
   const installMetadata = loadInstallMetadata(extension.path);
 
   if (!installMetadata?.type) {
     dispatchExtensionStateUpdate({
-      type: 'SET_STATE',
+      type: "SET_STATE",
       payload: { name: extension.name, state: ExtensionUpdateState.ERROR },
     });
-    throw new Error(
-      `Extension ${extension.name} cannot be updated, type is unknown.`,
-    );
+    throw new Error(`Extension ${extension.name} cannot be updated, type is unknown.`);
   }
-  if (installMetadata?.type === 'link') {
+  if (installMetadata?.type === "link") {
     dispatchExtensionStateUpdate({
-      type: 'SET_STATE',
+      type: "SET_STATE",
       payload: { name: extension.name, state: ExtensionUpdateState.UP_TO_DATE },
     });
     throw new Error(`Extension is linked so does not need to be updated`);
@@ -59,9 +57,7 @@ export async function updateExtension(
 
   const tempDir = await ExtensionStorage.createTmpDir();
   try {
-    const previousExtensionConfig = extensionManager.loadExtensionConfig(
-      extension.path,
-    );
+    const previousExtensionConfig = extensionManager.loadExtensionConfig(extension.path);
     let updatedExtension: GeminiCLIExtension;
     try {
       updatedExtension = await extensionManager.installOrUpdateExtension(
@@ -70,16 +66,14 @@ export async function updateExtension(
       );
     } catch (e) {
       dispatchExtensionStateUpdate({
-        type: 'SET_STATE',
+        type: "SET_STATE",
         payload: { name: extension.name, state: ExtensionUpdateState.ERROR },
       });
-      throw new Error(
-        `Updated extension not found after installation, got error:\n${e}`,
-      );
+      throw new Error(`Updated extension not found after installation, got error:\n${e}`);
     }
     const updatedVersion = updatedExtension.version;
     dispatchExtensionStateUpdate({
-      type: 'SET_STATE',
+      type: "SET_STATE",
       payload: {
         name: extension.name,
         state: enableExtensionReloading
@@ -93,11 +87,9 @@ export async function updateExtension(
       updatedVersion,
     };
   } catch (e) {
-    debugLogger.error(
-      `Error updating extension, rolling back. ${getErrorMessage(e)}`,
-    );
+    debugLogger.error(`Error updating extension, rolling back. ${getErrorMessage(e)}`);
     dispatchExtensionStateUpdate({
-      type: 'SET_STATE',
+      type: "SET_STATE",
       payload: { name: extension.name, state: ExtensionUpdateState.ERROR },
     });
     await copyExtension(tempDir, extension.path);
@@ -119,8 +111,7 @@ export async function updateAllUpdatableExtensions(
       extensions
         .filter(
           (extension) =>
-            extensionsState.get(extension.name)?.status ===
-            ExtensionUpdateState.UPDATE_AVAILABLE,
+            extensionsState.get(extension.name)?.status === ExtensionUpdateState.UPDATE_AVAILABLE,
         )
         .map((extension) =>
           updateExtension(
@@ -145,13 +136,13 @@ export async function checkForAllExtensionUpdates(
   extensionManager: ExtensionManager,
   dispatch: (action: ExtensionUpdateAction) => void,
 ): Promise<void> {
-  dispatch({ type: 'BATCH_CHECK_START' });
+  dispatch({ type: "BATCH_CHECK_START" });
   try {
     const promises: Array<Promise<void>> = [];
     for (const extension of extensions) {
       if (!extension.installMetadata) {
         dispatch({
-          type: 'SET_STATE',
+          type: "SET_STATE",
           payload: {
             name: extension.name,
             state: ExtensionUpdateState.NOT_UPDATABLE,
@@ -160,7 +151,7 @@ export async function checkForAllExtensionUpdates(
         continue;
       }
       dispatch({
-        type: 'SET_STATE',
+        type: "SET_STATE",
         payload: {
           name: extension.name,
           state: ExtensionUpdateState.CHECKING_FOR_UPDATES,
@@ -169,7 +160,7 @@ export async function checkForAllExtensionUpdates(
       promises.push(
         checkForExtensionUpdate(extension, extensionManager).then((state) =>
           dispatch({
-            type: 'SET_STATE',
+            type: "SET_STATE",
             payload: { name: extension.name, state },
           }),
         ),
@@ -177,6 +168,6 @@ export async function checkForAllExtensionUpdates(
     }
     await Promise.all(promises);
   } finally {
-    dispatch({ type: 'BATCH_CHECK_END' });
+    dispatch({ type: "BATCH_CHECK_END" });
   }
 }

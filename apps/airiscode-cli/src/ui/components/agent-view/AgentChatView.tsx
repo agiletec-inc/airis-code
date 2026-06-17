@@ -21,27 +21,24 @@
  * streaming), which avoids per-chunk re-renders and keeps the display simple.
  */
 
-import { Box, Text, Static } from 'ink';
-import { useMemo, useState, useEffect, useCallback, useRef } from 'react';
 import {
-  AgentStatus,
   AgentEventType,
-  getGitBranch,
+  AgentStatus,
   type AgentStatusChangeEvent,
-} from '@airiscode/core';
-import {
-  useAgentViewState,
-  useAgentViewActions,
-} from '../../contexts/AgentViewContext.js';
-import { useUIState } from '../../contexts/UIStateContext.js';
-import { useTerminalSize } from '../../hooks/useTerminalSize.js';
-import { HistoryItemDisplay } from '../HistoryItemDisplay.js';
-import { ToolCallStatus } from '../../types.js';
-import { theme } from '../../semantic-colors.js';
-import { GeminiRespondingSpinner } from '../GeminiRespondingSpinner.js';
-import { useKeypress } from '../../hooks/useKeypress.js';
-import { agentMessagesToHistoryItems } from './agentHistoryAdapter.js';
-import { AgentHeader } from './AgentHeader.js';
+  getGitBranch,
+} from "@airiscode/core";
+import { Box, Static, Text } from "ink";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useAgentViewActions, useAgentViewState } from "../../contexts/AgentViewContext.js";
+import { useUIState } from "../../contexts/UIStateContext.js";
+import { useKeypress } from "../../hooks/useKeypress.js";
+import { useTerminalSize } from "../../hooks/useTerminalSize.js";
+import { theme } from "../../semantic-colors.js";
+import { ToolCallStatus } from "../../types.js";
+import { GeminiRespondingSpinner } from "../GeminiRespondingSpinner.js";
+import { HistoryItemDisplay } from "../HistoryItemDisplay.js";
+import { AgentHeader } from "./AgentHeader.js";
+import { agentMessagesToHistoryItems } from "./agentHistoryAdapter.js";
 
 // ─── Main Component ─────────────────────────────────────────
 
@@ -53,8 +50,7 @@ export const AgentChatView = ({ agentId }: AgentChatViewProps) => {
   const { agents } = useAgentViewState();
   const { setAgentShellFocused } = useAgentViewActions();
   const uiState = useUIState();
-  const { historyRemountKey, availableTerminalHeight, constrainHeight } =
-    uiState;
+  const { historyRemountKey, availableTerminalHeight, constrainHeight } = uiState;
   const { columns: terminalWidth } = useTerminalSize();
   const agent = agents.get(agentId);
   const contentWidth = terminalWidth - 4;
@@ -105,15 +101,11 @@ export const AgentChatView = ({ agentId }: AgentChatViewProps) => {
   const liveOutputs = interactiveAgent?.getLiveOutputs();
   const shellPids = interactiveAgent?.getShellPids();
   const status = interactiveAgent?.getStatus();
-  const isRunning =
-    status === AgentStatus.RUNNING || status === AgentStatus.INITIALIZING;
+  const isRunning = status === AgentStatus.RUNNING || status === AgentStatus.INITIALIZING;
 
   // Derive the active PTY PID: first shell PID among currently-executing tools.
   // Resets naturally to undefined when the tool finishes (shellPids cleared).
-  const activePtyId =
-    shellPids && shellPids.size > 0
-      ? shellPids.values().next().value
-      : undefined;
+  const activePtyId = shellPids && shellPids.size > 0 ? shellPids.values().next().value : undefined;
 
   // Track whether the user has toggled input focus into the embedded shell.
   // Mirrors the main agent's embeddedShellFocused in AppContainer.
@@ -134,7 +126,7 @@ export const AgentChatView = ({ agentId }: AgentChatViewProps) => {
   // Ctrl+F: toggle shell input focus when a PTY is active.
   useKeypress(
     (key) => {
-      if (key.ctrl && key.name === 'f') {
+      if (key.ctrl && key.name === "f") {
         if (activePtyId || embeddedShellFocused) {
           setEmbeddedShellFocusedLocal((prev) => !prev);
         }
@@ -149,12 +141,7 @@ export const AgentChatView = ({ agentId }: AgentChatViewProps) => {
   // tool result updates an existing entry in place).
   const allItems = useMemo(
     () =>
-      agentMessagesToHistoryItems(
-        messages,
-        pendingApprovals ?? new Map(),
-        liveOutputs,
-        shellPids,
-      ),
+      agentMessagesToHistoryItems(messages, pendingApprovals ?? new Map(), liveOutputs, shellPids),
     // eslint-disable-next-line react-hooks/exhaustive-deps
     [
       agentId,
@@ -174,11 +161,9 @@ export const AgentChatView = ({ agentId }: AgentChatViewProps) => {
     for (let idx = allItems.length - 1; idx >= 0; idx--) {
       const item = allItems[idx]!;
       if (
-        item.type === 'tool_group' &&
+        item.type === "tool_group" &&
         item.tools.some(
-          (t) =>
-            t.status === ToolCallStatus.Executing ||
-            t.status === ToolCallStatus.Confirming,
+          (t) => t.status === ToolCallStatus.Executing || t.status === ToolCallStatus.Confirming,
         )
       ) {
         return idx;
@@ -191,11 +176,11 @@ export const AgentChatView = ({ agentId }: AgentChatViewProps) => {
   const pendingItems = allItems.slice(splitIndex);
 
   const core = interactiveAgent?.getCore();
-  const agentWorkingDir = core?.runtimeContext.getTargetDir() ?? '';
+  const agentWorkingDir = core?.runtimeContext.getTargetDir() ?? "";
   // Cache the branch — it won't change during the agent's lifetime and
   // getGitBranch uses synchronous execSync which blocks the render loop.
   const agentGitBranch = useMemo(
-    () => (agentWorkingDir ? getGitBranch(agentWorkingDir) : ''),
+    () => (agentWorkingDir ? getGitBranch(agentWorkingDir) : ""),
     // eslint-disable-next-line react-hooks/exhaustive-deps
     [agentId],
   );
@@ -203,14 +188,12 @@ export const AgentChatView = ({ agentId }: AgentChatViewProps) => {
   if (!agent || !interactiveAgent || !core) {
     return (
       <Box marginX={2}>
-        <Text color={theme.status.error}>
-          Agent &quot;{agentId}&quot; not found.
-        </Text>
+        <Text color={theme.status.error}>Agent &quot;{agentId}&quot; not found.</Text>
       </Box>
     );
   }
 
-  const agentModelId = core.modelConfig.model ?? '';
+  const agentModelId = core.modelConfig.model ?? "";
 
   return (
     <Box flexDirection="column">
@@ -252,9 +235,7 @@ export const AgentChatView = ({ agentId }: AgentChatViewProps) => {
           isPending={true}
           terminalWidth={terminalWidth}
           mainAreaWidth={contentWidth}
-          availableTerminalHeight={
-            constrainHeight ? availableTerminalHeight : undefined
-          }
+          availableTerminalHeight={constrainHeight ? availableTerminalHeight : undefined}
           isFocused={true}
           activeShellPtyId={activePtyId ?? null}
           embeddedShellFocused={embeddedShellFocused}

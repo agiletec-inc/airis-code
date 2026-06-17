@@ -4,26 +4,22 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import type React from 'react';
-import { Box, Text } from 'ink';
-import {
-  type Todo,
-  type TodoList,
-  type TodoStatus,
-} from '@airiscode/gemini-cli-core';
-import { theme } from '../../semantic-colors.js';
-import { useUIState } from '../../contexts/UIStateContext.js';
-import { useMemo } from 'react';
-import type { HistoryItemToolGroup } from '../../types.js';
+import { type Todo, type TodoList, type TodoStatus } from "@airiscode/gemini-cli-core";
+import { Box, Text } from "ink";
+import type React from "react";
+import { useMemo } from "react";
+import { useUIState } from "../../contexts/UIStateContext.js";
+import { theme } from "../../semantic-colors.js";
+import type { HistoryItemToolGroup } from "../../types.js";
 
 const TodoTitleDisplay: React.FC<{ todos: TodoList }> = ({ todos }) => {
   const score = useMemo(() => {
     let total = 0;
     let completed = 0;
     for (const todo of todos.todos) {
-      if (todo.status !== 'cancelled') {
+      if (todo.status !== "cancelled") {
         total += 1;
-        if (todo.status === 'completed') {
+        if (todo.status === "completed") {
           completed += 1;
         }
       }
@@ -43,25 +39,25 @@ const TodoTitleDisplay: React.FC<{ todos: TodoList }> = ({ todos }) => {
 
 const TodoStatusDisplay: React.FC<{ status: TodoStatus }> = ({ status }) => {
   switch (status) {
-    case 'completed':
+    case "completed":
       return (
         <Text color={theme.status.success} aria-label="Completed">
           ✓
         </Text>
       );
-    case 'in_progress':
+    case "in_progress":
       return (
         <Text color={theme.text.accent} aria-label="In Progress">
           »
         </Text>
       );
-    case 'pending':
+    case "pending":
       return (
         <Text color={theme.text.secondary} aria-label="Pending">
           ☐
         </Text>
       );
-    case 'cancelled':
+    case "cancelled":
     default:
       return (
         <Text color={theme.status.error} aria-label="Cancelled">
@@ -73,21 +69,21 @@ const TodoStatusDisplay: React.FC<{ status: TodoStatus }> = ({ status }) => {
 
 const TodoItemDisplay: React.FC<{
   todo: Todo;
-  wrap?: 'truncate';
-  role?: 'listitem';
+  wrap?: "truncate";
+  role?: "listitem";
 }> = ({ todo, wrap, role: ariaRole }) => {
   const textColor = (() => {
     switch (todo.status) {
-      case 'in_progress':
+      case "in_progress":
         return theme.text.accent;
-      case 'completed':
-      case 'cancelled':
+      case "completed":
+      case "cancelled":
         return theme.text.secondary;
       default:
         return theme.text.primary;
     }
   })();
-  const strikethrough = todo.status === 'cancelled';
+  const strikethrough = todo.status === "cancelled";
 
   return (
     <Box flexDirection="row" columnGap={1} aria-role={ariaRole}>
@@ -108,15 +104,12 @@ export const TodoTray: React.FC = () => {
     // Find the most recent todo list written by the WriteTodosTool
     for (let i = uiState.history.length - 1; i >= 0; i--) {
       const entry = uiState.history[i];
-      if (entry.type !== 'tool_group') {
+      if (entry.type !== "tool_group") {
         continue;
       }
       const toolGroup = entry as HistoryItemToolGroup;
       for (const tool of toolGroup.tools) {
-        if (
-          typeof tool.resultDisplay !== 'object' ||
-          !('todos' in tool.resultDisplay)
-        ) {
+        if (typeof tool.resultDisplay !== "object" || !("todos" in tool.resultDisplay)) {
           continue;
         }
         return tool.resultDisplay as TodoList;
@@ -129,14 +122,12 @@ export const TodoTray: React.FC = () => {
     if (todos === null) {
       return null;
     }
-    return todos.todos.find((todo) => todo.status === 'in_progress') || null;
+    return todos.todos.find((todo) => todo.status === "in_progress") || null;
   }, [todos]);
 
   const hasActiveTodos = useMemo(() => {
     if (!todos || !todos.todos) return false;
-    return todos.todos.some(
-      (todo) => todo.status === 'pending' || todo.status === 'in_progress',
-    );
+    return todos.todos.some((todo) => todo.status === "pending" || todo.status === "in_progress");
   }, [todos]);
 
   if (

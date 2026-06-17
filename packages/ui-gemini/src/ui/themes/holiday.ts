@@ -4,165 +4,165 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { type ColorsTheme, Theme } from './theme.js';
-import { interpolateColor } from './color-utils.js';
+import { interpolateColor } from "./color-utils.js";
+import { type ColorsTheme, Theme } from "./theme.js";
 
 const holidayColors: ColorsTheme = {
-  type: 'dark',
-  Background: '#00210e',
-  Foreground: '#F0F8FF',
-  LightBlue: '#B0E0E6',
-  AccentBlue: '#3CB371',
-  AccentPurple: '#FF9999',
-  AccentCyan: '#33F9FF',
-  AccentGreen: '#3CB371',
-  AccentYellow: '#FFEE8C',
-  AccentRed: '#FF6347',
-  DiffAdded: '#2E8B57',
-  DiffRemoved: '#CD5C5C',
-  Comment: '#8FBC8F',
-  Gray: '#D7F5D3',
-  DarkGray: interpolateColor('#D7F5D3', '#151B18', 0.5),
-  GradientColors: ['#FF0000', '#FFFFFF', '#008000'],
+  type: "dark",
+  Background: "#00210e",
+  Foreground: "#F0F8FF",
+  LightBlue: "#B0E0E6",
+  AccentBlue: "#3CB371",
+  AccentPurple: "#FF9999",
+  AccentCyan: "#33F9FF",
+  AccentGreen: "#3CB371",
+  AccentYellow: "#FFEE8C",
+  AccentRed: "#FF6347",
+  DiffAdded: "#2E8B57",
+  DiffRemoved: "#CD5C5C",
+  Comment: "#8FBC8F",
+  Gray: "#D7F5D3",
+  DarkGray: interpolateColor("#D7F5D3", "#151B18", 0.5),
+  GradientColors: ["#FF0000", "#FFFFFF", "#008000"],
 };
 
 export const Holiday: Theme = new Theme(
-  'Holiday',
-  'dark',
+  "Holiday",
+  "dark",
   {
     hljs: {
-      display: 'block',
-      overflowX: 'auto',
-      padding: '0.5em',
+      display: "block",
+      overflowX: "auto",
+      padding: "0.5em",
       background: holidayColors.Background,
       color: holidayColors.Foreground,
     },
-    'hljs-keyword': {
+    "hljs-keyword": {
       color: holidayColors.AccentBlue,
     },
-    'hljs-literal': {
+    "hljs-literal": {
       color: holidayColors.AccentBlue,
     },
-    'hljs-symbol': {
+    "hljs-symbol": {
       color: holidayColors.AccentBlue,
     },
-    'hljs-name': {
+    "hljs-name": {
       color: holidayColors.AccentBlue,
     },
-    'hljs-link': {
+    "hljs-link": {
       color: holidayColors.AccentBlue,
-      textDecoration: 'underline',
+      textDecoration: "underline",
     },
-    'hljs-built_in': {
+    "hljs-built_in": {
       color: holidayColors.AccentCyan,
     },
-    'hljs-type': {
+    "hljs-type": {
       color: holidayColors.AccentCyan,
     },
-    'hljs-number': {
+    "hljs-number": {
       color: holidayColors.AccentGreen,
     },
-    'hljs-class': {
+    "hljs-class": {
       color: holidayColors.AccentGreen,
     },
-    'hljs-string': {
+    "hljs-string": {
       color: holidayColors.AccentYellow,
     },
-    'hljs-meta-string': {
+    "hljs-meta-string": {
       color: holidayColors.AccentYellow,
     },
-    'hljs-regexp': {
+    "hljs-regexp": {
       color: holidayColors.AccentRed,
     },
-    'hljs-template-tag': {
+    "hljs-template-tag": {
       color: holidayColors.AccentRed,
     },
-    'hljs-subst': {
+    "hljs-subst": {
       color: holidayColors.Foreground,
     },
-    'hljs-function': {
+    "hljs-function": {
       color: holidayColors.Foreground,
     },
-    'hljs-title': {
+    "hljs-title": {
       color: holidayColors.Foreground,
     },
-    'hljs-params': {
+    "hljs-params": {
       color: holidayColors.Foreground,
     },
-    'hljs-formula': {
+    "hljs-formula": {
       color: holidayColors.Foreground,
     },
-    'hljs-comment': {
+    "hljs-comment": {
       color: holidayColors.Comment,
-      fontStyle: 'italic',
+      fontStyle: "italic",
     },
-    'hljs-quote': {
+    "hljs-quote": {
       color: holidayColors.Comment,
-      fontStyle: 'italic',
+      fontStyle: "italic",
     },
-    'hljs-doctag': {
+    "hljs-doctag": {
       color: holidayColors.Comment,
     },
-    'hljs-meta': {
+    "hljs-meta": {
       color: holidayColors.Gray,
     },
-    'hljs-meta-keyword': {
+    "hljs-meta-keyword": {
       color: holidayColors.Gray,
     },
-    'hljs-tag': {
+    "hljs-tag": {
       color: holidayColors.Gray,
     },
-    'hljs-variable': {
+    "hljs-variable": {
       color: holidayColors.AccentPurple,
     },
-    'hljs-template-variable': {
+    "hljs-template-variable": {
       color: holidayColors.AccentPurple,
     },
-    'hljs-attr': {
+    "hljs-attr": {
       color: holidayColors.LightBlue,
     },
-    'hljs-attribute': {
+    "hljs-attribute": {
       color: holidayColors.LightBlue,
     },
-    'hljs-builtin-name': {
+    "hljs-builtin-name": {
       color: holidayColors.LightBlue,
     },
-    'hljs-section': {
+    "hljs-section": {
       color: holidayColors.AccentYellow,
     },
-    'hljs-emphasis': {
-      fontStyle: 'italic',
+    "hljs-emphasis": {
+      fontStyle: "italic",
     },
-    'hljs-strong': {
-      fontWeight: 'bold',
+    "hljs-strong": {
+      fontWeight: "bold",
     },
-    'hljs-bullet': {
+    "hljs-bullet": {
       color: holidayColors.AccentYellow,
     },
-    'hljs-selector-tag': {
+    "hljs-selector-tag": {
       color: holidayColors.AccentYellow,
     },
-    'hljs-selector-id': {
+    "hljs-selector-id": {
       color: holidayColors.AccentYellow,
     },
-    'hljs-selector-class': {
+    "hljs-selector-class": {
       color: holidayColors.AccentYellow,
     },
-    'hljs-selector-attr': {
+    "hljs-selector-attr": {
       color: holidayColors.AccentYellow,
     },
-    'hljs-selector-pseudo': {
+    "hljs-selector-pseudo": {
       color: holidayColors.AccentYellow,
     },
-    'hljs-addition': {
+    "hljs-addition": {
       backgroundColor: holidayColors.DiffAdded,
-      display: 'inline-block',
-      width: '100%',
+      display: "inline-block",
+      width: "100%",
     },
-    'hljs-deletion': {
+    "hljs-deletion": {
       backgroundColor: holidayColors.DiffRemoved,
-      display: 'inline-block',
-      width: '100%',
+      display: "inline-block",
+      width: "100%",
     },
   },
   holidayColors,

@@ -9,7 +9,7 @@
  * are handled consistently and robustly across the application.
  */
 
-import stripAnsi from 'strip-ansi';
+import stripAnsi from "strip-ansi";
 
 export class TextOutput {
   private atStartOfLine = true;
@@ -30,7 +30,7 @@ export class TextOutput {
     this.outputStream.write(str);
     const strippedStr = stripAnsi(str);
     if (strippedStr.length > 0) {
-      this.atStartOfLine = strippedStr.endsWith('\n');
+      this.atStartOfLine = strippedStr.endsWith("\n");
     }
   }
 
@@ -42,7 +42,7 @@ export class TextOutput {
    */
   writeOnNewLine(str: string): void {
     if (!this.atStartOfLine) {
-      this.write('\n');
+      this.write("\n");
     }
     this.write(str);
   }
@@ -53,7 +53,7 @@ export class TextOutput {
    */
   ensureTrailingNewline(): void {
     if (!this.atStartOfLine) {
-      this.write('\n');
+      this.write("\n");
     }
   }
 }

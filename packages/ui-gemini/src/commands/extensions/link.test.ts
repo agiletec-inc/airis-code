@@ -4,36 +4,27 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import {
-  vi,
-  describe,
-  it,
-  expect,
-  beforeEach,
-  afterEach,
-  type Mock,
-} from 'vitest';
-import { format } from 'node:util';
-import { type CommandModule, type Argv } from 'yargs';
-import { handleLink, linkCommand } from './link.js';
-import { ExtensionManager } from '../../config/extension-manager.js';
-import { loadSettings, type LoadedSettings } from '../../config/settings.js';
-import { getErrorMessage } from '../../utils/errors.js';
+import { format } from "node:util";
+import { afterEach, beforeEach, describe, expect, it, type Mock, vi } from "vitest";
+import { type Argv, type CommandModule } from "yargs";
+import { ExtensionManager } from "../../config/extension-manager.js";
+import { type LoadedSettings, loadSettings } from "../../config/settings.js";
+import { getErrorMessage } from "../../utils/errors.js";
+import { handleLink, linkCommand } from "./link.js";
 
 // Mock dependencies
 const emitConsoleLog = vi.hoisted(() => vi.fn());
 const debugLogger = vi.hoisted(() => ({
   log: vi.fn((message, ...args) => {
-    emitConsoleLog('log', format(message, ...args));
+    emitConsoleLog("log", format(message, ...args));
   }),
   error: vi.fn((message, ...args) => {
-    emitConsoleLog('error', format(message, ...args));
+    emitConsoleLog("error", format(message, ...args));
   }),
 }));
 
-vi.mock('@airiscode/gemini-cli-core', async (importOriginal) => {
-  const actual =
-    await importOriginal<typeof import('@airiscode/gemini-cli-core')>();
+vi.mock("@airiscode/gemini-cli-core", async (importOriginal) => {
+  const actual = await importOriginal<typeof import("@airiscode/gemini-cli-core")>();
   return {
     ...actual,
     coreEvents: {
@@ -43,20 +34,20 @@ vi.mock('@airiscode/gemini-cli-core', async (importOriginal) => {
   };
 });
 
-vi.mock('../../config/extension-manager.js');
-vi.mock('../../config/settings.js');
-vi.mock('../../utils/errors.js');
-vi.mock('../../config/extensions/consent.js', () => ({
+vi.mock("../../config/extension-manager.js");
+vi.mock("../../config/settings.js");
+vi.mock("../../utils/errors.js");
+vi.mock("../../config/extensions/consent.js", () => ({
   requestConsentNonInteractive: vi.fn(),
 }));
-vi.mock('../../config/extensions/extensionSettings.js', () => ({
+vi.mock("../../config/extensions/extensionSettings.js", () => ({
   promptForSetting: vi.fn(),
 }));
-vi.mock('../utils.js', () => ({
+vi.mock("../utils.js", () => ({
   exitCli: vi.fn(),
 }));
 
-describe('extensions link command', () => {
+describe("extensions link command", () => {
   const mockLoadSettings = vi.mocked(loadSettings);
   const mockGetErrorMessage = vi.mocked(getErrorMessage);
   const mockExtensionManager = vi.mocked(ExtensionManager);
@@ -66,76 +57,65 @@ describe('extensions link command', () => {
     mockLoadSettings.mockReturnValue({
       merged: {},
     } as unknown as LoadedSettings);
-    mockExtensionManager.prototype.loadExtensions = vi
-      .fn()
-      .mockResolvedValue(undefined);
+    mockExtensionManager.prototype.loadExtensions = vi.fn().mockResolvedValue(undefined);
     mockExtensionManager.prototype.installOrUpdateExtension = vi
       .fn()
-      .mockResolvedValue({ name: 'my-linked-extension' });
+      .mockResolvedValue({ name: "my-linked-extension" });
   });
 
   afterEach(() => {
     vi.restoreAllMocks();
   });
 
-  describe('handleLink', () => {
-    it('should link an extension from a local path', async () => {
-      const mockCwd = vi.spyOn(process, 'cwd').mockReturnValue('/test/dir');
-      await handleLink({ path: '/local/path/to/extension' });
+  describe("handleLink", () => {
+    it("should link an extension from a local path", async () => {
+      const mockCwd = vi.spyOn(process, "cwd").mockReturnValue("/test/dir");
+      await handleLink({ path: "/local/path/to/extension" });
 
       expect(mockExtensionManager).toHaveBeenCalledWith(
         expect.objectContaining({
-          workspaceDir: '/test/dir',
+          workspaceDir: "/test/dir",
         }),
       );
       expect(mockExtensionManager.prototype.loadExtensions).toHaveBeenCalled();
-      expect(
-        mockExtensionManager.prototype.installOrUpdateExtension,
-      ).toHaveBeenCalledWith({
-        source: '/local/path/to/extension',
-        type: 'link',
+      expect(mockExtensionManager.prototype.installOrUpdateExtension).toHaveBeenCalledWith({
+        source: "/local/path/to/extension",
+        type: "link",
       });
       expect(emitConsoleLog).toHaveBeenCalledWith(
-        'log',
+        "log",
         'Extension "my-linked-extension" linked successfully and enabled.',
       );
       mockCwd.mockRestore();
     });
 
-    it('should log an error message and exit with code 1 when linking fails', async () => {
+    it("should log an error message and exit with code 1 when linking fails", async () => {
       const mockProcessExit = vi
-        .spyOn(process, 'exit')
-        .mockImplementation((() => {}) as (
-          code?: string | number | null | undefined,
-        ) => never);
-      const error = new Error('Link failed');
-      (
-        mockExtensionManager.prototype.installOrUpdateExtension as Mock
-      ).mockRejectedValue(error);
-      mockGetErrorMessage.mockReturnValue('Link failed message');
+        .spyOn(process, "exit")
+        .mockImplementation((() => {}) as (code?: string | number | null | undefined) => never);
+      const error = new Error("Link failed");
+      (mockExtensionManager.prototype.installOrUpdateExtension as Mock).mockRejectedValue(error);
+      mockGetErrorMessage.mockReturnValue("Link failed message");
 
-      await handleLink({ path: '/local/path/to/extension' });
+      await handleLink({ path: "/local/path/to/extension" });
 
-      expect(emitConsoleLog).toHaveBeenCalledWith(
-        'error',
-        'Link failed message',
-      );
+      expect(emitConsoleLog).toHaveBeenCalledWith("error", "Link failed message");
       expect(mockProcessExit).toHaveBeenCalledWith(1);
       mockProcessExit.mockRestore();
     });
   });
 
-  describe('linkCommand', () => {
+  describe("linkCommand", () => {
     const command = linkCommand as CommandModule;
 
-    it('should have correct command and describe', () => {
-      expect(command.command).toBe('link <path>');
+    it("should have correct command and describe", () => {
+      expect(command.command).toBe("link <path>");
       expect(command.describe).toBe(
-        'Links an extension from a local path. Updates made to the local path will always be reflected.',
+        "Links an extension from a local path. Updates made to the local path will always be reflected.",
       );
     });
 
-    describe('builder', () => {
+    describe("builder", () => {
       interface MockYargs {
         positional: Mock;
         option: Mock;
@@ -151,42 +131,38 @@ describe('extensions link command', () => {
         };
       });
 
-      it('should configure positional argument', () => {
-        (command.builder as (yargs: Argv) => Argv)(
-          yargsMock as unknown as Argv,
-        );
-        expect(yargsMock.positional).toHaveBeenCalledWith('path', {
-          describe: 'The name of the extension to link.',
-          type: 'string',
+      it("should configure positional argument", () => {
+        (command.builder as (yargs: Argv) => Argv)(yargsMock as unknown as Argv);
+        expect(yargsMock.positional).toHaveBeenCalledWith("path", {
+          describe: "The name of the extension to link.",
+          type: "string",
         });
-        expect(yargsMock.option).toHaveBeenCalledWith('consent', {
+        expect(yargsMock.option).toHaveBeenCalledWith("consent", {
           describe:
-            'Acknowledge the security risks of installing an extension and skip the confirmation prompt.',
-          type: 'boolean',
+            "Acknowledge the security risks of installing an extension and skip the confirmation prompt.",
+          type: "boolean",
           default: false,
         });
         expect(yargsMock.check).toHaveBeenCalled();
       });
     });
 
-    it('handler should call handleLink', async () => {
-      const mockCwd = vi.spyOn(process, 'cwd').mockReturnValue('/test/dir');
+    it("handler should call handleLink", async () => {
+      const mockCwd = vi.spyOn(process, "cwd").mockReturnValue("/test/dir");
       interface TestArgv {
         path: string;
         [key: string]: unknown;
       }
       const argv: TestArgv = {
-        path: '/local/path/to/extension',
+        path: "/local/path/to/extension",
         _: [],
-        $0: '',
+        $0: "",
       };
       await (command.handler as unknown as (args: TestArgv) => void)(argv);
 
-      expect(
-        mockExtensionManager.prototype.installOrUpdateExtension,
-      ).toHaveBeenCalledWith({
-        source: '/local/path/to/extension',
-        type: 'link',
+      expect(mockExtensionManager.prototype.installOrUpdateExtension).toHaveBeenCalledWith({
+        source: "/local/path/to/extension",
+        type: "link",
       });
       mockCwd.mockRestore();
     });

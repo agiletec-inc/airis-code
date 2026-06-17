@@ -4,45 +4,34 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import {
-  describe,
-  it,
-  expect,
-  vi,
-  beforeEach,
-  afterEach,
-  type Mock,
-} from 'vitest';
-
-import * as actualNodeFs from 'node:fs'; // For setup/teardown
-import fs from 'node:fs';
-import fsPromises from 'node:fs/promises';
-import path from 'node:path';
-import os from 'node:os';
-import { fileURLToPath } from 'node:url';
+import fs, * as actualNodeFs from "node:fs";
+import fsPromises from "node:fs/promises";
+import os from "node:os";
+import path from "node:path";
+import { fileURLToPath } from "node:url";
 // eslint-disable-next-line import/no-internal-modules
-import mime from 'mime/lite';
-
+import mime from "mime/lite";
+import { afterEach, beforeEach, describe, expect, it, type Mock, vi } from "vitest";
+import { StandardFileSystemService } from "../services/fileSystemService.js";
 import {
-  isWithinRoot,
-  isBinaryFile,
-  detectFileType,
-  processSingleFileContent,
   detectBOM,
-  readFileWithEncoding,
+  detectFileType,
   fileExists,
+  isBinaryFile,
+  isWithinRoot,
+  processSingleFileContent,
+  readFileWithEncoding,
   readWasmBinaryFromDisk,
-} from './fileUtils.js';
-import { StandardFileSystemService } from '../services/fileSystemService.js';
+} from "./fileUtils.js";
 
-vi.mock('mime/lite', () => ({
+vi.mock("mime/lite", () => ({
   default: { getType: vi.fn() },
   getType: vi.fn(),
 }));
 
 const mockMimeGetType = mime.getType as Mock;
 
-describe('fileUtils', () => {
+describe("fileUtils", () => {
   let tempRootDir: string;
   const originalProcessCwd = process.cwd;
 
@@ -56,17 +45,15 @@ describe('fileUtils', () => {
   beforeEach(() => {
     vi.resetAllMocks(); // Reset all mocks, including mime.getType
 
-    tempRootDir = actualNodeFs.mkdtempSync(
-      path.join(os.tmpdir(), 'fileUtils-test-'),
-    );
+    tempRootDir = actualNodeFs.mkdtempSync(path.join(os.tmpdir(), "fileUtils-test-"));
     process.cwd = vi.fn(() => tempRootDir); // Mock cwd if necessary for relative path logic within tests
 
-    testTextFilePath = path.join(tempRootDir, 'test.txt');
-    testImageFilePath = path.join(tempRootDir, 'image.png');
-    testPdfFilePath = path.join(tempRootDir, 'document.pdf');
-    testBinaryFilePath = path.join(tempRootDir, 'app.exe');
-    nonexistentFilePath = path.join(tempRootDir, 'nonexistent.txt');
-    directoryPath = path.join(tempRootDir, 'subdir');
+    testTextFilePath = path.join(tempRootDir, "test.txt");
+    testImageFilePath = path.join(tempRootDir, "image.png");
+    testPdfFilePath = path.join(tempRootDir, "document.pdf");
+    testBinaryFilePath = path.join(tempRootDir, "app.exe");
+    nonexistentFilePath = path.join(tempRootDir, "nonexistent.txt");
+    directoryPath = path.join(tempRootDir, "subdir");
 
     actualNodeFs.mkdirSync(directoryPath, { recursive: true }); // Ensure subdir exists
   });
@@ -79,119 +66,111 @@ describe('fileUtils', () => {
     vi.restoreAllMocks(); // Restore any spies
   });
 
-  describe('readWasmBinaryFromDisk', () => {
-    it('loads a WASM binary from disk as a Uint8Array', async () => {
-      const wasmFixtureUrl = new URL(
-        './__fixtures__/dummy.wasm',
-        import.meta.url,
-      );
+  describe("readWasmBinaryFromDisk", () => {
+    it("loads a WASM binary from disk as a Uint8Array", async () => {
+      const wasmFixtureUrl = new URL("./__fixtures__/dummy.wasm", import.meta.url);
       const wasmFixturePath = fileURLToPath(wasmFixtureUrl);
       const result = await readWasmBinaryFromDisk(wasmFixturePath);
-      const expectedBytes = new Uint8Array(
-        await fsPromises.readFile(wasmFixturePath),
-      );
+      const expectedBytes = new Uint8Array(await fsPromises.readFile(wasmFixturePath));
 
       expect(result).toBeInstanceOf(Uint8Array);
       expect(result).toStrictEqual(expectedBytes);
     });
   });
 
-  describe('isWithinRoot', () => {
-    const defaultRoot = path.resolve('/project/root');
+  describe("isWithinRoot", () => {
+    const defaultRoot = path.resolve("/project/root");
 
     it.each([
       {
-        name: 'a path directly within the root',
-        path: path.join(defaultRoot, 'file.txt'),
+        name: "a path directly within the root",
+        path: path.join(defaultRoot, "file.txt"),
         expected: true,
       },
       {
-        name: 'a path in a subdirectory within the root',
-        path: path.join(defaultRoot, 'subdir', 'file.txt'),
+        name: "a path in a subdirectory within the root",
+        path: path.join(defaultRoot, "subdir", "file.txt"),
         expected: true,
       },
-      { name: 'the root path itself', path: defaultRoot, expected: true },
+      { name: "the root path itself", path: defaultRoot, expected: true },
       {
-        name: 'a path with a trailing slash',
-        path: path.join(defaultRoot, 'file.txt') + path.sep,
+        name: "a path with a trailing slash",
+        path: path.join(defaultRoot, "file.txt") + path.sep,
         expected: true,
       },
       {
-        name: 'the root path with a trailing slash',
+        name: "the root path with a trailing slash",
         path: defaultRoot + path.sep,
         expected: true,
       },
       {
-        name: 'a sub-path of the path to check',
-        path: path.resolve('/project/root/sub'),
-        root: path.resolve('/project/root'),
+        name: "a sub-path of the path to check",
+        path: path.resolve("/project/root/sub"),
+        root: path.resolve("/project/root"),
         expected: true,
       },
       {
-        name: 'a path outside the root',
-        path: path.resolve('/project/other', 'file.txt'),
+        name: "a path outside the root",
+        path: path.resolve("/project/other", "file.txt"),
         expected: false,
       },
       {
-        name: 'an unrelated path',
-        path: path.resolve('/unrelated', 'file.txt'),
+        name: "an unrelated path",
+        path: path.resolve("/unrelated", "file.txt"),
         expected: false,
       },
       {
-        name: 'a path that only partially matches the root prefix',
-        path: path.resolve('/project/root-but-actually-different'),
+        name: "a path that only partially matches the root prefix",
+        path: path.resolve("/project/root-but-actually-different"),
         expected: false,
       },
       {
-        name: 'a root path that is a sub-path of the path to check',
-        path: path.resolve('/project/root'),
-        root: path.resolve('/project/root/sub'),
+        name: "a root path that is a sub-path of the path to check",
+        path: path.resolve("/project/root"),
+        root: path.resolve("/project/root/sub"),
         expected: false,
       },
       {
-        name: 'a POSIX path inside',
-        path: '/project/root/file.txt',
-        root: '/project/root',
+        name: "a POSIX path inside",
+        path: "/project/root/file.txt",
+        root: "/project/root",
         expected: true,
       },
       {
-        name: 'a POSIX path outside',
-        path: '/project/other/file.txt',
-        root: '/project/root',
+        name: "a POSIX path outside",
+        path: "/project/other/file.txt",
+        root: "/project/root",
         expected: false,
       },
-    ])(
-      'should return $expected for $name',
-      ({ path: testPath, root, expected }) => {
-        expect(isWithinRoot(testPath, root || defaultRoot)).toBe(expected);
-      },
-    );
+    ])("should return $expected for $name", ({ path: testPath, root, expected }) => {
+      expect(isWithinRoot(testPath, root || defaultRoot)).toBe(expected);
+    });
   });
 
-  describe('fileExists', () => {
-    it('should return true if the file exists', async () => {
-      const testFile = path.join(tempRootDir, 'exists.txt');
-      actualNodeFs.writeFileSync(testFile, 'content');
+  describe("fileExists", () => {
+    it("should return true if the file exists", async () => {
+      const testFile = path.join(tempRootDir, "exists.txt");
+      actualNodeFs.writeFileSync(testFile, "content");
       await expect(fileExists(testFile)).resolves.toBe(true);
     });
 
-    it('should return false if the file does not exist', async () => {
-      const testFile = path.join(tempRootDir, 'does-not-exist.txt');
+    it("should return false if the file does not exist", async () => {
+      const testFile = path.join(tempRootDir, "does-not-exist.txt");
       await expect(fileExists(testFile)).resolves.toBe(false);
     });
 
-    it('should return true for a directory that exists', async () => {
-      const testDir = path.join(tempRootDir, 'exists-dir');
+    it("should return true for a directory that exists", async () => {
+      const testDir = path.join(tempRootDir, "exists-dir");
       actualNodeFs.mkdirSync(testDir);
       await expect(fileExists(testDir)).resolves.toBe(true);
     });
   });
 
-  describe('isBinaryFile', () => {
+  describe("isBinaryFile", () => {
     let filePathForBinaryTest: string;
 
     beforeEach(() => {
-      filePathForBinaryTest = path.join(tempRootDir, 'binaryCheck.tmp');
+      filePathForBinaryTest = path.join(tempRootDir, "binaryCheck.tmp");
     });
 
     afterEach(() => {
@@ -200,20 +179,20 @@ describe('fileUtils', () => {
       }
     });
 
-    it('should return false for an empty file', async () => {
-      actualNodeFs.writeFileSync(filePathForBinaryTest, '');
+    it("should return false for an empty file", async () => {
+      actualNodeFs.writeFileSync(filePathForBinaryTest, "");
       expect(await isBinaryFile(filePathForBinaryTest)).toBe(false);
     });
 
-    it('should return false for a typical text file', async () => {
+    it("should return false for a typical text file", async () => {
       actualNodeFs.writeFileSync(
         filePathForBinaryTest,
-        'Hello, world!\nThis is a test file with normal text content.',
+        "Hello, world!\nThis is a test file with normal text content.",
       );
       expect(await isBinaryFile(filePathForBinaryTest)).toBe(false);
     });
 
-    it('should return true for a file with many null bytes', async () => {
+    it("should return true for a file with many null bytes", async () => {
       const binaryContent = Buffer.from([
         0x48, 0x65, 0x00, 0x6c, 0x6f, 0x00, 0x00, 0x00, 0x00, 0x00,
       ]); // "He\0llo\0\0\0\0\0"
@@ -221,7 +200,7 @@ describe('fileUtils', () => {
       expect(await isBinaryFile(filePathForBinaryTest)).toBe(true);
     });
 
-    it('should return true for a file with high percentage of non-printable ASCII', async () => {
+    it("should return true for a file with high percentage of non-printable ASCII", async () => {
       const binaryContent = Buffer.from([
         0x41, 0x42, 0x01, 0x02, 0x03, 0x04, 0x05, 0x43, 0x44, 0x06,
       ]); // AB\x01\x02\x03\x04\x05CD\x06
@@ -229,7 +208,7 @@ describe('fileUtils', () => {
       expect(await isBinaryFile(filePathForBinaryTest)).toBe(true);
     });
 
-    it('should return false if file access fails (e.g., ENOENT)', async () => {
+    it("should return false if file access fails (e.g., ENOENT)", async () => {
       // Ensure the file does not exist
       if (actualNodeFs.existsSync(filePathForBinaryTest)) {
         actualNodeFs.unlinkSync(filePathForBinaryTest);
@@ -238,15 +217,12 @@ describe('fileUtils', () => {
     });
   });
 
-  describe('BOM detection and encoding', () => {
+  describe("BOM detection and encoding", () => {
     let testDir: string;
 
     beforeEach(async () => {
       testDir = await fsPromises.mkdtemp(
-        path.join(
-          await fsPromises.realpath(os.tmpdir()),
-          'fileUtils-bom-test-',
-        ),
+        path.join(await fsPromises.realpath(os.tmpdir()), "fileUtils-bom-test-"),
       );
     });
 
@@ -256,91 +232,85 @@ describe('fileUtils', () => {
       }
     });
 
-    describe('detectBOM', () => {
-      it('should detect UTF-8 BOM', () => {
-        const buf = Buffer.from([
-          0xef, 0xbb, 0xbf, 0x48, 0x65, 0x6c, 0x6c, 0x6f,
-        ]);
+    describe("detectBOM", () => {
+      it("should detect UTF-8 BOM", () => {
+        const buf = Buffer.from([0xef, 0xbb, 0xbf, 0x48, 0x65, 0x6c, 0x6c, 0x6f]);
         const result = detectBOM(buf);
-        expect(result).toEqual({ encoding: 'utf8', bomLength: 3 });
+        expect(result).toEqual({ encoding: "utf8", bomLength: 3 });
       });
 
-      it('should detect UTF-16 LE BOM', () => {
+      it("should detect UTF-16 LE BOM", () => {
         const buf = Buffer.from([0xff, 0xfe, 0x48, 0x00, 0x65, 0x00]);
         const result = detectBOM(buf);
-        expect(result).toEqual({ encoding: 'utf16le', bomLength: 2 });
+        expect(result).toEqual({ encoding: "utf16le", bomLength: 2 });
       });
 
-      it('should detect UTF-16 BE BOM', () => {
+      it("should detect UTF-16 BE BOM", () => {
         const buf = Buffer.from([0xfe, 0xff, 0x00, 0x48, 0x00, 0x65]);
         const result = detectBOM(buf);
-        expect(result).toEqual({ encoding: 'utf16be', bomLength: 2 });
+        expect(result).toEqual({ encoding: "utf16be", bomLength: 2 });
       });
 
-      it('should detect UTF-32 LE BOM', () => {
-        const buf = Buffer.from([
-          0xff, 0xfe, 0x00, 0x00, 0x48, 0x00, 0x00, 0x00,
-        ]);
+      it("should detect UTF-32 LE BOM", () => {
+        const buf = Buffer.from([0xff, 0xfe, 0x00, 0x00, 0x48, 0x00, 0x00, 0x00]);
         const result = detectBOM(buf);
-        expect(result).toEqual({ encoding: 'utf32le', bomLength: 4 });
+        expect(result).toEqual({ encoding: "utf32le", bomLength: 4 });
       });
 
-      it('should detect UTF-32 BE BOM', () => {
-        const buf = Buffer.from([
-          0x00, 0x00, 0xfe, 0xff, 0x00, 0x00, 0x00, 0x48,
-        ]);
+      it("should detect UTF-32 BE BOM", () => {
+        const buf = Buffer.from([0x00, 0x00, 0xfe, 0xff, 0x00, 0x00, 0x00, 0x48]);
         const result = detectBOM(buf);
-        expect(result).toEqual({ encoding: 'utf32be', bomLength: 4 });
+        expect(result).toEqual({ encoding: "utf32be", bomLength: 4 });
       });
 
-      it('should return null for no BOM', () => {
+      it("should return null for no BOM", () => {
         const buf = Buffer.from([0x48, 0x65, 0x6c, 0x6c, 0x6f]);
         const result = detectBOM(buf);
         expect(result).toBeNull();
       });
 
-      it('should return null for empty buffer', () => {
+      it("should return null for empty buffer", () => {
         const buf = Buffer.alloc(0);
         const result = detectBOM(buf);
         expect(result).toBeNull();
       });
 
-      it('should return null for partial BOM', () => {
+      it("should return null for partial BOM", () => {
         const buf = Buffer.from([0xef, 0xbb]); // Incomplete UTF-8 BOM
         const result = detectBOM(buf);
         expect(result).toBeNull();
       });
     });
 
-    describe('readFileWithEncoding', () => {
-      it('should read UTF-8 BOM file correctly', async () => {
-        const content = 'Hello, 世界! 🌍';
+    describe("readFileWithEncoding", () => {
+      it("should read UTF-8 BOM file correctly", async () => {
+        const content = "Hello, 世界! 🌍";
         const utf8Bom = Buffer.from([0xef, 0xbb, 0xbf]);
-        const utf8Content = Buffer.from(content, 'utf8');
+        const utf8Content = Buffer.from(content, "utf8");
         const fullBuffer = Buffer.concat([utf8Bom, utf8Content]);
 
-        const filePath = path.join(testDir, 'utf8-bom.txt');
+        const filePath = path.join(testDir, "utf8-bom.txt");
         await fsPromises.writeFile(filePath, fullBuffer);
 
         const result = await readFileWithEncoding(filePath);
         expect(result).toBe(content);
       });
 
-      it('should read UTF-16 LE BOM file correctly', async () => {
-        const content = 'Hello, 世界! 🌍';
+      it("should read UTF-16 LE BOM file correctly", async () => {
+        const content = "Hello, 世界! 🌍";
         const utf16leBom = Buffer.from([0xff, 0xfe]);
-        const utf16leContent = Buffer.from(content, 'utf16le');
+        const utf16leContent = Buffer.from(content, "utf16le");
         const fullBuffer = Buffer.concat([utf16leBom, utf16leContent]);
 
-        const filePath = path.join(testDir, 'utf16le-bom.txt');
+        const filePath = path.join(testDir, "utf16le-bom.txt");
         await fsPromises.writeFile(filePath, fullBuffer);
 
         const result = await readFileWithEncoding(filePath);
         expect(result).toBe(content);
       });
 
-      it('should read UTF-16 BE BOM file correctly', async () => {
-        const content = 'Hello, 世界! 🌍';
+      it("should read UTF-16 BE BOM file correctly", async () => {
+        const content = "Hello, 世界! 🌍";
         // Manually encode UTF-16 BE: each char as big-endian 16-bit
         const utf16beBom = Buffer.from([0xfe, 0xff]);
         const chars = Array.from(content);
@@ -362,15 +332,15 @@ describe('fileUtils', () => {
         const utf16beContent = Buffer.from(utf16beBytes);
         const fullBuffer = Buffer.concat([utf16beBom, utf16beContent]);
 
-        const filePath = path.join(testDir, 'utf16be-bom.txt');
+        const filePath = path.join(testDir, "utf16be-bom.txt");
         await fsPromises.writeFile(filePath, fullBuffer);
 
         const result = await readFileWithEncoding(filePath);
         expect(result).toBe(content);
       });
 
-      it('should read UTF-32 LE BOM file correctly', async () => {
-        const content = 'Hello, 世界! 🌍';
+      it("should read UTF-32 LE BOM file correctly", async () => {
+        const content = "Hello, 世界! 🌍";
         const utf32leBom = Buffer.from([0xff, 0xfe, 0x00, 0x00]);
 
         const utf32leBytes: number[] = [];
@@ -387,15 +357,15 @@ describe('fileUtils', () => {
         const utf32leContent = Buffer.from(utf32leBytes);
         const fullBuffer = Buffer.concat([utf32leBom, utf32leContent]);
 
-        const filePath = path.join(testDir, 'utf32le-bom.txt');
+        const filePath = path.join(testDir, "utf32le-bom.txt");
         await fsPromises.writeFile(filePath, fullBuffer);
 
         const result = await readFileWithEncoding(filePath);
         expect(result).toBe(content);
       });
 
-      it('should read UTF-32 BE BOM file correctly', async () => {
-        const content = 'Hello, 世界! 🌍';
+      it("should read UTF-32 BE BOM file correctly", async () => {
+        const content = "Hello, 世界! 🌍";
         const utf32beBom = Buffer.from([0x00, 0x00, 0xfe, 0xff]);
 
         const utf32beBytes: number[] = [];
@@ -412,59 +382,59 @@ describe('fileUtils', () => {
         const utf32beContent = Buffer.from(utf32beBytes);
         const fullBuffer = Buffer.concat([utf32beBom, utf32beContent]);
 
-        const filePath = path.join(testDir, 'utf32be-bom.txt');
+        const filePath = path.join(testDir, "utf32be-bom.txt");
         await fsPromises.writeFile(filePath, fullBuffer);
 
         const result = await readFileWithEncoding(filePath);
         expect(result).toBe(content);
       });
 
-      it('should read file without BOM as UTF-8', async () => {
-        const content = 'Hello, 世界!';
-        const filePath = path.join(testDir, 'no-bom.txt');
-        await fsPromises.writeFile(filePath, content, 'utf8');
+      it("should read file without BOM as UTF-8", async () => {
+        const content = "Hello, 世界!";
+        const filePath = path.join(testDir, "no-bom.txt");
+        await fsPromises.writeFile(filePath, content, "utf8");
 
         const result = await readFileWithEncoding(filePath);
         expect(result).toBe(content);
       });
 
-      it('should handle empty file', async () => {
-        const filePath = path.join(testDir, 'empty.txt');
-        await fsPromises.writeFile(filePath, '');
+      it("should handle empty file", async () => {
+        const filePath = path.join(testDir, "empty.txt");
+        await fsPromises.writeFile(filePath, "");
 
         const result = await readFileWithEncoding(filePath);
-        expect(result).toBe('');
+        expect(result).toBe("");
       });
     });
 
-    describe('isBinaryFile with BOM awareness', () => {
-      it('should not treat UTF-8 BOM file as binary', async () => {
-        const content = 'Hello, world!';
+    describe("isBinaryFile with BOM awareness", () => {
+      it("should not treat UTF-8 BOM file as binary", async () => {
+        const content = "Hello, world!";
         const utf8Bom = Buffer.from([0xef, 0xbb, 0xbf]);
-        const utf8Content = Buffer.from(content, 'utf8');
+        const utf8Content = Buffer.from(content, "utf8");
         const fullBuffer = Buffer.concat([utf8Bom, utf8Content]);
 
-        const filePath = path.join(testDir, 'utf8-bom-test.txt');
+        const filePath = path.join(testDir, "utf8-bom-test.txt");
         await fsPromises.writeFile(filePath, fullBuffer);
 
         const result = await isBinaryFile(filePath);
         expect(result).toBe(false);
       });
 
-      it('should not treat UTF-16 LE BOM file as binary', async () => {
-        const content = 'Hello, world!';
+      it("should not treat UTF-16 LE BOM file as binary", async () => {
+        const content = "Hello, world!";
         const utf16leBom = Buffer.from([0xff, 0xfe]);
-        const utf16leContent = Buffer.from(content, 'utf16le');
+        const utf16leContent = Buffer.from(content, "utf16le");
         const fullBuffer = Buffer.concat([utf16leBom, utf16leContent]);
 
-        const filePath = path.join(testDir, 'utf16le-bom-test.txt');
+        const filePath = path.join(testDir, "utf16le-bom-test.txt");
         await fsPromises.writeFile(filePath, fullBuffer);
 
         const result = await isBinaryFile(filePath);
         expect(result).toBe(false);
       });
 
-      it('should not treat UTF-16 BE BOM file as binary', async () => {
+      it("should not treat UTF-16 BE BOM file as binary", async () => {
         const utf16beBom = Buffer.from([0xfe, 0xff]);
         // Simple ASCII in UTF-16 BE
         const utf16beContent = Buffer.from([
@@ -497,14 +467,14 @@ describe('fileUtils', () => {
         ]);
         const fullBuffer = Buffer.concat([utf16beBom, utf16beContent]);
 
-        const filePath = path.join(testDir, 'utf16be-bom-test.txt');
+        const filePath = path.join(testDir, "utf16be-bom-test.txt");
         await fsPromises.writeFile(filePath, fullBuffer);
 
         const result = await isBinaryFile(filePath);
         expect(result).toBe(false);
       });
 
-      it('should not treat UTF-32 LE BOM file as binary', async () => {
+      it("should not treat UTF-32 LE BOM file as binary", async () => {
         const utf32leBom = Buffer.from([0xff, 0xfe, 0x00, 0x00]);
         const utf32leContent = Buffer.from([
           0x48,
@@ -530,14 +500,14 @@ describe('fileUtils', () => {
         ]);
         const fullBuffer = Buffer.concat([utf32leBom, utf32leContent]);
 
-        const filePath = path.join(testDir, 'utf32le-bom-test.txt');
+        const filePath = path.join(testDir, "utf32le-bom-test.txt");
         await fsPromises.writeFile(filePath, fullBuffer);
 
         const result = await isBinaryFile(filePath);
         expect(result).toBe(false);
       });
 
-      it('should not treat UTF-32 BE BOM file as binary', async () => {
+      it("should not treat UTF-32 BE BOM file as binary", async () => {
         const utf32beBom = Buffer.from([0x00, 0x00, 0xfe, 0xff]);
         const utf32beContent = Buffer.from([
           0x00,
@@ -563,34 +533,30 @@ describe('fileUtils', () => {
         ]);
         const fullBuffer = Buffer.concat([utf32beBom, utf32beContent]);
 
-        const filePath = path.join(testDir, 'utf32be-bom-test.txt');
+        const filePath = path.join(testDir, "utf32be-bom-test.txt");
         await fsPromises.writeFile(filePath, fullBuffer);
 
         const result = await isBinaryFile(filePath);
         expect(result).toBe(false);
       });
 
-      it('should still treat actual binary file as binary', async () => {
+      it("should still treat actual binary file as binary", async () => {
         // PNG header + some binary data with null bytes
-        const pngHeader = Buffer.from([
-          0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a,
-        ]);
-        const binaryData = Buffer.from([
-          0x00, 0x00, 0x00, 0x0d, 0x49, 0x48, 0x44, 0x52,
-        ]); // IHDR chunk with nulls
+        const pngHeader = Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]);
+        const binaryData = Buffer.from([0x00, 0x00, 0x00, 0x0d, 0x49, 0x48, 0x44, 0x52]); // IHDR chunk with nulls
         const fullContent = Buffer.concat([pngHeader, binaryData]);
-        const filePath = path.join(testDir, 'test.png');
+        const filePath = path.join(testDir, "test.png");
         await fsPromises.writeFile(filePath, fullContent);
 
         const result = await isBinaryFile(filePath);
         expect(result).toBe(true);
       });
 
-      it('should treat file with null bytes (no BOM) as binary', async () => {
+      it("should treat file with null bytes (no BOM) as binary", async () => {
         const content = Buffer.from([
           0x48, 0x65, 0x6c, 0x6c, 0x6f, 0x00, 0x77, 0x6f, 0x72, 0x6c, 0x64,
         ]);
-        const filePath = path.join(testDir, 'null-bytes.bin');
+        const filePath = path.join(testDir, "null-bytes.bin");
         await fsPromises.writeFile(filePath, content);
 
         const result = await isBinaryFile(filePath);
@@ -599,13 +565,13 @@ describe('fileUtils', () => {
     });
   });
 
-  describe('detectFileType', () => {
+  describe("detectFileType", () => {
     let filePathForDetectTest: string;
 
     beforeEach(() => {
-      filePathForDetectTest = path.join(tempRootDir, 'detectType.tmp');
+      filePathForDetectTest = path.join(tempRootDir, "detectType.tmp");
       // Default: create as a text file for isBinaryFile fallback
-      actualNodeFs.writeFileSync(filePathForDetectTest, 'Plain text content');
+      actualNodeFs.writeFileSync(filePathForDetectTest, "Plain text content");
     });
 
     afterEach(() => {
@@ -615,68 +581,61 @@ describe('fileUtils', () => {
       vi.restoreAllMocks(); // Restore spies on actualNodeFs
     });
 
-    it('should detect typescript type by extension (ts, mts, cts, tsx)', async () => {
-      expect(await detectFileType('file.ts')).toBe('text');
-      expect(await detectFileType('file.test.ts')).toBe('text');
-      expect(await detectFileType('file.mts')).toBe('text');
-      expect(await detectFileType('vite.config.mts')).toBe('text');
-      expect(await detectFileType('file.cts')).toBe('text');
-      expect(await detectFileType('component.tsx')).toBe('text');
+    it("should detect typescript type by extension (ts, mts, cts, tsx)", async () => {
+      expect(await detectFileType("file.ts")).toBe("text");
+      expect(await detectFileType("file.test.ts")).toBe("text");
+      expect(await detectFileType("file.mts")).toBe("text");
+      expect(await detectFileType("vite.config.mts")).toBe("text");
+      expect(await detectFileType("file.cts")).toBe("text");
+      expect(await detectFileType("component.tsx")).toBe("text");
     });
 
     it.each([
-      { type: 'image', file: 'file.png', mime: 'image/png' },
-      { type: 'image', file: 'file.jpg', mime: 'image/jpeg' },
-      { type: 'pdf', file: 'file.pdf', mime: 'application/pdf' },
-      { type: 'audio', file: 'song.mp3', mime: 'audio/mpeg' },
-      { type: 'video', file: 'movie.mp4', mime: 'video/mp4' },
-      { type: 'binary', file: 'archive.zip', mime: 'application/zip' },
-      { type: 'binary', file: 'app.exe', mime: 'application/octet-stream' },
-    ])(
-      'should detect $type type for $file by extension',
-      async ({ file, mime, type }) => {
-        mockMimeGetType.mockReturnValueOnce(mime);
-        expect(await detectFileType(file)).toBe(type);
-      },
-    );
-
-    it('should detect svg type by extension', async () => {
-      expect(await detectFileType('image.svg')).toBe('svg');
-      expect(await detectFileType('image.icon.svg')).toBe('svg');
+      { type: "image", file: "file.png", mime: "image/png" },
+      { type: "image", file: "file.jpg", mime: "image/jpeg" },
+      { type: "pdf", file: "file.pdf", mime: "application/pdf" },
+      { type: "audio", file: "song.mp3", mime: "audio/mpeg" },
+      { type: "video", file: "movie.mp4", mime: "video/mp4" },
+      { type: "binary", file: "archive.zip", mime: "application/zip" },
+      { type: "binary", file: "app.exe", mime: "application/octet-stream" },
+    ])("should detect $type type for $file by extension", async ({ file, mime, type }) => {
+      mockMimeGetType.mockReturnValueOnce(mime);
+      expect(await detectFileType(file)).toBe(type);
     });
 
-    it('should use isBinaryFile for unknown extensions and detect as binary', async () => {
+    it("should detect svg type by extension", async () => {
+      expect(await detectFileType("image.svg")).toBe("svg");
+      expect(await detectFileType("image.icon.svg")).toBe("svg");
+    });
+
+    it("should use isBinaryFile for unknown extensions and detect as binary", async () => {
       mockMimeGetType.mockReturnValueOnce(false); // Unknown mime type
       // Create a file that isBinaryFile will identify as binary
       const binaryContent = Buffer.from([
         0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08, 0x09, 0x0a,
       ]);
       actualNodeFs.writeFileSync(filePathForDetectTest, binaryContent);
-      expect(await detectFileType(filePathForDetectTest)).toBe('binary');
+      expect(await detectFileType(filePathForDetectTest)).toBe("binary");
     });
 
-    it('should default to text if mime type is unknown and content is not binary', async () => {
+    it("should default to text if mime type is unknown and content is not binary", async () => {
       mockMimeGetType.mockReturnValueOnce(false); // Unknown mime type
       // filePathForDetectTest is already a text file by default from beforeEach
-      expect(await detectFileType(filePathForDetectTest)).toBe('text');
+      expect(await detectFileType(filePathForDetectTest)).toBe("text");
     });
   });
 
-  describe('processSingleFileContent', () => {
+  describe("processSingleFileContent", () => {
     beforeEach(() => {
       // Ensure files exist for statSync checks before readFile might be mocked
-      if (actualNodeFs.existsSync(testTextFilePath))
-        actualNodeFs.unlinkSync(testTextFilePath);
-      if (actualNodeFs.existsSync(testImageFilePath))
-        actualNodeFs.unlinkSync(testImageFilePath);
-      if (actualNodeFs.existsSync(testPdfFilePath))
-        actualNodeFs.unlinkSync(testPdfFilePath);
-      if (actualNodeFs.existsSync(testBinaryFilePath))
-        actualNodeFs.unlinkSync(testBinaryFilePath);
+      if (actualNodeFs.existsSync(testTextFilePath)) actualNodeFs.unlinkSync(testTextFilePath);
+      if (actualNodeFs.existsSync(testImageFilePath)) actualNodeFs.unlinkSync(testImageFilePath);
+      if (actualNodeFs.existsSync(testPdfFilePath)) actualNodeFs.unlinkSync(testPdfFilePath);
+      if (actualNodeFs.existsSync(testBinaryFilePath)) actualNodeFs.unlinkSync(testBinaryFilePath);
     });
 
-    it('should read a text file successfully', async () => {
-      const content = 'Line 1\\nLine 2\\nLine 3';
+    it("should read a text file successfully", async () => {
+      const content = "Line 1\\nLine 2\\nLine 3";
       actualNodeFs.writeFileSync(testTextFilePath, content);
       const result = await processSingleFileContent(
         testTextFilePath,
@@ -684,103 +643,97 @@ describe('fileUtils', () => {
         new StandardFileSystemService(),
       );
       expect(result.llmContent).toBe(content);
-      expect(result.returnDisplay).toBe('');
+      expect(result.returnDisplay).toBe("");
       expect(result.error).toBeUndefined();
     });
 
-    it('should handle file not found', async () => {
+    it("should handle file not found", async () => {
       const result = await processSingleFileContent(
         nonexistentFilePath,
         tempRootDir,
         new StandardFileSystemService(),
       );
-      expect(result.error).toContain('File not found');
-      expect(result.returnDisplay).toContain('File not found');
+      expect(result.error).toContain("File not found");
+      expect(result.returnDisplay).toContain("File not found");
     });
 
-    it('should handle read errors for text files', async () => {
-      actualNodeFs.writeFileSync(testTextFilePath, 'content'); // File must exist for initial statSync
-      const readError = new Error('Simulated read error');
-      vi.spyOn(fsPromises, 'readFile').mockRejectedValueOnce(readError);
+    it("should handle read errors for text files", async () => {
+      actualNodeFs.writeFileSync(testTextFilePath, "content"); // File must exist for initial statSync
+      const readError = new Error("Simulated read error");
+      vi.spyOn(fsPromises, "readFile").mockRejectedValueOnce(readError);
 
       const result = await processSingleFileContent(
         testTextFilePath,
         tempRootDir,
         new StandardFileSystemService(),
       );
-      expect(result.error).toContain('Simulated read error');
-      expect(result.returnDisplay).toContain('Simulated read error');
+      expect(result.error).toContain("Simulated read error");
+      expect(result.returnDisplay).toContain("Simulated read error");
     });
 
-    it('should handle read errors for image/pdf files', async () => {
-      actualNodeFs.writeFileSync(testImageFilePath, 'content'); // File must exist
-      mockMimeGetType.mockReturnValue('image/png');
-      const readError = new Error('Simulated image read error');
-      vi.spyOn(fsPromises, 'readFile').mockRejectedValueOnce(readError);
+    it("should handle read errors for image/pdf files", async () => {
+      actualNodeFs.writeFileSync(testImageFilePath, "content"); // File must exist
+      mockMimeGetType.mockReturnValue("image/png");
+      const readError = new Error("Simulated image read error");
+      vi.spyOn(fsPromises, "readFile").mockRejectedValueOnce(readError);
 
       const result = await processSingleFileContent(
         testImageFilePath,
         tempRootDir,
         new StandardFileSystemService(),
       );
-      expect(result.error).toContain('Simulated image read error');
-      expect(result.returnDisplay).toContain('Simulated image read error');
+      expect(result.error).toContain("Simulated image read error");
+      expect(result.returnDisplay).toContain("Simulated image read error");
     });
 
-    it('should process an image file', async () => {
-      const fakePngData = Buffer.from('fake png data');
+    it("should process an image file", async () => {
+      const fakePngData = Buffer.from("fake png data");
       actualNodeFs.writeFileSync(testImageFilePath, fakePngData);
-      mockMimeGetType.mockReturnValue('image/png');
+      mockMimeGetType.mockReturnValue("image/png");
       const result = await processSingleFileContent(
         testImageFilePath,
         tempRootDir,
         new StandardFileSystemService(),
       );
-      expect(
-        (result.llmContent as { inlineData: unknown }).inlineData,
-      ).toBeDefined();
-      expect(
-        (result.llmContent as { inlineData: { mimeType: string } }).inlineData
-          .mimeType,
-      ).toBe('image/png');
-      expect(
-        (result.llmContent as { inlineData: { data: string } }).inlineData.data,
-      ).toBe(fakePngData.toString('base64'));
-      expect(result.returnDisplay).toContain('Read image file: image.png');
+      expect((result.llmContent as { inlineData: unknown }).inlineData).toBeDefined();
+      expect((result.llmContent as { inlineData: { mimeType: string } }).inlineData.mimeType).toBe(
+        "image/png",
+      );
+      expect((result.llmContent as { inlineData: { data: string } }).inlineData.data).toBe(
+        fakePngData.toString("base64"),
+      );
+      expect(result.returnDisplay).toContain("Read image file: image.png");
     });
 
-    it('should process a PDF file', async () => {
-      const fakePdfData = Buffer.from('fake pdf data');
+    it("should process a PDF file", async () => {
+      const fakePdfData = Buffer.from("fake pdf data");
       actualNodeFs.writeFileSync(testPdfFilePath, fakePdfData);
-      mockMimeGetType.mockReturnValue('application/pdf');
+      mockMimeGetType.mockReturnValue("application/pdf");
       const result = await processSingleFileContent(
         testPdfFilePath,
         tempRootDir,
         new StandardFileSystemService(),
       );
-      expect(
-        (result.llmContent as { inlineData: unknown }).inlineData,
-      ).toBeDefined();
-      expect(
-        (result.llmContent as { inlineData: { mimeType: string } }).inlineData
-          .mimeType,
-      ).toBe('application/pdf');
-      expect(
-        (result.llmContent as { inlineData: { data: string } }).inlineData.data,
-      ).toBe(fakePdfData.toString('base64'));
-      expect(result.returnDisplay).toContain('Read pdf file: document.pdf');
+      expect((result.llmContent as { inlineData: unknown }).inlineData).toBeDefined();
+      expect((result.llmContent as { inlineData: { mimeType: string } }).inlineData.mimeType).toBe(
+        "application/pdf",
+      );
+      expect((result.llmContent as { inlineData: { data: string } }).inlineData.data).toBe(
+        fakePdfData.toString("base64"),
+      );
+      expect(result.returnDisplay).toContain("Read pdf file: document.pdf");
     });
 
-    it('should read an SVG file as text when under 1MB', async () => {
+    it("should read an SVG file as text when under 1MB", async () => {
       const svgContent = `
     <svg xmlns="http://www.w3.org/2000/svg" width="100" height="100">
       <rect width="100" height="100" fill="blue" />
     </svg>
   `;
-      const testSvgFilePath = path.join(tempRootDir, 'test.svg');
-      actualNodeFs.writeFileSync(testSvgFilePath, svgContent, 'utf-8');
+      const testSvgFilePath = path.join(tempRootDir, "test.svg");
+      actualNodeFs.writeFileSync(testSvgFilePath, svgContent, "utf-8");
 
-      mockMimeGetType.mockReturnValue('image/svg+xml');
+      mockMimeGetType.mockReturnValue("image/svg+xml");
 
       const result = await processSingleFileContent(
         testSvgFilePath,
@@ -789,15 +742,12 @@ describe('fileUtils', () => {
       );
 
       expect(result.llmContent).toBe(svgContent);
-      expect(result.returnDisplay).toContain('Read SVG as text');
+      expect(result.returnDisplay).toContain("Read SVG as text");
     });
 
-    it('should skip binary files', async () => {
-      actualNodeFs.writeFileSync(
-        testBinaryFilePath,
-        Buffer.from([0x00, 0x01, 0x02]),
-      );
-      mockMimeGetType.mockReturnValueOnce('application/octet-stream');
+    it("should skip binary files", async () => {
+      actualNodeFs.writeFileSync(testBinaryFilePath, Buffer.from([0x00, 0x01, 0x02]));
+      mockMimeGetType.mockReturnValueOnce("application/octet-stream");
       // isBinaryFile will operate on the real file.
 
       const result = await processSingleFileContent(
@@ -805,25 +755,23 @@ describe('fileUtils', () => {
         tempRootDir,
         new StandardFileSystemService(),
       );
-      expect(result.llmContent).toContain(
-        'Cannot display content of binary file',
-      );
-      expect(result.returnDisplay).toContain('Skipped binary file: app.exe');
+      expect(result.llmContent).toContain("Cannot display content of binary file");
+      expect(result.returnDisplay).toContain("Skipped binary file: app.exe");
     });
 
-    it('should handle path being a directory', async () => {
+    it("should handle path being a directory", async () => {
       const result = await processSingleFileContent(
         directoryPath,
         tempRootDir,
         new StandardFileSystemService(),
       );
-      expect(result.error).toContain('Path is a directory');
-      expect(result.returnDisplay).toContain('Path is a directory');
+      expect(result.error).toContain("Path is a directory");
+      expect(result.returnDisplay).toContain("Path is a directory");
     });
 
-    it('should paginate text files correctly (offset and limit)', async () => {
+    it("should paginate text files correctly (offset and limit)", async () => {
       const lines = Array.from({ length: 20 }, (_, i) => `Line ${i + 1}`);
-      actualNodeFs.writeFileSync(testTextFilePath, lines.join('\n'));
+      actualNodeFs.writeFileSync(testTextFilePath, lines.join("\n"));
 
       const result = await processSingleFileContent(
         testTextFilePath,
@@ -832,18 +780,18 @@ describe('fileUtils', () => {
         5,
         5,
       ); // Read lines 6-10
-      const expectedContent = lines.slice(5, 10).join('\n');
+      const expectedContent = lines.slice(5, 10).join("\n");
 
       expect(result.llmContent).toBe(expectedContent);
-      expect(result.returnDisplay).toBe('Read lines 6-10 of 20 from test.txt');
+      expect(result.returnDisplay).toBe("Read lines 6-10 of 20 from test.txt");
       expect(result.isTruncated).toBe(true);
       expect(result.originalLineCount).toBe(20);
       expect(result.linesShown).toEqual([6, 10]);
     });
 
-    it('should identify truncation when reading the end of a file', async () => {
+    it("should identify truncation when reading the end of a file", async () => {
       const lines = Array.from({ length: 20 }, (_, i) => `Line ${i + 1}`);
-      actualNodeFs.writeFileSync(testTextFilePath, lines.join('\n'));
+      actualNodeFs.writeFileSync(testTextFilePath, lines.join("\n"));
 
       // Read from line 11 to 20. The start is not 0, so it's truncated.
       const result = await processSingleFileContent(
@@ -853,18 +801,18 @@ describe('fileUtils', () => {
         10,
         10,
       );
-      const expectedContent = lines.slice(10, 20).join('\n');
+      const expectedContent = lines.slice(10, 20).join("\n");
 
       expect(result.llmContent).toContain(expectedContent);
-      expect(result.returnDisplay).toBe('Read lines 11-20 of 20 from test.txt');
+      expect(result.returnDisplay).toBe("Read lines 11-20 of 20 from test.txt");
       expect(result.isTruncated).toBe(true); // This is the key check for the bug
       expect(result.originalLineCount).toBe(20);
       expect(result.linesShown).toEqual([11, 20]);
     });
 
-    it('should handle limit exceeding file length', async () => {
-      const lines = ['Line 1', 'Line 2'];
-      actualNodeFs.writeFileSync(testTextFilePath, lines.join('\n'));
+    it("should handle limit exceeding file length", async () => {
+      const lines = ["Line 1", "Line 2"];
+      actualNodeFs.writeFileSync(testTextFilePath, lines.join("\n"));
 
       const result = await processSingleFileContent(
         testTextFilePath,
@@ -873,21 +821,18 @@ describe('fileUtils', () => {
         0,
         10,
       );
-      const expectedContent = lines.join('\n');
+      const expectedContent = lines.join("\n");
 
       expect(result.llmContent).toBe(expectedContent);
-      expect(result.returnDisplay).toBe('');
+      expect(result.returnDisplay).toBe("");
       expect(result.isTruncated).toBe(false);
       expect(result.originalLineCount).toBe(2);
       expect(result.linesShown).toEqual([1, 2]);
     });
 
-    it('should truncate long lines in text files', async () => {
-      const longLine = 'a'.repeat(2500);
-      actualNodeFs.writeFileSync(
-        testTextFilePath,
-        `Short line\n${longLine}\nAnother short line`,
-      );
+    it("should truncate long lines in text files", async () => {
+      const longLine = "a".repeat(2500);
+      actualNodeFs.writeFileSync(testTextFilePath, `Short line\n${longLine}\nAnother short line`);
 
       const result = await processSingleFileContent(
         testTextFilePath,
@@ -895,20 +840,18 @@ describe('fileUtils', () => {
         new StandardFileSystemService(),
       );
 
-      expect(result.llmContent).toContain('Short line');
-      expect(result.llmContent).toContain(
-        longLine.substring(0, 2000) + '... [truncated]',
-      );
-      expect(result.llmContent).toContain('Another short line');
+      expect(result.llmContent).toContain("Short line");
+      expect(result.llmContent).toContain(longLine.substring(0, 2000) + "... [truncated]");
+      expect(result.llmContent).toContain("Another short line");
       expect(result.returnDisplay).toBe(
-        'Read all 3 lines from test.txt (some lines were shortened)',
+        "Read all 3 lines from test.txt (some lines were shortened)",
       );
       expect(result.isTruncated).toBe(true);
     });
 
-    it('should truncate when line count exceeds the limit', async () => {
+    it("should truncate when line count exceeds the limit", async () => {
       const lines = Array.from({ length: 11 }, (_, i) => `Line ${i + 1}`);
-      actualNodeFs.writeFileSync(testTextFilePath, lines.join('\n'));
+      actualNodeFs.writeFileSync(testTextFilePath, lines.join("\n"));
 
       // Read 5 lines, but there are 11 total
       const result = await processSingleFileContent(
@@ -920,14 +863,14 @@ describe('fileUtils', () => {
       );
 
       expect(result.isTruncated).toBe(true);
-      expect(result.returnDisplay).toBe('Read lines 1-5 of 11 from test.txt');
+      expect(result.returnDisplay).toBe("Read lines 1-5 of 11 from test.txt");
     });
 
-    it('should truncate when a line length exceeds the character limit', async () => {
-      const longLine = 'b'.repeat(2500);
+    it("should truncate when a line length exceeds the character limit", async () => {
+      const longLine = "b".repeat(2500);
       const lines = Array.from({ length: 10 }, (_, i) => `Line ${i + 1}`);
       lines.push(longLine); // Total 11 lines
-      actualNodeFs.writeFileSync(testTextFilePath, lines.join('\n'));
+      actualNodeFs.writeFileSync(testTextFilePath, lines.join("\n"));
 
       // Read all 11 lines, including the long one
       const result = await processSingleFileContent(
@@ -940,20 +883,14 @@ describe('fileUtils', () => {
 
       expect(result.isTruncated).toBe(true);
       expect(result.returnDisplay).toBe(
-        'Read all 11 lines from test.txt (some lines were shortened)',
+        "Read all 11 lines from test.txt (some lines were shortened)",
       );
     });
 
-    it('should truncate both line count and line length when both exceed limits', async () => {
-      const linesWithLongInMiddle = Array.from(
-        { length: 20 },
-        (_, i) => `Line ${i + 1}`,
-      );
-      linesWithLongInMiddle[4] = 'c'.repeat(2500);
-      actualNodeFs.writeFileSync(
-        testTextFilePath,
-        linesWithLongInMiddle.join('\n'),
-      );
+    it("should truncate both line count and line length when both exceed limits", async () => {
+      const linesWithLongInMiddle = Array.from({ length: 20 }, (_, i) => `Line ${i + 1}`);
+      linesWithLongInMiddle[4] = "c".repeat(2500);
+      actualNodeFs.writeFileSync(testTextFilePath, linesWithLongInMiddle.join("\n"));
 
       // Read 10 lines out of 20, including the long line
       const result = await processSingleFileContent(
@@ -965,16 +902,16 @@ describe('fileUtils', () => {
       );
       expect(result.isTruncated).toBe(true);
       expect(result.returnDisplay).toBe(
-        'Read lines 1-10 of 20 from test.txt (some lines were shortened)',
+        "Read lines 1-10 of 20 from test.txt (some lines were shortened)",
       );
     });
 
-    it('should return an error if the file size exceeds 20MB', async () => {
+    it("should return an error if the file size exceeds 20MB", async () => {
       // Create a small test file
-      actualNodeFs.writeFileSync(testTextFilePath, 'test content');
+      actualNodeFs.writeFileSync(testTextFilePath, "test content");
 
       // Spy on fs.promises.stat to return a large file size
-      const statSpy = vi.spyOn(fs.promises, 'stat').mockResolvedValueOnce({
+      const statSpy = vi.spyOn(fs.promises, "stat").mockResolvedValueOnce({
         size: 21 * 1024 * 1024,
         isDirectory: () => false,
       } as fs.Stats);
@@ -986,11 +923,9 @@ describe('fileUtils', () => {
           new StandardFileSystemService(),
         );
 
-        expect(result.error).toContain('File size exceeds the 20MB limit');
-        expect(result.returnDisplay).toContain(
-          'File size exceeds the 20MB limit',
-        );
-        expect(result.llmContent).toContain('File size exceeds the 20MB limit');
+        expect(result.error).toContain("File size exceeds the 20MB limit");
+        expect(result.returnDisplay).toContain("File size exceeds the 20MB limit");
+        expect(result.llmContent).toContain("File size exceeds the 20MB limit");
       } finally {
         statSpy.mockRestore();
       }

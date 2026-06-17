@@ -4,18 +4,14 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import type {
-  Settings,
-  LoadedSettings,
-  LoadableSettingScope,
-} from '../config/settings.js';
+import type { LoadableSettingScope, LoadedSettings, Settings } from "../config/settings.js";
 import type {
   SettingDefinition,
   SettingsSchema,
   SettingsType,
   SettingsValue,
-} from '../config/settingsSchema.js';
-import { getSettingsSchema } from '../config/settingsSchema.js';
+} from "../config/settingsSchema.js";
+import { getSettingsSchema } from "../config/settingsSchema.js";
 
 // The schema is now nested, but many parts of the UI and logic work better
 // with a flattened structure and dot-notation keys. This section flattens the
@@ -23,7 +19,7 @@ import { getSettingsSchema } from '../config/settingsSchema.js';
 
 type FlattenedSchema = Record<string, SettingDefinition & { key: string }>;
 
-function flattenSchema(schema: SettingsSchema, prefix = ''): FlattenedSchema {
+function flattenSchema(schema: SettingsSchema, prefix = ""): FlattenedSchema {
   let result: FlattenedSchema = {};
   for (const key in schema) {
     const newKey = prefix ? `${prefix}.${key}` : key;
@@ -40,10 +36,7 @@ let _FLATTENED_SCHEMA: FlattenedSchema | undefined;
 
 /** Returns a flattened schema, the first call is memoized for future requests. */
 export function getFlattenedSchema() {
-  return (
-    _FLATTENED_SCHEMA ??
-    (_FLATTENED_SCHEMA = flattenSchema(getSettingsSchema()))
-  );
+  return _FLATTENED_SCHEMA ?? (_FLATTENED_SCHEMA = flattenSchema(getSettingsSchema()));
 }
 
 function clearFlattenedSchema() {
@@ -57,10 +50,7 @@ export function getSettingsByCategory(): Record<
   string,
   Array<SettingDefinition & { key: string }>
 > {
-  const categories: Record<
-    string,
-    Array<SettingDefinition & { key: string }>
-  > = {};
+  const categories: Record<string, Array<SettingDefinition & { key: string }>> = {};
 
   Object.values(getFlattenedSchema()).forEach((definition) => {
     const category = definition.category;
@@ -108,10 +98,7 @@ export function getRestartRequiredSettings(): string[] {
 /**
  * Recursively gets a value from a nested object using a key path array.
  */
-export function getNestedValue(
-  obj: Record<string, unknown>,
-  path: string[],
-): unknown {
+export function getNestedValue(obj: Record<string, unknown>, path: string[]): unknown {
   const [first, ...rest] = path;
   if (!first || !(first in obj)) {
     return undefined;
@@ -120,7 +107,7 @@ export function getNestedValue(
   if (rest.length === 0) {
     return value;
   }
-  if (value && typeof value === 'object' && value !== null) {
+  if (value && typeof value === "object" && value !== null) {
     return getNestedValue(value as Record<string, unknown>, rest);
   }
   return undefined;
@@ -140,7 +127,7 @@ export function getEffectiveValue(
     return undefined;
   }
 
-  const path = key.split('.');
+  const path = key.split(".");
 
   // Check the current scope's settings first
   let value = getNestedValue(settings as Record<string, unknown>, path);
@@ -168,12 +155,8 @@ export function getAllSettingKeys(): string[] {
 /**
  * Get settings by type
  */
-export function getSettingsByType(
-  type: SettingsType,
-): Array<SettingDefinition & { key: string }> {
-  return Object.values(getFlattenedSchema()).filter(
-    (definition) => definition.type === type,
-  );
+export function getSettingsByType(type: SettingsType): Array<SettingDefinition & { key: string }> {
+  return Object.values(getFlattenedSchema()).filter((definition) => definition.type === type);
 }
 
 /**
@@ -184,9 +167,7 @@ export function getSettingsRequiringRestart(): Array<
     key: string;
   }
 > {
-  return Object.values(getFlattenedSchema()).filter(
-    (definition) => definition.requiresRestart,
-  );
+  return Object.values(getFlattenedSchema()).filter((definition) => definition.requiresRestart);
 }
 
 /**
@@ -217,10 +198,7 @@ export function getDialogSettingsByCategory(): Record<
   string,
   Array<SettingDefinition & { key: string }>
 > {
-  const categories: Record<
-    string,
-    Array<SettingDefinition & { key: string }>
-  > = {};
+  const categories: Record<string, Array<SettingDefinition & { key: string }>> = {};
 
   Object.values(getFlattenedSchema())
     .filter((definition) => definition.showInDialog !== false)
@@ -242,8 +220,7 @@ export function getDialogSettingsByType(
   type: SettingsType,
 ): Array<SettingDefinition & { key: string }> {
   return Object.values(getFlattenedSchema()).filter(
-    (definition) =>
-      definition.type === type && definition.showInDialog !== false,
+    (definition) => definition.type === type && definition.showInDialog !== false,
   );
 }
 
@@ -276,12 +253,12 @@ export function getSettingValue(
 
   const value = getEffectiveValue(key, settings, mergedSettings);
   // Ensure we return a boolean value, converting from the more general type
-  if (typeof value === 'boolean') {
+  if (typeof value === "boolean") {
     return value;
   }
   // Fall back to default value, ensuring it's a boolean
   const defaultValue = definition.default;
-  if (typeof defaultValue === 'boolean') {
+  if (typeof defaultValue === "boolean") {
     return defaultValue;
   }
   return false; // Final fallback
@@ -293,7 +270,7 @@ export function getSettingValue(
 export function isSettingModified(key: string, value: boolean): boolean {
   const defaultValue = getDefaultValue(key);
   // Handle type comparison properly
-  if (typeof defaultValue === 'boolean') {
+  if (typeof defaultValue === "boolean") {
     return value !== defaultValue;
   }
   // If default is not a boolean, consider it modified if value is true
@@ -303,11 +280,8 @@ export function isSettingModified(key: string, value: boolean): boolean {
 /**
  * Check if a setting exists in the original settings file for a scope
  */
-export function settingExistsInScope(
-  key: string,
-  scopeSettings: Settings,
-): boolean {
-  const path = key.split('.');
+export function settingExistsInScope(key: string, scopeSettings: Settings): boolean {
+  const path = key.split(".");
   const value = getNestedValue(scopeSettings as Record<string, unknown>, path);
   return value !== undefined;
 }
@@ -330,7 +304,7 @@ function setNestedValue(
     return obj;
   }
 
-  if (!obj[first] || typeof obj[first] !== 'object') {
+  if (!obj[first] || typeof obj[first] !== "object") {
     obj[first] = {};
   }
 
@@ -346,7 +320,7 @@ export function setPendingSettingValue(
   value: boolean,
   pendingSettings: Settings,
 ): Settings {
-  const path = key.split('.');
+  const path = key.split(".");
   const newSettings = JSON.parse(JSON.stringify(pendingSettings));
   setNestedValue(newSettings, path, value);
   return newSettings;
@@ -360,7 +334,7 @@ export function setPendingSettingValueAny(
   value: SettingsValue,
   pendingSettings: Settings,
 ): Settings {
-  const path = key.split('.');
+  const path = key.split(".");
   const newSettings = structuredClone(pendingSettings);
   setNestedValue(newSettings, path, value);
   return newSettings;
@@ -369,18 +343,14 @@ export function setPendingSettingValueAny(
 /**
  * Check if any modified settings require a restart
  */
-export function hasRestartRequiredSettings(
-  modifiedSettings: Set<string>,
-): boolean {
+export function hasRestartRequiredSettings(modifiedSettings: Set<string>): boolean {
   return Array.from(modifiedSettings).some((key) => requiresRestart(key));
 }
 
 /**
  * Get the restart required settings from a set of modified settings
  */
-export function getRestartRequiredFromModified(
-  modifiedSettings: Set<string>,
-): string[] {
+export function getRestartRequiredFromModified(modifiedSettings: Set<string>): string[] {
   return Array.from(modifiedSettings).filter((key) => requiresRestart(key));
 }
 
@@ -394,11 +364,8 @@ export function saveModifiedSettings(
   scope: LoadableSettingScope,
 ): void {
   modifiedSettings.forEach((settingKey) => {
-    const path = settingKey.split('.');
-    const value = getNestedValue(
-      pendingSettings as Record<string, unknown>,
-      path,
-    );
+    const path = settingKey.split(".");
+    const value = getNestedValue(pendingSettings as Record<string, unknown>, path);
 
     if (value === undefined) {
       return;
@@ -444,7 +411,7 @@ export function getDisplayValue(
 
   let valueString = String(value);
 
-  if (definition?.type === 'enum' && definition.options) {
+  if (definition?.type === "enum" && definition.options) {
     const option = definition.options?.find((option) => option.value === value);
     valueString = option?.label ?? `${value}`;
   }

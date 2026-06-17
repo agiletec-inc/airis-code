@@ -1,10 +1,10 @@
-import type { GenerateContentConfig } from '../../../types/llm.js';
-import type OpenAI from 'openai';
+import type OpenAI from "openai";
+import type { GenerateContentConfig } from "../../../types/llm.js";
 
 // Extended types to support cache_control for compatible providers
 export interface ChatCompletionContentPartTextWithCache
   extends OpenAI.Chat.ChatCompletionContentPartText {
-  cache_control?: { type: 'ephemeral' };
+  cache_control?: { type: "ephemeral" };
 }
 
 export type ChatCompletionContentPartWithCache =
@@ -13,7 +13,7 @@ export type ChatCompletionContentPartWithCache =
   | OpenAI.Chat.ChatCompletionContentPartRefusal;
 
 export type ChatCompletionToolWithCache = OpenAI.Chat.ChatCompletionTool & {
-  cache_control?: { type: 'ephemeral' };
+  cache_control?: { type: "ephemeral" };
 };
 
 export interface OpenAICompatibleProvider {

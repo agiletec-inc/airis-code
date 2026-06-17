@@ -2,24 +2,24 @@
  * Git runner types
  */
 
-import type { Result } from '@airiscode/types';
+import type { Result } from "@airiscode/types";
 
 /**
  * Git operation types
  */
 export enum GitOperation {
-  STATUS = 'status',
-  DIFF = 'diff',
-  ADD = 'add',
-  COMMIT = 'commit',
-  PUSH = 'push',
-  PULL = 'pull',
-  BRANCH = 'branch',
-  CHECKOUT = 'checkout',
-  LOG = 'log',
-  RESET = 'reset',
-  STASH = 'stash',
-  APPLY = 'apply',
+  STATUS = "status",
+  DIFF = "diff",
+  ADD = "add",
+  COMMIT = "commit",
+  PUSH = "push",
+  PULL = "pull",
+  BRANCH = "branch",
+  CHECKOUT = "checkout",
+  LOG = "log",
+  RESET = "reset",
+  STASH = "stash",
+  APPLY = "apply",
 }
 
 /**
@@ -144,7 +144,7 @@ export interface GitApplyOptions {
   /** Reverse patch */
   reverse?: boolean;
   /** Whitespace handling */
-  whitespace?: 'nowarn' | 'warn' | 'fix' | 'error';
+  whitespace?: "nowarn" | "warn" | "fix" | "error";
 }
 
 /**
@@ -154,10 +154,10 @@ export class GitRunnerError extends Error {
   constructor(
     message: string,
     public operation: GitOperation,
-    public cause?: Error
+    public cause?: Error,
   ) {
     super(message);
-    this.name = 'GitRunnerError';
+    this.name = "GitRunnerError";
   }
 }
 

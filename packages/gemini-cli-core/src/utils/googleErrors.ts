@@ -14,25 +14,25 @@
  */
 
 export interface ErrorInfo {
-  '@type': 'type.googleapis.com/google.rpc.ErrorInfo';
+  "@type": "type.googleapis.com/google.rpc.ErrorInfo";
   reason: string;
   domain: string;
   metadata: { [key: string]: string };
 }
 
 export interface RetryInfo {
-  '@type': 'type.googleapis.com/google.rpc.RetryInfo';
+  "@type": "type.googleapis.com/google.rpc.RetryInfo";
   retryDelay: string; // e.g. "51820.638305887s"
 }
 
 export interface DebugInfo {
-  '@type': 'type.googleapis.com/google.rpc.DebugInfo';
+  "@type": "type.googleapis.com/google.rpc.DebugInfo";
   stackEntries: string[];
   detail: string;
 }
 
 export interface QuotaFailure {
-  '@type': 'type.googleapis.com/google.rpc.QuotaFailure';
+  "@type": "type.googleapis.com/google.rpc.QuotaFailure";
   violations: Array<{
     subject?: string;
     description?: string;
@@ -46,7 +46,7 @@ export interface QuotaFailure {
 }
 
 export interface PreconditionFailure {
-  '@type': 'type.googleapis.com/google.rpc.PreconditionFailure';
+  "@type": "type.googleapis.com/google.rpc.PreconditionFailure";
   violations: Array<{
     type: string;
     subject: string;
@@ -55,13 +55,13 @@ export interface PreconditionFailure {
 }
 
 export interface LocalizedMessage {
-  '@type': 'type.googleapis.com/google.rpc.LocalizedMessage';
+  "@type": "type.googleapis.com/google.rpc.LocalizedMessage";
   locale: string;
   message: string;
 }
 
 export interface BadRequest {
-  '@type': 'type.googleapis.com/google.rpc.BadRequest';
+  "@type": "type.googleapis.com/google.rpc.BadRequest";
   fieldViolations: Array<{
     field: string;
     description: string;
@@ -71,13 +71,13 @@ export interface BadRequest {
 }
 
 export interface RequestInfo {
-  '@type': 'type.googleapis.com/google.rpc.RequestInfo';
+  "@type": "type.googleapis.com/google.rpc.RequestInfo";
   requestId: string;
   servingData: string;
 }
 
 export interface ResourceInfo {
-  '@type': 'type.googleapis.com/google.rpc.ResourceInfo';
+  "@type": "type.googleapis.com/google.rpc.ResourceInfo";
   resourceType: string;
   resourceName: string;
   owner: string;
@@ -85,7 +85,7 @@ export interface ResourceInfo {
 }
 
 export interface Help {
-  '@type': 'type.googleapis.com/google.rpc.Help';
+  "@type": "type.googleapis.com/google.rpc.Help";
   links: Array<{
     description: string;
     url: string;
@@ -136,7 +136,7 @@ export function parseGoogleApiError(error: unknown): GoogleApiError | null {
   let errorObj: unknown = error;
 
   // If error is a string, try to parse it.
-  if (typeof errorObj === 'string') {
+  if (typeof errorObj === "string") {
     try {
       errorObj = JSON.parse(errorObj);
     } catch (_) {
@@ -149,25 +149,20 @@ export function parseGoogleApiError(error: unknown): GoogleApiError | null {
     errorObj = errorObj[0];
   }
 
-  if (typeof errorObj !== 'object' || errorObj === null) {
+  if (typeof errorObj !== "object" || errorObj === null) {
     return null;
   }
 
-  let currentError: ErrorShape | undefined =
-    fromGaxiosError(errorObj) ?? fromApiError(errorObj);
+  let currentError: ErrorShape | undefined = fromGaxiosError(errorObj) ?? fromApiError(errorObj);
 
   let depth = 0;
   const maxDepth = 10;
   // Handle cases where the actual error object is stringified inside the message
   // by drilling down until we find an error that doesn't have a stringified message.
-  while (
-    currentError &&
-    typeof currentError.message === 'string' &&
-    depth < maxDepth
-  ) {
+  while (currentError && typeof currentError.message === "string" && depth < maxDepth) {
     try {
       const parsedMessage = JSON.parse(
-        currentError.message.replace(/\u00A0/g, '').replace(/\n/g, ' '),
+        currentError.message.replace(/\u00A0/g, "").replace(/\n/g, " "),
       );
       if (parsedMessage.error) {
         currentError = parsedMessage.error;
@@ -194,14 +189,12 @@ export function parseGoogleApiError(error: unknown): GoogleApiError | null {
     const details: GoogleApiErrorDetail[] = [];
     if (Array.isArray(errorDetails)) {
       for (const detail of errorDetails) {
-        if (detail && typeof detail === 'object') {
+        if (detail && typeof detail === "object") {
           const detailObj = detail as Record<string, unknown>;
-          const typeKey = Object.keys(detailObj).find(
-            (key) => key.trim() === '@type',
-          );
+          const typeKey = Object.keys(detailObj).find((key) => key.trim() === "@type");
           if (typeKey) {
-            if (typeKey !== '@type') {
-              detailObj['@type'] = detailObj[typeKey];
+            if (typeKey !== "@type") {
+              detailObj["@type"] = detailObj[typeKey];
               delete detailObj[typeKey];
             }
             // We can just cast it; the consumer will have to switch on @type
@@ -239,7 +232,7 @@ function fromGaxiosError(errorObj: object): ErrorShape | undefined {
   if (gaxiosError.response?.data) {
     let data = gaxiosError.response.data;
 
-    if (typeof data === 'string') {
+    if (typeof data === "string") {
       try {
         data = JSON.parse(data);
       } catch (_) {
@@ -251,8 +244,8 @@ function fromGaxiosError(errorObj: object): ErrorShape | undefined {
       data = data[0];
     }
 
-    if (typeof data === 'object' && data !== null) {
-      if ('error' in data) {
+    if (typeof data === "object" && data !== null) {
+      if ("error" in data) {
         outerError = (data as { error: ErrorShape }).error;
       }
     }
@@ -283,15 +276,15 @@ function fromApiError(errorObj: object): ErrorShape | undefined {
   if (apiError.message) {
     let data = apiError.message;
 
-    if (typeof data === 'string') {
+    if (typeof data === "string") {
       try {
         data = JSON.parse(data);
       } catch (_) {
         // Not a JSON string, can't parse.
         // Try one more fallback: look for the first '{' and last '}'
-        if (typeof data === 'string') {
-          const firstBrace = data.indexOf('{');
-          const lastBrace = data.lastIndexOf('}');
+        if (typeof data === "string") {
+          const firstBrace = data.indexOf("{");
+          const lastBrace = data.lastIndexOf("}");
           if (firstBrace !== -1 && lastBrace !== -1 && lastBrace > firstBrace) {
             try {
               data = JSON.parse(data.substring(firstBrace, lastBrace + 1));
@@ -307,8 +300,8 @@ function fromApiError(errorObj: object): ErrorShape | undefined {
       data = data[0];
     }
 
-    if (typeof data === 'object' && data !== null) {
-      if ('error' in data) {
+    if (typeof data === "object" && data !== null) {
+      if ("error" in data) {
         outerError = (data as { error: ErrorShape }).error;
       }
     }

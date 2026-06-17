@@ -4,14 +4,14 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { useState, useEffect, useRef, useCallback } from 'react';
-import { exec, type ChildProcess } from 'child_process';
-import { createDebugLogger } from '@airiscode/core';
-import { useSettings } from '../contexts/SettingsContext.js';
-import { useUIState } from '../contexts/UIStateContext.js';
-import { useConfig } from '../contexts/ConfigContext.js';
-import { useVimMode } from '../contexts/VimModeContext.js';
-import type { SessionMetrics } from '../contexts/SessionContext.js';
+import { createDebugLogger } from "@airiscode/core";
+import { type ChildProcess, exec } from "child_process";
+import { useCallback, useEffect, useRef, useState } from "react";
+import { useConfig } from "../contexts/ConfigContext.js";
+import type { SessionMetrics } from "../contexts/SessionContext.js";
+import { useSettings } from "../contexts/SettingsContext.js";
+import { useUIState } from "../contexts/UIStateContext.js";
+import { useVimMode } from "../contexts/VimModeContext.js";
 
 /**
  * Structured JSON input passed to the status line command via stdin.
@@ -67,11 +67,11 @@ export interface StatusLineCommandInput {
 }
 
 interface StatusLineConfig {
-  type: 'command';
+  type: "command";
   command: string;
 }
 
-const debugLog = createDebugLogger('STATUS_LINE');
+const debugLog = createDebugLogger("STATUS_LINE");
 
 function getStatusLineConfig(
   settings: ReturnType<typeof useSettings>,
@@ -79,15 +79,15 @@ function getStatusLineConfig(
   const raw = settings.merged.ui?.statusLine;
   if (
     raw &&
-    typeof raw === 'object' &&
-    'type' in raw &&
-    raw.type === 'command' &&
-    'command' in raw &&
-    typeof raw.command === 'string' &&
+    typeof raw === "object" &&
+    "type" in raw &&
+    raw.type === "command" &&
+    "command" in raw &&
+    typeof raw.command === "string" &&
     raw.command.trim().length > 0
   ) {
     const config: StatusLineConfig = {
-      type: 'command',
+      type: "command",
       command: raw.command,
     };
     return config;
@@ -95,10 +95,8 @@ function getStatusLineConfig(
   return undefined;
 }
 
-function buildMetricsPayload(
-  m: SessionMetrics,
-): StatusLineCommandInput['metrics'] {
-  const models: StatusLineCommandInput['metrics']['models'] = {};
+function buildMetricsPayload(m: SessionMetrics): StatusLineCommandInput["metrics"] {
+  const models: StatusLineCommandInput["metrics"]["models"] = {};
   for (const [id, mm] of Object.entries(m.models)) {
     models[id] = {
       api: {
@@ -158,9 +156,7 @@ export function useStatusLine(): {
   const statusLineCommandRef = useRef(statusLineCommand);
   statusLineCommandRef.current = statusLineCommand;
 
-  const debounceTimerRef = useRef<ReturnType<typeof setTimeout> | undefined>(
-    undefined,
-  );
+  const debounceTimerRef = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
 
   // Track previous trigger values to detect actual changes.
   // Initialized with current values so the state-change effect
@@ -169,8 +165,7 @@ export function useStatusLine(): {
   const { currentModel, branchName } = uiState;
   const totalToolCalls = uiState.sessionStats.metrics.tools.totalCalls;
   const totalLinesAdded = uiState.sessionStats.metrics.files.totalLinesAdded;
-  const totalLinesRemoved =
-    uiState.sessionStats.metrics.files.totalLinesRemoved;
+  const totalLinesRemoved = uiState.sessionStats.metrics.files.totalLinesRemoved;
   const effectiveVim = vimEnabled ? vimMode : undefined;
   const prevStateRef = useRef<{
     promptTokenCount: number;
@@ -210,18 +205,12 @@ export function useStatusLine(): {
     const stats = ui.sessionStats;
     const m = stats.metrics;
 
-    const contextWindowSize =
-      cfg.getContentGeneratorConfig()?.contextWindowSize || 0;
+    const contextWindowSize = cfg.getContentGeneratorConfig()?.contextWindowSize || 0;
     const usedPercentage =
       contextWindowSize > 0
         ? Math.min(
             100,
-            Math.max(
-              0,
-              Math.round(
-                (stats.lastPromptTokenCount / contextWindowSize) * 1000,
-              ) / 10,
-            ),
+            Math.max(0, Math.round((stats.lastPromptTokenCount / contextWindowSize) * 1000) / 10),
           )
         : 0;
 
@@ -234,9 +223,9 @@ export function useStatusLine(): {
 
     const input: StatusLineCommandInput = {
       session_id: stats.sessionId,
-      version: cfg.getCliVersion() || 'unknown',
+      version: cfg.getCliVersion() || "unknown",
       model: {
-        display_name: ui.currentModel || cfg.getModel() || 'unknown',
+        display_name: ui.currentModel || cfg.getModel() || "unknown",
       },
       context_window: {
         context_window_size: contextWindowSize,
@@ -277,7 +266,7 @@ export function useStatusLine(): {
         activeChildRef.current = undefined;
         if (!error && stdout) {
           // Strip only the trailing newline to preserve intentional whitespace.
-          const line = stdout.replace(/\r?\n$/, '').split(/\r?\n/, 1)[0];
+          const line = stdout.replace(/\r?\n$/, "").split(/\r?\n/, 1)[0];
           setOutput(line || null);
         } else {
           setOutput(null);
@@ -290,9 +279,9 @@ export function useStatusLine(): {
     // Pass structured JSON context via stdin.
     // Guard against EPIPE if the child exits before we finish writing.
     if (child.stdin) {
-      child.stdin.on('error', (err) => {
-        if ((err as NodeJS.ErrnoException).code !== 'EPIPE') {
-          debugLog.error('statusline stdin error:', err.message);
+      child.stdin.on("error", (err) => {
+        if ((err as NodeJS.ErrnoException).code !== "EPIPE") {
+          debugLog.error("statusline stdin error:", err.message);
         }
       });
       child.stdin.write(JSON.stringify(input));

@@ -3,6 +3,6 @@
  * MCP (Model Context Protocol) client for AIRIS Gateway
  */
 
-export * from './types.js';
-export * from './client.js';
-export * from './errors.js';
+export * from "./client.js";
+export * from "./errors.js";
+export * from "./types.js";

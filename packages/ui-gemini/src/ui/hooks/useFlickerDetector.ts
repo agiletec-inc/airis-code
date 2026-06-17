@@ -4,12 +4,12 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { type DOMElement, measureElement } from 'ink';
-import { useEffect } from 'react';
-import { useConfig } from '../contexts/ConfigContext.js';
-import { recordFlickerFrame } from '@airiscode/gemini-cli-core';
-import { appEvents, AppEvent } from '../../utils/events.js';
-import { useUIState } from '../contexts/UIStateContext.js';
+import { recordFlickerFrame } from "@airiscode/gemini-cli-core";
+import { type DOMElement, measureElement } from "ink";
+import { useEffect } from "react";
+import { AppEvent, appEvents } from "../../utils/events.js";
+import { useConfig } from "../contexts/ConfigContext.js";
+import { useUIState } from "../contexts/UIStateContext.js";
 
 /**
  * A hook that detects when the UI flickers (renders taller than the terminal).

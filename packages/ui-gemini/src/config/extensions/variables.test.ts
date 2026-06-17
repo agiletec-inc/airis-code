@@ -4,118 +4,112 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { expect, describe, it } from 'vitest';
+import { describe, expect, it } from "vitest";
 import {
   hydrateString,
   recursivelyHydrateStrings,
-  validateVariables,
   type VariableContext,
-} from './variables.js';
+  validateVariables,
+} from "./variables.js";
 
-describe('validateVariables', () => {
-  it('should not throw if all required variables are present', () => {
+describe("validateVariables", () => {
+  it("should not throw if all required variables are present", () => {
     const schema = {
-      extensionPath: { type: 'string', description: 'test', required: true },
+      extensionPath: { type: "string", description: "test", required: true },
     } as const;
-    const context = { extensionPath: 'value' };
+    const context = { extensionPath: "value" };
     expect(() => validateVariables(context, schema)).not.toThrow();
   });
 
-  it('should throw if a required variable is missing', () => {
+  it("should throw if a required variable is missing", () => {
     const schema = {
-      extensionPath: { type: 'string', description: 'test', required: true },
+      extensionPath: { type: "string", description: "test", required: true },
     } as const;
     const context = {};
     expect(() => validateVariables(context, schema)).toThrow(
-      'Missing required variable: extensionPath',
+      "Missing required variable: extensionPath",
     );
   });
 });
 
-describe('hydrateString', () => {
-  it('should replace a single variable', () => {
+describe("hydrateString", () => {
+  it("should replace a single variable", () => {
     const context = {
-      extensionPath: 'path/my-extension',
+      extensionPath: "path/my-extension",
     };
-    const result = hydrateString('Hello, ${extensionPath}!', context);
-    expect(result).toBe('Hello, path/my-extension!');
+    const result = hydrateString("Hello, ${extensionPath}!", context);
+    expect(result).toBe("Hello, path/my-extension!");
   });
 
-  it('should replace multiple variables', () => {
+  it("should replace multiple variables", () => {
     const context = {
-      extensionPath: 'path/my-extension',
-      workspacePath: '/ws',
+      extensionPath: "path/my-extension",
+      workspacePath: "/ws",
     };
-    const result = hydrateString(
-      'Ext: ${extensionPath}, WS: ${workspacePath}',
-      context,
-    );
-    expect(result).toBe('Ext: path/my-extension, WS: /ws');
+    const result = hydrateString("Ext: ${extensionPath}, WS: ${workspacePath}", context);
+    expect(result).toBe("Ext: path/my-extension, WS: /ws");
   });
 
-  it('should ignore unknown variables', () => {
+  it("should ignore unknown variables", () => {
     const context = {
-      extensionPath: 'path/my-extension',
+      extensionPath: "path/my-extension",
     };
-    const result = hydrateString('Hello, ${unknown}!', context);
-    expect(result).toBe('Hello, ${unknown}!');
+    const result = hydrateString("Hello, ${unknown}!", context);
+    expect(result).toBe("Hello, ${unknown}!");
   });
 
-  it('should handle null and undefined context values', () => {
+  it("should handle null and undefined context values", () => {
     const context: VariableContext = {
       extensionPath: undefined,
     };
-    const result = hydrateString(
-      'Ext: ${extensionPath}, WS: ${workspacePath}',
-      context,
-    );
-    expect(result).toBe('Ext: ${extensionPath}, WS: ${workspacePath}');
+    const result = hydrateString("Ext: ${extensionPath}, WS: ${workspacePath}", context);
+    expect(result).toBe("Ext: ${extensionPath}, WS: ${workspacePath}");
   });
 });
 
-describe('recursivelyHydrateStrings', () => {
+describe("recursivelyHydrateStrings", () => {
   const context = {
-    extensionPath: 'path/my-extension',
-    workspacePath: '/ws',
+    extensionPath: "path/my-extension",
+    workspacePath: "/ws",
   };
 
-  it('should hydrate strings in a flat object', () => {
+  it("should hydrate strings in a flat object", () => {
     const obj = {
-      a: 'Hello, ${workspacePath}',
-      b: 'Hi, ${extensionPath}',
+      a: "Hello, ${workspacePath}",
+      b: "Hi, ${extensionPath}",
     };
     const result = recursivelyHydrateStrings(obj, context);
     expect(result).toEqual({
-      a: 'Hello, /ws',
-      b: 'Hi, path/my-extension',
+      a: "Hello, /ws",
+      b: "Hi, path/my-extension",
     });
   });
 
-  it('should hydrate strings in an array', () => {
-    const arr = ['${workspacePath}', '${extensionPath}'];
+  it("should hydrate strings in an array", () => {
+    const arr = ["${workspacePath}", "${extensionPath}"];
     const result = recursivelyHydrateStrings(arr, context);
-    expect(result).toEqual(['/ws', 'path/my-extension']);
+    expect(result).toEqual(["/ws", "path/my-extension"]);
   });
 
-  it('should hydrate strings in a nested object', () => {
+  it("should hydrate strings in a nested object", () => {
     const obj = {
-      a: 'Hello, ${workspacePath}',
+      a: "Hello, ${workspacePath}",
       b: {
-        c: 'Hi, ${extensionPath}',
-        d: ['${workspacePath}/foo'],
+        c: "Hi, ${extensionPath}",
+        d: ["${workspacePath}/foo"],
       },
     };
     const result = recursivelyHydrateStrings(obj, context);
     expect(result).toEqual({
-      a: 'Hello, /ws',
+      a: "Hello, /ws",
       b: {
-        c: 'Hi, path/my-extension',
-        d: ['/ws/foo'],
+        c: "Hi, path/my-extension",
+        d: ["/ws/foo"],
       },
     });
   });
 
-  it('should not modify non-string values', () => {
+  it("should not modify non-string values", () => {
     const obj = {
       a: 123,
       b: true,

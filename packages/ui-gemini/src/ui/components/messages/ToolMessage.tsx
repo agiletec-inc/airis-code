@@ -4,28 +4,25 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import type React from 'react';
-import { useState, useEffect } from 'react';
-import { Box, Text } from 'ink';
-import type { IndividualToolCallDisplay } from '../../types.js';
-import { StickyHeader } from '../StickyHeader.js';
-import { ToolResultDisplay } from './ToolResultDisplay.js';
+import type { Config } from "@airiscode/gemini-cli-core";
+import { Box, Text } from "ink";
+import type React from "react";
+import { useEffect, useState } from "react";
+import { SHELL_COMMAND_NAME, SHELL_FOCUS_HINT_DELAY_MS } from "../../constants.js";
+import { useInactivityTimer } from "../../hooks/useInactivityTimer.js";
+import { theme } from "../../semantic-colors.js";
+import type { IndividualToolCallDisplay } from "../../types.js";
+import { ToolCallStatus } from "../../types.js";
+import { ShellInputPrompt } from "../ShellInputPrompt.js";
+import { StickyHeader } from "../StickyHeader.js";
+import { ToolResultDisplay } from "./ToolResultDisplay.js";
 import {
-  ToolStatusIndicator,
-  ToolInfo,
-  TrailingIndicator,
-  type TextEmphasis,
   STATUS_INDICATOR_WIDTH,
-} from './ToolShared.js';
-import {
-  SHELL_COMMAND_NAME,
-  SHELL_FOCUS_HINT_DELAY_MS,
-} from '../../constants.js';
-import { theme } from '../../semantic-colors.js';
-import type { Config } from '@airiscode/gemini-cli-core';
-import { useInactivityTimer } from '../../hooks/useInactivityTimer.js';
-import { ToolCallStatus } from '../../types.js';
-import { ShellInputPrompt } from '../ShellInputPrompt.js';
+  type TextEmphasis,
+  ToolInfo,
+  ToolStatusIndicator,
+  TrailingIndicator,
+} from "./ToolShared.js";
 
 export type { TextEmphasis };
 
@@ -50,7 +47,7 @@ export const ToolMessage: React.FC<ToolMessageProps> = ({
   status,
   availableTerminalHeight,
   terminalWidth,
-  emphasis = 'medium',
+  emphasis = "medium",
   renderOutputAsMarkdown = true,
   isFirst,
   borderColor,
@@ -61,7 +58,7 @@ export const ToolMessage: React.FC<ToolMessageProps> = ({
   config,
 }) => {
   const isThisShellFocused =
-    (name === SHELL_COMMAND_NAME || name === 'Shell') &&
+    (name === SHELL_COMMAND_NAME || name === "Shell") &&
     status === ToolCallStatus.Executing &&
     ptyId === activeShellPtyId &&
     embeddedShellFocused;
@@ -87,12 +84,11 @@ export const ToolMessage: React.FC<ToolMessageProps> = ({
   }, [isThisShellFocused]);
 
   const isThisShellFocusable =
-    (name === SHELL_COMMAND_NAME || name === 'Shell') &&
+    (name === SHELL_COMMAND_NAME || name === "Shell") &&
     status === ToolCallStatus.Executing &&
     config?.getEnableInteractiveShell();
 
-  const shouldShowFocusHint =
-    isThisShellFocusable && (showFocusHint || userHasFocused);
+  const shouldShowFocusHint = isThisShellFocusable && (showFocusHint || userHasFocused);
 
   return (
     <Box flexDirection="column" width={terminalWidth}>
@@ -103,20 +99,15 @@ export const ToolMessage: React.FC<ToolMessageProps> = ({
         borderDimColor={borderDimColor}
       >
         <ToolStatusIndicator status={status} name={name} />
-        <ToolInfo
-          name={name}
-          status={status}
-          description={description}
-          emphasis={emphasis}
-        />
+        <ToolInfo name={name} status={status} description={description} emphasis={emphasis} />
         {shouldShowFocusHint && (
           <Box marginLeft={1} flexShrink={0}>
             <Text color={theme.text.accent}>
-              {isThisShellFocused ? '(Focused)' : '(ctrl+f to focus)'}
+              {isThisShellFocused ? "(Focused)" : "(ctrl+f to focus)"}
             </Text>
           </Box>
         )}
-        {emphasis === 'high' && <TrailingIndicator />}
+        {emphasis === "high" && <TrailingIndicator />}
       </StickyHeader>
       <Box
         width={terminalWidth}

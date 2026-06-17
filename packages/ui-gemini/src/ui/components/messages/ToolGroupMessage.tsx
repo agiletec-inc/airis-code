@@ -4,18 +4,18 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import type React from 'react';
-import { useMemo } from 'react';
-import { Box, Text } from 'ink';
-import type { IndividualToolCallDisplay } from '../../types.js';
-import { ToolCallStatus } from '../../types.js';
-import { ToolMessage } from './ToolMessage.js';
-import { ShellToolMessage } from './ShellToolMessage.js';
-import { ToolConfirmationMessage } from './ToolConfirmationMessage.js';
-import { theme } from '../../semantic-colors.js';
-import { SHELL_COMMAND_NAME, SHELL_NAME } from '../../constants.js';
-import { SHELL_TOOL_NAME } from '@airiscode/gemini-cli-core';
-import { useConfig } from '../../contexts/ConfigContext.js';
+import { SHELL_TOOL_NAME } from "@airiscode/gemini-cli-core";
+import { Box, Text } from "ink";
+import type React from "react";
+import { useMemo } from "react";
+import { SHELL_COMMAND_NAME, SHELL_NAME } from "../../constants.js";
+import { useConfig } from "../../contexts/ConfigContext.js";
+import { theme } from "../../semantic-colors.js";
+import type { IndividualToolCallDisplay } from "../../types.js";
+import { ToolCallStatus } from "../../types.js";
+import { ShellToolMessage } from "./ShellToolMessage.js";
+import { ToolConfirmationMessage } from "./ToolConfirmationMessage.js";
+import { ToolMessage } from "./ToolMessage.js";
 
 interface ToolGroupMessageProps {
   groupId: number;
@@ -39,14 +39,9 @@ export const ToolGroupMessage: React.FC<ToolGroupMessageProps> = ({
 }) => {
   const isEmbeddedShellFocused =
     embeddedShellFocused &&
-    toolCalls.some(
-      (t) =>
-        t.ptyId === activeShellPtyId && t.status === ToolCallStatus.Executing,
-    );
+    toolCalls.some((t) => t.ptyId === activeShellPtyId && t.status === ToolCallStatus.Executing);
 
-  const hasPending = !toolCalls.every(
-    (t) => t.status === ToolCallStatus.Success,
-  );
+  const hasPending = !toolCalls.every((t) => t.status === ToolCallStatus.Success);
 
   const config = useConfig();
   const isShellCommand = toolCalls.some(
@@ -59,8 +54,7 @@ export const ToolGroupMessage: React.FC<ToolGroupMessageProps> = ({
         ? theme.status.warning
         : theme.border.default;
 
-  const borderDimColor =
-    hasPending && (!isShellCommand || !isEmbeddedShellFocused);
+  const borderDimColor = hasPending && (!isShellCommand || !isEmbeddedShellFocused);
 
   const staticHeight = /* border */ 2 + /* marginBottom */ 1;
 
@@ -73,7 +67,7 @@ export const ToolGroupMessage: React.FC<ToolGroupMessageProps> = ({
 
   let countToolCallsWithResults = 0;
   for (const tool of toolCalls) {
-    if (tool.resultDisplay !== undefined && tool.resultDisplay !== '') {
+    if (tool.resultDisplay !== undefined && tool.resultDisplay !== "") {
       countToolCallsWithResults++;
     }
   }
@@ -115,22 +109,17 @@ export const ToolGroupMessage: React.FC<ToolGroupMessageProps> = ({
           availableTerminalHeight: availableTerminalHeightPerToolMessage,
           terminalWidth,
           emphasis: isConfirming
-            ? ('high' as const)
+            ? ("high" as const)
             : toolAwaitingApproval
-              ? ('low' as const)
-              : ('medium' as const),
+              ? ("low" as const)
+              : ("medium" as const),
           isFirst,
           borderColor,
           borderDimColor,
         };
 
         return (
-          <Box
-            key={tool.callId}
-            flexDirection="column"
-            minHeight={1}
-            width={terminalWidth}
-          >
+          <Box key={tool.callId} flexDirection="column" minHeight={1} width={terminalWidth}>
             {isShellTool ? (
               <ShellToolMessage
                 {...commonProps}
@@ -160,9 +149,7 @@ export const ToolGroupMessage: React.FC<ToolGroupMessageProps> = ({
                     confirmationDetails={tool.confirmationDetails}
                     config={config}
                     isFocused={isFocused}
-                    availableTerminalHeight={
-                      availableTerminalHeightPerToolMessage
-                    }
+                    availableTerminalHeight={availableTerminalHeightPerToolMessage}
                     terminalWidth={terminalWidth - 4}
                   />
                 )}

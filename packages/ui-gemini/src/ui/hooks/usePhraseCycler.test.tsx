@@ -4,17 +4,17 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { act } from 'react';
-import { render } from '../../test-utils/render.js';
-import { Text } from 'ink';
+import { Text } from "ink";
+import { act } from "react";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { render } from "../../test-utils/render.js";
+import { INFORMATIVE_TIPS } from "../constants/tips.js";
+import { WITTY_LOADING_PHRASES } from "../constants/wittyPhrases.js";
 import {
-  usePhraseCycler,
-  PHRASE_CHANGE_INTERVAL_MS,
   INTERACTIVE_SHELL_WAITING_PHRASE,
-} from './usePhraseCycler.js';
-import { INFORMATIVE_TIPS } from '../constants/tips.js';
-import { WITTY_LOADING_PHRASES } from '../constants/wittyPhrases.js';
+  PHRASE_CHANGE_INTERVAL_MS,
+  usePhraseCycler,
+} from "./usePhraseCycler.js";
 
 // Test component to consume the hook
 const TestComponent = ({
@@ -40,7 +40,7 @@ const TestComponent = ({
   return <Text>{phrase}</Text>;
 };
 
-describe('usePhraseCycler', () => {
+describe("usePhraseCycler", () => {
   beforeEach(() => {
     vi.useFakeTimers();
   });
@@ -49,30 +49,24 @@ describe('usePhraseCycler', () => {
     vi.restoreAllMocks();
   });
 
-  it('should initialize with a witty phrase when not active and not waiting', () => {
-    vi.spyOn(Math, 'random').mockImplementation(() => 0.5); // Always witty
-    const { lastFrame } = render(
-      <TestComponent isActive={false} isWaiting={false} />,
-    );
+  it("should initialize with a witty phrase when not active and not waiting", () => {
+    vi.spyOn(Math, "random").mockImplementation(() => 0.5); // Always witty
+    const { lastFrame } = render(<TestComponent isActive={false} isWaiting={false} />);
     expect(WITTY_LOADING_PHRASES).toContain(lastFrame());
   });
 
   it('should show "Waiting for user confirmation..." when isWaiting is true', async () => {
-    const { lastFrame, rerender } = render(
-      <TestComponent isActive={true} isWaiting={false} />,
-    );
+    const { lastFrame, rerender } = render(<TestComponent isActive={true} isWaiting={false} />);
     rerender(<TestComponent isActive={true} isWaiting={true} />);
     await act(async () => {
       await vi.advanceTimersByTimeAsync(0);
     });
-    expect(lastFrame()).toBe('Waiting for user confirmation...');
+    expect(lastFrame()).toBe("Waiting for user confirmation...");
   });
 
-  it('should show interactive shell waiting message when isInteractiveShellWaiting is true after 5s', async () => {
-    vi.spyOn(Math, 'random').mockImplementation(() => 0.5); // Always witty
-    const { lastFrame, rerender } = render(
-      <TestComponent isActive={true} isWaiting={false} />,
-    );
+  it("should show interactive shell waiting message when isInteractiveShellWaiting is true after 5s", async () => {
+    vi.spyOn(Math, "random").mockImplementation(() => 0.5); // Always witty
+    const { lastFrame, rerender } = render(<TestComponent isActive={true} isWaiting={false} />);
     rerender(
       <TestComponent
         isActive={true}
@@ -85,9 +79,7 @@ describe('usePhraseCycler', () => {
       await vi.advanceTimersByTimeAsync(0);
     });
     // Should still be showing a witty phrase or tip initially
-    expect([...WITTY_LOADING_PHRASES, ...INFORMATIVE_TIPS]).toContain(
-      lastFrame(),
-    );
+    expect([...WITTY_LOADING_PHRASES, ...INFORMATIVE_TIPS]).toContain(lastFrame());
 
     await act(async () => {
       await vi.advanceTimersByTimeAsync(5000);
@@ -95,8 +87,8 @@ describe('usePhraseCycler', () => {
     expect(lastFrame()).toBe(INTERACTIVE_SHELL_WAITING_PHRASE);
   });
 
-  it('should reset interactive shell waiting timer when lastOutputTime changes', async () => {
-    vi.spyOn(Math, 'random').mockImplementation(() => 0.5); // Always witty
+  it("should reset interactive shell waiting timer when lastOutputTime changes", async () => {
+    vi.spyOn(Math, "random").mockImplementation(() => 0.5); // Always witty
     const { lastFrame, rerender } = render(
       <TestComponent
         isActive={true}
@@ -111,9 +103,7 @@ describe('usePhraseCycler', () => {
       await vi.advanceTimersByTimeAsync(3000);
     });
     // Should still be witty phrase or tip
-    expect([...WITTY_LOADING_PHRASES, ...INFORMATIVE_TIPS]).toContain(
-      lastFrame(),
-    );
+    expect([...WITTY_LOADING_PHRASES, ...INFORMATIVE_TIPS]).toContain(lastFrame());
 
     // Update lastOutputTime
     rerender(
@@ -130,9 +120,7 @@ describe('usePhraseCycler', () => {
       await vi.advanceTimersByTimeAsync(3000);
     });
     // Should STILL be witty phrase or tip because timer reset
-    expect([...WITTY_LOADING_PHRASES, ...INFORMATIVE_TIPS]).toContain(
-      lastFrame(),
-    );
+    expect([...WITTY_LOADING_PHRASES, ...INFORMATIVE_TIPS]).toContain(lastFrame());
 
     // Advance another 2 seconds (total 5s from last output)
     await act(async () => {
@@ -141,14 +129,12 @@ describe('usePhraseCycler', () => {
     expect(lastFrame()).toBe(INTERACTIVE_SHELL_WAITING_PHRASE);
   });
 
-  it('should prioritize interactive shell waiting over normal waiting after 5s', async () => {
-    const { lastFrame, rerender } = render(
-      <TestComponent isActive={true} isWaiting={true} />,
-    );
+  it("should prioritize interactive shell waiting over normal waiting after 5s", async () => {
+    const { lastFrame, rerender } = render(<TestComponent isActive={true} isWaiting={true} />);
     await act(async () => {
       await vi.advanceTimersByTimeAsync(0);
     });
-    expect(lastFrame()).toBe('Waiting for user confirmation...');
+    expect(lastFrame()).toBe("Waiting for user confirmation...");
 
     rerender(
       <TestComponent
@@ -164,10 +150,8 @@ describe('usePhraseCycler', () => {
     expect(lastFrame()).toBe(INTERACTIVE_SHELL_WAITING_PHRASE);
   });
 
-  it('should not cycle phrases if isActive is false and not waiting', async () => {
-    const { lastFrame } = render(
-      <TestComponent isActive={false} isWaiting={false} />,
-    );
+  it("should not cycle phrases if isActive is false and not waiting", async () => {
+    const { lastFrame } = render(<TestComponent isActive={false} isWaiting={false} />);
     const initialPhrase = lastFrame();
     await act(async () => {
       await vi.advanceTimersByTimeAsync(PHRASE_CHANGE_INTERVAL_MS * 2);
@@ -175,11 +159,9 @@ describe('usePhraseCycler', () => {
     expect(lastFrame()).toBe(initialPhrase);
   });
 
-  it('should show a tip on first activation, then a witty phrase', async () => {
-    vi.spyOn(Math, 'random').mockImplementation(() => 0.99); // Subsequent phrases are witty
-    const { lastFrame } = render(
-      <TestComponent isActive={true} isWaiting={false} />,
-    );
+  it("should show a tip on first activation, then a witty phrase", async () => {
+    vi.spyOn(Math, "random").mockImplementation(() => 0.99); // Subsequent phrases are witty
+    const { lastFrame } = render(<TestComponent isActive={true} isWaiting={false} />);
 
     // Initial phrase on first activation should be a tip
     await act(async () => {
@@ -194,11 +176,9 @@ describe('usePhraseCycler', () => {
     expect(WITTY_LOADING_PHRASES).toContain(lastFrame());
   });
 
-  it('should cycle through phrases when isActive is true and not waiting', async () => {
-    vi.spyOn(Math, 'random').mockImplementation(() => 0.5); // Always witty for subsequent phrases
-    const { lastFrame } = render(
-      <TestComponent isActive={true} isWaiting={false} />,
-    );
+  it("should cycle through phrases when isActive is true and not waiting", async () => {
+    vi.spyOn(Math, "random").mockImplementation(() => 0.5); // Always witty for subsequent phrases
+    const { lastFrame } = render(<TestComponent isActive={true} isWaiting={false} />);
     // Initial phrase on first activation will be a tip, not necessarily from witty phrases
     await act(async () => {
       await vi.advanceTimersByTimeAsync(0);
@@ -217,10 +197,10 @@ describe('usePhraseCycler', () => {
     expect(WITTY_LOADING_PHRASES).toContain(lastFrame());
   });
 
-  it('should reset to a phrase when isActive becomes true after being false', async () => {
-    const customPhrases = ['Phrase A', 'Phrase B'];
+  it("should reset to a phrase when isActive becomes true after being false", async () => {
+    const customPhrases = ["Phrase A", "Phrase B"];
     let callCount = 0;
-    vi.spyOn(Math, 'random').mockImplementation(() => {
+    vi.spyOn(Math, "random").mockImplementation(() => {
       // For custom phrases, only 1 Math.random call is made per update.
       // 0 -> index 0 ('Phrase A')
       // 0.99 -> index 1 ('Phrase B')
@@ -230,21 +210,11 @@ describe('usePhraseCycler', () => {
     });
 
     const { lastFrame, rerender } = render(
-      <TestComponent
-        isActive={false}
-        isWaiting={false}
-        customPhrases={customPhrases}
-      />,
+      <TestComponent isActive={false} isWaiting={false} customPhrases={customPhrases} />,
     );
 
     // Activate -> On first activation will show tip on initial call, then first interval will use first mock value for 'Phrase A'
-    rerender(
-      <TestComponent
-        isActive={true}
-        isWaiting={false}
-        customPhrases={customPhrases}
-      />,
-    );
+    rerender(<TestComponent isActive={true} isWaiting={false} customPhrases={customPhrases} />);
     await act(async () => {
       await vi.advanceTimersByTimeAsync(PHRASE_CHANGE_INTERVAL_MS); // First interval after initial state -> callCount 0 -> 'Phrase A'
     });
@@ -257,13 +227,7 @@ describe('usePhraseCycler', () => {
     expect(customPhrases).toContain(lastFrame()); // Should be one of the custom phrases
 
     // Deactivate -> resets to first phrase in sequence
-    rerender(
-      <TestComponent
-        isActive={false}
-        isWaiting={false}
-        customPhrases={customPhrases}
-      />,
-    );
+    rerender(<TestComponent isActive={false} isWaiting={false} customPhrases={customPhrases} />);
     await act(async () => {
       await vi.advanceTimersByTimeAsync(0);
     });
@@ -271,38 +235,26 @@ describe('usePhraseCycler', () => {
     expect(customPhrases).toContain(lastFrame());
 
     // Activate again -> this will show a tip on first activation, then cycle from where mock is
-    rerender(
-      <TestComponent
-        isActive={true}
-        isWaiting={false}
-        customPhrases={customPhrases}
-      />,
-    );
+    rerender(<TestComponent isActive={true} isWaiting={false} customPhrases={customPhrases} />);
     await act(async () => {
       await vi.advanceTimersByTimeAsync(PHRASE_CHANGE_INTERVAL_MS); // First interval after re-activation -> should contain phrase
     });
     expect(customPhrases).toContain(lastFrame()); // Should be one of the custom phrases
   });
 
-  it('should clear phrase interval on unmount when active', () => {
-    const { unmount } = render(
-      <TestComponent isActive={true} isWaiting={false} />,
-    );
-    const clearIntervalSpy = vi.spyOn(global, 'clearInterval');
+  it("should clear phrase interval on unmount when active", () => {
+    const { unmount } = render(<TestComponent isActive={true} isWaiting={false} />);
+    const clearIntervalSpy = vi.spyOn(global, "clearInterval");
     unmount();
     expect(clearIntervalSpy).toHaveBeenCalledOnce();
   });
 
-  it('should use custom phrases when provided', async () => {
-    const customPhrases = ['Custom Phrase 1', 'Custom Phrase 2'];
-    const randomMock = vi.spyOn(Math, 'random');
+  it("should use custom phrases when provided", async () => {
+    const customPhrases = ["Custom Phrase 1", "Custom Phrase 2"];
+    const randomMock = vi.spyOn(Math, "random");
 
     const { lastFrame, rerender } = render(
-      <TestComponent
-        isActive={true}
-        isWaiting={false}
-        customPhrases={customPhrases}
-      />,
+      <TestComponent isActive={true} isWaiting={false} customPhrases={customPhrases} />,
     );
 
     // After first interval, it should use custom phrases
@@ -311,13 +263,7 @@ describe('usePhraseCycler', () => {
     });
 
     randomMock.mockReturnValue(0);
-    rerender(
-      <TestComponent
-        isActive={true}
-        isWaiting={false}
-        customPhrases={customPhrases}
-      />,
-    );
+    rerender(<TestComponent isActive={true} isWaiting={false} customPhrases={customPhrases} />);
     await act(async () => {
       await vi.advanceTimersByTimeAsync(PHRASE_CHANGE_INTERVAL_MS + 100);
     });
@@ -331,11 +277,9 @@ describe('usePhraseCycler', () => {
 
     // Test fallback to default phrases.
     randomMock.mockRestore();
-    vi.spyOn(Math, 'random').mockReturnValue(0.5); // Always witty
+    vi.spyOn(Math, "random").mockReturnValue(0.5); // Always witty
 
-    rerender(
-      <TestComponent isActive={true} isWaiting={false} customPhrases={[]} />,
-    );
+    rerender(<TestComponent isActive={true} isWaiting={false} customPhrases={[]} />);
     await act(async () => {
       await vi.advanceTimersByTimeAsync(PHRASE_CHANGE_INTERVAL_MS); // Wait for first cycle
     });
@@ -343,8 +287,8 @@ describe('usePhraseCycler', () => {
     expect(WITTY_LOADING_PHRASES).toContain(lastFrame());
   });
 
-  it('should fall back to witty phrases if custom phrases are an empty array', async () => {
-    vi.spyOn(Math, 'random').mockImplementation(() => 0.5); // Always witty for subsequent phrases
+  it("should fall back to witty phrases if custom phrases are an empty array", async () => {
+    vi.spyOn(Math, "random").mockImplementation(() => 0.5); // Always witty for subsequent phrases
     const { lastFrame } = render(
       <TestComponent isActive={true} isWaiting={false} customPhrases={[]} />,
     );
@@ -359,11 +303,9 @@ describe('usePhraseCycler', () => {
     expect(WITTY_LOADING_PHRASES).toContain(lastFrame());
   });
 
-  it('should reset phrase when transitioning from waiting to active', async () => {
-    vi.spyOn(Math, 'random').mockImplementation(() => 0.5); // Always witty for subsequent phrases
-    const { lastFrame, rerender } = render(
-      <TestComponent isActive={true} isWaiting={false} />,
-    );
+  it("should reset phrase when transitioning from waiting to active", async () => {
+    vi.spyOn(Math, "random").mockImplementation(() => 0.5); // Always witty for subsequent phrases
+    const { lastFrame, rerender } = render(<TestComponent isActive={true} isWaiting={false} />);
     await act(async () => {
       await vi.advanceTimersByTimeAsync(0); // First activation will be a tip
     });
@@ -380,7 +322,7 @@ describe('usePhraseCycler', () => {
     await act(async () => {
       await vi.advanceTimersByTimeAsync(0);
     });
-    expect(lastFrame()).toBe('Waiting for user confirmation...');
+    expect(lastFrame()).toBe("Waiting for user confirmation...");
 
     // Go back to active cycling - should pick a phrase based on the logic (witty due to mock)
     rerender(<TestComponent isActive={true} isWaiting={false} />);

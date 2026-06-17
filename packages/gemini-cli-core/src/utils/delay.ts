@@ -8,8 +8,8 @@
  * Factory to create a standard abort error for delay helpers.
  */
 export function createAbortError(): Error {
-  const abortError = new Error('Aborted');
-  abortError.name = 'AbortError';
+  const abortError = new Error("Aborted");
+  abortError.name = "AbortError";
   return abortError;
 }
 
@@ -34,15 +34,15 @@ export function delay(ms: number, signal?: AbortSignal): Promise<void> {
   return new Promise((resolve, reject) => {
     const onAbort = () => {
       clearTimeout(timeoutId);
-      signal.removeEventListener('abort', onAbort);
+      signal.removeEventListener("abort", onAbort);
       reject(createAbortError());
     };
 
     const timeoutId = setTimeout(() => {
-      signal.removeEventListener('abort', onAbort);
+      signal.removeEventListener("abort", onAbort);
       resolve();
     }, ms);
 
-    signal.addEventListener('abort', onAbort, { once: true });
+    signal.addEventListener("abort", onAbort, { once: true });
   });
 }

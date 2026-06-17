@@ -4,84 +4,72 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import {
-  describe,
-  it,
-  expect,
-  vi,
-  beforeEach,
-  afterEach,
-  type Mock,
-} from 'vitest';
-import {
-  getEnvironmentContext,
-  getDirectoryContextString,
-} from './environmentContext.js';
-import type { Config } from '../config/config.js';
-import type { Storage } from '../config/storage.js';
-import { getFolderStructure } from './getFolderStructure.js';
+import { afterEach, beforeEach, describe, expect, it, type Mock, vi } from "vitest";
+import type { Config } from "../config/config.js";
+import type { Storage } from "../config/storage.js";
+import { getDirectoryContextString, getEnvironmentContext } from "./environmentContext.js";
+import { getFolderStructure } from "./getFolderStructure.js";
 
-vi.mock('../config/config.js');
-vi.mock('./getFolderStructure.js', () => ({
+vi.mock("../config/config.js");
+vi.mock("./getFolderStructure.js", () => ({
   getFolderStructure: vi.fn(),
 }));
-vi.mock('../tools/read-many-files.js');
+vi.mock("../tools/read-many-files.js");
 
-describe('getDirectoryContextString', () => {
+describe("getDirectoryContextString", () => {
   let mockConfig: Partial<Config>;
 
   beforeEach(() => {
     mockConfig = {
       getWorkspaceContext: vi.fn().mockReturnValue({
-        getDirectories: vi.fn().mockReturnValue(['/test/dir']),
+        getDirectories: vi.fn().mockReturnValue(["/test/dir"]),
       }),
       getFileService: vi.fn(),
       storage: {
-        getProjectTempDir: vi.fn().mockReturnValue('/tmp/project-temp'),
+        getProjectTempDir: vi.fn().mockReturnValue("/tmp/project-temp"),
       } as unknown as Storage,
     };
-    vi.mocked(getFolderStructure).mockResolvedValue('Mock Folder Structure');
+    vi.mocked(getFolderStructure).mockResolvedValue("Mock Folder Structure");
   });
 
   afterEach(() => {
     vi.resetAllMocks();
   });
 
-  it('should return context string for a single directory', async () => {
+  it("should return context string for a single directory", async () => {
     const contextString = await getDirectoryContextString(mockConfig as Config);
+    expect(contextString).toContain("I'm currently working in the directory: /test/dir");
     expect(contextString).toContain(
-      "I'm currently working in the directory: /test/dir",
-    );
-    expect(contextString).toContain(
-      'Here is the folder structure of the current working directories:\n\nMock Folder Structure',
+      "Here is the folder structure of the current working directories:\n\nMock Folder Structure",
     );
   });
 
-  it('should return context string for multiple directories', async () => {
-    (
-      vi.mocked(mockConfig.getWorkspaceContext!)().getDirectories as Mock
-    ).mockReturnValue(['/test/dir1', '/test/dir2']);
+  it("should return context string for multiple directories", async () => {
+    (vi.mocked(mockConfig.getWorkspaceContext!)().getDirectories as Mock).mockReturnValue([
+      "/test/dir1",
+      "/test/dir2",
+    ]);
     vi.mocked(getFolderStructure)
-      .mockResolvedValueOnce('Structure 1')
-      .mockResolvedValueOnce('Structure 2');
+      .mockResolvedValueOnce("Structure 1")
+      .mockResolvedValueOnce("Structure 2");
 
     const contextString = await getDirectoryContextString(mockConfig as Config);
     expect(contextString).toContain(
       "I'm currently working in the following directories:\n  - /test/dir1\n  - /test/dir2",
     );
     expect(contextString).toContain(
-      'Here is the folder structure of the current working directories:\n\nStructure 1\nStructure 2',
+      "Here is the folder structure of the current working directories:\n\nStructure 1\nStructure 2",
     );
   });
 });
 
-describe('getEnvironmentContext', () => {
+describe("getEnvironmentContext", () => {
   let mockConfig: Partial<Config>;
   let mockToolRegistry: { getTool: Mock };
 
   beforeEach(() => {
     vi.useFakeTimers();
-    vi.setSystemTime(new Date('2025-08-05T12:00:00Z'));
+    vi.setSystemTime(new Date("2025-08-05T12:00:00Z"));
 
     mockToolRegistry = {
       getTool: vi.fn(),
@@ -89,17 +77,17 @@ describe('getEnvironmentContext', () => {
 
     mockConfig = {
       getWorkspaceContext: vi.fn().mockReturnValue({
-        getDirectories: vi.fn().mockReturnValue(['/test/dir']),
+        getDirectories: vi.fn().mockReturnValue(["/test/dir"]),
       }),
       getFileService: vi.fn(),
 
       getToolRegistry: vi.fn().mockReturnValue(mockToolRegistry),
       storage: {
-        getProjectTempDir: vi.fn().mockReturnValue('/tmp/project-temp'),
+        getProjectTempDir: vi.fn().mockReturnValue("/tmp/project-temp"),
       } as unknown as Storage,
     };
 
-    vi.mocked(getFolderStructure).mockResolvedValue('Mock Folder Structure');
+    vi.mocked(getFolderStructure).mockResolvedValue("Mock Folder Structure");
   });
 
   afterEach(() => {
@@ -107,7 +95,7 @@ describe('getEnvironmentContext', () => {
     vi.resetAllMocks();
   });
 
-  it('should return basic environment context for a single directory', async () => {
+  it("should return basic environment context for a single directory", async () => {
     const parts = await getEnvironmentContext(mockConfig as Config);
 
     expect(parts.length).toBe(1);
@@ -116,24 +104,23 @@ describe('getEnvironmentContext', () => {
     expect(context).toContain("Today's date is");
     expect(context).toContain("(formatted according to the user's locale)");
     expect(context).toContain(`My operating system is: ${process.platform}`);
+    expect(context).toContain("I'm currently working in the directory: /test/dir");
     expect(context).toContain(
-      "I'm currently working in the directory: /test/dir",
+      "Here is the folder structure of the current working directories:\n\nMock Folder Structure",
     );
-    expect(context).toContain(
-      'Here is the folder structure of the current working directories:\n\nMock Folder Structure',
-    );
-    expect(getFolderStructure).toHaveBeenCalledWith('/test/dir', {
+    expect(getFolderStructure).toHaveBeenCalledWith("/test/dir", {
       fileService: undefined,
     });
   });
 
-  it('should return basic environment context for multiple directories', async () => {
-    (
-      vi.mocked(mockConfig.getWorkspaceContext!)().getDirectories as Mock
-    ).mockReturnValue(['/test/dir1', '/test/dir2']);
+  it("should return basic environment context for multiple directories", async () => {
+    (vi.mocked(mockConfig.getWorkspaceContext!)().getDirectories as Mock).mockReturnValue([
+      "/test/dir1",
+      "/test/dir2",
+    ]);
     vi.mocked(getFolderStructure)
-      .mockResolvedValueOnce('Structure 1')
-      .mockResolvedValueOnce('Structure 2');
+      .mockResolvedValueOnce("Structure 1")
+      .mockResolvedValueOnce("Structure 2");
 
     const parts = await getEnvironmentContext(mockConfig as Config);
 
@@ -144,15 +131,15 @@ describe('getEnvironmentContext', () => {
       "I'm currently working in the following directories:\n  - /test/dir1\n  - /test/dir2",
     );
     expect(context).toContain(
-      'Here is the folder structure of the current working directories:\n\nStructure 1\nStructure 2',
+      "Here is the folder structure of the current working directories:\n\nStructure 1\nStructure 2",
     );
     expect(getFolderStructure).toHaveBeenCalledTimes(2);
   });
 
-  it('should handle read_many_files returning no content', async () => {
+  it("should handle read_many_files returning no content", async () => {
     const mockReadManyFilesTool = {
       build: vi.fn().mockReturnValue({
-        execute: vi.fn().mockResolvedValue({ llmContent: '' }),
+        execute: vi.fn().mockResolvedValue({ llmContent: "" }),
       }),
     };
     mockToolRegistry.getTool.mockReturnValue(mockReadManyFilesTool);
@@ -162,7 +149,7 @@ describe('getEnvironmentContext', () => {
     expect(parts.length).toBe(1); // No extra part added
   });
 
-  it('should handle read_many_files tool not being found', async () => {
+  it("should handle read_many_files tool not being found", async () => {
     mockToolRegistry.getTool.mockReturnValue(null);
 
     const parts = await getEnvironmentContext(mockConfig as Config);

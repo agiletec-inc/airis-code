@@ -4,19 +4,19 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { spawn } from 'node:child_process';
-import type { HookConfig } from './types.js';
-import { HookEventName } from './types.js';
+import { spawn } from "node:child_process";
+import { debugLogger } from "../utils/debugLogger.js";
+import type { LLMRequest } from "./hookTranslator.js";
 import type {
-  HookInput,
-  HookOutput,
-  HookExecutionResult,
   BeforeAgentInput,
   BeforeModelInput,
   BeforeModelOutput,
-} from './types.js';
-import type { LLMRequest } from './hookTranslator.js';
-import { debugLogger } from '../utils/debugLogger.js';
+  HookConfig,
+  HookExecutionResult,
+  HookInput,
+  HookOutput,
+} from "./types.js";
+import { HookEventName } from "./types.js";
 
 /**
  * Default timeout for hook execution (60 seconds)
@@ -47,15 +47,10 @@ export class HookRunner {
     const startTime = Date.now();
 
     try {
-      return await this.executeCommandHook(
-        hookConfig,
-        eventName,
-        input,
-        startTime,
-      );
+      return await this.executeCommandHook(hookConfig, eventName, input, startTime);
     } catch (error) {
       const duration = Date.now() - startTime;
-      const hookSource = hookConfig.command || 'unknown';
+      const hookSource = hookConfig.command || "unknown";
       const errorMessage = `Hook execution failed for event '${eventName}' (source: ${hookSource}): ${error}`;
       debugLogger.warn(`Hook execution error (non-fatal): ${errorMessage}`);
 
@@ -77,9 +72,7 @@ export class HookRunner {
     eventName: HookEventName,
     input: HookInput,
   ): Promise<HookExecutionResult[]> {
-    const promises = hookConfigs.map((config) =>
-      this.executeHook(config, eventName, input),
-    );
+    const promises = hookConfigs.map((config) => this.executeHook(config, eventName, input));
 
     return Promise.all(promises);
   }
@@ -101,11 +94,7 @@ export class HookRunner {
 
       // If the hook succeeded and has output, use it to modify the input for the next hook
       if (result.success && result.output) {
-        currentInput = this.applyHookOutputToInput(
-          currentInput,
-          result.output,
-          eventName,
-        );
+        currentInput = this.applyHookOutputToInput(currentInput, result.output, eventName);
       }
     }
 
@@ -127,33 +116,26 @@ export class HookRunner {
     if (hookOutput.hookSpecificOutput) {
       switch (eventName) {
         case HookEventName.BeforeAgent:
-          if ('additionalContext' in hookOutput.hookSpecificOutput) {
+          if ("additionalContext" in hookOutput.hookSpecificOutput) {
             // For BeforeAgent, we could modify the prompt with additional context
-            const additionalContext =
-              hookOutput.hookSpecificOutput['additionalContext'];
-            if (
-              typeof additionalContext === 'string' &&
-              'prompt' in modifiedInput
-            ) {
-              (modifiedInput as BeforeAgentInput).prompt +=
-                '\n\n' + additionalContext;
+            const additionalContext = hookOutput.hookSpecificOutput["additionalContext"];
+            if (typeof additionalContext === "string" && "prompt" in modifiedInput) {
+              (modifiedInput as BeforeAgentInput).prompt += "\n\n" + additionalContext;
             }
           }
           break;
 
         case HookEventName.BeforeModel:
-          if ('llm_request' in hookOutput.hookSpecificOutput) {
+          if ("llm_request" in hookOutput.hookSpecificOutput) {
             // For BeforeModel, we update the LLM request
             const hookBeforeModelOutput = hookOutput as BeforeModelOutput;
             if (
               hookBeforeModelOutput.hookSpecificOutput?.llm_request &&
-              'llm_request' in modifiedInput
+              "llm_request" in modifiedInput
             ) {
               // Merge the partial request with the existing request
-              const currentRequest = (modifiedInput as BeforeModelInput)
-                .llm_request;
-              const partialRequest =
-                hookBeforeModelOutput.hookSpecificOutput.llm_request;
+              const currentRequest = (modifiedInput as BeforeModelInput).llm_request;
+              const partialRequest = hookBeforeModelOutput.hookSpecificOutput.llm_request;
               (modifiedInput as BeforeModelInput).llm_request = {
                 ...currentRequest,
                 ...partialRequest,
@@ -184,10 +166,8 @@ export class HookRunner {
 
     return new Promise((resolve) => {
       if (!hookConfig.command) {
-        const errorMessage = 'Command hook missing command';
-        debugLogger.warn(
-          `Hook configuration error (non-fatal): ${errorMessage}`,
-        );
+        const errorMessage = "Command hook missing command";
+        debugLogger.warn(`Hook configuration error (non-fatal): ${errorMessage}`);
         resolve({
           hookConfig,
           eventName,
@@ -198,8 +178,8 @@ export class HookRunner {
         return;
       }
 
-      let stdout = '';
-      let stderr = '';
+      let stdout = "";
+      let stderr = "";
       let timedOut = false;
       const command = this.expandCommand(hookConfig.command, input);
 
@@ -213,28 +193,28 @@ export class HookRunner {
       const child = spawn(command, {
         env,
         cwd: input.cwd,
-        stdio: ['pipe', 'pipe', 'pipe'],
+        stdio: ["pipe", "pipe", "pipe"],
         shell: true,
       });
 
       // Set up timeout
       const timeoutHandle = setTimeout(() => {
         timedOut = true;
-        child.kill('SIGTERM');
+        child.kill("SIGTERM");
 
         // Force kill after 5 seconds
         setTimeout(() => {
           if (!child.killed) {
-            child.kill('SIGKILL');
+            child.kill("SIGKILL");
           }
         }, 5000);
       }, timeout);
 
       // Send input to stdin
       if (child.stdin) {
-        child.stdin.on('error', (err: NodeJS.ErrnoException) => {
+        child.stdin.on("error", (err: NodeJS.ErrnoException) => {
           // Ignore EPIPE errors which happen when the child process closes stdin early
-          if (err.code !== 'EPIPE') {
+          if (err.code !== "EPIPE") {
             debugLogger.warn(`Hook stdin error: ${err}`);
           }
         });
@@ -246,24 +226,24 @@ export class HookRunner {
           child.stdin.end();
         } catch (err) {
           // Ignore EPIPE errors which happen when the child process closes stdin early
-          if (err instanceof Error && 'code' in err && err.code !== 'EPIPE') {
+          if (err instanceof Error && "code" in err && err.code !== "EPIPE") {
             debugLogger.warn(`Hook stdin write error: ${err}`);
           }
         }
       }
 
       // Collect stdout
-      child.stdout?.on('data', (data: Buffer) => {
+      child.stdout?.on("data", (data: Buffer) => {
         stdout += data.toString();
       });
 
       // Collect stderr
-      child.stderr?.on('data', (data: Buffer) => {
+      child.stderr?.on("data", (data: Buffer) => {
         stderr += data.toString();
       });
 
       // Handle process exit
-      child.on('close', (exitCode) => {
+      child.on("close", (exitCode) => {
         clearTimeout(timeoutHandle);
         const duration = Date.now() - startTime;
 
@@ -285,7 +265,7 @@ export class HookRunner {
         if (exitCode === EXIT_CODE_SUCCESS && stdout.trim()) {
           try {
             let parsed = JSON.parse(stdout.trim());
-            if (typeof parsed === 'string') {
+            if (typeof parsed === "string") {
               // If the output is a string, parse it in case
               // it's double-encoded JSON string.
               parsed = JSON.parse(parsed);
@@ -318,7 +298,7 @@ export class HookRunner {
       });
 
       // Handle process errors
-      child.on('error', (error) => {
+      child.on("error", (error) => {
         clearTimeout(timeoutHandle);
         const duration = Date.now() - startTime;
 
@@ -347,26 +327,23 @@ export class HookRunner {
   /**
    * Convert plain text output to structured HookOutput
    */
-  private convertPlainTextToHookOutput(
-    text: string,
-    exitCode: number,
-  ): HookOutput {
+  private convertPlainTextToHookOutput(text: string, exitCode: number): HookOutput {
     if (exitCode === EXIT_CODE_SUCCESS) {
       // Success - treat as system message or additional context
       return {
-        decision: 'allow',
+        decision: "allow",
         systemMessage: text,
       };
     } else if (exitCode === EXIT_CODE_BLOCKING_ERROR) {
       // Blocking error
       return {
-        decision: 'deny',
+        decision: "deny",
         reason: text,
       };
     } else {
       // Non-blocking error (EXIT_CODE_NON_BLOCKING_ERROR or any other code)
       return {
-        decision: 'allow',
+        decision: "allow",
         systemMessage: `Warning: ${text}`,
       };
     }

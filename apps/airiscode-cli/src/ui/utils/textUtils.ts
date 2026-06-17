@@ -4,10 +4,10 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import stripAnsi from 'strip-ansi';
-import ansiRegex from 'ansi-regex';
-import { stripVTControlCharacters } from 'node:util';
-import stringWidth from 'string-width';
+import { stripVTControlCharacters } from "node:util";
+import ansiRegex from "ansi-regex";
+import stringWidth from "string-width";
+import stripAnsi from "strip-ansi";
 
 /**
  * Calculates the maximum width of a multi-line ASCII art string.
@@ -18,7 +18,7 @@ export const getAsciiArtWidth = (asciiArt: string): number => {
   if (!asciiArt) {
     return 0;
   }
-  const lines = asciiArt.split('\n');
+  const lines = asciiArt.split("\n");
   return Math.max(...lines.map((line) => line.length));
 };
 
@@ -42,7 +42,7 @@ export function toCodePoints(str: string): string[] {
     }
   }
   if (isAscii) {
-    return str.split('');
+    return str.split("");
   }
 
   // Cache short strings
@@ -70,7 +70,7 @@ export function cpLen(str: string): number {
 export function cpSlice(str: string, start: number, end?: number): string {
   // Slice by code‑point indices and re‑join.
   const arr = toCodePoints(str).slice(start, end);
-  return arr.join('');
+  return arr.join("");
 }
 
 /**
@@ -115,7 +115,7 @@ export function stripUnsafeCharacters(str: string): string {
       // Preserve all other characters including Unicode/emojis
       return true;
     })
-    .join('');
+    .join("");
 }
 
 // String width caching for performance optimization
@@ -166,18 +166,16 @@ const regex = ansiRegex();
  * original `obj` reference if no changes were necessary.
  */
 export function escapeAnsiCtrlCodes<T>(obj: T): T {
-  if (typeof obj === 'string') {
+  if (typeof obj === "string") {
     if (obj.search(regex) === -1) {
       return obj; // No changes return original string
     }
 
     regex.lastIndex = 0; // needed for global regex
-    return obj.replace(regex, (match) =>
-      JSON.stringify(match).slice(1, -1),
-    ) as T;
+    return obj.replace(regex, (match) => JSON.stringify(match).slice(1, -1)) as T;
   }
 
-  if (obj === null || typeof obj !== 'object') {
+  if (obj === null || typeof obj !== "object") {
     return obj;
   }
 
@@ -222,40 +220,40 @@ const SENSITIVE_PATTERNS: Array<{ pattern: RegExp; replacement: string }> = [
   // API keys with common prefixes
   {
     pattern: /(sk-[a-zA-Z0-9]{20,})/g,
-    replacement: 'sk-***REDACTED***',
+    replacement: "sk-***REDACTED***",
   },
   {
     pattern: /(api[_-]?key[_-]?[=:]\s*)[a-zA-Z0-9_-]{20,}/gi,
-    replacement: '$1***REDACTED***',
+    replacement: "$1***REDACTED***",
   },
   // Bearer tokens
   {
     pattern: /(Bearer\s+)[a-zA-Z0-9._-]+/gi,
-    replacement: '$1***REDACTED***',
+    replacement: "$1***REDACTED***",
   },
   // Generic tokens
   {
     pattern: /(token[_-]?[=:]\s*)[a-zA-Z0-9._-]{10,}/gi,
-    replacement: '$1***REDACTED***',
+    replacement: "$1***REDACTED***",
   },
   // Passwords in connection strings or assignments
   {
     pattern: /(password[_-]?[=:]\s*)[^\s]+/gi,
-    replacement: '$1***REDACTED***',
+    replacement: "$1***REDACTED***",
   },
   {
     pattern: /(pwd[_-]?[=:]\s*)[^\s]+/gi,
-    replacement: '$1***REDACTED***',
+    replacement: "$1***REDACTED***",
   },
   // AWS keys
   {
     pattern: /(AKIA[A-Z0-9]{16})/g,
-    replacement: '***REDACTED***',
+    replacement: "***REDACTED***",
   },
   // Generic secret patterns
   {
     pattern: /(secret[_-]?[=:]\s*)[a-zA-Z0-9._-]{10,}/gi,
-    replacement: '$1***REDACTED***',
+    replacement: "$1***REDACTED***",
   },
 ];
 
@@ -267,10 +265,7 @@ const SENSITIVE_PATTERNS: Array<{ pattern: RegExp; replacement: string }> = [
  * @param maxLength Maximum length of the output text (default: 200)
  * @returns Sanitized and truncated text
  */
-export function sanitizeSensitiveText(
-  text: string,
-  maxLength: number = 200,
-): string {
+export function sanitizeSensitiveText(text: string, maxLength: number = 200): string {
   let result = text;
 
   // Apply each sensitive pattern replacement
@@ -283,7 +278,7 @@ export function sanitizeSensitiveText(
     if (maxLength <= 3) {
       return result.slice(0, maxLength);
     }
-    return result.slice(0, maxLength - 3) + '...';
+    return result.slice(0, maxLength - 3) + "...";
   }
 
   return result;

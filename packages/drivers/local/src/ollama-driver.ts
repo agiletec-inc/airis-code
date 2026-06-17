@@ -2,20 +2,20 @@
  * Ollama driver implementation
  */
 
-import { ModelDriver, DriverAPIError, DriverTimeoutError } from '@airiscode/drivers';
 import type {
+  Capabilities,
   ChatRequest,
   ChatResponse,
-  Capabilities,
-  StreamChunk,
   DriverConfig,
-} from '@airiscode/drivers';
+  StreamChunk,
+} from "@airiscode/drivers";
+import { DriverAPIError, DriverTimeoutError, ModelDriver } from "@airiscode/drivers";
 import type {
   OllamaChatRequest,
   OllamaChatResponse,
   OllamaListResponse,
   OllamaTool,
-} from './types.js';
+} from "./types.js";
 
 /**
  * Ollama driver configuration
@@ -35,12 +35,12 @@ export class OllamaDriver extends ModelDriver {
 
   constructor(config: OllamaDriverConfig = {}) {
     super(config);
-    this.baseUrl = config.baseUrl || 'http://localhost:11434';
+    this.baseUrl = config.baseUrl || "http://localhost:11434";
   }
 
   async getCapabilities(): Promise<Capabilities> {
     try {
-      const response = await this.fetch('/api/tags');
+      const response = await this.fetch("/api/tags");
       const data = (await response.json()) as OllamaListResponse;
 
       return {
@@ -48,13 +48,13 @@ export class OllamaDriver extends ModelDriver {
         supportsTools: true,
         supportsStream: true,
         maxContextTokens: 128000, // Varies by model
-        apiVersion: '1.0.0',
+        apiVersion: "1.0.0",
       };
     } catch (error) {
       throw new DriverAPIError(
-        `Failed to get capabilities: ${error instanceof Error ? error.message : 'Unknown error'}`,
+        `Failed to get capabilities: ${error instanceof Error ? error.message : "Unknown error"}`,
         undefined,
-        error
+        error,
       );
     }
   }
@@ -65,8 +65,8 @@ export class OllamaDriver extends ModelDriver {
     const ollamaRequest = this.buildOllamaRequest(request, false);
 
     try {
-      const response = await this.fetch('/api/chat', {
-        method: 'POST',
+      const response = await this.fetch("/api/chat", {
+        method: "POST",
         body: JSON.stringify(ollamaRequest),
       });
 
@@ -78,9 +78,9 @@ export class OllamaDriver extends ModelDriver {
         throw error;
       }
       throw new DriverAPIError(
-        `Chat request failed: ${error instanceof Error ? error.message : 'Unknown error'}`,
+        `Chat request failed: ${error instanceof Error ? error.message : "Unknown error"}`,
         undefined,
-        error
+        error,
       );
     }
   }
@@ -91,27 +91,27 @@ export class OllamaDriver extends ModelDriver {
     const ollamaRequest = this.buildOllamaRequest(request, true);
 
     try {
-      const response = await this.fetch('/api/chat', {
-        method: 'POST',
+      const response = await this.fetch("/api/chat", {
+        method: "POST",
         body: JSON.stringify(ollamaRequest),
       });
 
       if (!response.body) {
-        throw new DriverAPIError('No response body for streaming');
+        throw new DriverAPIError("No response body for streaming");
       }
 
       const reader = response.body.getReader();
       const decoder = new TextDecoder();
-      let buffer = '';
-      let fullText = '';
+      let buffer = "";
+      let fullText = "";
 
       while (true) {
         const { done, value } = await reader.read();
         if (done) break;
 
         buffer += decoder.decode(value, { stream: true });
-        const lines = buffer.split('\n');
-        buffer = lines.pop() || '';
+        const lines = buffer.split("\n");
+        buffer = lines.pop() || "";
 
         for (const line of lines) {
           if (line.trim()) {
@@ -144,9 +144,9 @@ export class OllamaDriver extends ModelDriver {
         throw error;
       }
       throw new DriverAPIError(
-        `Stream request failed: ${error instanceof Error ? error.message : 'Unknown error'}`,
+        `Stream request failed: ${error instanceof Error ? error.message : "Unknown error"}`,
         undefined,
-        error
+        error,
       );
     }
   }
@@ -173,7 +173,7 @@ export class OllamaDriver extends ModelDriver {
 
     if (request.tools && request.tools.length > 0) {
       ollamaRequest.tools = request.tools.map((t) => ({
-        type: 'function',
+        type: "function",
         function: {
           name: t.name,
           description: t.description,
@@ -204,7 +204,7 @@ export class OllamaDriver extends ModelDriver {
         completionTokens: data.eval_count || 0,
         totalTokens: (data.prompt_eval_count || 0) + (data.eval_count || 0),
       },
-      finishReason: toolCalls ? 'tool_calls' : data.done ? 'stop' : 'length',
+      finishReason: toolCalls ? "tool_calls" : data.done ? "stop" : "length",
     };
   }
 
@@ -217,16 +217,16 @@ export class OllamaDriver extends ModelDriver {
       method?: string;
       headers?: Record<string, string>;
       body?: string;
-    }
+    },
   ): Promise<Response> {
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), this.config.timeout);
 
     try {
       const response = await fetch(`${this.baseUrl}${path}`, {
-        method: options?.method || 'GET',
+        method: options?.method || "GET",
         headers: {
-          'Content-Type': 'application/json',
+          "Content-Type": "application/json",
           ...this.config.headers,
           ...options?.headers,
         },
@@ -238,13 +238,13 @@ export class OllamaDriver extends ModelDriver {
         throw new DriverAPIError(
           `HTTP ${response.status}: ${response.statusText}`,
           response.status,
-          await response.text()
+          await response.text(),
         );
       }
 
       return response;
     } catch (error) {
-      if (error instanceof Error && error.name === 'AbortError') {
+      if (error instanceof Error && error.name === "AbortError") {
         throw new DriverTimeoutError(`Request timed out after ${this.config.timeout}ms`);
       }
       throw error;

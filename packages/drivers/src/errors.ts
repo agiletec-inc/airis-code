@@ -6,9 +6,12 @@
  * Base error for driver-related issues
  */
 export class DriverError extends Error {
-  constructor(message: string, public readonly code?: string) {
+  constructor(
+    message: string,
+    public readonly code?: string,
+  ) {
     super(message);
-    this.name = 'DriverError';
+    this.name = "DriverError";
   }
 }
 
@@ -17,8 +20,8 @@ export class DriverError extends Error {
  */
 export class DriverInitError extends DriverError {
   constructor(message: string) {
-    super(message, 'DRIVER_INIT_ERROR');
-    this.name = 'DriverInitError';
+    super(message, "DRIVER_INIT_ERROR");
+    this.name = "DriverInitError";
   }
 }
 
@@ -29,10 +32,10 @@ export class DriverAPIError extends DriverError {
   constructor(
     message: string,
     public readonly statusCode?: number,
-    public readonly response?: unknown
+    public readonly response?: unknown,
   ) {
-    super(message, 'DRIVER_API_ERROR');
-    this.name = 'DriverAPIError';
+    super(message, "DRIVER_API_ERROR");
+    this.name = "DriverAPIError";
   }
 }
 
@@ -40,9 +43,9 @@ export class DriverAPIError extends DriverError {
  * Error when request times out
  */
 export class DriverTimeoutError extends DriverError {
-  constructor(message: string = 'Request timed out') {
-    super(message, 'DRIVER_TIMEOUT_ERROR');
-    this.name = 'DriverTimeoutError';
+  constructor(message: string = "Request timed out") {
+    super(message, "DRIVER_TIMEOUT_ERROR");
+    this.name = "DriverTimeoutError";
   }
 }
 
@@ -51,8 +54,8 @@ export class DriverTimeoutError extends DriverError {
  */
 export class ModelNotFoundError extends DriverError {
   constructor(model: string) {
-    super(`Model not found: ${model}`, 'MODEL_NOT_FOUND');
-    this.name = 'ModelNotFoundError';
+    super(`Model not found: ${model}`, "MODEL_NOT_FOUND");
+    this.name = "ModelNotFoundError";
   }
 }
 
@@ -61,7 +64,7 @@ export class ModelNotFoundError extends DriverError {
  */
 export class ToolsNotSupportedError extends DriverError {
   constructor() {
-    super('Tools/function calling is not supported by this driver', 'TOOLS_NOT_SUPPORTED');
-    this.name = 'ToolsNotSupportedError';
+    super("Tools/function calling is not supported by this driver", "TOOLS_NOT_SUPPORTED");
+    this.name = "ToolsNotSupportedError";
   }
 }

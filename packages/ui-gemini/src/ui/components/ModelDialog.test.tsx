@@ -4,27 +4,27 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { render } from '../../test-utils/render.js';
-import { cleanup } from 'ink-testing-library';
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+import type { Config } from "@airiscode/gemini-cli-core";
 import {
-  GEMINI_MODEL_ALIAS_FLASH_LITE,
-  GEMINI_MODEL_ALIAS_FLASH,
-  GEMINI_MODEL_ALIAS_PRO,
   DEFAULT_GEMINI_MODEL_AUTO,
-} from '@airiscode/gemini-cli-core';
-import { ModelDialog } from './ModelDialog.js';
-import { useKeypress } from '../hooks/useKeypress.js';
-import { DescriptiveRadioButtonSelect } from './shared/DescriptiveRadioButtonSelect.js';
-import { ConfigContext } from '../contexts/ConfigContext.js';
-import type { Config } from '@airiscode/gemini-cli-core';
+  GEMINI_MODEL_ALIAS_FLASH,
+  GEMINI_MODEL_ALIAS_FLASH_LITE,
+  GEMINI_MODEL_ALIAS_PRO,
+} from "@airiscode/gemini-cli-core";
+import { cleanup } from "ink-testing-library";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { render } from "../../test-utils/render.js";
+import { ConfigContext } from "../contexts/ConfigContext.js";
+import { useKeypress } from "../hooks/useKeypress.js";
+import { ModelDialog } from "./ModelDialog.js";
+import { DescriptiveRadioButtonSelect } from "./shared/DescriptiveRadioButtonSelect.js";
 
-vi.mock('../hooks/useKeypress.js', () => ({
+vi.mock("../hooks/useKeypress.js", () => ({
   useKeypress: vi.fn(),
 }));
 const mockedUseKeypress = vi.mocked(useKeypress);
 
-vi.mock('./shared/DescriptiveRadioButtonSelect.js', () => ({
+vi.mock("./shared/DescriptiveRadioButtonSelect.js", () => ({
   DescriptiveRadioButtonSelect: vi.fn(() => null),
 }));
 const mockedSelect = vi.mocked(DescriptiveRadioButtonSelect);
@@ -47,9 +47,9 @@ const renderComponent = (
 
         // --- Functions used by ClearcutLogger ---
         getUsageStatisticsEnabled: vi.fn(() => true),
-        getSessionId: vi.fn(() => 'mock-session-id'),
+        getSessionId: vi.fn(() => "mock-session-id"),
         getDebugMode: vi.fn(() => false),
-        getContentGeneratorConfig: vi.fn(() => ({ authType: 'mock' })),
+        getContentGeneratorConfig: vi.fn(() => ({ authType: "mock" })),
         getUseSmartEdit: vi.fn(() => false),
         getProxy: vi.fn(() => undefined),
         isInteractive: vi.fn(() => false),
@@ -73,7 +73,7 @@ const renderComponent = (
   };
 };
 
-describe('<ModelDialog />', () => {
+describe("<ModelDialog />", () => {
   beforeEach(() => {
     vi.clearAllMocks();
   });
@@ -82,17 +82,17 @@ describe('<ModelDialog />', () => {
     cleanup();
   });
 
-  it('renders the title and help text', () => {
+  it("renders the title and help text", () => {
     const { lastFrame, unmount } = renderComponent();
-    expect(lastFrame()).toContain('Select Model');
-    expect(lastFrame()).toContain('(Press Esc to close)');
+    expect(lastFrame()).toContain("Select Model");
+    expect(lastFrame()).toContain("(Press Esc to close)");
     expect(lastFrame()).toContain(
-      'To use a specific Gemini model on startup, use the --model flag.',
+      "To use a specific Gemini model on startup, use the --model flag.",
     );
     unmount();
   });
 
-  it('passes all model options to DescriptiveRadioButtonSelect', () => {
+  it("passes all model options to DescriptiveRadioButtonSelect", () => {
     const { unmount } = renderComponent();
     expect(mockedSelect).toHaveBeenCalledTimes(1);
 
@@ -106,7 +106,7 @@ describe('<ModelDialog />', () => {
     unmount();
   });
 
-  it('initializes with the model from ConfigContext', () => {
+  it("initializes with the model from ConfigContext", () => {
     const mockGetModel = vi.fn(() => GEMINI_MODEL_ALIAS_FLASH);
     const { unmount } = renderComponent({}, { getModel: mockGetModel });
 
@@ -152,7 +152,7 @@ describe('<ModelDialog />', () => {
     unmount();
   });
 
-  it('calls config.setModel and onClose when DescriptiveRadioButtonSelect.onSelect is triggered', () => {
+  it("calls config.setModel and onClose when DescriptiveRadioButtonSelect.onSelect is triggered", () => {
     const { props, mockConfig, unmount } = renderComponent({}, {}); // Pass empty object for contextValue
 
     const childOnSelect = mockedSelect.mock.calls[0][0].onSelect;
@@ -166,7 +166,7 @@ describe('<ModelDialog />', () => {
     unmount();
   });
 
-  it('does not pass onHighlight to DescriptiveRadioButtonSelect', () => {
+  it("does not pass onHighlight to DescriptiveRadioButtonSelect", () => {
     const { unmount } = renderComponent();
 
     const childOnHighlight = mockedSelect.mock.calls[0][0].onHighlight;
@@ -185,30 +185,30 @@ describe('<ModelDialog />', () => {
     expect(options).toEqual({ isActive: true });
 
     keyPressHandler({
-      name: 'escape',
+      name: "escape",
       ctrl: false,
       meta: false,
       shift: false,
       paste: false,
       insertable: false,
-      sequence: '',
+      sequence: "",
     });
     expect(props.onClose).toHaveBeenCalledTimes(1);
 
     keyPressHandler({
-      name: 'a',
+      name: "a",
       ctrl: false,
       meta: false,
       shift: false,
       paste: false,
       insertable: true,
-      sequence: '',
+      sequence: "",
     });
     expect(props.onClose).toHaveBeenCalledTimes(1);
     unmount();
   });
 
-  it('updates initialIndex when config context changes', () => {
+  it("updates initialIndex when config context changes", () => {
     const mockGetModel = vi.fn(() => DEFAULT_GEMINI_MODEL_AUTO);
     const oldMockConfig = {
       getModel: mockGetModel,

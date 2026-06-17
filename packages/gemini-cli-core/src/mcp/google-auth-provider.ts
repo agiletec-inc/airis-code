@@ -4,17 +4,17 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import type { McpAuthProvider } from './auth-provider.js';
 import type {
   OAuthClientInformation,
   OAuthClientInformationFull,
   OAuthClientMetadata,
   OAuthTokens,
-} from '@modelcontextprotocol/sdk/shared/auth.js';
-import { GoogleAuth } from 'google-auth-library';
-import type { MCPServerConfig } from '../config/config.js';
-import { FIVE_MIN_BUFFER_MS } from './oauth-utils.js';
-import { coreEvents } from '../utils/events.js';
+} from "@modelcontextprotocol/sdk/shared/auth.js";
+import { GoogleAuth } from "google-auth-library";
+import type { MCPServerConfig } from "../config/config.js";
+import { coreEvents } from "../utils/events.js";
+import type { McpAuthProvider } from "./auth-provider.js";
+import { FIVE_MIN_BUFFER_MS } from "./oauth-utils.js";
 
 const ALLOWED_HOSTS = [/^.+\.googleapis\.com$/, /^(.*\.)?luci\.app$/];
 
@@ -24,35 +24,31 @@ export class GoogleCredentialProvider implements McpAuthProvider {
   private tokenExpiryTime?: number;
 
   // Properties required by OAuthClientProvider, with no-op values
-  readonly redirectUrl = '';
+  readonly redirectUrl = "";
   readonly clientMetadata: OAuthClientMetadata = {
-    client_name: 'Gemini CLI (Google ADC)',
+    client_name: "Gemini CLI (Google ADC)",
     redirect_uris: [],
     grant_types: [],
     response_types: [],
-    token_endpoint_auth_method: 'none',
+    token_endpoint_auth_method: "none",
   };
   private _clientInformation?: OAuthClientInformationFull;
 
   constructor(private readonly config?: MCPServerConfig) {
     const url = this.config?.url || this.config?.httpUrl;
     if (!url) {
-      throw new Error(
-        'URL must be provided in the config for Google Credentials provider',
-      );
+      throw new Error("URL must be provided in the config for Google Credentials provider");
     }
 
     const hostname = new URL(url).hostname;
     if (!ALLOWED_HOSTS.some((pattern) => pattern.test(hostname))) {
-      throw new Error(
-        `Host "${hostname}" is not an allowed host for Google Credential provider.`,
-      );
+      throw new Error(`Host "${hostname}" is not an allowed host for Google Credential provider.`);
     }
 
     const scopes = this.config?.oauth?.scopes;
     if (!scopes || scopes.length === 0) {
       throw new Error(
-        'Scopes must be provided in the oauth config for Google Credentials provider',
+        "Scopes must be provided in the oauth config for Google Credentials provider",
       );
     }
     this.auth = new GoogleAuth({
@@ -86,16 +82,13 @@ export class GoogleCredentialProvider implements McpAuthProvider {
     const accessTokenResponse = await client.getAccessToken();
 
     if (!accessTokenResponse.token) {
-      coreEvents.emitFeedback(
-        'error',
-        'Failed to get access token from Google ADC',
-      );
+      coreEvents.emitFeedback("error", "Failed to get access token from Google ADC");
       return undefined;
     }
 
     const newToken: OAuthTokens = {
       access_token: accessTokenResponse.token,
-      token_type: 'Bearer',
+      token_type: "Bearer",
     };
 
     const expiryTime = client.credentials?.expiry_date;
@@ -121,7 +114,7 @@ export class GoogleCredentialProvider implements McpAuthProvider {
 
   codeVerifier(): string {
     // No-op
-    return '';
+    return "";
   }
   /**
    * Returns the project ID used for quota.
@@ -138,7 +131,7 @@ export class GoogleCredentialProvider implements McpAuthProvider {
     const headers: Record<string, string> = {};
     const configHeaders = this.config?.headers ?? {};
     const userProjectHeaderKey = Object.keys(configHeaders).find(
-      (key) => key.toLowerCase() === 'x-goog-user-project',
+      (key) => key.toLowerCase() === "x-goog-user-project",
     );
 
     // If the header is present in the config (case-insensitive check), use the
@@ -149,7 +142,7 @@ export class GoogleCredentialProvider implements McpAuthProvider {
     } else {
       const quotaProjectId = await this.getQuotaProjectId();
       if (quotaProjectId) {
-        headers['X-Goog-User-Project'] = quotaProjectId;
+        headers["X-Goog-User-Project"] = quotaProjectId;
       }
     }
     return headers;

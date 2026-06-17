@@ -4,24 +4,24 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { render } from '../../test-utils/render.js';
-import { QuittingDisplay } from './QuittingDisplay.js';
-import { describe, it, expect, vi, beforeEach } from 'vitest';
-import React from 'react';
-import { useUIState, type UIState } from '../contexts/UIStateContext.js';
-import { useTerminalSize } from '../hooks/useTerminalSize.js';
+import React from "react";
+import { beforeEach, describe, expect, it, vi } from "vitest";
+import { render } from "../../test-utils/render.js";
+import { type UIState, useUIState } from "../contexts/UIStateContext.js";
+import { useTerminalSize } from "../hooks/useTerminalSize.js";
+import { QuittingDisplay } from "./QuittingDisplay.js";
 
-vi.mock('../contexts/UIStateContext.js');
-vi.mock('../hooks/useTerminalSize.js');
-vi.mock('./HistoryItemDisplay.js', async () => {
-  const { Text } = await vi.importActual('ink');
+vi.mock("../contexts/UIStateContext.js");
+vi.mock("../hooks/useTerminalSize.js");
+vi.mock("./HistoryItemDisplay.js", async () => {
+  const { Text } = await vi.importActual("ink");
   return {
     HistoryItemDisplay: ({ item }: { item: { content: string } }) =>
       React.createElement(Text as unknown as React.FC, null, item.content),
   };
 });
 
-describe('QuittingDisplay', () => {
+describe("QuittingDisplay", () => {
   const mockUseUIState = vi.mocked(useUIState);
   const mockUseTerminalSize = vi.mocked(useTerminalSize);
 
@@ -30,25 +30,25 @@ describe('QuittingDisplay', () => {
     mockUseTerminalSize.mockReturnValue({ rows: 20, columns: 80 });
   });
 
-  it('renders nothing when no quitting messages', () => {
+  it("renders nothing when no quitting messages", () => {
     mockUseUIState.mockReturnValue({
       quittingMessages: null,
     } as unknown as UIState);
     const { lastFrame } = render(<QuittingDisplay />);
-    expect(lastFrame()).toBe('');
+    expect(lastFrame()).toBe("");
   });
 
-  it('renders quitting messages', () => {
+  it("renders quitting messages", () => {
     const mockMessages = [
-      { id: '1', type: 'user', content: 'Goodbye' },
-      { id: '2', type: 'model', content: 'See you later' },
+      { id: "1", type: "user", content: "Goodbye" },
+      { id: "2", type: "model", content: "See you later" },
     ];
     mockUseUIState.mockReturnValue({
       quittingMessages: mockMessages,
       constrainHeight: false,
     } as unknown as UIState);
     const { lastFrame } = render(<QuittingDisplay />);
-    expect(lastFrame()).toContain('Goodbye');
-    expect(lastFrame()).toContain('See you later');
+    expect(lastFrame()).toContain("Goodbye");
+    expect(lastFrame()).toContain("See you later");
   });
 });

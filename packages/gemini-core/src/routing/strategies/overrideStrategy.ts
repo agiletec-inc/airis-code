@@ -4,20 +4,16 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import type { Config } from '../../config/config.js';
-import { DEFAULT_GEMINI_MODEL_AUTO } from '../../config/models.js';
-import type { BaseLlmClient } from '../../core/baseLlmClient.js';
-import type {
-  RoutingContext,
-  RoutingDecision,
-  RoutingStrategy,
-} from '../routingStrategy.js';
+import type { Config } from "../../config/config.js";
+import { DEFAULT_GEMINI_MODEL_AUTO } from "../../config/models.js";
+import type { BaseLlmClient } from "../../core/baseLlmClient.js";
+import type { RoutingContext, RoutingDecision, RoutingStrategy } from "../routingStrategy.js";
 
 /**
  * Handles cases where the user explicitly specifies a model (override).
  */
 export class OverrideStrategy implements RoutingStrategy {
-  readonly name = 'override';
+  readonly name = "override";
 
   async route(
     _context: RoutingContext,

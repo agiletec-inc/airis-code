@@ -1,0 +1,15 @@
+# gitleaks config for the org secret-scan reusable (gitleaks reads .gitleaks.toml
+# from the repo root automatically). Extends the default ruleset, then allowlists
+# known non-secrets inherited from the upstream Qwen Code / Gemini CLI fork.
+title = "airis-code gitleaks config"
+
+[extend]
+useDefault = true
+
+[allowlist]
+description = "Upstream Gemini/Qwen public OAuth client secret (installed-app credential, not confidential) + a sanitizer test fixture"
+paths = [
+  '''packages/gemini-cli-core/src/code_assist/oauth2\.ts''',
+  '''packages/gemini-core/src/code_assist/oauth2\.ts''',
+  '''packages/gemini-cli-core/src/telemetry/sanitize\.test\.ts''',
+]

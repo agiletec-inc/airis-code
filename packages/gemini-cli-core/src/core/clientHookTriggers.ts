@@ -4,16 +4,16 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import type { PartListUnion } from '@google/genai';
-import type { MessageBus } from '../confirmation-bus/message-bus.js';
+import type { PartListUnion } from "@google/genai";
+import type { MessageBus } from "../confirmation-bus/message-bus.js";
 import {
-  MessageBusType,
   type HookExecutionRequest,
   type HookExecutionResponse,
-} from '../confirmation-bus/types.js';
-import { createHookOutput, type DefaultHookOutput } from '../hooks/types.js';
-import { partToString } from '../utils/partUtils.js';
-import { debugLogger } from '../utils/debugLogger.js';
+  MessageBusType,
+} from "../confirmation-bus/types.js";
+import { createHookOutput, type DefaultHookOutput } from "../hooks/types.js";
+import { debugLogger } from "../utils/debugLogger.js";
+import { partToString } from "../utils/partUtils.js";
 
 /**
  * Fires the BeforeAgent hook and returns the hook output.
@@ -35,13 +35,10 @@ export async function fireBeforeAgentHook(
   try {
     const promptText = partToString(request);
 
-    const response = await messageBus.request<
-      HookExecutionRequest,
-      HookExecutionResponse
-    >(
+    const response = await messageBus.request<HookExecutionRequest, HookExecutionResponse>(
       {
         type: MessageBusType.HOOK_EXECUTION_REQUEST,
-        eventName: 'BeforeAgent',
+        eventName: "BeforeAgent",
         input: {
           prompt: promptText,
         },
@@ -49,9 +46,7 @@ export async function fireBeforeAgentHook(
       MessageBusType.HOOK_EXECUTION_RESPONSE,
     );
 
-    return response.output
-      ? createHookOutput('BeforeAgent', response.output)
-      : undefined;
+    return response.output ? createHookOutput("BeforeAgent", response.output) : undefined;
   } catch (error) {
     debugLogger.warn(`BeforeAgent hook failed: ${error}`);
     return undefined;
@@ -79,13 +74,10 @@ export async function fireAfterAgentHook(
   try {
     const promptText = partToString(request);
 
-    const response = await messageBus.request<
-      HookExecutionRequest,
-      HookExecutionResponse
-    >(
+    const response = await messageBus.request<HookExecutionRequest, HookExecutionResponse>(
       {
         type: MessageBusType.HOOK_EXECUTION_REQUEST,
-        eventName: 'AfterAgent',
+        eventName: "AfterAgent",
         input: {
           prompt: promptText,
           prompt_response: responseText,
@@ -95,9 +87,7 @@ export async function fireAfterAgentHook(
       MessageBusType.HOOK_EXECUTION_RESPONSE,
     );
 
-    return response.output
-      ? createHookOutput('AfterAgent', response.output)
-      : undefined;
+    return response.output ? createHookOutput("AfterAgent", response.output) : undefined;
   } catch (error) {
     debugLogger.warn(`AfterAgent hook failed: ${error}`);
     return undefined;

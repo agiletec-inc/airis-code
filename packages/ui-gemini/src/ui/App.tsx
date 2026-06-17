@@ -4,14 +4,14 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { useIsScreenReaderEnabled } from 'ink';
-import { useUIState } from './contexts/UIStateContext.js';
-import { StreamingContext } from './contexts/StreamingContext.js';
-import { QuittingDisplay } from './components/QuittingDisplay.js';
-import { ScreenReaderAppLayout } from './layouts/ScreenReaderAppLayout.js';
-import { DefaultAppLayout } from './layouts/DefaultAppLayout.js';
-import { AlternateBufferQuittingDisplay } from './components/AlternateBufferQuittingDisplay.js';
-import { useAlternateBuffer } from './hooks/useAlternateBuffer.js';
+import { useIsScreenReaderEnabled } from "ink";
+import { AlternateBufferQuittingDisplay } from "./components/AlternateBufferQuittingDisplay.js";
+import { QuittingDisplay } from "./components/QuittingDisplay.js";
+import { StreamingContext } from "./contexts/StreamingContext.js";
+import { useUIState } from "./contexts/UIStateContext.js";
+import { useAlternateBuffer } from "./hooks/useAlternateBuffer.js";
+import { DefaultAppLayout } from "./layouts/DefaultAppLayout.js";
+import { ScreenReaderAppLayout } from "./layouts/ScreenReaderAppLayout.js";
 
 export const App = () => {
   const uiState = useUIState();

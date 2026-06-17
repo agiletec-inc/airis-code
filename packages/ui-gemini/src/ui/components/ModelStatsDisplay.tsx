@@ -4,17 +4,17 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import type React from 'react';
-import { Box, Text } from 'ink';
-import { theme } from '../semantic-colors.js';
-import { formatDuration } from '../utils/formatters.js';
+import { Box, Text } from "ink";
+import type React from "react";
+import type { ModelMetrics } from "../contexts/SessionContext.js";
+import { useSessionStats } from "../contexts/SessionContext.js";
+import { theme } from "../semantic-colors.js";
 import {
   calculateAverageLatency,
   calculateCacheHitRate,
   calculateErrorRate,
-} from '../utils/computeStats.js';
-import type { ModelMetrics } from '../contexts/SessionContext.js';
-import { useSessionStats } from '../contexts/SessionContext.js';
+} from "../utils/computeStats.js";
+import { formatDuration } from "../utils/formatters.js";
 
 const METRIC_COL_WIDTH = 28;
 const MODEL_COL_WIDTH = 22;
@@ -34,10 +34,7 @@ const StatRow: React.FC<StatRowProps> = ({
 }) => (
   <Box>
     <Box width={METRIC_COL_WIDTH}>
-      <Text
-        bold={isSection}
-        color={isSection ? theme.text.primary : theme.text.link}
-      >
+      <Text bold={isSection} color={isSection ? theme.text.primary : theme.text.link}>
         {isSubtle ? `  ↳ ${title}` : title}
       </Text>
     </Box>
@@ -58,32 +55,20 @@ export const ModelStatsDisplay: React.FC = () => {
 
   if (activeModels.length === 0) {
     return (
-      <Box
-        borderStyle="round"
-        borderColor={theme.border.default}
-        paddingY={1}
-        paddingX={2}
-      >
-        <Text color={theme.text.primary}>
-          No API calls have been made in this session.
-        </Text>
+      <Box borderStyle="round" borderColor={theme.border.default} paddingY={1} paddingX={2}>
+        <Text color={theme.text.primary}>No API calls have been made in this session.</Text>
       </Box>
     );
   }
 
   const modelNames = activeModels.map(([name]) => name);
 
-  const getModelValues = (
-    getter: (metrics: ModelMetrics) => string | React.ReactElement,
-  ) => activeModels.map(([, metrics]) => getter(metrics));
+  const getModelValues = (getter: (metrics: ModelMetrics) => string | React.ReactElement) =>
+    activeModels.map(([, metrics]) => getter(metrics));
 
-  const hasThoughts = activeModels.some(
-    ([, metrics]) => metrics.tokens.thoughts > 0,
-  );
+  const hasThoughts = activeModels.some(([, metrics]) => metrics.tokens.thoughts > 0);
   const hasTool = activeModels.some(([, metrics]) => metrics.tokens.tool > 0);
-  const hasCached = activeModels.some(
-    ([, metrics]) => metrics.tokens.cached > 0,
-  );
+  const hasCached = activeModels.some(([, metrics]) => metrics.tokens.cached > 0);
 
   return (
     <Box
@@ -135,11 +120,7 @@ export const ModelStatsDisplay: React.FC = () => {
         values={getModelValues((m) => {
           const errorRate = calculateErrorRate(m);
           return (
-            <Text
-              color={
-                m.api.totalErrors > 0 ? theme.status.error : theme.text.primary
-              }
-            >
+            <Text color={m.api.totalErrors > 0 ? theme.status.error : theme.text.primary}>
               {m.api.totalErrors.toLocaleString()} ({errorRate.toFixed(1)}%)
             </Text>
           );
@@ -160,9 +141,7 @@ export const ModelStatsDisplay: React.FC = () => {
       <StatRow
         title="Total"
         values={getModelValues((m) => (
-          <Text color={theme.text.secondary}>
-            {m.tokens.total.toLocaleString()}
-          </Text>
+          <Text color={theme.text.secondary}>{m.tokens.total.toLocaleString()}</Text>
         ))}
       />
       <StatRow
@@ -193,9 +172,7 @@ export const ModelStatsDisplay: React.FC = () => {
           title="Thoughts"
           isSubtle
           values={getModelValues((m) => (
-            <Text color={theme.text.primary}>
-              {m.tokens.thoughts.toLocaleString()}
-            </Text>
+            <Text color={theme.text.primary}>{m.tokens.thoughts.toLocaleString()}</Text>
           ))}
         />
       )}
@@ -204,9 +181,7 @@ export const ModelStatsDisplay: React.FC = () => {
           title="Tool"
           isSubtle
           values={getModelValues((m) => (
-            <Text color={theme.text.primary}>
-              {m.tokens.tool.toLocaleString()}
-            </Text>
+            <Text color={theme.text.primary}>{m.tokens.tool.toLocaleString()}</Text>
           ))}
         />
       )}
@@ -214,9 +189,7 @@ export const ModelStatsDisplay: React.FC = () => {
         title="Output"
         isSubtle
         values={getModelValues((m) => (
-          <Text color={theme.text.primary}>
-            {m.tokens.candidates.toLocaleString()}
-          </Text>
+          <Text color={theme.text.primary}>{m.tokens.candidates.toLocaleString()}</Text>
         ))}
       />
     </Box>

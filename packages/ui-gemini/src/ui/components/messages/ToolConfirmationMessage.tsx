@@ -4,24 +4,24 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import type React from 'react';
-import { useEffect, useState, useMemo } from 'react';
-import { Box, Text } from 'ink';
-import { DiffRenderer } from './DiffRenderer.js';
-import { RenderInline } from '../../utils/InlineMarkdownRenderer.js';
 import type {
+  Config,
   ToolCallConfirmationDetails,
   ToolExecuteConfirmationDetails,
   ToolMcpConfirmationDetails,
-  Config,
-} from '@airiscode/gemini-cli-core';
-import { IdeClient, ToolConfirmationOutcome } from '@airiscode/gemini-cli-core';
-import type { RadioSelectItem } from '../shared/RadioButtonSelect.js';
-import { RadioButtonSelect } from '../shared/RadioButtonSelect.js';
-import { MaxSizedBox } from '../shared/MaxSizedBox.js';
-import { useKeypress } from '../../hooks/useKeypress.js';
-import { theme } from '../../semantic-colors.js';
-import { useAlternateBuffer } from '../../hooks/useAlternateBuffer.js';
+} from "@airiscode/gemini-cli-core";
+import { IdeClient, ToolConfirmationOutcome } from "@airiscode/gemini-cli-core";
+import { Box, Text } from "ink";
+import type React from "react";
+import { useEffect, useMemo, useState } from "react";
+import { useAlternateBuffer } from "../../hooks/useAlternateBuffer.js";
+import { useKeypress } from "../../hooks/useKeypress.js";
+import { theme } from "../../semantic-colors.js";
+import { RenderInline } from "../../utils/InlineMarkdownRenderer.js";
+import { MaxSizedBox } from "../shared/MaxSizedBox.js";
+import type { RadioSelectItem } from "../shared/RadioButtonSelect.js";
+import { RadioButtonSelect } from "../shared/RadioButtonSelect.js";
+import { DiffRenderer } from "./DiffRenderer.js";
 
 export interface ToolConfirmationMessageProps {
   confirmationDetails: ToolCallConfirmationDetails;
@@ -31,9 +31,7 @@ export interface ToolConfirmationMessageProps {
   terminalWidth: number;
 }
 
-export const ToolConfirmationMessage: React.FC<
-  ToolConfirmationMessageProps
-> = ({
+export const ToolConfirmationMessage: React.FC<ToolConfirmationMessageProps> = ({
   confirmationDetails,
   config,
   isFocused = true,
@@ -66,14 +64,10 @@ export const ToolConfirmationMessage: React.FC<
   }, [config]);
 
   const handleConfirm = async (outcome: ToolConfirmationOutcome) => {
-    if (confirmationDetails.type === 'edit') {
+    if (confirmationDetails.type === "edit") {
       if (config.getIdeMode() && isDiffingEnabled) {
-        const cliOutcome =
-          outcome === ToolConfirmationOutcome.Cancel ? 'rejected' : 'accepted';
-        await ideClient?.resolveDiffFromCli(
-          confirmationDetails.filePath,
-          cliOutcome,
-        );
+        const cliOutcome = outcome === ToolConfirmationOutcome.Cancel ? "rejected" : "accepted";
+        await ideClient?.resolveDiffFromCli(confirmationDetails.filePath, cliOutcome);
       }
     }
     // eslint-disable-next-line @typescript-eslint/no-floating-promises
@@ -85,7 +79,7 @@ export const ToolConfirmationMessage: React.FC<
   useKeypress(
     (key) => {
       if (!isFocused) return;
-      if (key.name === 'escape' || (key.ctrl && key.name === 'c')) {
+      if (key.name === "escape" || (key.ctrl && key.name === "c")) {
         // eslint-disable-next-line @typescript-eslint/no-floating-promises
         handleConfirm(ToolConfirmationOutcome.Cancel);
       }
@@ -97,47 +91,46 @@ export const ToolConfirmationMessage: React.FC<
 
   const { question, bodyContent, options } = useMemo(() => {
     let bodyContent: React.ReactNode | null = null;
-    let question = '';
+    let question = "";
     const options: Array<RadioSelectItem<ToolConfirmationOutcome>> = [];
 
-    if (confirmationDetails.type === 'edit') {
+    if (confirmationDetails.type === "edit") {
       if (!confirmationDetails.isModifying) {
         question = `Apply this change?`;
         options.push({
-          label: 'Yes, allow once',
+          label: "Yes, allow once",
           value: ToolConfirmationOutcome.ProceedOnce,
-          key: 'Yes, allow once',
+          key: "Yes, allow once",
         });
         if (isTrustedFolder) {
           options.push({
-            label: 'Yes, allow always',
+            label: "Yes, allow always",
             value: ToolConfirmationOutcome.ProceedAlways,
-            key: 'Yes, allow always',
+            key: "Yes, allow always",
           });
         }
         if (!config.getIdeMode() || !isDiffingEnabled) {
           options.push({
-            label: 'Modify with external editor',
+            label: "Modify with external editor",
             value: ToolConfirmationOutcome.ModifyWithEditor,
-            key: 'Modify with external editor',
+            key: "Modify with external editor",
           });
         }
 
         options.push({
-          label: 'No, suggest changes (esc)',
+          label: "No, suggest changes (esc)",
           value: ToolConfirmationOutcome.Cancel,
-          key: 'No, suggest changes (esc)',
+          key: "No, suggest changes (esc)",
         });
       }
-    } else if (confirmationDetails.type === 'exec') {
-      const executionProps =
-        confirmationDetails as ToolExecuteConfirmationDetails;
+    } else if (confirmationDetails.type === "exec") {
+      const executionProps = confirmationDetails as ToolExecuteConfirmationDetails;
 
       question = `Allow execution of: '${executionProps.rootCommand}'?`;
       options.push({
-        label: 'Yes, allow once',
+        label: "Yes, allow once",
         value: ToolConfirmationOutcome.ProceedOnce,
-        key: 'Yes, allow once',
+        key: "Yes, allow once",
       });
       if (isTrustedFolder) {
         options.push({
@@ -147,37 +140,37 @@ export const ToolConfirmationMessage: React.FC<
         });
       }
       options.push({
-        label: 'No, suggest changes (esc)',
+        label: "No, suggest changes (esc)",
         value: ToolConfirmationOutcome.Cancel,
-        key: 'No, suggest changes (esc)',
+        key: "No, suggest changes (esc)",
       });
-    } else if (confirmationDetails.type === 'info') {
+    } else if (confirmationDetails.type === "info") {
       question = `Do you want to proceed?`;
       options.push({
-        label: 'Yes, allow once',
+        label: "Yes, allow once",
         value: ToolConfirmationOutcome.ProceedOnce,
-        key: 'Yes, allow once',
+        key: "Yes, allow once",
       });
       if (isTrustedFolder) {
         options.push({
-          label: 'Yes, allow always',
+          label: "Yes, allow always",
           value: ToolConfirmationOutcome.ProceedAlways,
-          key: 'Yes, allow always',
+          key: "Yes, allow always",
         });
       }
       options.push({
-        label: 'No, suggest changes (esc)',
+        label: "No, suggest changes (esc)",
         value: ToolConfirmationOutcome.Cancel,
-        key: 'No, suggest changes (esc)',
+        key: "No, suggest changes (esc)",
       });
     } else {
       // mcp tool confirmation
       const mcpProps = confirmationDetails as ToolMcpConfirmationDetails;
       question = `Allow execution of MCP tool "${mcpProps.toolName}" from server "${mcpProps.serverName}"?`;
       options.push({
-        label: 'Yes, allow once',
+        label: "Yes, allow once",
         value: ToolConfirmationOutcome.ProceedOnce,
-        key: 'Yes, allow once',
+        key: "Yes, allow once",
       });
       if (isTrustedFolder) {
         options.push({
@@ -192,9 +185,9 @@ export const ToolConfirmationMessage: React.FC<
         });
       }
       options.push({
-        label: 'No, suggest changes (esc)',
+        label: "No, suggest changes (esc)",
         value: ToolConfirmationOutcome.Cancel,
-        key: 'No, suggest changes (esc)',
+        key: "No, suggest changes (esc)",
       });
     }
 
@@ -226,7 +219,7 @@ export const ToolConfirmationMessage: React.FC<
       return Math.max(availableTerminalHeight - surroundingElementsHeight, 1);
     }
 
-    if (confirmationDetails.type === 'edit') {
+    if (confirmationDetails.type === "edit") {
       if (!confirmationDetails.isModifying) {
         bodyContent = (
           <DiffRenderer
@@ -237,9 +230,8 @@ export const ToolConfirmationMessage: React.FC<
           />
         );
       }
-    } else if (confirmationDetails.type === 'exec') {
-      const executionProps =
-        confirmationDetails as ToolExecuteConfirmationDetails;
+    } else if (confirmationDetails.type === "exec") {
+      const executionProps = confirmationDetails as ToolExecuteConfirmationDetails;
       let bodyContentHeight = availableBodyContentHeight();
       if (bodyContentHeight !== undefined) {
         bodyContentHeight -= 2; // Account for padding;
@@ -254,35 +246,26 @@ export const ToolConfirmationMessage: React.FC<
       bodyContent = isAlternateBuffer ? (
         commandBox
       ) : (
-        <MaxSizedBox
-          maxHeight={bodyContentHeight}
-          maxWidth={Math.max(terminalWidth, 1)}
-        >
+        <MaxSizedBox maxHeight={bodyContentHeight} maxWidth={Math.max(terminalWidth, 1)}>
           {commandBox}
         </MaxSizedBox>
       );
-    } else if (confirmationDetails.type === 'info') {
+    } else if (confirmationDetails.type === "info") {
       const infoProps = confirmationDetails;
       const displayUrls =
-        infoProps.urls &&
-        !(
-          infoProps.urls.length === 1 && infoProps.urls[0] === infoProps.prompt
-        );
+        infoProps.urls && !(infoProps.urls.length === 1 && infoProps.urls[0] === infoProps.prompt);
 
       bodyContent = (
         <Box flexDirection="column">
           <Text color={theme.text.link}>
-            <RenderInline
-              text={infoProps.prompt}
-              defaultColor={theme.text.link}
-            />
+            <RenderInline text={infoProps.prompt} defaultColor={theme.text.link} />
           </Text>
           {displayUrls && infoProps.urls && infoProps.urls.length > 0 && (
             <Box flexDirection="column" marginTop={1}>
               <Text color={theme.text.primary}>URLs to fetch:</Text>
               {infoProps.urls.map((url) => (
                 <Text key={url}>
-                  {' '}
+                  {" "}
                   - <RenderInline text={url} />
                 </Text>
               ))}
@@ -313,7 +296,7 @@ export const ToolConfirmationMessage: React.FC<
     isAlternateBuffer,
   ]);
 
-  if (confirmationDetails.type === 'edit') {
+  if (confirmationDetails.type === "edit") {
     if (confirmationDetails.isModifying) {
       return (
         <Box
@@ -326,9 +309,7 @@ export const ToolConfirmationMessage: React.FC<
           overflow="hidden"
         >
           <Text color={theme.text.primary}>Modify in progress: </Text>
-          <Text color={theme.status.success}>
-            Save and close external editor to continue
-          </Text>
+          <Text color={theme.status.success}>Save and close external editor to continue</Text>
         </Box>
       );
     }
@@ -349,11 +330,7 @@ export const ToolConfirmationMessage: React.FC<
 
       {/* Select Input for Options */}
       <Box flexShrink={0}>
-        <RadioButtonSelect
-          items={options}
-          onSelect={handleSelect}
-          isFocused={isFocused}
-        />
+        <RadioButtonSelect items={options} onSelect={handleSelect} isFocused={isFocused} />
       </Box>
     </Box>
   );

@@ -4,12 +4,12 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import type { SessionMetrics } from '../telemetry/uiTelemetry.js';
+import type { SessionMetrics } from "../telemetry/uiTelemetry.js";
 
 export enum OutputFormat {
-  TEXT = 'text',
-  JSON = 'json',
-  STREAM_JSON = 'stream-json',
+  TEXT = "text",
+  JSON = "json",
+  STREAM_JSON = "stream-json",
 }
 
 export interface JsonError {
@@ -27,12 +27,12 @@ export interface JsonOutput {
 
 // Streaming JSON event types
 export enum JsonStreamEventType {
-  INIT = 'init',
-  MESSAGE = 'message',
-  TOOL_USE = 'tool_use',
-  TOOL_RESULT = 'tool_result',
-  ERROR = 'error',
-  RESULT = 'result',
+  INIT = "init",
+  MESSAGE = "message",
+  TOOL_USE = "tool_use",
+  TOOL_RESULT = "tool_result",
+  ERROR = "error",
+  RESULT = "result",
 }
 
 export interface BaseJsonStreamEvent {
@@ -48,7 +48,7 @@ export interface InitEvent extends BaseJsonStreamEvent {
 
 export interface MessageEvent extends BaseJsonStreamEvent {
   type: JsonStreamEventType.MESSAGE;
-  role: 'user' | 'assistant';
+  role: "user" | "assistant";
   content: string;
   delta?: boolean;
 }
@@ -63,7 +63,7 @@ export interface ToolUseEvent extends BaseJsonStreamEvent {
 export interface ToolResultEvent extends BaseJsonStreamEvent {
   type: JsonStreamEventType.TOOL_RESULT;
   tool_id: string;
-  status: 'success' | 'error';
+  status: "success" | "error";
   output?: string;
   error?: {
     type: string;
@@ -73,7 +73,7 @@ export interface ToolResultEvent extends BaseJsonStreamEvent {
 
 export interface ErrorEvent extends BaseJsonStreamEvent {
   type: JsonStreamEventType.ERROR;
-  severity: 'warning' | 'error';
+  severity: "warning" | "error";
   message: string;
 }
 
@@ -87,7 +87,7 @@ export interface StreamStats {
 
 export interface ResultEvent extends BaseJsonStreamEvent {
   type: JsonStreamEventType.RESULT;
-  status: 'success' | 'error';
+  status: "success" | "error";
   error?: {
     type: string;
     message: string;

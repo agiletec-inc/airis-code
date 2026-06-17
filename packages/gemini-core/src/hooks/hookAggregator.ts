@@ -4,20 +4,16 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { FunctionCallingConfigMode } from '@google/genai';
-import type {
-  HookOutput,
-  HookExecutionResult,
-  BeforeToolSelectionOutput,
-} from './types.js';
+import { FunctionCallingConfigMode } from "@google/genai";
+import type { BeforeToolSelectionOutput, HookExecutionResult, HookOutput } from "./types.js";
 import {
-  DefaultHookOutput,
-  BeforeToolHookOutput,
-  BeforeModelHookOutput,
-  BeforeToolSelectionHookOutput,
   AfterModelHookOutput,
-} from './types.js';
-import { HookEventName } from './types.js';
+  BeforeModelHookOutput,
+  BeforeToolHookOutput,
+  BeforeToolSelectionHookOutput,
+  DefaultHookOutput,
+  HookEventName,
+} from "./types.js";
 
 /**
  * Aggregated hook result
@@ -37,10 +33,7 @@ export class HookAggregator {
   /**
    * Aggregate results from multiple hook executions
    */
-  aggregateResults(
-    results: HookExecutionResult[],
-    eventName: HookEventName,
-  ): AggregatedHookResult {
+  aggregateResults(results: HookExecutionResult[], eventName: HookEventName): AggregatedHookResult {
     const allOutputs: HookOutput[] = [];
     const errors: Error[] = [];
     let totalDuration = 0;
@@ -79,10 +72,7 @@ export class HookAggregator {
    * Note: We always use the merge logic even for single hooks to ensure
    * consistent default behaviors (e.g., default decision='allow' for OR logic)
    */
-  private mergeOutputs(
-    outputs: HookOutput[],
-    eventName: HookEventName,
-  ): HookOutput | undefined {
+  private mergeOutputs(outputs: HookOutput[], eventName: HookEventName): HookOutput | undefined {
     if (outputs.length === 0) {
       return undefined;
     }
@@ -100,9 +90,7 @@ export class HookAggregator {
         return this.mergeWithFieldReplacement(outputs);
 
       case HookEventName.BeforeToolSelection:
-        return this.mergeToolSelectionOutputs(
-          outputs as BeforeToolSelectionOutput[],
-        );
+        return this.mergeToolSelectionOutputs(outputs as BeforeToolSelectionOutput[]);
 
       default:
         // For other events, use simple merge
@@ -164,27 +152,27 @@ export class HookAggregator {
 
     // Set final decision if no blocking decision was found
     if (!hasBlockDecision && !hasContinueFalse) {
-      merged.decision = 'allow';
+      merged.decision = "allow";
     }
 
     // Merge messages
     if (messages.length > 0) {
-      merged.stopReason = messages.join('\n');
+      merged.stopReason = messages.join("\n");
     }
 
     if (reasons.length > 0) {
-      merged.reason = reasons.join('\n');
+      merged.reason = reasons.join("\n");
     }
 
     if (systemMessages.length > 0) {
-      merged.systemMessage = systemMessages.join('\n');
+      merged.systemMessage = systemMessages.join("\n");
     }
 
     // Add merged additional context
     if (additionalContexts.length > 0) {
       merged.hookSpecificOutput = {
         ...(merged.hookSpecificOutput || {}),
-        additionalContext: additionalContexts.join('\n'),
+        additionalContext: additionalContexts.join("\n"),
       };
     }
 
@@ -241,9 +229,9 @@ export class HookAggregator {
       }
 
       // Check mode (using simplified HookToolConfig format)
-      if (toolConfig.mode === 'NONE') {
+      if (toolConfig.mode === "NONE") {
         hasNoneMode = true;
-      } else if (toolConfig.mode === 'ANY') {
+      } else if (toolConfig.mode === "ANY") {
         hasAnyMode = true;
       }
 
@@ -276,7 +264,7 @@ export class HookAggregator {
     }
 
     merged.hookSpecificOutput = {
-      hookEventName: 'BeforeToolSelection',
+      hookEventName: "BeforeToolSelection",
       toolConfig: {
         mode: finalMode,
         allowedFunctionNames: finalFunctionNames,
@@ -323,21 +311,15 @@ export class HookAggregator {
   /**
    * Extract additional context from hook-specific outputs
    */
-  private extractAdditionalContext(
-    output: HookOutput,
-    contexts: string[],
-  ): void {
+  private extractAdditionalContext(output: HookOutput, contexts: string[]): void {
     const specific = output.hookSpecificOutput;
     if (!specific) {
       return;
     }
 
     // Extract additionalContext from various hook types
-    if (
-      'additionalContext' in specific &&
-      typeof specific['additionalContext'] === 'string'
-    ) {
-      contexts.push(specific['additionalContext']);
+    if ("additionalContext" in specific && typeof specific["additionalContext"] === "string") {
+      contexts.push(specific["additionalContext"]);
     }
   }
 }

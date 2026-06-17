@@ -4,26 +4,26 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import type React from 'react';
-import { useCallback, useContext, useMemo } from 'react';
-import { Box, Text } from 'ink';
 import {
-  PREVIEW_GEMINI_MODEL,
-  DEFAULT_GEMINI_MODEL,
-  DEFAULT_GEMINI_FLASH_MODEL,
   DEFAULT_GEMINI_FLASH_LITE_MODEL,
+  DEFAULT_GEMINI_FLASH_MODEL,
+  DEFAULT_GEMINI_MODEL,
   DEFAULT_GEMINI_MODEL_AUTO,
   GEMINI_MODEL_ALIAS_FLASH,
   GEMINI_MODEL_ALIAS_FLASH_LITE,
   GEMINI_MODEL_ALIAS_PRO,
-  ModelSlashCommandEvent,
   logModelSlashCommand,
-} from '@airiscode/gemini-cli-core';
-import { useKeypress } from '../hooks/useKeypress.js';
-import { theme } from '../semantic-colors.js';
-import { DescriptiveRadioButtonSelect } from './shared/DescriptiveRadioButtonSelect.js';
-import { ConfigContext } from '../contexts/ConfigContext.js';
-import { ThemedGradient } from './ThemedGradient.js';
+  ModelSlashCommandEvent,
+  PREVIEW_GEMINI_MODEL,
+} from "@airiscode/gemini-cli-core";
+import { Box, Text } from "ink";
+import type React from "react";
+import { useCallback, useContext, useMemo } from "react";
+import { ConfigContext } from "../contexts/ConfigContext.js";
+import { useKeypress } from "../hooks/useKeypress.js";
+import { theme } from "../semantic-colors.js";
+import { DescriptiveRadioButtonSelect } from "./shared/DescriptiveRadioButtonSelect.js";
+import { ThemedGradient } from "./ThemedGradient.js";
 
 interface ModelDialogProps {
   onClose: () => void;
@@ -37,7 +37,7 @@ export function ModelDialog({ onClose }: ModelDialogProps): React.JSX.Element {
 
   useKeypress(
     (key) => {
-      if (key.name === 'escape') {
+      if (key.name === "escape") {
         onClose();
       }
     },
@@ -48,8 +48,8 @@ export function ModelDialog({ onClose }: ModelDialogProps): React.JSX.Element {
     () => [
       {
         value: DEFAULT_GEMINI_MODEL_AUTO,
-        title: 'Auto',
-        description: 'Let the system choose the best model for your task.',
+        title: "Auto",
+        description: "Let the system choose the best model for your task.",
         key: DEFAULT_GEMINI_MODEL_AUTO,
       },
       {
@@ -57,20 +57,19 @@ export function ModelDialog({ onClose }: ModelDialogProps): React.JSX.Element {
         title: config?.getPreviewFeatures()
           ? `Pro (${PREVIEW_GEMINI_MODEL}, ${DEFAULT_GEMINI_MODEL})`
           : `Pro (${DEFAULT_GEMINI_MODEL})`,
-        description:
-          'For complex tasks that require deep reasoning and creativity',
+        description: "For complex tasks that require deep reasoning and creativity",
         key: GEMINI_MODEL_ALIAS_PRO,
       },
       {
         value: GEMINI_MODEL_ALIAS_FLASH,
         title: `Flash (${DEFAULT_GEMINI_FLASH_MODEL})`,
-        description: 'For tasks that need a balance of speed and reasoning',
+        description: "For tasks that need a balance of speed and reasoning",
         key: GEMINI_MODEL_ALIAS_FLASH,
       },
       {
         value: GEMINI_MODEL_ALIAS_FLASH_LITE,
         title: `Flash-Lite (${DEFAULT_GEMINI_FLASH_LITE_MODEL})`,
-        description: 'For simple tasks that need to be done quickly',
+        description: "For simple tasks that need to be done quickly",
         key: GEMINI_MODEL_ALIAS_FLASH_LITE,
       },
     ],
@@ -97,8 +96,8 @@ export function ModelDialog({ onClose }: ModelDialogProps): React.JSX.Element {
   );
 
   const header = config?.getPreviewFeatures()
-    ? 'Gemini 3 is now enabled.'
-    : 'Gemini 3 is now available.';
+    ? "Gemini 3 is now enabled."
+    : "Gemini 3 is now available.";
 
   const subheader = config?.getPreviewFeatures()
     ? `To disable Gemini 3, disable "Preview features" in /settings.\nLearn more at https://goo.gle/enable-preview-features\n\nWhen you select Auto or Pro, Gemini CLI will attempt to use ${PREVIEW_GEMINI_MODEL} first, before falling back to ${DEFAULT_GEMINI_MODEL}.`
@@ -131,7 +130,7 @@ export function ModelDialog({ onClose }: ModelDialogProps): React.JSX.Element {
       </Box>
       <Box marginTop={1} flexDirection="column">
         <Text color={theme.text.secondary}>
-          {'To use a specific Gemini model on startup, use the --model flag.'}
+          {"To use a specific Gemini model on startup, use the --model flag."}
         </Text>
       </Box>
       <Box marginTop={1} flexDirection="column">

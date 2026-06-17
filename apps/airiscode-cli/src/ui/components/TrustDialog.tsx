@@ -4,29 +4,29 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { Box, Text } from 'ink';
-import type React from 'react';
-import { TrustLevel } from '../../config/trustedFolders.js';
-import { useKeypress } from '../hooks/useKeypress.js';
-import { useTrustModify } from '../hooks/useTrustModify.js';
-import { theme } from '../semantic-colors.js';
-import { RadioButtonSelect } from './shared/RadioButtonSelect.js';
-import { relaunchApp } from '../../utils/processUtils.js';
-import { type UseHistoryManagerReturn } from '../hooks/useHistoryManager.js';
+import { Box, Text } from "ink";
+import type React from "react";
+import { TrustLevel } from "../../config/trustedFolders.js";
+import { relaunchApp } from "../../utils/processUtils.js";
+import { type UseHistoryManagerReturn } from "../hooks/useHistoryManager.js";
+import { useKeypress } from "../hooks/useKeypress.js";
+import { useTrustModify } from "../hooks/useTrustModify.js";
+import { theme } from "../semantic-colors.js";
+import { RadioButtonSelect } from "./shared/RadioButtonSelect.js";
 
 interface TrustDialogProps {
   onExit: () => void;
-  addItem: UseHistoryManagerReturn['addItem'];
+  addItem: UseHistoryManagerReturn["addItem"];
 }
 
 const TRUST_LEVEL_ITEMS = [
   {
-    label: 'Trust this folder',
+    label: "Trust this folder",
     value: TrustLevel.TRUST_FOLDER,
     key: TrustLevel.TRUST_FOLDER,
   },
   {
-    label: 'Trust parent folder',
+    label: "Trust parent folder",
     value: TrustLevel.TRUST_PARENT,
     key: TrustLevel.TRUST_PARENT,
   },
@@ -37,10 +37,7 @@ const TRUST_LEVEL_ITEMS = [
   },
 ];
 
-export function TrustDialog({
-  onExit,
-  addItem,
-}: TrustDialogProps): React.JSX.Element {
+export function TrustDialog({ onExit, addItem }: TrustDialogProps): React.JSX.Element {
   const {
     cwd,
     currentTrustLevel,
@@ -53,10 +50,10 @@ export function TrustDialog({
 
   useKeypress(
     (key) => {
-      if (key.name === 'escape') {
+      if (key.name === "escape") {
         onExit();
       }
-      if (needsRestart && key.name === 'r') {
+      if (needsRestart && key.name === "r") {
         commitTrustLevelChange();
         relaunchApp();
         onExit();
@@ -65,9 +62,7 @@ export function TrustDialog({
     { isActive: true },
   );
 
-  const index = TRUST_LEVEL_ITEMS.findIndex(
-    (item) => item.value === currentTrustLevel,
-  );
+  const index = TRUST_LEVEL_ITEMS.findIndex((item) => item.value === currentTrustLevel);
   const initialIndex = index === -1 ? 0 : index;
 
   return (
@@ -79,25 +74,23 @@ export function TrustDialog({
         padding={1}
       >
         <Box flexDirection="column" paddingBottom={1}>
-          <Text bold>{'> '}Modify Trust Level</Text>
+          <Text bold>{"> "}Modify Trust Level</Text>
           <Box marginTop={1} />
           <Text>Folder: {cwd}</Text>
           <Text>
-            Current Level: <Text bold>{currentTrustLevel || 'Not Set'}</Text>
+            Current Level: <Text bold>{currentTrustLevel || "Not Set"}</Text>
           </Text>
           {isInheritedTrustFromParent && (
             <Text color={theme.text.secondary}>
-              Note: This folder behaves as a trusted folder because one of the
-              parent folders is trusted. It will remain trusted even if you set
-              a different trust level here. To change this, you need to modify
-              the trust setting in the parent folder.
+              Note: This folder behaves as a trusted folder because one of the parent folders is
+              trusted. It will remain trusted even if you set a different trust level here. To
+              change this, you need to modify the trust setting in the parent folder.
             </Text>
           )}
           {isInheritedTrustFromIde && (
             <Text color={theme.text.secondary}>
-              Note: This folder behaves as a trusted folder because the
-              connected IDE workspace is trusted. It will remain trusted even if
-              you set a different trust level here.
+              Note: This folder behaves as a trusted folder because the connected IDE workspace is
+              trusted. It will remain trusted even if you set a different trust level here.
             </Text>
           )}
         </Box>
@@ -115,8 +108,8 @@ export function TrustDialog({
       {needsRestart && (
         <Box marginLeft={1} marginTop={1}>
           <Text color={theme.status.warning}>
-            To apply the trust changes, AIRIS Code must be restarted. Press
-            &apos;r&apos; to restart CLI now.
+            To apply the trust changes, AIRIS Code must be restarted. Press &apos;r&apos; to restart
+            CLI now.
           </Text>
         </Box>
       )}

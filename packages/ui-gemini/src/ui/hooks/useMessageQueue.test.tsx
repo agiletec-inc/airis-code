@@ -4,14 +4,14 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { act } from 'react';
-import { render } from '../../test-utils/render.js';
-import { waitFor } from '../../test-utils/async.js';
-import { useMessageQueue } from './useMessageQueue.js';
-import { StreamingState } from '../types.js';
+import { act } from "react";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { waitFor } from "../../test-utils/async.js";
+import { render } from "../../test-utils/render.js";
+import { StreamingState } from "../types.js";
+import { useMessageQueue } from "./useMessageQueue.js";
 
-describe('useMessageQueue', () => {
+describe("useMessageQueue", () => {
   let mockSubmitQuery: ReturnType<typeof vi.fn>;
 
   beforeEach(() => {
@@ -46,7 +46,7 @@ describe('useMessageQueue', () => {
     };
   };
 
-  it('should initialize with empty queue', () => {
+  it("should initialize with empty queue", () => {
     const { result } = renderMessageQueueHook({
       isConfigInitialized: true,
       streamingState: StreamingState.Idle,
@@ -54,10 +54,10 @@ describe('useMessageQueue', () => {
     });
 
     expect(result.current.messageQueue).toEqual([]);
-    expect(result.current.getQueuedMessagesText()).toBe('');
+    expect(result.current.getQueuedMessagesText()).toBe("");
   });
 
-  it('should add messages to queue', () => {
+  it("should add messages to queue", () => {
     const { result } = renderMessageQueueHook({
       isConfigInitialized: true,
       streamingState: StreamingState.Responding,
@@ -65,17 +65,14 @@ describe('useMessageQueue', () => {
     });
 
     act(() => {
-      result.current.addMessage('Test message 1');
-      result.current.addMessage('Test message 2');
+      result.current.addMessage("Test message 1");
+      result.current.addMessage("Test message 2");
     });
 
-    expect(result.current.messageQueue).toEqual([
-      'Test message 1',
-      'Test message 2',
-    ]);
+    expect(result.current.messageQueue).toEqual(["Test message 1", "Test message 2"]);
   });
 
-  it('should filter out empty messages', () => {
+  it("should filter out empty messages", () => {
     const { result } = renderMessageQueueHook({
       isConfigInitialized: true,
       streamingState: StreamingState.Responding,
@@ -83,19 +80,16 @@ describe('useMessageQueue', () => {
     });
 
     act(() => {
-      result.current.addMessage('Valid message');
-      result.current.addMessage('   '); // Only whitespace
-      result.current.addMessage(''); // Empty
-      result.current.addMessage('Another valid message');
+      result.current.addMessage("Valid message");
+      result.current.addMessage("   "); // Only whitespace
+      result.current.addMessage(""); // Empty
+      result.current.addMessage("Another valid message");
     });
 
-    expect(result.current.messageQueue).toEqual([
-      'Valid message',
-      'Another valid message',
-    ]);
+    expect(result.current.messageQueue).toEqual(["Valid message", "Another valid message"]);
   });
 
-  it('should clear queue', () => {
+  it("should clear queue", () => {
     const { result } = renderMessageQueueHook({
       isConfigInitialized: true,
       streamingState: StreamingState.Responding,
@@ -103,10 +97,10 @@ describe('useMessageQueue', () => {
     });
 
     act(() => {
-      result.current.addMessage('Test message');
+      result.current.addMessage("Test message");
     });
 
-    expect(result.current.messageQueue).toEqual(['Test message']);
+    expect(result.current.messageQueue).toEqual(["Test message"]);
 
     act(() => {
       result.current.clearQueue();
@@ -115,7 +109,7 @@ describe('useMessageQueue', () => {
     expect(result.current.messageQueue).toEqual([]);
   });
 
-  it('should return queued messages as text with double newlines', () => {
+  it("should return queued messages as text with double newlines", () => {
     const { result } = renderMessageQueueHook({
       isConfigInitialized: true,
       streamingState: StreamingState.Responding,
@@ -123,17 +117,15 @@ describe('useMessageQueue', () => {
     });
 
     act(() => {
-      result.current.addMessage('Message 1');
-      result.current.addMessage('Message 2');
-      result.current.addMessage('Message 3');
+      result.current.addMessage("Message 1");
+      result.current.addMessage("Message 2");
+      result.current.addMessage("Message 3");
     });
 
-    expect(result.current.getQueuedMessagesText()).toBe(
-      'Message 1\n\nMessage 2\n\nMessage 3',
-    );
+    expect(result.current.getQueuedMessagesText()).toBe("Message 1\n\nMessage 2\n\nMessage 3");
   });
 
-  it('should auto-submit queued messages when transitioning to Idle', async () => {
+  it("should auto-submit queued messages when transitioning to Idle", async () => {
     const { result, rerender } = renderMessageQueueHook({
       isConfigInitialized: true,
       streamingState: StreamingState.Responding,
@@ -142,22 +134,22 @@ describe('useMessageQueue', () => {
 
     // Add some messages
     act(() => {
-      result.current.addMessage('Message 1');
-      result.current.addMessage('Message 2');
+      result.current.addMessage("Message 1");
+      result.current.addMessage("Message 2");
     });
 
-    expect(result.current.messageQueue).toEqual(['Message 1', 'Message 2']);
+    expect(result.current.messageQueue).toEqual(["Message 1", "Message 2"]);
 
     // Transition to Idle
     rerender({ streamingState: StreamingState.Idle });
 
     await waitFor(() => {
-      expect(mockSubmitQuery).toHaveBeenCalledWith('Message 1\n\nMessage 2');
+      expect(mockSubmitQuery).toHaveBeenCalledWith("Message 1\n\nMessage 2");
       expect(result.current.messageQueue).toEqual([]);
     });
   });
 
-  it('should not auto-submit when queue is empty', () => {
+  it("should not auto-submit when queue is empty", () => {
     const { rerender } = renderMessageQueueHook({
       isConfigInitialized: true,
       streamingState: StreamingState.Responding,
@@ -170,7 +162,7 @@ describe('useMessageQueue', () => {
     expect(mockSubmitQuery).not.toHaveBeenCalled();
   });
 
-  it('should not auto-submit when not transitioning to Idle', () => {
+  it("should not auto-submit when not transitioning to Idle", () => {
     const { result, rerender } = renderMessageQueueHook({
       isConfigInitialized: true,
       streamingState: StreamingState.Responding,
@@ -179,17 +171,17 @@ describe('useMessageQueue', () => {
 
     // Add messages
     act(() => {
-      result.current.addMessage('Message 1');
+      result.current.addMessage("Message 1");
     });
 
     // Transition to WaitingForConfirmation (not Idle)
     rerender({ streamingState: StreamingState.WaitingForConfirmation });
 
     expect(mockSubmitQuery).not.toHaveBeenCalled();
-    expect(result.current.messageQueue).toEqual(['Message 1']);
+    expect(result.current.messageQueue).toEqual(["Message 1"]);
   });
 
-  it('should handle multiple state transitions correctly', async () => {
+  it("should handle multiple state transitions correctly", async () => {
     const { result, rerender } = renderMessageQueueHook({
       isConfigInitialized: true,
       streamingState: StreamingState.Idle,
@@ -201,14 +193,14 @@ describe('useMessageQueue', () => {
 
     // Add messages while responding
     act(() => {
-      result.current.addMessage('First batch');
+      result.current.addMessage("First batch");
     });
 
     // Go back to idle - should submit
     rerender({ streamingState: StreamingState.Idle });
 
     await waitFor(() => {
-      expect(mockSubmitQuery).toHaveBeenCalledWith('First batch');
+      expect(mockSubmitQuery).toHaveBeenCalledWith("First batch");
       expect(result.current.messageQueue).toEqual([]);
     });
 
@@ -217,20 +209,20 @@ describe('useMessageQueue', () => {
 
     // Add more messages
     act(() => {
-      result.current.addMessage('Second batch');
+      result.current.addMessage("Second batch");
     });
 
     // Go back to idle - should submit again
     rerender({ streamingState: StreamingState.Idle });
 
     await waitFor(() => {
-      expect(mockSubmitQuery).toHaveBeenCalledWith('Second batch');
+      expect(mockSubmitQuery).toHaveBeenCalledWith("Second batch");
       expect(mockSubmitQuery).toHaveBeenCalledTimes(2);
     });
   });
 
-  describe('popAllMessages', () => {
-    it('should pop all messages and return them joined with double newlines', () => {
+  describe("popAllMessages", () => {
+    it("should pop all messages and return them joined with double newlines", () => {
       const { result } = renderMessageQueueHook({
         isConfigInitialized: true,
         streamingState: StreamingState.Responding,
@@ -239,16 +231,12 @@ describe('useMessageQueue', () => {
 
       // Add multiple messages
       act(() => {
-        result.current.addMessage('Message 1');
-        result.current.addMessage('Message 2');
-        result.current.addMessage('Message 3');
+        result.current.addMessage("Message 1");
+        result.current.addMessage("Message 2");
+        result.current.addMessage("Message 3");
       });
 
-      expect(result.current.messageQueue).toEqual([
-        'Message 1',
-        'Message 2',
-        'Message 3',
-      ]);
+      expect(result.current.messageQueue).toEqual(["Message 1", "Message 2", "Message 3"]);
 
       // Pop all messages
       let poppedMessages: string | undefined;
@@ -256,18 +244,18 @@ describe('useMessageQueue', () => {
         poppedMessages = result.current.popAllMessages();
       });
 
-      expect(poppedMessages).toBe('Message 1\n\nMessage 2\n\nMessage 3');
+      expect(poppedMessages).toBe("Message 1\n\nMessage 2\n\nMessage 3");
       expect(result.current.messageQueue).toEqual([]);
     });
 
-    it('should return undefined when queue is empty', () => {
+    it("should return undefined when queue is empty", () => {
       const { result } = renderMessageQueueHook({
         isConfigInitialized: true,
         streamingState: StreamingState.Responding,
         submitQuery: mockSubmitQuery,
       });
 
-      let poppedMessages: string | undefined = 'not-undefined';
+      let poppedMessages: string | undefined = "not-undefined";
       act(() => {
         poppedMessages = result.current.popAllMessages();
       });
@@ -276,7 +264,7 @@ describe('useMessageQueue', () => {
       expect(result.current.messageQueue).toEqual([]);
     });
 
-    it('should handle single message correctly', () => {
+    it("should handle single message correctly", () => {
       const { result } = renderMessageQueueHook({
         isConfigInitialized: true,
         streamingState: StreamingState.Responding,
@@ -284,7 +272,7 @@ describe('useMessageQueue', () => {
       });
 
       act(() => {
-        result.current.addMessage('Single message');
+        result.current.addMessage("Single message");
       });
 
       let poppedMessages: string | undefined;
@@ -292,11 +280,11 @@ describe('useMessageQueue', () => {
         poppedMessages = result.current.popAllMessages();
       });
 
-      expect(poppedMessages).toBe('Single message');
+      expect(poppedMessages).toBe("Single message");
       expect(result.current.messageQueue).toEqual([]);
     });
 
-    it('should clear the entire queue after popping', () => {
+    it("should clear the entire queue after popping", () => {
       const { result } = renderMessageQueueHook({
         isConfigInitialized: true,
         streamingState: StreamingState.Responding,
@@ -304,8 +292,8 @@ describe('useMessageQueue', () => {
       });
 
       act(() => {
-        result.current.addMessage('Message 1');
-        result.current.addMessage('Message 2');
+        result.current.addMessage("Message 1");
+        result.current.addMessage("Message 2");
       });
 
       act(() => {
@@ -314,10 +302,10 @@ describe('useMessageQueue', () => {
 
       // Queue should be empty
       expect(result.current.messageQueue).toEqual([]);
-      expect(result.current.getQueuedMessagesText()).toBe('');
+      expect(result.current.getQueuedMessagesText()).toBe("");
 
       // Popping again should return undefined
-      let secondPop: string | undefined = 'not-undefined';
+      let secondPop: string | undefined = "not-undefined";
       act(() => {
         secondPop = result.current.popAllMessages();
       });
@@ -325,7 +313,7 @@ describe('useMessageQueue', () => {
       expect(secondPop).toBeUndefined();
     });
 
-    it('should work correctly with state updates', () => {
+    it("should work correctly with state updates", () => {
       const { result } = renderMessageQueueHook({
         isConfigInitialized: true,
         streamingState: StreamingState.Responding,
@@ -334,8 +322,8 @@ describe('useMessageQueue', () => {
 
       // Add messages
       act(() => {
-        result.current.addMessage('First');
-        result.current.addMessage('Second');
+        result.current.addMessage("First");
+        result.current.addMessage("Second");
       });
 
       // Pop all messages
@@ -344,12 +332,12 @@ describe('useMessageQueue', () => {
         firstPop = result.current.popAllMessages();
       });
 
-      expect(firstPop).toBe('First\n\nSecond');
+      expect(firstPop).toBe("First\n\nSecond");
 
       // Add new messages after popping
       act(() => {
-        result.current.addMessage('Third');
-        result.current.addMessage('Fourth');
+        result.current.addMessage("Third");
+        result.current.addMessage("Fourth");
       });
 
       // Pop again
@@ -358,7 +346,7 @@ describe('useMessageQueue', () => {
         secondPop = result.current.popAllMessages();
       });
 
-      expect(secondPop).toBe('Third\n\nFourth');
+      expect(secondPop).toBe("Third\n\nFourth");
       expect(result.current.messageQueue).toEqual([]);
     });
   });

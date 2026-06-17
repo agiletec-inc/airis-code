@@ -9,19 +9,15 @@
 // ============================================================================
 
 // Core configuration
-export * from './config/config.js';
-export { Storage } from './config/storage.js';
-
-// Permission system
-export * from './permissions/index.js';
-
+export * from "./config/config.js";
 // Model configuration
 export {
   DEFAULT_AIRISCODE_MODEL,
-  DEFAULT_QWEN_FLASH_MODEL,
   DEFAULT_QWEN_EMBEDDING_MODEL,
+  DEFAULT_QWEN_FLASH_MODEL,
   MAINLINE_CODER_MODEL,
-} from './config/models.js';
+} from "./config/models.js";
+export { Storage } from "./config/storage.js";
 export {
   type AvailableModel,
   type ModelCapabilities,
@@ -31,139 +27,140 @@ export {
   type ModelConfigSettingsInput,
   type ModelConfigSourcesInput,
   type ModelConfigValidationResult,
-  ModelRegistry,
   type ModelGenerationConfig,
+  type ModelProvidersConfig,
+  ModelRegistry,
+  type ModelSwitchMetadata,
   ModelsConfig,
   type ModelsConfigOptions,
-  type ModelProvidersConfig,
-  type ModelSwitchMetadata,
   type OnModelChangeCallback,
-  resolveModelConfig,
   type ResolvedModelConfig,
+  resolveModelConfig,
   validateModelConfig,
-} from './models/index.js';
-
+} from "./models/index.js";
 // Output formatting
-export * from './output/json-formatter.js';
-export * from './output/types.js';
+export * from "./output/json-formatter.js";
+export * from "./output/types.js";
+// Permission system
+export * from "./permissions/index.js";
 
 // ============================================================================
 // Core Engine
 // ============================================================================
 
-export * from './core/client.js';
-export * from './core/contentGenerator.js';
-export * from './core/coreToolScheduler.js';
-export * from './core/permission-helpers.js';
-export * from './core/geminiChat.js';
-export * from './core/geminiRequest.js';
-export * from './core/logger.js';
-export * from './core/nonInteractiveToolExecutor.js';
-export * from './core/prompts.js';
-export * from './core/tokenLimits.js';
-export * from './core/turn.js';
+export * from "./core/client.js";
+export * from "./core/contentGenerator.js";
+export * from "./core/coreToolScheduler.js";
+export * from "./core/geminiChat.js";
+export * from "./core/geminiRequest.js";
+export * from "./core/logger.js";
+export * from "./core/nonInteractiveToolExecutor.js";
+export * from "./core/permission-helpers.js";
+export * from "./core/prompts.js";
+export * from "./core/tokenLimits.js";
+export * from "./core/turn.js";
 
 // ============================================================================
 // Tools
 // ============================================================================
 
-// Tool names and registry
-export * from './tools/tool-names.js';
-export * from './tools/tool-error.js';
-export * from './tools/tool-registry.js';
-export * from './tools/tools.js';
+export * from "./tools/agent.js";
+export * from "./tools/cron-create.js";
+export * from "./tools/cron-delete.js";
+export * from "./tools/cron-list.js";
 
 // Individual tools
-export * from './tools/edit.js';
-export * from './tools/exitPlanMode.js';
-export * from './tools/glob.js';
-export * from './tools/grep.js';
-export * from './tools/ls.js';
-export * from './tools/lsp.js';
-export * from './tools/mcp-client.js';
-export * from './tools/mcp-client-manager.js';
-export * from './tools/mcp-tool.js';
-export * from './tools/memoryTool.js';
-export * from './tools/read-file.js';
-export * from './tools/ripGrep.js';
-export * from './tools/sdk-control-client-transport.js';
-export * from './tools/shell.js';
-export * from './tools/skill.js';
-export * from './tools/agent.js';
-export * from './tools/todoWrite.js';
-export * from './tools/tool-error.js';
-export * from './tools/tool-registry.js';
-export * from './tools/web-fetch.js';
-export * from './tools/web-search/index.js';
-export * from './tools/write-file.js';
-export * from './tools/cron-create.js';
-export * from './tools/cron-list.js';
-export * from './tools/cron-delete.js';
+export * from "./tools/edit.js";
+export * from "./tools/exitPlanMode.js";
+export * from "./tools/glob.js";
+export * from "./tools/grep.js";
+export * from "./tools/ls.js";
+export * from "./tools/lsp.js";
+export * from "./tools/mcp-client.js";
+export * from "./tools/mcp-client-manager.js";
+export * from "./tools/mcp-tool.js";
+export * from "./tools/memoryTool.js";
+export * from "./tools/read-file.js";
+export * from "./tools/ripGrep.js";
+export * from "./tools/sdk-control-client-transport.js";
+export * from "./tools/shell.js";
+export * from "./tools/skill.js";
+export * from "./tools/todoWrite.js";
+export * from "./tools/tool-error.js";
+export * from "./tools/tool-error.js";
+// Tool names and registry
+export * from "./tools/tool-names.js";
+export * from "./tools/tool-registry.js";
+export * from "./tools/tool-registry.js";
+export * from "./tools/tools.js";
+export * from "./tools/web-fetch.js";
+export * from "./tools/web-search/index.js";
+export * from "./tools/write-file.js";
 
 // ============================================================================
 // Services
 // ============================================================================
 
-export * from './services/chatRecordingService.js';
-export * from './services/cronScheduler.js';
-export * from './services/fileDiscoveryService.js';
-export * from './services/fileSystemService.js';
-export * from './services/gitService.js';
-export * from './services/gitWorktreeService.js';
-export * from './services/sessionService.js';
-export * from './services/shellExecutionService.js';
+export * from "./services/chatRecordingService.js";
+export * from "./services/cronScheduler.js";
+export * from "./services/fileDiscoveryService.js";
+export * from "./services/fileSystemService.js";
+export * from "./services/gitService.js";
+export * from "./services/gitWorktreeService.js";
+export * from "./services/sessionService.js";
+export * from "./services/shellExecutionService.js";
 
 // ============================================================================
 // IDE Support
 // ============================================================================
 
-export * from './ide/ide-client.js';
-export * from './ide/ideContext.js';
-export * from './ide/ide-installer.js';
-export { IDE_DEFINITIONS, type IdeInfo } from './ide/detect-ide.js';
-export * from './ide/constants.js';
-export * from './ide/types.js';
+export * from "./ide/constants.js";
+export { IDE_DEFINITIONS, type IdeInfo } from "./ide/detect-ide.js";
+export * from "./ide/ide-client.js";
+export * from "./ide/ide-installer.js";
+export * from "./ide/ideContext.js";
+export * from "./ide/types.js";
 
 // ============================================================================
 // LSP Support
 // ============================================================================
 
-export * from './lsp/constants.js';
-export * from './lsp/LspConfigLoader.js';
-export * from './lsp/LspConnectionFactory.js';
-export * from './lsp/LspResponseNormalizer.js';
-export * from './lsp/LspServerManager.js';
-export * from './lsp/NativeLspClient.js';
-export * from './lsp/NativeLspService.js';
-export * from './lsp/types.js';
+export * from "./lsp/constants.js";
+export * from "./lsp/LspConfigLoader.js";
+export * from "./lsp/LspConnectionFactory.js";
+export * from "./lsp/LspResponseNormalizer.js";
+export * from "./lsp/LspServerManager.js";
+export * from "./lsp/NativeLspClient.js";
+export * from "./lsp/NativeLspService.js";
+export * from "./lsp/types.js";
 
 // ============================================================================
 // MCP (Model Context Protocol)
 // ============================================================================
 
-export { MCPOAuthProvider } from './mcp/oauth-provider.js';
 export type {
   MCPOAuthConfig,
   OAuthDisplayMessage,
   OAuthDisplayPayload,
-} from './mcp/oauth-provider.js';
-export { MCPOAuthTokenStorage } from './mcp/oauth-token-storage.js';
-export { KeychainTokenStorage } from './mcp/token-storage/keychain-token-storage.js';
-export type {
-  OAuthCredentials,
-  OAuthToken,
-} from './mcp/token-storage/types.js';
-export { OAuthUtils } from './mcp/oauth-utils.js';
+} from "./mcp/oauth-provider.js";
+export { MCPOAuthProvider } from "./mcp/oauth-provider.js";
+export { MCPOAuthTokenStorage } from "./mcp/oauth-token-storage.js";
 export type {
   OAuthAuthorizationServerMetadata,
   OAuthProtectedResourceMetadata,
-} from './mcp/oauth-utils.js';
+} from "./mcp/oauth-utils.js";
+export { OAuthUtils } from "./mcp/oauth-utils.js";
+export { KeychainTokenStorage } from "./mcp/token-storage/keychain-token-storage.js";
+export type {
+  OAuthCredentials,
+  OAuthToken,
+} from "./mcp/token-storage/types.js";
 
 // ============================================================================
 // Telemetry
 // ============================================================================
 
-export * from './telemetry/index.js';
+export * from "./telemetry/index.js";
 export {
   logAuth,
   logExtensionDisable,
@@ -172,7 +169,7 @@ export {
   logModelSlashCommand,
   logPromptSuggestion,
   logSpeculation,
-} from './telemetry/loggers.js';
+} from "./telemetry/loggers.js";
 export {
   AuthEvent,
   ExtensionDisableEvent,
@@ -184,151 +181,149 @@ export {
   ModelSlashCommandEvent,
   PromptSuggestionEvent,
   SpeculationEvent,
-} from './telemetry/types.js';
+} from "./telemetry/types.js";
 
 // ============================================================================
 // Extensions, Skills, Subagents & Agents
 // ============================================================================
 
-export * from './extension/index.js';
-export * from './prompts/mcp-prompts.js';
-export * from './skills/index.js';
-export * from './subagents/index.js';
-export * from './agents/index.js';
+export * from "./agents/index.js";
+export * from "./extension/index.js";
+export * from "./prompts/mcp-prompts.js";
+export * from "./skills/index.js";
+export * from "./subagents/index.js";
 
 // ============================================================================
 // Follow-up Suggestions
 // ============================================================================
 
-export * from './followup/index.js';
+export * from "./followup/index.js";
 
 // ============================================================================
 // Utilities
 // ============================================================================
 
-export * from './utils/browser.js';
-export * from './utils/configResolver.js';
-export * from './utils/debugLogger.js';
-export * from './utils/editor.js';
-export * from './utils/environmentContext.js';
-export * from './utils/errorParsing.js';
-export * from './utils/errors.js';
-export * from './utils/fileUtils.js';
-export * from './utils/filesearch/fileSearch.js';
-export * from './utils/formatters.js';
-export * from './utils/generateContentResponseUtilities.js';
-export * from './utils/getFolderStructure.js';
-export * from './utils/gitIgnoreParser.js';
-export * from './utils/gitUtils.js';
-export * from './utils/ignorePatterns.js';
-export * from './utils/jsonl-utils.js';
-export * from './utils/memoryDiscovery.js';
-export { OpenAILogger, openaiLogger } from './utils/openaiLogger.js';
-export * from './utils/partUtils.js';
-export * from './utils/pathReader.js';
-export * from './utils/paths.js';
-export * from './utils/projectSummary.js';
-export * from './utils/promptIdContext.js';
-export * from './utils/proxyUtils.js';
-export * from './utils/quotaErrorDetection.js';
-export * from './utils/rateLimit.js';
-export * from './utils/readManyFiles.js';
-export * from './utils/request-tokenizer/supportedImageFormats.js';
-export { TextTokenizer } from './utils/request-tokenizer/textTokenizer.js';
-export * from './utils/retry.js';
-export * from './utils/ripgrepUtils.js';
-export * from './utils/schemaValidator.js';
-export * from './utils/shell-utils.js';
-export * from './utils/subagentGenerator.js';
-export * from './utils/symlink.js';
-export * from './utils/systemEncoding.js';
-export * from './utils/terminalSerializer.js';
-export * from './utils/textUtils.js';
-export * from './utils/thoughtUtils.js';
-export * from './utils/toml-to-markdown-converter.js';
-export * from './utils/tool-utils.js';
-export * from './utils/workspaceContext.js';
-export * from './utils/yaml-parser.js';
+export * from "./utils/browser.js";
+export * from "./utils/configResolver.js";
+export * from "./utils/debugLogger.js";
+export * from "./utils/editor.js";
+export * from "./utils/environmentContext.js";
+export * from "./utils/errorParsing.js";
+export * from "./utils/errors.js";
+export * from "./utils/filesearch/fileSearch.js";
+export * from "./utils/fileUtils.js";
+export * from "./utils/formatters.js";
+export * from "./utils/generateContentResponseUtilities.js";
+export * from "./utils/getFolderStructure.js";
+export * from "./utils/gitIgnoreParser.js";
+export * from "./utils/gitUtils.js";
+export * from "./utils/ignorePatterns.js";
+export * from "./utils/jsonl-utils.js";
+export * from "./utils/memoryDiscovery.js";
+export { OpenAILogger, openaiLogger } from "./utils/openaiLogger.js";
+export * from "./utils/partUtils.js";
+export * from "./utils/pathReader.js";
+export * from "./utils/paths.js";
+export * from "./utils/projectSummary.js";
+export * from "./utils/promptIdContext.js";
+export * from "./utils/proxyUtils.js";
+export * from "./utils/quotaErrorDetection.js";
+export * from "./utils/rateLimit.js";
+export * from "./utils/readManyFiles.js";
+export * from "./utils/request-tokenizer/supportedImageFormats.js";
+export { TextTokenizer } from "./utils/request-tokenizer/textTokenizer.js";
+export * from "./utils/retry.js";
+export * from "./utils/ripgrepUtils.js";
+export * from "./utils/schemaValidator.js";
+export * from "./utils/shell-utils.js";
+export * from "./utils/subagentGenerator.js";
+export * from "./utils/symlink.js";
+export * from "./utils/systemEncoding.js";
+export * from "./utils/terminalSerializer.js";
+export * from "./utils/textUtils.js";
+export * from "./utils/thoughtUtils.js";
+export * from "./utils/toml-to-markdown-converter.js";
+export * from "./utils/tool-utils.js";
+export * from "./utils/workspaceContext.js";
+export * from "./utils/yaml-parser.js";
 
 // ============================================================================
 // OAuth & Authentication
 // ============================================================================
 
-
 // ============================================================================
 // Testing Utilities
 // ============================================================================
 
-export { makeFakeConfig } from './test-utils/config.js';
-export * from './test-utils/index.js';
+export { makeFakeConfig } from "./test-utils/config.js";
+export * from "./test-utils/index.js";
 
 // ============================================================================
 // Hooks
 // ============================================================================
-
-export * from './hooks/types.js';
-export { HookSystem, HookRegistry } from './hooks/index.js';
-export type { HookRegistryEntry } from './hooks/index.js';
 
 // Export hook triggers for notification hooks
 export {
   fireNotificationHook,
   firePermissionRequestHook,
   type NotificationHookResult,
-} from './core/toolHookTriggers.js';
+} from "./core/toolHookTriggers.js";
+export type { HookRegistryEntry } from "./hooks/index.js";
+export { HookRegistry, HookSystem } from "./hooks/index.js";
+export * from "./hooks/types.js";
 
 // ============================================================================
 // LLM Types (self-hosted replacement for @google/genai)
 // ============================================================================
 
 export {
-  FinishReason,
-  Type,
-  HarmCategory,
-  HarmBlockThreshold,
-  BlockedReason,
-  Modality,
-  GenerateContentResponse,
   ApiError as LlmApiError,
-  createUserContent,
-  createModelContent,
-  mcpToTool,
-  type Schema,
-  type FunctionCall,
-  type FunctionResponse,
-  type InlineData,
-  type FileData,
-  type ExecutableCode,
-  type CodeExecutionResult,
-  type Part,
-  type FunctionResponsePart,
-  type PartUnion,
-  type PartListUnion,
-  type Content,
-  type ContentUnion,
-  type ContentListUnion,
-  type FunctionDeclaration,
-  type Tool as LlmTool,
-  type ToolUnion,
-  type ToolListUnion,
-  type ToolConfig as LlmToolConfig,
-  type ToolUseConfig,
+  type ApiErrorInit,
+  BlockedReason,
   type CallableTool,
-  type SafetySetting,
-  type SafetyRating,
+  type Candidate,
   type CitationMetadata,
+  type CodeExecutionResult,
+  type Content,
   type ContentEmbedding,
-  type GenerationConfig,
-  type ThinkingConfig,
-  type GenerateContentConfig,
-  type GenerateContentParameters,
-  type SendMessageParameters,
+  type ContentListUnion,
+  type ContentUnion,
   type CountTokensParameters,
   type CountTokensResponse,
+  createModelContent,
+  createUserContent,
   type EmbedContentParameters,
   type EmbedContentResponse,
+  type ExecutableCode,
+  type FileData,
+  FinishReason,
+  type FunctionCall,
+  type FunctionDeclaration,
+  type FunctionResponse,
+  type FunctionResponsePart,
+  type GenerateContentConfig,
+  type GenerateContentParameters,
+  GenerateContentResponse,
   type GenerateContentResponseUsageMetadata,
-  type Candidate,
+  type GenerationConfig,
+  HarmBlockThreshold,
+  HarmCategory,
+  type InlineData,
+  Modality,
+  mcpToTool,
+  type Part,
+  type PartListUnion,
+  type PartUnion,
   type PromptFeedback,
-  type ApiErrorInit,
-} from './types/llm.js';
+  type SafetyRating,
+  type SafetySetting,
+  type Schema,
+  type SendMessageParameters,
+  type ThinkingConfig,
+  type Tool as LlmTool,
+  type ToolConfig as LlmToolConfig,
+  type ToolListUnion,
+  type ToolUnion,
+  type ToolUseConfig,
+  Type,
+} from "./types/llm.js";

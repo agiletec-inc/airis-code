@@ -4,17 +4,17 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { useState, useEffect, useCallback } from 'react';
-import type { LoadedSettings } from '../../config/settings.js';
 import {
   AuthType,
   type Config,
-  loadApiKey,
   debugLogger,
-} from '@airiscode/gemini-cli-core';
-import { getErrorMessage } from '@airiscode/gemini-cli-core';
-import { AuthState } from '../types.js';
-import { validateAuthMethod } from '../../config/auth.js';
+  getErrorMessage,
+  loadApiKey,
+} from "@airiscode/gemini-cli-core";
+import { useCallback, useEffect, useState } from "react";
+import { validateAuthMethod } from "../../config/auth.js";
+import type { LoadedSettings } from "../../config/settings.js";
+import { AuthState } from "../types.js";
 
 export function validateAuthMethodWithSettings(
   authType: AuthType,
@@ -35,14 +35,10 @@ export function validateAuthMethodWithSettings(
 }
 
 export const useAuthCommand = (settings: LoadedSettings, config: Config) => {
-  const [authState, setAuthState] = useState<AuthState>(
-    AuthState.Unauthenticated,
-  );
+  const [authState, setAuthState] = useState<AuthState>(AuthState.Unauthenticated);
 
   const [authError, setAuthError] = useState<string | null>(null);
-  const [apiKeyDefaultValue, setApiKeyDefaultValue] = useState<
-    string | undefined
-  >(undefined);
+  const [apiKeyDefaultValue, setApiKeyDefaultValue] = useState<string | undefined>(undefined);
 
   const onAuthError = useCallback(
     (error: string | null) => {
@@ -55,8 +51,8 @@ export const useAuthCommand = (settings: LoadedSettings, config: Config) => {
   );
 
   const reloadApiKey = useCallback(async () => {
-    const storedKey = (await loadApiKey()) ?? '';
-    const envKey = process.env['GEMINI_API_KEY'] ?? '';
+    const storedKey = (await loadApiKey()) ?? "";
+    const envKey = process.env["GEMINI_API_KEY"] ?? "";
     const key = envKey || storedKey;
     setApiKeyDefaultValue(key);
     return key; // Return the key for immediate use
@@ -78,12 +74,12 @@ export const useAuthCommand = (settings: LoadedSettings, config: Config) => {
 
       const authType = settings.merged.security?.auth?.selectedType;
       if (!authType) {
-        if (process.env['GEMINI_API_KEY']) {
+        if (process.env["GEMINI_API_KEY"]) {
           onAuthError(
             'Existing API key detected (GEMINI_API_KEY). Select "Gemini API Key" option to use it.',
           );
         } else {
-          onAuthError('No authentication method selected.');
+          onAuthError("No authentication method selected.");
         }
         return;
       }
@@ -102,14 +98,11 @@ export const useAuthCommand = (settings: LoadedSettings, config: Config) => {
         return;
       }
 
-      const defaultAuthType = process.env['GEMINI_DEFAULT_AUTH_TYPE'];
-      if (
-        defaultAuthType &&
-        !Object.values(AuthType).includes(defaultAuthType as AuthType)
-      ) {
+      const defaultAuthType = process.env["GEMINI_DEFAULT_AUTH_TYPE"];
+      if (defaultAuthType && !Object.values(AuthType).includes(defaultAuthType as AuthType)) {
         onAuthError(
           `Invalid value for GEMINI_DEFAULT_AUTH_TYPE: "${defaultAuthType}". ` +
-            `Valid values are: ${Object.values(AuthType).join(', ')}.`,
+            `Valid values are: ${Object.values(AuthType).join(", ")}.`,
         );
         return;
       }
@@ -124,15 +117,7 @@ export const useAuthCommand = (settings: LoadedSettings, config: Config) => {
         onAuthError(`Failed to login. Message: ${getErrorMessage(e)}`);
       }
     })();
-  }, [
-    settings,
-    config,
-    authState,
-    setAuthState,
-    setAuthError,
-    onAuthError,
-    reloadApiKey,
-  ]);
+  }, [settings, config, authState, setAuthState, setAuthError, onAuthError, reloadApiKey]);
 
   return {
     authState,

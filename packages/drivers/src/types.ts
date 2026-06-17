@@ -2,7 +2,7 @@
  * Type definitions for model drivers
  */
 
-import { PolicyProfile } from '@airiscode/policies';
+import { PolicyProfile } from "@airiscode/policies";
 
 /**
  * Tool specification following JSON Schema format
@@ -19,7 +19,7 @@ export interface ToolSpec {
 /**
  * Chat message role
  */
-export type MessageRole = 'system' | 'user' | 'assistant' | 'tool';
+export type MessageRole = "system" | "user" | "assistant" | "tool";
 
 /**
  * Individual chat message
@@ -94,7 +94,7 @@ export interface ChatResponse {
   /** Token usage statistics */
   usage?: TokenUsage;
   /** Finish reason */
-  finishReason?: 'stop' | 'length' | 'tool_calls' | 'content_filter';
+  finishReason?: "stop" | "length" | "tool_calls" | "content_filter";
 }
 
 /**

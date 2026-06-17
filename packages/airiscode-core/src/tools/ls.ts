@@ -4,21 +4,20 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import fs from 'node:fs/promises';
-import path from 'node:path';
-import type { ToolInvocation, ToolResult } from './tools.js';
-import { BaseDeclarativeTool, BaseToolInvocation, Kind } from './tools.js';
-import { makeRelative, shortenPath } from '../utils/paths.js';
-import { isSubpaths, isSubpath } from '../utils/paths.js';
-import type { Config } from '../config/config.js';
-import type { PermissionDecision } from '../permissions/types.js';
-import { DEFAULT_FILE_FILTERING_OPTIONS } from '../config/constants.js';
-import { ToolErrorType } from './tool-error.js';
-import { ToolDisplayNames, ToolNames } from './tool-names.js';
-import { createDebugLogger } from '../utils/debugLogger.js';
-import { Storage } from '../config/storage.js';
+import fs from "node:fs/promises";
+import path from "node:path";
+import type { Config } from "../config/config.js";
+import { DEFAULT_FILE_FILTERING_OPTIONS } from "../config/constants.js";
+import { Storage } from "../config/storage.js";
+import type { PermissionDecision } from "../permissions/types.js";
+import { createDebugLogger } from "../utils/debugLogger.js";
+import { isSubpath, isSubpaths, makeRelative, shortenPath } from "../utils/paths.js";
+import { ToolErrorType } from "./tool-error.js";
+import { ToolDisplayNames, ToolNames } from "./tool-names.js";
+import type { ToolInvocation, ToolResult } from "./tools.js";
+import { BaseDeclarativeTool, BaseToolInvocation, Kind } from "./tools.js";
 
-const debugLogger = createDebugLogger('LS');
+const debugLogger = createDebugLogger("LS");
 
 const MAX_ENTRY_COUNT = 100;
 
@@ -96,9 +95,9 @@ class LSToolInvocation extends BaseToolInvocation<LSToolParams, ToolResult> {
     for (const pattern of patterns) {
       // Convert glob pattern to RegExp
       const regexPattern = pattern
-        .replace(/[.+^${}()|[\]\\]/g, '\\$&')
-        .replace(/\*/g, '.*')
-        .replace(/\?/g, '.');
+        .replace(/[.+^${}()|[\]\\]/g, "\\$&")
+        .replace(/\*/g, ".*")
+        .replace(/\?/g, ".");
       const regex = new RegExp(`^${regexPattern}$`);
       if (regex.test(filename)) {
         return true;
@@ -112,10 +111,7 @@ class LSToolInvocation extends BaseToolInvocation<LSToolParams, ToolResult> {
    * @returns A string describing the file being read
    */
   getDescription(): string {
-    const relativePath = makeRelative(
-      this.params.path,
-      this.config.getTargetDir(),
-    );
+    const relativePath = makeRelative(this.params.path, this.config.getTargetDir());
     return shortenPath(relativePath);
   }
 
@@ -134,17 +130,13 @@ class LSToolInvocation extends BaseToolInvocation<LSToolParams, ToolResult> {
       isSubpaths(userSkillsDirs, dirPath) ||
       isSubpath(userExtensionsDir, dirPath)
     ) {
-      return 'allow';
+      return "allow";
     }
-    return 'ask';
+    return "ask";
   }
 
   // Helper for consistent error formatting
-  private errorResult(
-    llmContent: string,
-    returnDisplay: string,
-    type: ToolErrorType,
-  ): ToolResult {
+  private errorResult(llmContent: string, returnDisplay: string, type: ToolErrorType): ToolResult {
     return {
       llmContent,
       // Keep returnDisplay simpler in core logic
@@ -190,10 +182,7 @@ class LSToolInvocation extends BaseToolInvocation<LSToolParams, ToolResult> {
       }
 
       const relativePaths = files.map((file) =>
-        path.relative(
-          this.config.getTargetDir(),
-          path.join(this.params.path, file),
-        ),
+        path.relative(this.config.getTargetDir(), path.join(this.params.path, file)),
       );
 
       const fileDiscovery = this.config.getFileService();
@@ -241,23 +230,20 @@ class LSToolInvocation extends BaseToolInvocation<LSToolParams, ToolResult> {
       });
 
       const totalEntryCount = entries.length;
-      const entryLimit = Math.min(
-        MAX_ENTRY_COUNT,
-        this.config.getTruncateToolOutputLines(),
-      );
+      const entryLimit = Math.min(MAX_ENTRY_COUNT, this.config.getTruncateToolOutputLines());
       const truncated = totalEntryCount > entryLimit;
 
       const entriesToShow = truncated ? entries.slice(0, entryLimit) : entries;
 
       const directoryContent = entriesToShow
-        .map((entry) => `${entry.isDirectory ? '[DIR] ' : ''}${entry.name}`)
-        .join('\n');
+        .map((entry) => `${entry.isDirectory ? "[DIR] " : ""}${entry.name}`)
+        .join("\n");
 
       let resultMessage = `Listed ${totalEntryCount} item(s) in ${this.params.path}:\n---\n${directoryContent}`;
 
       if (truncated) {
         const omittedEntries = totalEntryCount - entryLimit;
-        const entryTerm = omittedEntries === 1 ? 'item' : 'items';
+        const entryTerm = omittedEntries === 1 ? "item" : "items";
         resultMessage += `\n---\n[${omittedEntries} ${entryTerm} truncated] ...`;
       }
 
@@ -269,15 +255,15 @@ class LSToolInvocation extends BaseToolInvocation<LSToolParams, ToolResult> {
         ignoredMessages.push(`${qwenIgnoredCount} qwen-ignored`);
       }
       if (ignoredMessages.length > 0) {
-        resultMessage += `\n\n(${ignoredMessages.join(', ')})`;
+        resultMessage += `\n\n(${ignoredMessages.join(", ")})`;
       }
 
       let displayMessage = `Listed ${totalEntryCount} item(s)`;
       if (ignoredMessages.length > 0) {
-        displayMessage += ` (${ignoredMessages.join(', ')})`;
+        displayMessage += ` (${ignoredMessages.join(", ")})`;
       }
       if (truncated) {
-        displayMessage += ' (truncated)';
+        displayMessage += " (truncated)";
       }
 
       return {
@@ -288,7 +274,7 @@ class LSToolInvocation extends BaseToolInvocation<LSToolParams, ToolResult> {
       const errorMsg = `Error listing directory: ${error instanceof Error ? error.message : String(error)}`;
       return this.errorResult(
         errorMsg,
-        'Failed to list directory.',
+        "Failed to list directory.",
         ToolErrorType.LS_EXECUTION_ERROR,
       );
     }
@@ -305,42 +291,42 @@ export class LSTool extends BaseDeclarativeTool<LSToolParams, ToolResult> {
     super(
       LSTool.Name,
       ToolDisplayNames.LS,
-      'Lists the names of files and subdirectories directly within a specified directory path. Can optionally ignore entries matching provided glob patterns.',
+      "Lists the names of files and subdirectories directly within a specified directory path. Can optionally ignore entries matching provided glob patterns.",
       Kind.Search,
       {
         properties: {
           path: {
             description:
-              'The absolute path to the directory to list (must be absolute, not relative)',
-            type: 'string',
+              "The absolute path to the directory to list (must be absolute, not relative)",
+            type: "string",
           },
           ignore: {
-            description: 'List of glob patterns to ignore',
+            description: "List of glob patterns to ignore",
             items: {
-              type: 'string',
+              type: "string",
             },
-            type: 'array',
+            type: "array",
           },
           file_filtering_options: {
             description:
-              'Optional: Whether to respect ignore patterns from .gitignore or .airiscodeigenore',
-            type: 'object',
+              "Optional: Whether to respect ignore patterns from .gitignore or .airiscodeigenore",
+            type: "object",
             properties: {
               respect_git_ignore: {
                 description:
-                  'Optional: Whether to respect .gitignore patterns when listing files. Only available in git repositories. Defaults to true.',
-                type: 'boolean',
+                  "Optional: Whether to respect .gitignore patterns when listing files. Only available in git repositories. Defaults to true.",
+                type: "boolean",
               },
               respect_airiscode_ignore: {
                 description:
-                  'Optional: Whether to respect .airiscodeigenore patterns when listing files. Defaults to true.',
-                type: 'boolean',
+                  "Optional: Whether to respect .airiscodeigenore patterns when listing files. Defaults to true.",
+                type: "boolean",
               },
             },
           },
         },
-        required: ['path'],
-        type: 'object',
+        required: ["path"],
+        type: "object",
       },
     );
   }
@@ -350,9 +336,7 @@ export class LSTool extends BaseDeclarativeTool<LSToolParams, ToolResult> {
    * @param params Parameters to validate
    * @returns An error message string if invalid, null otherwise
    */
-  protected override validateToolParamValues(
-    params: LSToolParams,
-  ): string | null {
+  protected override validateToolParamValues(params: LSToolParams): string | null {
     if (!path.isAbsolute(params.path)) {
       return `Path must be absolute: ${params.path}`;
     }
@@ -360,9 +344,7 @@ export class LSTool extends BaseDeclarativeTool<LSToolParams, ToolResult> {
     return null;
   }
 
-  protected createInvocation(
-    params: LSToolParams,
-  ): ToolInvocation<LSToolParams, ToolResult> {
+  protected createInvocation(params: LSToolParams): ToolInvocation<LSToolParams, ToolResult> {
     return new LSToolInvocation(this.config, params);
   }
 }

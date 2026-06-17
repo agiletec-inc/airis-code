@@ -5,121 +5,123 @@
  */
 
 export enum TelemetryTarget {
-  GCP = 'gcp',
-  LOCAL = 'local',
-  QWEN = 'airiscode',
+  GCP = "gcp",
+  LOCAL = "local",
+  QWEN = "airiscode",
 }
 
 const DEFAULT_TELEMETRY_TARGET = TelemetryTarget.LOCAL;
-const DEFAULT_OTLP_ENDPOINT = 'http://localhost:4317';
+const DEFAULT_OTLP_ENDPOINT = "http://localhost:4317";
 
-export { DEFAULT_TELEMETRY_TARGET, DEFAULT_OTLP_ENDPOINT };
 export {
-  initializeTelemetry,
-  shutdownTelemetry,
-  isTelemetrySdkInitialized,
-} from './sdk.js';
-export {
-  resolveTelemetrySettings,
   parseBooleanEnvFlag,
   parseTelemetryTargetValue,
-} from './config.js';
+  resolveTelemetrySettings,
+} from "./config.js";
 export {
-  logStartSession,
-  logUserPrompt,
-  logUserRetry,
-  logToolCall,
-  logApiRequest,
-  logApiError,
   logApiCancel,
+  logApiError,
+  logApiRequest,
   logApiResponse,
-  logFlashFallback,
-  logSlashCommand,
-  logConversationFinishedEvent,
-  logKittySequenceOverflow,
+  logArenaAgentCompleted,
+  logArenaSessionEnded,
+  logArenaSessionStarted,
+  logAuth,
   logChatCompression,
-  logToolOutputTruncated,
+  logConversationFinishedEvent,
+  logExtensionDisable,
   logExtensionEnable,
   logExtensionInstallEvent,
   logExtensionUninstall,
-  logExtensionDisable,
   logExtensionUpdateEvent,
-  logRipgrepFallback,
+  logFlashFallback,
+  logKittySequenceOverflow,
   logNextSpeakerCheck,
-  logAuth,
+  logRipgrepFallback,
   logSkillLaunch,
+  logSlashCommand,
+  logStartSession,
+  logToolCall,
+  logToolOutputTruncated,
   logUserFeedback,
-  logArenaSessionStarted,
-  logArenaAgentCompleted,
-  logArenaSessionEnded,
-} from './loggers.js';
-export type { SlashCommandEvent, ChatCompressionEvent } from './types.js';
+  logUserPrompt,
+  logUserRetry,
+} from "./loggers.js";
 export {
-  SlashCommandStatus,
-  EndSessionEvent,
-  UserPromptEvent,
-  UserRetryEvent,
-  ApiRequestEvent,
-  ApiErrorEvent,
-  ApiResponseEvent,
-  ApiCancelEvent,
-  FlashFallbackEvent,
-  StartSessionEvent,
-  ToolCallEvent,
-  ConversationFinishedEvent,
-  KittySequenceOverflowEvent,
-  ToolOutputTruncatedEvent,
-  RipgrepFallbackEvent,
-  NextSpeakerCheckEvent,
-  AuthEvent,
-  SkillLaunchEvent,
-  UserFeedbackEvent,
-  UserFeedbackRating,
-  makeArenaSessionStartedEvent,
-  makeArenaAgentCompletedEvent,
-  makeArenaSessionEndedEvent,
-} from './types.js';
-export { makeSlashCommandEvent, makeChatCompressionEvent } from './types.js';
-export type {
-  ArenaSessionStartedEvent,
-  ArenaAgentCompletedEvent,
-  ArenaSessionEndedEvent,
-  ArenaSessionEndedStatus,
-  ArenaAgentCompletedStatus,
-} from './types.js';
-export type { TelemetryEvent } from './types.js';
-export * from './uiTelemetry.js';
-export {
-  // Core metrics functions
-  recordToolCallMetrics,
-  recordTokenUsageMetrics,
-  recordApiResponseMetrics,
-  recordApiErrorMetrics,
-  recordFileOperationMetric,
-  recordInvalidChunk,
-  recordContentRetry,
-  recordContentRetryFailure,
-  // Performance monitoring functions
-  recordStartupPerformance,
-  recordMemoryUsage,
-  recordCpuUsage,
-  recordToolQueueDepth,
-  recordToolExecutionBreakdown,
-  recordTokenEfficiency,
-  recordApiRequestBreakdown,
-  recordPerformanceScore,
-  recordPerformanceRegression,
-  recordBaselineComparison,
-  isPerformanceMonitoringActive,
-  // Arena metrics functions
-  recordArenaSessionStartedMetrics,
-  recordArenaAgentCompletedMetrics,
-  recordArenaSessionEndedMetrics,
-  // Performance monitoring types
-  PerformanceMetricType,
-  MemoryMetricType,
-  ToolExecutionPhase,
   ApiRequestPhase,
   FileOperation,
-} from './metrics.js';
-export { sanitizeHookName } from './sanitize.js';
+  isPerformanceMonitoringActive,
+  MemoryMetricType,
+  // Performance monitoring types
+  PerformanceMetricType,
+  recordApiErrorMetrics,
+  recordApiRequestBreakdown,
+  recordApiResponseMetrics,
+  recordArenaAgentCompletedMetrics,
+  recordArenaSessionEndedMetrics,
+  // Arena metrics functions
+  recordArenaSessionStartedMetrics,
+  recordBaselineComparison,
+  recordContentRetry,
+  recordContentRetryFailure,
+  recordCpuUsage,
+  recordFileOperationMetric,
+  recordInvalidChunk,
+  recordMemoryUsage,
+  recordPerformanceRegression,
+  recordPerformanceScore,
+  // Performance monitoring functions
+  recordStartupPerformance,
+  recordTokenEfficiency,
+  recordTokenUsageMetrics,
+  // Core metrics functions
+  recordToolCallMetrics,
+  recordToolExecutionBreakdown,
+  recordToolQueueDepth,
+  ToolExecutionPhase,
+} from "./metrics.js";
+export { sanitizeHookName } from "./sanitize.js";
+export {
+  initializeTelemetry,
+  isTelemetrySdkInitialized,
+  shutdownTelemetry,
+} from "./sdk.js";
+export type {
+  ArenaAgentCompletedEvent,
+  ArenaAgentCompletedStatus,
+  ArenaSessionEndedEvent,
+  ArenaSessionEndedStatus,
+  ArenaSessionStartedEvent,
+  ChatCompressionEvent,
+  SlashCommandEvent,
+  TelemetryEvent,
+} from "./types.js";
+export {
+  ApiCancelEvent,
+  ApiErrorEvent,
+  ApiRequestEvent,
+  ApiResponseEvent,
+  AuthEvent,
+  ConversationFinishedEvent,
+  EndSessionEvent,
+  FlashFallbackEvent,
+  KittySequenceOverflowEvent,
+  makeArenaAgentCompletedEvent,
+  makeArenaSessionEndedEvent,
+  makeArenaSessionStartedEvent,
+  makeChatCompressionEvent,
+  makeSlashCommandEvent,
+  NextSpeakerCheckEvent,
+  RipgrepFallbackEvent,
+  SkillLaunchEvent,
+  SlashCommandStatus,
+  StartSessionEvent,
+  ToolCallEvent,
+  ToolOutputTruncatedEvent,
+  UserFeedbackEvent,
+  UserFeedbackRating,
+  UserPromptEvent,
+  UserRetryEvent,
+} from "./types.js";
+export * from "./uiTelemetry.js";
+export { DEFAULT_OTLP_ENDPOINT, DEFAULT_TELEMETRY_TARGET };

@@ -4,11 +4,11 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { Box, Text } from 'ink';
-import { theme } from '../semantic-colors.js';
-import { useKeypress } from '../hooks/useKeypress.js';
-import { relaunchApp } from '../../utils/processUtils.js';
-import { type RestartReason } from '../hooks/useIdeTrustListener.js';
+import { Box, Text } from "ink";
+import { relaunchApp } from "../../utils/processUtils.js";
+import { type RestartReason } from "../hooks/useIdeTrustListener.js";
+import { useKeypress } from "../hooks/useKeypress.js";
+import { theme } from "../semantic-colors.js";
 
 interface IdeTrustChangeDialogProps {
   reason: RestartReason;
@@ -17,7 +17,7 @@ interface IdeTrustChangeDialogProps {
 export const IdeTrustChangeDialog = ({ reason }: IdeTrustChangeDialogProps) => {
   useKeypress(
     (key) => {
-      if (key.name === 'r' || key.name === 'R') {
+      if (key.name === "r" || key.name === "R") {
         // eslint-disable-next-line @typescript-eslint/no-floating-promises
         relaunchApp();
       }
@@ -25,17 +25,14 @@ export const IdeTrustChangeDialog = ({ reason }: IdeTrustChangeDialogProps) => {
     { isActive: true },
   );
 
-  let message = 'Workspace trust has changed.';
-  if (reason === 'NONE') {
+  let message = "Workspace trust has changed.";
+  if (reason === "NONE") {
     // This should not happen, but provides a fallback and a debug log.
-    console.error(
-      'IdeTrustChangeDialog rendered with unexpected reason "NONE"',
-    );
-  } else if (reason === 'CONNECTION_CHANGE') {
-    message =
-      'Workspace trust has changed due to a change in the IDE connection.';
-  } else if (reason === 'TRUST_CHANGE') {
-    message = 'Workspace trust has changed due to a change in the IDE trust.';
+    console.error('IdeTrustChangeDialog rendered with unexpected reason "NONE"');
+  } else if (reason === "CONNECTION_CHANGE") {
+    message = "Workspace trust has changed due to a change in the IDE connection.";
+  } else if (reason === "TRUST_CHANGE") {
+    message = "Workspace trust has changed due to a change in the IDE trust.";
   }
 
   return (

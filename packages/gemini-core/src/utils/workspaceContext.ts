@@ -4,10 +4,10 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { isNodeError } from '../utils/errors.js';
-import * as fs from 'node:fs';
-import * as path from 'node:path';
-import { debugLogger } from './debugLogger.js';
+import * as fs from "node:fs";
+import * as path from "node:path";
+import { isNodeError } from "../utils/errors.js";
+import { debugLogger } from "./debugLogger.js";
 
 export type Unsubscribe = () => void;
 
@@ -155,7 +155,7 @@ export class WorkspaceContext {
     } catch (e: unknown) {
       if (
         isNodeError(e) &&
-        e.code === 'ENOENT' &&
+        e.code === "ENOENT" &&
         e.path &&
         // realpathSync does not set e.path correctly for symlinks to
         // non-existent files.
@@ -174,16 +174,9 @@ export class WorkspaceContext {
    * @param rootDirectory The absolute root directory
    * @returns True if the path is within the root directory, false otherwise
    */
-  private isPathWithinRoot(
-    pathToCheck: string,
-    rootDirectory: string,
-  ): boolean {
+  private isPathWithinRoot(pathToCheck: string, rootDirectory: string): boolean {
     const relative = path.relative(rootDirectory, pathToCheck);
-    return (
-      !relative.startsWith(`..${path.sep}`) &&
-      relative !== '..' &&
-      !path.isAbsolute(relative)
-    );
+    return !relative.startsWith(`..${path.sep}`) && relative !== ".." && !path.isAbsolute(relative);
   }
 
   /**
@@ -191,7 +184,7 @@ export class WorkspaceContext {
    */
   private isFileSymlink(filePath: string): boolean {
     try {
-      return !fs.readlinkSync(filePath).endsWith('/');
+      return !fs.readlinkSync(filePath).endsWith("/");
     } catch (_error) {
       return false;
     }

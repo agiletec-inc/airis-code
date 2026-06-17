@@ -5,10 +5,10 @@
  */
 
 import type {
-  SessionMetrics,
   ComputedSessionStats,
   ModelMetrics,
-} from '../contexts/SessionContext.js';
+  SessionMetrics,
+} from "../contexts/SessionContext.js";
 
 export function calculateErrorRate(metrics: ModelMetrics): number {
   if (metrics.api.totalRequests === 0) {
@@ -31,9 +31,7 @@ export function calculateCacheHitRate(metrics: ModelMetrics): number {
   return (metrics.tokens.cached / metrics.tokens.prompt) * 100;
 }
 
-export const computeSessionStats = (
-  metrics: SessionMetrics,
-): ComputedSessionStats => {
+export const computeSessionStats = (metrics: SessionMetrics): ComputedSessionStats => {
   const { models, tools, files } = metrics;
   const totalApiTime = Object.values(models).reduce(
     (acc, model) => acc + model.api.totalLatencyMs,
@@ -41,10 +39,8 @@ export const computeSessionStats = (
   );
   const totalToolTime = tools.totalDurationMs;
   const agentActiveTime = totalApiTime + totalToolTime;
-  const apiTimePercent =
-    agentActiveTime > 0 ? (totalApiTime / agentActiveTime) * 100 : 0;
-  const toolTimePercent =
-    agentActiveTime > 0 ? (totalToolTime / agentActiveTime) * 100 : 0;
+  const apiTimePercent = agentActiveTime > 0 ? (totalApiTime / agentActiveTime) * 100 : 0;
+  const toolTimePercent = agentActiveTime > 0 ? (totalToolTime / agentActiveTime) * 100 : 0;
 
   const totalCachedTokens = Object.values(models).reduce(
     (acc, model) => acc + model.tokens.cached,
@@ -54,21 +50,17 @@ export const computeSessionStats = (
     (acc, model) => acc + model.tokens.prompt,
     0,
   );
-  const cacheEfficiency =
-    totalPromptTokens > 0 ? (totalCachedTokens / totalPromptTokens) * 100 : 0;
+  const cacheEfficiency = totalPromptTokens > 0 ? (totalCachedTokens / totalPromptTokens) * 100 : 0;
 
   const totalDecisions =
     tools.totalDecisions.accept +
     tools.totalDecisions.reject +
     tools.totalDecisions.modify +
     tools.totalDecisions.auto_accept;
-  const successRate =
-    tools.totalCalls > 0 ? (tools.totalSuccess / tools.totalCalls) * 100 : 0;
+  const successRate = tools.totalCalls > 0 ? (tools.totalSuccess / tools.totalCalls) * 100 : 0;
   const agreementRate =
     totalDecisions > 0
-      ? ((tools.totalDecisions.accept + tools.totalDecisions.auto_accept) /
-          totalDecisions) *
-        100
+      ? ((tools.totalDecisions.accept + tools.totalDecisions.auto_accept) / totalDecisions) * 100
       : 0;
 
   return {

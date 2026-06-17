@@ -12,24 +12,20 @@
  *
  */
 
+// Built-in agents registry
+export { BuiltinAgentRegistry } from "./builtin-agents.js";
+// Main management class
+export { SubagentManager } from "./subagent-manager.js";
 // Core types and interfaces
 export type {
+  CreateSubagentOptions,
+  ListSubagentsOptions,
   SubagentConfig,
+  SubagentErrorCode,
   SubagentLevel,
   SubagentRuntimeConfig,
   ValidationResult,
-  ListSubagentsOptions,
-  CreateSubagentOptions,
-  SubagentErrorCode,
-} from './types.js';
-
-export { SubagentError } from './types.js';
-
-// Built-in agents registry
-export { BuiltinAgentRegistry } from './builtin-agents.js';
-
+} from "./types.js";
+export { SubagentError } from "./types.js";
 // Validation system
-export { SubagentValidator } from './validation.js';
-
-// Main management class
-export { SubagentManager } from './subagent-manager.js';
+export { SubagentValidator } from "./validation.js";

@@ -4,35 +4,29 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { promises as fs } from 'node:fs';
-import path from 'node:path';
-import toml from '@iarna/toml';
-import { glob } from 'glob';
-import { z } from 'zod';
-import type { Config } from '@airiscode/gemini-cli-core';
-import { Storage } from '@airiscode/gemini-cli-core';
-import type { ICommandLoader } from './types.js';
+import { promises as fs } from "node:fs";
+import path from "node:path";
+import type { Config } from "@airiscode/gemini-cli-core";
+import { Storage } from "@airiscode/gemini-cli-core";
+import toml from "@iarna/toml";
+import { glob } from "glob";
+import { z } from "zod";
 import type {
   CommandContext,
   SlashCommand,
   SlashCommandActionReturn,
-} from '../ui/commands/types.js';
-import { CommandKind } from '../ui/commands/types.js';
-import { DefaultArgumentProcessor } from './prompt-processors/argumentProcessor.js';
-import type {
-  IPromptProcessor,
-  PromptPipelineContent,
-} from './prompt-processors/types.js';
+} from "../ui/commands/types.js";
+import { CommandKind } from "../ui/commands/types.js";
+import { DefaultArgumentProcessor } from "./prompt-processors/argumentProcessor.js";
+import { AtFileProcessor } from "./prompt-processors/atFileProcessor.js";
+import { ConfirmationRequiredError, ShellProcessor } from "./prompt-processors/shellProcessor.js";
+import type { IPromptProcessor, PromptPipelineContent } from "./prompt-processors/types.js";
 import {
-  SHORTHAND_ARGS_PLACEHOLDER,
-  SHELL_INJECTION_TRIGGER,
   AT_FILE_INJECTION_TRIGGER,
-} from './prompt-processors/types.js';
-import {
-  ConfirmationRequiredError,
-  ShellProcessor,
-} from './prompt-processors/shellProcessor.js';
-import { AtFileProcessor } from './prompt-processors/atFileProcessor.js';
+  SHELL_INJECTION_TRIGGER,
+  SHORTHAND_ARGS_PLACEHOLDER,
+} from "./prompt-processors/types.js";
+import type { ICommandLoader } from "./types.js";
 
 interface CommandDirectory {
   path: string;
@@ -101,7 +95,7 @@ export class FileCommandLoader implements ICommandLoader {
     const commandDirs = this.getCommandDirectories();
     for (const dirInfo of commandDirs) {
       try {
-        const files = await glob('**/*.toml', {
+        const files = await glob("**/*.toml", {
           ...globOptions,
           cwd: dirInfo.path,
         });
@@ -122,14 +116,8 @@ export class FileCommandLoader implements ICommandLoader {
         // Add all commands without deduplication
         allCommands.push(...commands);
       } catch (error) {
-        if (
-          !signal.aborted &&
-          (error as { code?: string })?.code !== 'ENOENT'
-        ) {
-          console.error(
-            `[FileCommandLoader] Error loading commands from ${dirInfo.path}:`,
-            error,
-          );
+        if (!signal.aborted && (error as { code?: string })?.code !== "ENOENT") {
+          console.error(`[FileCommandLoader] Error loading commands from ${dirInfo.path}:`, error);
         }
       }
     }
@@ -161,7 +149,7 @@ export class FileCommandLoader implements ICommandLoader {
         .sort((a, b) => a.name.localeCompare(b.name)); // Sort alphabetically for deterministic loading
 
       const extensionCommandDirs = activeExtensions.map((ext) => ({
-        path: path.join(ext.path, 'commands'),
+        path: path.join(ext.path, "commands"),
         extensionName: ext.name,
         extensionId: ext.id,
       }));
@@ -187,7 +175,7 @@ export class FileCommandLoader implements ICommandLoader {
   ): Promise<SlashCommand | null> {
     let fileContent: string;
     try {
-      fileContent = await fs.readFile(filePath, 'utf-8');
+      fileContent = await fs.readFile(filePath, "utf-8");
     } catch (error: unknown) {
       console.error(
         `[FileCommandLoader] Failed to read file ${filePath}:`,
@@ -229,8 +217,8 @@ export class FileCommandLoader implements ICommandLoader {
       // Sanitize each path segment to prevent ambiguity. Since ':' is our
       // namespace separator, we replace any literal colons in filenames
       // with underscores to avoid naming conflicts.
-      .map((segment) => segment.replaceAll(':', '_'))
-      .join(':');
+      .map((segment) => segment.replaceAll(":", "_"))
+      .join(":");
 
     // Add extension name tag for extension commands
     const defaultDescription = `Custom command from ${path.basename(filePath)}`;
@@ -241,12 +229,8 @@ export class FileCommandLoader implements ICommandLoader {
 
     const processors: IPromptProcessor[] = [];
     const usesArgs = validDef.prompt.includes(SHORTHAND_ARGS_PLACEHOLDER);
-    const usesShellInjection = validDef.prompt.includes(
-      SHELL_INJECTION_TRIGGER,
-    );
-    const usesAtFileInjection = validDef.prompt.includes(
-      AT_FILE_INJECTION_TRIGGER,
-    );
+    const usesShellInjection = validDef.prompt.includes(SHELL_INJECTION_TRIGGER);
+    const usesAtFileInjection = validDef.prompt.includes(AT_FILE_INJECTION_TRIGGER);
 
     // 1. @-File Injection (Security First).
     // This runs first to ensure we're not executing shell commands that
@@ -273,33 +257,25 @@ export class FileCommandLoader implements ICommandLoader {
       kind: CommandKind.FILE,
       extensionName,
       extensionId,
-      action: async (
-        context: CommandContext,
-        _args: string,
-      ): Promise<SlashCommandActionReturn> => {
+      action: async (context: CommandContext, _args: string): Promise<SlashCommandActionReturn> => {
         if (!context.invocation) {
           console.error(
             `[FileCommandLoader] Critical error: Command '${baseCommandName}' was executed without invocation context.`,
           );
           return {
-            type: 'submit_prompt',
+            type: "submit_prompt",
             content: [{ text: validDef.prompt }], // Fallback to unprocessed prompt
           };
         }
 
         try {
-          let processedContent: PromptPipelineContent = [
-            { text: validDef.prompt },
-          ];
+          let processedContent: PromptPipelineContent = [{ text: validDef.prompt }];
           for (const processor of processors) {
-            processedContent = await processor.process(
-              processedContent,
-              context,
-            );
+            processedContent = await processor.process(processedContent, context);
           }
 
           return {
-            type: 'submit_prompt',
+            type: "submit_prompt",
             content: processedContent,
           };
         } catch (e) {
@@ -307,7 +283,7 @@ export class FileCommandLoader implements ICommandLoader {
           if (e instanceof ConfirmationRequiredError) {
             // Halt and request confirmation from the UI layer.
             return {
-              type: 'confirm_shell_commands',
+              type: "confirm_shell_commands",
               commandsToConfirm: e.commandsToConfirm,
               originalInvocation: {
                 raw: context.invocation.raw,

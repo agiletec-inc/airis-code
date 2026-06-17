@@ -4,22 +4,19 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import type { FunctionDeclaration, Part, PartListUnion } from '../types/llm.js';
-import { ToolErrorType } from './tool-error.js';
-import type { ShellExecutionConfig } from '../services/shellExecutionService.js';
-import { SchemaValidator } from '../utils/schemaValidator.js';
-import { type AgentStatsSummary } from '../agents/runtime/agent-statistics.js';
-import type { AnsiOutput } from '../utils/terminalSerializer.js';
-import type { PermissionDecision } from '../permissions/types.js';
+import { type AgentStatsSummary } from "../agents/runtime/agent-statistics.js";
+import type { PermissionDecision } from "../permissions/types.js";
+import type { ShellExecutionConfig } from "../services/shellExecutionService.js";
+import type { FunctionDeclaration, Part, PartListUnion } from "../types/llm.js";
+import { SchemaValidator } from "../utils/schemaValidator.js";
+import type { AnsiOutput } from "../utils/terminalSerializer.js";
+import { ToolErrorType } from "./tool-error.js";
 
 /**
  * Represents a validated and ready-to-execute tool call.
  * An instance of this is created by a `ToolBuilder`.
  */
-export interface ToolInvocation<
-  TParams extends object,
-  TResult extends ToolResult,
-> {
+export interface ToolInvocation<TParams extends object, TResult extends ToolResult> {
   /**
    * The validated parameters for this specific invocation.
    */
@@ -59,9 +56,7 @@ export interface ToolInvocation<
    * @param abortSignal Signal to cancel the operation.
    * @returns The confirmation details for the UI to display.
    */
-  getConfirmationDetails(
-    abortSignal: AbortSignal,
-  ): Promise<ToolCallConfirmationDetails>;
+  getConfirmationDetails(abortSignal: AbortSignal): Promise<ToolCallConfirmationDetails>;
 
   /**
    * Executes the tool with the validated parameters.
@@ -79,10 +74,8 @@ export interface ToolInvocation<
 /**
  * A convenience base class for ToolInvocation.
  */
-export abstract class BaseToolInvocation<
-  TParams extends object,
-  TResult extends ToolResult,
-> implements ToolInvocation<TParams, TResult>
+export abstract class BaseToolInvocation<TParams extends object, TResult extends ToolResult>
+  implements ToolInvocation<TParams, TResult>
 {
   constructor(readonly params: TParams) {}
 
@@ -97,7 +90,7 @@ export abstract class BaseToolInvocation<
    * tools with side effects.
    */
   getDefaultPermission(): Promise<PermissionDecision> {
-    return Promise.resolve('allow');
+    return Promise.resolve("allow");
   }
 
   /**
@@ -108,17 +101,12 @@ export abstract class BaseToolInvocation<
    *
    * Tools with richer confirmation UIs (Shell, Edit, MCP, etc.) override this.
    */
-  getConfirmationDetails(
-    _abortSignal: AbortSignal,
-  ): Promise<ToolCallConfirmationDetails> {
+  getConfirmationDetails(_abortSignal: AbortSignal): Promise<ToolCallConfirmationDetails> {
     const details: ToolInfoConfirmationDetails = {
-      type: 'info',
-      title: `Confirm ${this.constructor.name.replace(/Invocation$/, '')}`,
+      type: "info",
+      title: `Confirm ${this.constructor.name.replace(/Invocation$/, "")}`,
       prompt: this.getDescription(),
-      onConfirm: async (
-        _outcome: ToolConfirmationOutcome,
-        _payload?: ToolConfirmationPayload,
-      ) => {
+      onConfirm: async (_outcome: ToolConfirmationOutcome, _payload?: ToolConfirmationPayload) => {
         // No-op: persistence is handled by coreToolScheduler via PM rules
       },
     };
@@ -140,10 +128,7 @@ export type AnyToolInvocation = ToolInvocation<object, ToolResult>;
 /**
  * Interface for a tool builder that validates parameters and creates invocations.
  */
-export interface ToolBuilder<
-  TParams extends object,
-  TResult extends ToolResult,
-> {
+export interface ToolBuilder<TParams extends object, TResult extends ToolResult> {
   /**
    * The internal name of the tool (used for API calls).
    */
@@ -191,10 +176,8 @@ export interface ToolBuilder<
  * New base class for tools that separates validation from execution.
  * New tools should extend this class.
  */
-export abstract class DeclarativeTool<
-  TParams extends object,
-  TResult extends ToolResult,
-> implements ToolBuilder<TParams, TResult>
+export abstract class DeclarativeTool<TParams extends object, TResult extends ToolResult>
+  implements ToolBuilder<TParams, TResult>
 {
   constructor(
     readonly name: string,
@@ -258,9 +241,7 @@ export abstract class DeclarativeTool<
    * @param params The raw, untrusted parameters from the model.
    * @returns A `ToolInvocation` instance.
    */
-  private silentBuild(
-    params: TParams,
-  ): ToolInvocation<TParams, TResult> | Error {
+  private silentBuild(params: TParams): ToolInvocation<TParams, TResult> | Error {
     try {
       return this.build(params);
     } catch (e) {
@@ -278,10 +259,7 @@ export abstract class DeclarativeTool<
    * @params abortSignal a signal to abort.
    * @returns The result of the tool execution.
    */
-  async validateBuildAndExecute(
-    params: TParams,
-    abortSignal: AbortSignal,
-  ): Promise<ToolResult> {
+  async validateBuildAndExecute(params: TParams, abortSignal: AbortSignal): Promise<ToolResult> {
     const invocationOrError = this.silentBuild(params);
     if (invocationOrError instanceof Error) {
       const errorMessage = invocationOrError.message;
@@ -298,8 +276,7 @@ export abstract class DeclarativeTool<
     try {
       return await invocationOrError.execute(abortSignal);
     } catch (error) {
-      const errorMessage =
-        error instanceof Error ? error.message : String(error);
+      const errorMessage = error instanceof Error ? error.message : String(error);
       return {
         llmContent: `Error: Tool call execution failed. Reason: ${errorMessage}`,
         returnDisplay: errorMessage,
@@ -331,10 +308,7 @@ export abstract class BaseDeclarativeTool<
   }
 
   override validateToolParams(params: TParams): string | null {
-    const errors = SchemaValidator.validate(
-      this.schema.parametersJsonSchema,
-      params,
-    );
+    const errors = SchemaValidator.validate(this.schema.parametersJsonSchema, params);
 
     if (errors) {
       return errors;
@@ -347,9 +321,7 @@ export abstract class BaseDeclarativeTool<
     return null;
   }
 
-  protected abstract createInvocation(
-    params: TParams,
-  ): ToolInvocation<TParams, TResult>;
+  protected abstract createInvocation(params: TParams): ToolInvocation<TParams, TResult>;
 }
 
 /**
@@ -364,11 +336,11 @@ export type AnyDeclarativeTool = DeclarativeTool<object, ToolResult>;
  */
 export function isTool(obj: unknown): obj is AnyDeclarativeTool {
   return (
-    typeof obj === 'object' &&
+    typeof obj === "object" &&
     obj !== null &&
-    'name' in obj &&
-    'build' in obj &&
-    typeof (obj as AnyDeclarativeTool).build === 'function'
+    "name" in obj &&
+    "build" in obj &&
+    typeof (obj as AnyDeclarativeTool).build === "function"
   );
 }
 
@@ -404,17 +376,13 @@ export interface ToolResult {
  */
 export function hasCycleInSchema(schema: object): boolean {
   function resolveRef(ref: string): object | null {
-    if (!ref.startsWith('#/')) {
+    if (!ref.startsWith("#/")) {
       return null;
     }
-    const path = ref.substring(2).split('/');
+    const path = ref.substring(2).split("/");
     let current: unknown = schema;
     for (const segment of path) {
-      if (
-        typeof current !== 'object' ||
-        current === null ||
-        !Object.prototype.hasOwnProperty.call(current, segment)
-      ) {
+      if (typeof current !== "object" || current === null || !Object.hasOwn(current, segment)) {
         return null;
       }
       current = (current as Record<string, unknown>)[segment];
@@ -422,12 +390,8 @@ export function hasCycleInSchema(schema: object): boolean {
     return current as object;
   }
 
-  function traverse(
-    node: unknown,
-    visitedRefs: Set<string>,
-    pathRefs: Set<string>,
-  ): boolean {
-    if (typeof node !== 'object' || node === null) {
+  function traverse(node: unknown, visitedRefs: Set<string>, pathRefs: Set<string>): boolean {
+    if (typeof node !== "object" || node === null) {
       return false;
     }
 
@@ -440,9 +404,9 @@ export function hasCycleInSchema(schema: object): boolean {
       return false;
     }
 
-    if ('$ref' in node && typeof node.$ref === 'string') {
+    if ("$ref" in node && typeof node.$ref === "string") {
       const ref = node.$ref;
-      if (ref === '#/' || pathRefs.has(ref)) {
+      if (ref === "#/" || pathRefs.has(ref)) {
         // A ref to just '#/' is always a cycle.
         return true; // Cycle detected!
       }
@@ -463,14 +427,8 @@ export function hasCycleInSchema(schema: object): boolean {
 
     // Crawl all the properties of node
     for (const key in node) {
-      if (Object.prototype.hasOwnProperty.call(node, key)) {
-        if (
-          traverse(
-            (node as Record<string, unknown>)[key],
-            visitedRefs,
-            pathRefs,
-          )
-        ) {
+      if (Object.hasOwn(node, key)) {
+        if (traverse((node as Record<string, unknown>)[key], visitedRefs, pathRefs)) {
           return true;
         }
       }
@@ -483,12 +441,12 @@ export function hasCycleInSchema(schema: object): boolean {
 }
 
 export interface AgentResultDisplay {
-  type: 'task_execution';
+  type: "task_execution";
   subagentName: string;
   subagentColor?: string;
   taskDescription: string;
   taskPrompt: string;
-  status: 'running' | 'completed' | 'failed' | 'cancelled';
+  status: "running" | "completed" | "failed" | "cancelled";
   terminateReason?: string;
   result?: string;
   executionSummary?: AgentStatsSummary;
@@ -500,7 +458,7 @@ export interface AgentResultDisplay {
   toolCalls?: Array<{
     callId: string;
     name: string;
-    status: 'executing' | 'awaiting_approval' | 'success' | 'failed';
+    status: "executing" | "awaiting_approval" | "success" | "failed";
     error?: string;
     args?: Record<string, unknown>;
     result?: string;
@@ -519,7 +477,7 @@ export interface AnsiOutputDisplay {
  * @see https://modelcontextprotocol.io/specification/2025-06-18/basic/utilities/progress
  */
 export interface McpToolProgressData {
-  type: 'mcp_tool_progress';
+  type: "mcp_tool_progress";
   /** Current progress value (must increase with each notification) */
   progress: number;
   /** Optional total value indicating the operation's target */
@@ -557,28 +515,25 @@ export interface DiffStat {
 }
 
 export interface TodoResultDisplay {
-  type: 'todo_list';
+  type: "todo_list";
   todos: Array<{
     id: string;
     content: string;
-    status: 'pending' | 'in_progress' | 'completed';
+    status: "pending" | "in_progress" | "completed";
   }>;
 }
 
 export interface PlanResultDisplay {
-  type: 'plan_summary';
+  type: "plan_summary";
   message: string;
   plan: string;
   rejected?: boolean;
 }
 
 export interface ToolEditConfirmationDetails {
-  type: 'edit';
+  type: "edit";
   title: string;
-  onConfirm: (
-    outcome: ToolConfirmationOutcome,
-    payload?: ToolConfirmationPayload,
-  ) => Promise<void>;
+  onConfirm: (outcome: ToolConfirmationOutcome, payload?: ToolConfirmationPayload) => Promise<void>;
   /**
    * When true, the UI should not show "Always allow" options (ProceedAlwaysProject/User).
    * Set by coreToolScheduler when PM has an explicit 'ask' rule that would override
@@ -608,12 +563,9 @@ export interface ToolConfirmationPayload {
 }
 
 export interface ToolExecuteConfirmationDetails {
-  type: 'exec';
+  type: "exec";
   title: string;
-  onConfirm: (
-    outcome: ToolConfirmationOutcome,
-    payload?: ToolConfirmationPayload,
-  ) => Promise<void>;
+  onConfirm: (outcome: ToolConfirmationOutcome, payload?: ToolConfirmationPayload) => Promise<void>;
   /** @see ToolEditConfirmationDetails.hideAlwaysAllow */
   hideAlwaysAllow?: boolean;
   command: string;
@@ -623,28 +575,22 @@ export interface ToolExecuteConfirmationDetails {
 }
 
 export interface ToolMcpConfirmationDetails {
-  type: 'mcp';
+  type: "mcp";
   title: string;
   /** @see ToolEditConfirmationDetails.hideAlwaysAllow */
   hideAlwaysAllow?: boolean;
   serverName: string;
   toolName: string;
   toolDisplayName: string;
-  onConfirm: (
-    outcome: ToolConfirmationOutcome,
-    payload?: ToolConfirmationPayload,
-  ) => Promise<void>;
+  onConfirm: (outcome: ToolConfirmationOutcome, payload?: ToolConfirmationPayload) => Promise<void>;
   /** Permission rule for this MCP tool, e.g. 'mcp__server__tool'. */
   permissionRules?: string[];
 }
 
 export interface ToolInfoConfirmationDetails {
-  type: 'info';
+  type: "info";
   title: string;
-  onConfirm: (
-    outcome: ToolConfirmationOutcome,
-    payload?: ToolConfirmationPayload,
-  ) => Promise<void>;
+  onConfirm: (outcome: ToolConfirmationOutcome, payload?: ToolConfirmationPayload) => Promise<void>;
   /** @see ToolEditConfirmationDetails.hideAlwaysAllow */
   hideAlwaysAllow?: boolean;
   prompt: string;
@@ -662,21 +608,18 @@ export type ToolCallConfirmationDetails =
   | ToolAskUserQuestionConfirmationDetails;
 
 export interface ToolPlanConfirmationDetails {
-  type: 'plan';
+  type: "plan";
   title: string;
   /** @see ToolEditConfirmationDetails.hideAlwaysAllow */
   hideAlwaysAllow?: boolean;
   plan: string;
   /** The approval mode that was active before entering plan mode (for display in the UI). */
   prePlanMode?: string;
-  onConfirm: (
-    outcome: ToolConfirmationOutcome,
-    payload?: ToolConfirmationPayload,
-  ) => Promise<void>;
+  onConfirm: (outcome: ToolConfirmationOutcome, payload?: ToolConfirmationPayload) => Promise<void>;
 }
 
 export interface ToolAskUserQuestionConfirmationDetails {
-  type: 'ask_user_question';
+  type: "ask_user_question";
   title: string;
   questions: Array<{
     question: string;
@@ -690,10 +633,7 @@ export interface ToolAskUserQuestionConfirmationDetails {
   metadata?: {
     source?: string;
   };
-  onConfirm: (
-    outcome: ToolConfirmationOutcome,
-    payload?: ToolConfirmationPayload,
-  ) => Promise<void>;
+  onConfirm: (outcome: ToolConfirmationOutcome, payload?: ToolConfirmationPayload) => Promise<void>;
 }
 
 /**
@@ -702,41 +642,36 @@ export interface ToolAskUserQuestionConfirmationDetails {
  * 2. support proceed with modified input
  */
 export enum ToolConfirmationOutcome {
-  ProceedOnce = 'proceed_once',
-  ProceedAlways = 'proceed_always',
+  ProceedOnce = "proceed_once",
+  ProceedAlways = "proceed_always",
   /** @deprecated Use ProceedAlwaysProject or ProceedAlwaysUser instead. */
-  ProceedAlwaysServer = 'proceed_always_server',
+  ProceedAlwaysServer = "proceed_always_server",
   /** @deprecated Use ProceedAlwaysProject or ProceedAlwaysUser instead. */
-  ProceedAlwaysTool = 'proceed_always_tool',
+  ProceedAlwaysTool = "proceed_always_tool",
   /** Persist the permission rule to the project settings (workspace scope). */
-  ProceedAlwaysProject = 'proceed_always_project',
+  ProceedAlwaysProject = "proceed_always_project",
   /** Persist the permission rule to the user settings (user scope). */
-  ProceedAlwaysUser = 'proceed_always_user',
-  ModifyWithEditor = 'modify_with_editor',
+  ProceedAlwaysUser = "proceed_always_user",
+  ModifyWithEditor = "modify_with_editor",
   /** Restore the approval mode that was active before entering plan mode. */
-  RestorePrevious = 'restore_previous',
-  Cancel = 'cancel',
+  RestorePrevious = "restore_previous",
+  Cancel = "cancel",
 }
 
 export enum Kind {
-  Read = 'read',
-  Edit = 'edit',
-  Delete = 'delete',
-  Move = 'move',
-  Search = 'search',
-  Execute = 'execute',
-  Think = 'think',
-  Fetch = 'fetch',
-  Other = 'other',
+  Read = "read",
+  Edit = "edit",
+  Delete = "delete",
+  Move = "move",
+  Search = "search",
+  Execute = "execute",
+  Think = "think",
+  Fetch = "fetch",
+  Other = "other",
 }
 
 // Function kinds that have side effects
-export const MUTATOR_KINDS: Kind[] = [
-  Kind.Edit,
-  Kind.Delete,
-  Kind.Move,
-  Kind.Execute,
-] as const;
+export const MUTATOR_KINDS: Kind[] = [Kind.Edit, Kind.Delete, Kind.Move, Kind.Execute] as const;
 
 export interface ToolLocation {
   // Absolute path to the file

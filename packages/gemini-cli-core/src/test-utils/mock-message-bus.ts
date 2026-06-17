@@ -4,23 +4,20 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { vi } from 'vitest';
-import type { MessageBus } from '../confirmation-bus/message-bus.js';
+import { vi } from "vitest";
+import type { MessageBus } from "../confirmation-bus/message-bus.js";
 import {
-  MessageBusType,
-  type Message,
   type HookExecutionRequest,
   type HookExecutionResponse,
-} from '../confirmation-bus/types.js';
+  type Message,
+  MessageBusType,
+} from "../confirmation-bus/types.js";
 
 /**
  * Mock MessageBus for testing hook execution through MessageBus
  */
 export class MockMessageBus {
-  private subscriptions = new Map<
-    MessageBusType,
-    Set<(message: Message) => void>
-  >();
+  private subscriptions = new Map<MessageBusType, Set<(message: Message) => void>>();
   publishedMessages: Message[] = [];
   hookRequests: HookExecutionRequest[] = [];
   hookResponses: HookExecutionResponse[] = [];
@@ -41,8 +38,8 @@ export class MockMessageBus {
         correlationId: (message as HookExecutionRequest).correlationId,
         success: true,
         output: {
-          decision: 'allow',
-          reason: 'Mock hook execution successful',
+          decision: "allow",
+          reason: "Mock hook execution successful",
         },
       };
       this.hookResponses.push(response);
@@ -55,26 +52,22 @@ export class MockMessageBus {
   /**
    * Mock subscribe method that stores listeners
    */
-  subscribe = vi.fn(
-    <T extends Message>(type: T['type'], listener: (message: T) => void) => {
-      if (!this.subscriptions.has(type)) {
-        this.subscriptions.set(type, new Set());
-      }
-      this.subscriptions.get(type)!.add(listener as (message: Message) => void);
-    },
-  );
+  subscribe = vi.fn(<T extends Message>(type: T["type"], listener: (message: T) => void) => {
+    if (!this.subscriptions.has(type)) {
+      this.subscriptions.set(type, new Set());
+    }
+    this.subscriptions.get(type)!.add(listener as (message: Message) => void);
+  });
 
   /**
    * Mock unsubscribe method
    */
-  unsubscribe = vi.fn(
-    <T extends Message>(type: T['type'], listener: (message: T) => void) => {
-      const listeners = this.subscriptions.get(type);
-      if (listeners) {
-        listeners.delete(listener as (message: Message) => void);
-      }
-    },
-  );
+  unsubscribe = vi.fn(<T extends Message>(type: T["type"], listener: (message: T) => void) => {
+    const listeners = this.subscriptions.get(type);
+    if (listeners) {
+      listeners.delete(listener as (message: Message) => void);
+    }
+  });
 
   /**
    * Emit a message to subscribers (for testing)
@@ -133,17 +126,10 @@ export class MockMessageBus {
   /**
    * Verify that a hook execution request was published
    */
-  expectHookRequest(
-    eventName: string,
-    input?: Partial<Record<string, unknown>>,
-  ) {
-    const request = this.hookRequests.find(
-      (req) => req.eventName === eventName,
-    );
+  expectHookRequest(eventName: string, input?: Partial<Record<string, unknown>>) {
+    const request = this.hookRequests.find((req) => req.eventName === eventName);
     if (!request) {
-      throw new Error(
-        `Expected hook request for event "${eventName}" but none was found`,
-      );
+      throw new Error(`Expected hook request for event "${eventName}" but none was found`);
     }
 
     if (input) {
@@ -170,8 +156,6 @@ export function createMockMessageBus(): MessageBus {
 /**
  * Get the MockMessageBus instance from a mocked MessageBus
  */
-export function getMockMessageBusInstance(
-  messageBus: MessageBus,
-): MockMessageBus {
+export function getMockMessageBusInstance(messageBus: MessageBus): MockMessageBus {
   return messageBus as unknown as MockMessageBus;
 }

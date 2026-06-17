@@ -4,27 +4,27 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { describe, it, expect, beforeEach, vi } from 'vitest';
-import { Config } from '../config/config.js';
-import fs from 'node:fs';
-import {
-  setSimulate429,
-  disableSimulationAfterFallback,
-  shouldSimulate429,
-  resetRequestCounter,
-} from './testUtils.js';
-import { DEFAULT_GEMINI_FLASH_MODEL } from '../config/models.js';
-import { retryWithBackoff } from './retry.js';
-import { AuthType } from '../core/contentGenerator.js';
+import fs from "node:fs";
+import { beforeEach, describe, expect, it, vi } from "vitest";
+import { Config } from "../config/config.js";
+import { DEFAULT_GEMINI_FLASH_MODEL } from "../config/models.js";
+import { AuthType } from "../core/contentGenerator.js";
 // Import the new types (Assuming this test file is in packages/core/src/utils/)
-import type { FallbackModelHandler } from '../fallback/types.js';
-import type { GoogleApiError } from './googleErrors.js';
-import { TerminalQuotaError } from './googleQuotaErrors.js';
+import type { FallbackModelHandler } from "../fallback/types.js";
+import type { GoogleApiError } from "./googleErrors.js";
+import { TerminalQuotaError } from "./googleQuotaErrors.js";
+import { retryWithBackoff } from "./retry.js";
+import {
+  disableSimulationAfterFallback,
+  resetRequestCounter,
+  setSimulate429,
+  shouldSimulate429,
+} from "./testUtils.js";
 
-vi.mock('node:fs');
+vi.mock("node:fs");
 
 // Update the description to reflect that this tests the retry utility's integration
-describe('Retry Utility Fallback Integration', () => {
+describe("Retry Utility Fallback Integration", () => {
   let config: Config;
   let mockGoogleApiError: GoogleApiError;
 
@@ -34,15 +34,15 @@ describe('Retry Utility Fallback Integration', () => {
       isDirectory: () => true,
     } as fs.Stats);
     config = new Config({
-      sessionId: 'test-session',
-      targetDir: '/test',
+      sessionId: "test-session",
+      targetDir: "/test",
       debugMode: false,
-      cwd: '/test',
-      model: 'gemini-2.5-pro',
+      cwd: "/test",
+      model: "gemini-2.5-pro",
     });
     mockGoogleApiError = {
       code: 429,
-      message: 'mock error',
+      message: "mock error",
       details: [],
     };
 
@@ -52,37 +52,33 @@ describe('Retry Utility Fallback Integration', () => {
   });
 
   // This test validates the Config's ability to store and execute the handler contract.
-  it('should execute the injected FallbackHandler contract correctly', async () => {
+  it("should execute the injected FallbackHandler contract correctly", async () => {
     // Set up a minimal handler for testing, ensuring it matches the new type.
-    const fallbackHandler: FallbackModelHandler = async () => 'retry';
+    const fallbackHandler: FallbackModelHandler = async () => "retry";
 
     // Use the generalized setter
     config.setFallbackModelHandler(fallbackHandler);
 
     // Call the handler directly via the config property
     const result = await config.fallbackModelHandler!(
-      'gemini-2.5-pro',
+      "gemini-2.5-pro",
       DEFAULT_GEMINI_FLASH_MODEL,
-      new Error('test'),
+      new Error("test"),
     );
 
     // Verify it returns the correct intent
-    expect(result).toBe('retry');
+    expect(result).toBe("retry");
   });
 
   // This test validates the retry utility's logic for triggering the callback.
-  it('should trigger onPersistent429 on TerminalQuotaError for OAuth users', async () => {
+  it("should trigger onPersistent429 on TerminalQuotaError for OAuth users", async () => {
     let fallbackCalled = false;
 
     const mockApiCall = vi
       .fn()
-      .mockRejectedValueOnce(
-        new TerminalQuotaError('Daily limit', mockGoogleApiError),
-      )
-      .mockRejectedValueOnce(
-        new TerminalQuotaError('Daily limit', mockGoogleApiError),
-      )
-      .mockResolvedValueOnce('success after fallback');
+      .mockRejectedValueOnce(new TerminalQuotaError("Daily limit", mockGoogleApiError))
+      .mockRejectedValueOnce(new TerminalQuotaError("Daily limit", mockGoogleApiError))
+      .mockResolvedValueOnce("success after fallback");
 
     const mockPersistent429Callback = vi.fn(async (_authType?: string) => {
       fallbackCalled = true;
@@ -102,18 +98,16 @@ describe('Retry Utility Fallback Integration', () => {
       AuthType.LOGIN_WITH_GOOGLE,
       expect.any(TerminalQuotaError),
     );
-    expect(result).toBe('success after fallback');
+    expect(result).toBe("success after fallback");
     expect(mockApiCall).toHaveBeenCalledTimes(3);
   });
 
-  it('should not trigger onPersistent429 for API key users', async () => {
+  it("should not trigger onPersistent429 for API key users", async () => {
     const fallbackCallback = vi.fn();
 
     const mockApiCall = vi
       .fn()
-      .mockRejectedValueOnce(
-        new TerminalQuotaError('Daily limit', mockGoogleApiError),
-      );
+      .mockRejectedValueOnce(new TerminalQuotaError("Daily limit", mockGoogleApiError));
 
     const promise = retryWithBackoff(mockApiCall, {
       maxAttempts: 2,
@@ -123,13 +117,13 @@ describe('Retry Utility Fallback Integration', () => {
       authType: AuthType.USE_GEMINI, // API key auth type
     });
 
-    await expect(promise).rejects.toThrow('Daily limit');
+    await expect(promise).rejects.toThrow("Daily limit");
     expect(fallbackCallback).not.toHaveBeenCalled();
     expect(mockApiCall).toHaveBeenCalledTimes(1);
   });
 
   // This test validates the test utilities themselves.
-  it('should properly disable simulation state after fallback (Test Utility)', () => {
+  it("should properly disable simulation state after fallback (Test Utility)", () => {
     // Enable simulation
     setSimulate429(true);
 

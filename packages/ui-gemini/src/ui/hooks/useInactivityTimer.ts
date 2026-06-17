@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { useState, useEffect } from 'react';
+import { useEffect, useState } from "react";
 
 /**
  * Returns true after a specified delay of inactivity.

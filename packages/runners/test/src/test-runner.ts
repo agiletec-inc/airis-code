@@ -2,20 +2,20 @@
  * Test runner implementation
  */
 
-import { spawn } from 'child_process';
-import { ok, err } from '@airiscode/types';
+import { err, ok } from "@airiscode/types";
+import { spawn } from "child_process";
 import type {
+  CoverageReport,
   TestFramework,
+  TestResult,
+  TestRunnerError,
   TestRunOptions,
   TestRunResult,
-  TestSuiteResult,
-  TestResult,
-  TestStatus,
-  CoverageReport,
-  TestRunnerError,
   TestRunResultType,
-} from './types.js';
-import { TestRunnerError as TestError } from './types.js';
+  TestStatus,
+  TestSuiteResult,
+} from "./types.js";
+import { TestRunnerError as TestError } from "./types.js";
 
 /**
  * Test execution runner
@@ -39,7 +39,7 @@ export class TestRunner {
 
       if (!framework) {
         return err(
-          new TestError('Could not detect test framework. Please specify framework explicitly.')
+          new TestError("Could not detect test framework. Please specify framework explicitly."),
         );
       }
 
@@ -53,10 +53,10 @@ export class TestRunner {
     } catch (error) {
       return err(
         new TestError(
-          'Failed to run tests',
+          "Failed to run tests",
           options.framework,
-          error instanceof Error ? error : undefined
-        )
+          error instanceof Error ? error : undefined,
+        ),
       );
     }
   }
@@ -65,34 +65,34 @@ export class TestRunner {
    * Auto-detect test framework
    */
   private async detectFramework(): Promise<TestFramework | null> {
-    const { existsSync, readFileSync } = await import('fs');
-    const { join } = await import('path');
+    const { existsSync, readFileSync } = await import("fs");
+    const { join } = await import("path");
 
     // Check package.json for framework dependencies
-    const packageJsonPath = join(this.workingDir, 'package.json');
+    const packageJsonPath = join(this.workingDir, "package.json");
     if (existsSync(packageJsonPath)) {
-      const packageJson = JSON.parse(readFileSync(packageJsonPath, 'utf-8'));
+      const packageJson = JSON.parse(readFileSync(packageJsonPath, "utf-8"));
       const deps = {
         ...packageJson.dependencies,
         ...packageJson.devDependencies,
       };
 
       if (deps.vitest) return TestFramework.VITEST;
-      if (deps.jest || deps['@types/jest']) return TestFramework.JEST;
+      if (deps.jest || deps["@types/jest"]) return TestFramework.JEST;
       if (deps.mocha) return TestFramework.MOCHA;
       if (deps.ava) return TestFramework.AVA;
     }
 
     // Check for Python pytest
-    const pytestConfig = join(this.workingDir, 'pytest.ini');
+    const pytestConfig = join(this.workingDir, "pytest.ini");
     if (existsSync(pytestConfig)) return TestFramework.PYTEST;
 
     // Check for Go
-    const goMod = join(this.workingDir, 'go.mod');
+    const goMod = join(this.workingDir, "go.mod");
     if (existsSync(goMod)) return TestFramework.GO_TEST;
 
     // Check for Rust
-    const cargoToml = join(this.workingDir, 'Cargo.toml');
+    const cargoToml = join(this.workingDir, "Cargo.toml");
     if (existsSync(cargoToml)) return TestFramework.CARGO_TEST;
 
     return null;
@@ -103,7 +103,7 @@ export class TestRunner {
    */
   private buildCommand(
     framework: TestFramework,
-    options: TestRunOptions
+    options: TestRunOptions,
   ): { command: string; args: string[] } {
     switch (framework) {
       case TestFramework.VITEST:
@@ -126,111 +126,111 @@ export class TestRunner {
   }
 
   private buildVitestCommand(options: TestRunOptions): { command: string; args: string[] } {
-    const args = ['run'];
+    const args = ["run"];
 
-    if (options.watch) args.push('--watch');
-    if (options.coverage) args.push('--coverage');
-    if (options.verbose) args.push('--reporter=verbose');
-    if (options.bail) args.push('--bail', '1');
-    if (options.grep) args.push('--grep', options.grep);
+    if (options.watch) args.push("--watch");
+    if (options.coverage) args.push("--coverage");
+    if (options.verbose) args.push("--reporter=verbose");
+    if (options.bail) args.push("--bail", "1");
+    if (options.grep) args.push("--grep", options.grep);
 
     if (options.files && options.files.length > 0) {
       args.push(...options.files);
     }
 
-    return { command: 'vitest', args };
+    return { command: "vitest", args };
   }
 
   private buildJestCommand(options: TestRunOptions): { command: string; args: string[] } {
     const args: string[] = [];
 
-    if (options.watch) args.push('--watch');
-    if (options.coverage) args.push('--coverage');
-    if (options.verbose) args.push('--verbose');
-    if (options.bail) args.push('--bail');
-    if (options.grep) args.push('--testNamePattern', options.grep);
+    if (options.watch) args.push("--watch");
+    if (options.coverage) args.push("--coverage");
+    if (options.verbose) args.push("--verbose");
+    if (options.bail) args.push("--bail");
+    if (options.grep) args.push("--testNamePattern", options.grep);
 
     if (options.files && options.files.length > 0) {
       args.push(...options.files);
     }
 
-    return { command: 'jest', args };
+    return { command: "jest", args };
   }
 
   private buildMochaCommand(options: TestRunOptions): { command: string; args: string[] } {
     const args: string[] = [];
 
-    if (options.watch) args.push('--watch');
-    if (options.bail) args.push('--bail');
-    if (options.grep) args.push('--grep', options.grep);
-    if (options.timeout) args.push('--timeout', options.timeout.toString());
+    if (options.watch) args.push("--watch");
+    if (options.bail) args.push("--bail");
+    if (options.grep) args.push("--grep", options.grep);
+    if (options.timeout) args.push("--timeout", options.timeout.toString());
 
     if (options.files && options.files.length > 0) {
       args.push(...options.files);
     } else {
-      args.push('test/**/*.test.{js,ts}');
+      args.push("test/**/*.test.{js,ts}");
     }
 
-    return { command: 'mocha', args };
+    return { command: "mocha", args };
   }
 
   private buildAvaCommand(options: TestRunOptions): { command: string; args: string[] } {
     const args: string[] = [];
 
-    if (options.watch) args.push('--watch');
-    if (options.verbose) args.push('--verbose');
-    if (options.bail) args.push('--fail-fast');
-    if (options.grep) args.push('--match', options.grep);
+    if (options.watch) args.push("--watch");
+    if (options.verbose) args.push("--verbose");
+    if (options.bail) args.push("--fail-fast");
+    if (options.grep) args.push("--match", options.grep);
 
     if (options.files && options.files.length > 0) {
       args.push(...options.files);
     }
 
-    return { command: 'ava', args };
+    return { command: "ava", args };
   }
 
   private buildPytestCommand(options: TestRunOptions): { command: string; args: string[] } {
     const args: string[] = [];
 
-    if (options.verbose) args.push('-v');
-    if (options.bail) args.push('-x');
-    if (options.grep) args.push('-k', options.grep);
-    if (options.coverage) args.push('--cov');
+    if (options.verbose) args.push("-v");
+    if (options.bail) args.push("-x");
+    if (options.grep) args.push("-k", options.grep);
+    if (options.coverage) args.push("--cov");
 
     if (options.files && options.files.length > 0) {
       args.push(...options.files);
     }
 
-    return { command: 'pytest', args };
+    return { command: "pytest", args };
   }
 
   private buildGoTestCommand(options: TestRunOptions): { command: string; args: string[] } {
-    const args = ['test'];
+    const args = ["test"];
 
-    if (options.verbose) args.push('-v');
-    if (options.coverage) args.push('-cover');
-    if (options.grep) args.push('-run', options.grep);
-    if (options.timeout) args.push('-timeout', `${options.timeout}ms`);
+    if (options.verbose) args.push("-v");
+    if (options.coverage) args.push("-cover");
+    if (options.grep) args.push("-run", options.grep);
+    if (options.timeout) args.push("-timeout", `${options.timeout}ms`);
 
     if (options.files && options.files.length > 0) {
       args.push(...options.files);
     } else {
-      args.push('./...');
+      args.push("./...");
     }
 
-    return { command: 'go', args };
+    return { command: "go", args };
   }
 
   private buildCargoTestCommand(options: TestRunOptions): { command: string; args: string[] } {
-    const args = ['test'];
+    const args = ["test"];
 
-    if (options.verbose) args.push('--verbose');
+    if (options.verbose) args.push("--verbose");
     if (options.grep) args.push(options.grep);
 
     // Cargo test doesn't support individual file selection
     // Tests are selected by name pattern
 
-    return { command: 'cargo', args };
+    return { command: "cargo", args };
   }
 
   /**
@@ -239,27 +239,27 @@ export class TestRunner {
   private execCommand(
     command: string,
     args: string[],
-    env?: Record<string, string>
+    env?: Record<string, string>,
   ): Promise<{ stdout: string; stderr: string; exitCode: number }> {
     return new Promise((resolve) => {
       const proc = spawn(command, args, {
         cwd: this.workingDir,
         env: { ...process.env, ...env },
-        stdio: ['ignore', 'pipe', 'pipe'],
+        stdio: ["ignore", "pipe", "pipe"],
       });
 
-      let stdout = '';
-      let stderr = '';
+      let stdout = "";
+      let stderr = "";
 
-      proc.stdout.on('data', (chunk) => {
+      proc.stdout.on("data", (chunk) => {
         stdout += chunk.toString();
       });
 
-      proc.stderr.on('data', (chunk) => {
+      proc.stderr.on("data", (chunk) => {
         stderr += chunk.toString();
       });
 
-      proc.on('close', (code) => {
+      proc.on("close", (code) => {
         resolve({ stdout, stderr, exitCode: code || 0 });
       });
     });
@@ -271,12 +271,12 @@ export class TestRunner {
   private parseOutput(
     framework: TestFramework,
     output: { stdout: string; stderr: string; exitCode: number },
-    coverageEnabled?: boolean
+    coverageEnabled?: boolean,
   ): TestRunResult {
     // This is a simplified parser
     // In production, you'd use framework-specific parsers or JSON reporters
 
-    const lines = output.stdout.split('\n');
+    const lines = output.stdout.split("\n");
     const suites: TestSuiteResult[] = [];
     let totalTests = 0;
     let passedTests = 0;
@@ -343,7 +343,9 @@ export class TestRunner {
     };
 
     // Look for coverage percentage patterns
-    const coverageMatch = output.match(/All files\s+\|\s+([\d.]+)\s+\|\s+([\d.]+)\s+\|\s+([\d.]+)\s+\|\s+([\d.]+)/);
+    const coverageMatch = output.match(
+      /All files\s+\|\s+([\d.]+)\s+\|\s+([\d.]+)\s+\|\s+([\d.]+)\s+\|\s+([\d.]+)/,
+    );
 
     if (coverageMatch) {
       return {

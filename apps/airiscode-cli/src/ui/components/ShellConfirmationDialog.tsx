@@ -4,36 +4,31 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { ToolConfirmationOutcome } from '@airiscode/core';
-import { Box, Text } from 'ink';
-import type React from 'react';
-import { theme } from '../semantic-colors.js';
-import { RenderInline } from '../utils/InlineMarkdownRenderer.js';
-import type { RadioSelectItem } from './shared/RadioButtonSelect.js';
-import { RadioButtonSelect } from './shared/RadioButtonSelect.js';
-import { useKeypress } from '../hooks/useKeypress.js';
-import { t } from '../../i18n/index.js';
+import { ToolConfirmationOutcome } from "@airiscode/core";
+import { Box, Text } from "ink";
+import type React from "react";
+import { t } from "../../i18n/index.js";
+import { useKeypress } from "../hooks/useKeypress.js";
+import { theme } from "../semantic-colors.js";
+import { RenderInline } from "../utils/InlineMarkdownRenderer.js";
+import type { RadioSelectItem } from "./shared/RadioButtonSelect.js";
+import { RadioButtonSelect } from "./shared/RadioButtonSelect.js";
 
 export interface ShellConfirmationRequest {
   commands: string[];
-  onConfirm: (
-    outcome: ToolConfirmationOutcome,
-    approvedCommands?: string[],
-  ) => void;
+  onConfirm: (outcome: ToolConfirmationOutcome, approvedCommands?: string[]) => void;
 }
 
 export interface ShellConfirmationDialogProps {
   request: ShellConfirmationRequest;
 }
 
-export const ShellConfirmationDialog: React.FC<
-  ShellConfirmationDialogProps
-> = ({ request }) => {
+export const ShellConfirmationDialog: React.FC<ShellConfirmationDialogProps> = ({ request }) => {
   const { commands, onConfirm } = request;
 
   useKeypress(
     (key) => {
-      if (key.name === 'escape') {
+      if (key.name === "escape") {
         onConfirm(ToolConfirmationOutcome.Cancel);
       }
     },
@@ -52,24 +47,24 @@ export const ShellConfirmationDialog: React.FC<
 
   const options: Array<RadioSelectItem<ToolConfirmationOutcome>> = [
     {
-      label: t('Yes, allow once'),
+      label: t("Yes, allow once"),
       value: ToolConfirmationOutcome.ProceedOnce,
-      key: 'Yes, allow once',
+      key: "Yes, allow once",
     },
     {
-      label: t('Always allow in this project'),
+      label: t("Always allow in this project"),
       value: ToolConfirmationOutcome.ProceedAlwaysProject,
-      key: 'Always allow in this project',
+      key: "Always allow in this project",
     },
     {
-      label: t('Always allow for this user'),
+      label: t("Always allow for this user"),
       value: ToolConfirmationOutcome.ProceedAlwaysUser,
-      key: 'Always allow for this user',
+      key: "Always allow for this user",
     },
     {
-      label: t('No (esc)'),
+      label: t("No (esc)"),
       value: ToolConfirmationOutcome.Cancel,
-      key: 'No (esc)',
+      key: "No (esc)",
     },
   ];
 
@@ -84,10 +79,10 @@ export const ShellConfirmationDialog: React.FC<
     >
       <Box flexDirection="column" marginBottom={1}>
         <Text bold color={theme.text.primary}>
-          {t('Shell Command Execution')}
+          {t("Shell Command Execution")}
         </Text>
         <Text color={theme.text.primary}>
-          {t('A custom command wants to run the following shell commands:')}
+          {t("A custom command wants to run the following shell commands:")}
         </Text>
         <Box
           flexDirection="column"
@@ -105,7 +100,7 @@ export const ShellConfirmationDialog: React.FC<
       </Box>
 
       <Box marginBottom={1}>
-        <Text color={theme.text.primary}>{t('Do you want to proceed?')}</Text>
+        <Text color={theme.text.primary}>{t("Do you want to proceed?")}</Text>
       </Box>
 
       <RadioButtonSelect items={options} onSelect={handleSelect} isFocused />

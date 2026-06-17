@@ -2,17 +2,17 @@
  * Base adapter process abstract class
  */
 
-import { ShellGuard } from '@airiscode/sandbox';
+import { ShellGuard } from "@airiscode/sandbox";
+import type { AnyAdapterEvent } from "./events.js";
 import type {
-  SpawnOptions,
-  ExecuteRequest,
-  ExecuteResponse,
-  ShellExecutionResult,
   AdapterMetadata,
   AdapterState,
   AdapterStatus,
-} from './types.js';
-import type { AnyAdapterEvent } from './events.js';
+  ExecuteRequest,
+  ExecuteResponse,
+  ShellExecutionResult,
+  SpawnOptions,
+} from "./types.js";
 
 /**
  * Abstract base class for all adapter processes
@@ -35,7 +35,7 @@ export abstract class AdapterProcess {
     this.options = options;
     this.guard = new ShellGuard(options.policy);
     this.state = {
-      status: 'idle',
+      status: "idle",
     };
   }
 
@@ -107,7 +107,7 @@ export abstract class AdapterProcess {
       try {
         listener(event);
       } catch (error) {
-        console.error('Error in event listener:', error);
+        console.error("Error in event listener:", error);
       }
     }
   }
@@ -124,17 +124,17 @@ export abstract class AdapterProcess {
    */
   protected validateExecuteRequest(request: ExecuteRequest): void {
     if (!request.action) {
-      throw new Error('Action is required');
+      throw new Error("Action is required");
     }
     if (!request.inputJson) {
-      throw new Error('Input JSON is required');
+      throw new Error("Input JSON is required");
     }
 
     // Validate JSON
     try {
       JSON.parse(request.inputJson);
     } catch {
-      throw new Error('Invalid input JSON');
+      throw new Error("Invalid input JSON");
     }
   }
 

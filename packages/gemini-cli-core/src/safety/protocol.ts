@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import type { FunctionCall } from '@google/genai';
+import type { FunctionCall } from "@google/genai";
 
 /**
  * Represents a single turn in the conversation between the user and the model.
@@ -29,7 +29,7 @@ export interface SafetyCheckInput {
    * for introducing breaking changes in the future while maintaining
    * support for older checkers.
    */
-  protocolVersion: '1.0.0';
+  protocolVersion: "1.0.0";
 
   /**
    * The specific tool call that is being validated.
@@ -70,9 +70,9 @@ export interface SafetyCheckInput {
  * The possible decisions a safety checker can make.
  */
 export enum SafetyCheckDecision {
-  ALLOW = 'allow',
-  DENY = 'deny',
-  ASK_USER = 'ask_user',
+  ALLOW = "allow",
+  DENY = "deny",
+  ASK_USER = "ask_user",
 }
 
 /**

@@ -4,12 +4,12 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import type { Content, PartListUnion } from '@google/genai';
+import type { Content, PartListUnion } from "@google/genai";
 /**
  * The return type for a command action that results in scheduling a tool call.
  */
 export interface ToolActionReturn {
-  type: 'tool';
+  type: "tool";
   toolName: string;
   toolArgs: Record<string, unknown>;
 }
@@ -19,8 +19,8 @@ export interface ToolActionReturn {
  * being displayed to the user.
  */
 export interface MessageActionReturn {
-  type: 'message';
-  messageType: 'info' | 'error';
+  type: "message";
+  messageType: "info" | "error";
   content: string;
 }
 
@@ -29,7 +29,7 @@ export interface MessageActionReturn {
  * the entire conversation history.
  */
 export interface LoadHistoryActionReturn<HistoryType = unknown> {
-  type: 'load_history';
+  type: "load_history";
   history: HistoryType;
   clientHistory: Content[]; // The history for the generative client
 }
@@ -39,7 +39,7 @@ export interface LoadHistoryActionReturn<HistoryType = unknown> {
  * content as a prompt to the Gemini model.
  */
 export interface SubmitPromptActionReturn {
-  type: 'submit_prompt';
+  type: "submit_prompt";
   content: PartListUnion;
 }
 

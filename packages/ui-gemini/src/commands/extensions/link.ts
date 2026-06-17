@@ -4,21 +4,17 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import type { CommandModule } from 'yargs';
-import {
-  debugLogger,
-  type ExtensionInstallMetadata,
-} from '@airiscode/gemini-cli-core';
-
-import { getErrorMessage } from '../../utils/errors.js';
+import { debugLogger, type ExtensionInstallMetadata } from "@airiscode/gemini-cli-core";
+import type { CommandModule } from "yargs";
+import { ExtensionManager } from "../../config/extension-manager.js";
 import {
   INSTALL_WARNING_MESSAGE,
   requestConsentNonInteractive,
-} from '../../config/extensions/consent.js';
-import { ExtensionManager } from '../../config/extension-manager.js';
-import { loadSettings } from '../../config/settings.js';
-import { promptForSetting } from '../../config/extensions/extensionSettings.js';
-import { exitCli } from '../utils.js';
+} from "../../config/extensions/consent.js";
+import { promptForSetting } from "../../config/extensions/extensionSettings.js";
+import { loadSettings } from "../../config/settings.js";
+import { getErrorMessage } from "../../utils/errors.js";
+import { exitCli } from "../utils.js";
 
 interface InstallArgs {
   path: string;
@@ -29,13 +25,13 @@ export async function handleLink(args: InstallArgs) {
   try {
     const installMetadata: ExtensionInstallMetadata = {
       source: args.path,
-      type: 'link',
+      type: "link",
     };
     const requestConsent = args.consent
       ? () => Promise.resolve(true)
       : requestConsentNonInteractive;
     if (args.consent) {
-      debugLogger.log('You have consented to the following:');
+      debugLogger.log("You have consented to the following:");
       debugLogger.log(INSTALL_WARNING_MESSAGE);
     }
     const workspaceDir = process.cwd();
@@ -46,11 +42,8 @@ export async function handleLink(args: InstallArgs) {
       settings: loadSettings(workspaceDir).merged,
     });
     await extensionManager.loadExtensions();
-    const extension =
-      await extensionManager.installOrUpdateExtension(installMetadata);
-    debugLogger.log(
-      `Extension "${extension.name}" linked successfully and enabled.`,
-    );
+    const extension = await extensionManager.installOrUpdateExtension(installMetadata);
+    debugLogger.log(`Extension "${extension.name}" linked successfully and enabled.`);
   } catch (error) {
     debugLogger.error(getErrorMessage(error));
     process.exit(1);
@@ -58,26 +51,26 @@ export async function handleLink(args: InstallArgs) {
 }
 
 export const linkCommand: CommandModule = {
-  command: 'link <path>',
+  command: "link <path>",
   describe:
-    'Links an extension from a local path. Updates made to the local path will always be reflected.',
+    "Links an extension from a local path. Updates made to the local path will always be reflected.",
   builder: (yargs) =>
     yargs
-      .positional('path', {
-        describe: 'The name of the extension to link.',
-        type: 'string',
+      .positional("path", {
+        describe: "The name of the extension to link.",
+        type: "string",
       })
-      .option('consent', {
+      .option("consent", {
         describe:
-          'Acknowledge the security risks of installing an extension and skip the confirmation prompt.',
-        type: 'boolean',
+          "Acknowledge the security risks of installing an extension and skip the confirmation prompt.",
+        type: "boolean",
         default: false,
       })
       .check((_) => true),
   handler: async (argv) => {
     await handleLink({
-      path: argv['path'] as string,
-      consent: argv['consent'] as boolean | undefined,
+      path: argv["path"] as string,
+      consent: argv["consent"] as boolean | undefined,
     });
     await exitCli();
   },

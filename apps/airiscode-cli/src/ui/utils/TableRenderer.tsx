@@ -4,10 +4,10 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import React from 'react';
-import { Text, Box } from 'ink';
-import { theme } from '../semantic-colors.js';
-import { RenderInline, getPlainTextLength } from './InlineMarkdownRenderer.js';
+import { Box, Text } from "ink";
+import React from "react";
+import { theme } from "../semantic-colors.js";
+import { getPlainTextLength, RenderInline } from "./InlineMarkdownRenderer.js";
 
 interface TableRendererProps {
   headers: string[];
@@ -19,17 +19,11 @@ interface TableRendererProps {
  * Custom table renderer for markdown tables
  * We implement our own instead of using ink-table due to module compatibility issues
  */
-export const TableRenderer: React.FC<TableRendererProps> = ({
-  headers,
-  rows,
-  contentWidth,
-}) => {
+export const TableRenderer: React.FC<TableRendererProps> = ({ headers, rows, contentWidth }) => {
   // Calculate column widths using actual display width after markdown processing
   const columnWidths = headers.map((header, index) => {
     const headerWidth = getPlainTextLength(header);
-    const maxRowWidth = Math.max(
-      ...rows.map((row) => getPlainTextLength(row[index] || '')),
-    );
+    const maxRowWidth = Math.max(...rows.map((row) => getPlainTextLength(row[index] || "")));
     return Math.max(headerWidth, maxRowWidth) + 2; // Add padding
   });
 
@@ -37,19 +31,11 @@ export const TableRenderer: React.FC<TableRendererProps> = ({
   const totalWidth = columnWidths.reduce((sum, width) => sum + width + 1, 1);
   const fixedWidth = columnWidths.length + 1;
   const scaleFactor =
-    totalWidth > contentWidth
-      ? (contentWidth - fixedWidth) / (totalWidth - fixedWidth)
-      : 1;
-  const adjustedWidths = columnWidths.map((width) =>
-    Math.floor(width * scaleFactor),
-  );
+    totalWidth > contentWidth ? (contentWidth - fixedWidth) / (totalWidth - fixedWidth) : 1;
+  const adjustedWidths = columnWidths.map((width) => Math.floor(width * scaleFactor));
 
   // Helper function to render a cell with proper width
-  const renderCell = (
-    content: string,
-    width: number,
-    isHeader = false,
-  ): React.ReactNode => {
+  const renderCell = (content: string, width: number, isHeader = false): React.ReactNode => {
     const contentWidth = Math.max(0, width - 2);
     const displayWidth = getPlainTextLength(content);
 
@@ -57,10 +43,7 @@ export const TableRenderer: React.FC<TableRendererProps> = ({
     if (displayWidth > contentWidth) {
       if (contentWidth <= 3) {
         // Just truncate by character count
-        cellContent = content.substring(
-          0,
-          Math.min(content.length, contentWidth),
-        );
+        cellContent = content.substring(0, Math.min(content.length, contentWidth));
       } else {
         // Truncate preserving markdown formatting using binary search
         let left = 0;
@@ -81,7 +64,7 @@ export const TableRenderer: React.FC<TableRendererProps> = ({
           }
         }
 
-        cellContent = bestTruncated + '...';
+        cellContent = bestTruncated + "...";
       }
     }
 
@@ -98,17 +81,17 @@ export const TableRenderer: React.FC<TableRendererProps> = ({
         ) : (
           <RenderInline text={cellContent} />
         )}
-        {' '.repeat(paddingNeeded)}
+        {" ".repeat(paddingNeeded)}
       </Text>
     );
   };
 
   // Helper function to render border
-  const renderBorder = (type: 'top' | 'middle' | 'bottom'): React.ReactNode => {
+  const renderBorder = (type: "top" | "middle" | "bottom"): React.ReactNode => {
     const chars = {
-      top: { left: '┌', middle: '┬', right: '┐', horizontal: '─' },
-      middle: { left: '├', middle: '┼', right: '┤', horizontal: '─' },
-      bottom: { left: '└', middle: '┴', right: '┘', horizontal: '─' },
+      top: { left: "┌", middle: "┬", right: "┐", horizontal: "─" },
+      middle: { left: "├", middle: "┼", right: "┤", horizontal: "─" },
+      bottom: { left: "└", middle: "┴", right: "┘", horizontal: "─" },
     };
 
     const char = chars[type];
@@ -122,18 +105,18 @@ export const TableRenderer: React.FC<TableRendererProps> = ({
   const renderRow = (cells: string[], isHeader = false): React.ReactNode => {
     const renderedCells = cells.map((cell, index) => {
       const width = adjustedWidths[index] || 0;
-      return renderCell(cell || '', width, isHeader);
+      return renderCell(cell || "", width, isHeader);
     });
 
     return (
       <Text color={theme.text.primary}>
-        │{' '}
+        │{" "}
         {renderedCells.map((cell, index) => (
           <React.Fragment key={index}>
             {cell}
-            {index < renderedCells.length - 1 ? ' │ ' : ''}
+            {index < renderedCells.length - 1 ? " │ " : ""}
           </React.Fragment>
-        ))}{' '}
+        ))}{" "}
         │
       </Text>
     );
@@ -142,13 +125,13 @@ export const TableRenderer: React.FC<TableRendererProps> = ({
   return (
     <Box flexDirection="column" marginY={1}>
       {/* Top border */}
-      {renderBorder('top')}
+      {renderBorder("top")}
 
       {/* Header row */}
       {renderRow(headers, true)}
 
       {/* Middle border */}
-      {renderBorder('middle')}
+      {renderBorder("middle")}
 
       {/* Data rows */}
       {rows.map((row, index) => (
@@ -156,7 +139,7 @@ export const TableRenderer: React.FC<TableRendererProps> = ({
       ))}
 
       {/* Bottom border */}
-      {renderBorder('bottom')}
+      {renderBorder("bottom")}
     </Box>
   );
 };

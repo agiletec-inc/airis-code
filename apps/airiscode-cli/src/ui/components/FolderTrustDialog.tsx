@@ -4,21 +4,21 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { Box, Text } from 'ink';
-import type React from 'react';
-import { useEffect } from 'react';
-import { theme } from '../semantic-colors.js';
-import type { RadioSelectItem } from './shared/RadioButtonSelect.js';
-import { RadioButtonSelect } from './shared/RadioButtonSelect.js';
-import { useKeypress } from '../hooks/useKeypress.js';
-import * as process from 'node:process';
-import * as path from 'node:path';
-import { relaunchApp } from '../../utils/processUtils.js';
+import * as path from "node:path";
+import * as process from "node:process";
+import { Box, Text } from "ink";
+import type React from "react";
+import { useEffect } from "react";
+import { relaunchApp } from "../../utils/processUtils.js";
+import { useKeypress } from "../hooks/useKeypress.js";
+import { theme } from "../semantic-colors.js";
+import type { RadioSelectItem } from "./shared/RadioButtonSelect.js";
+import { RadioButtonSelect } from "./shared/RadioButtonSelect.js";
 
 export enum FolderTrustChoice {
-  TRUST_FOLDER = 'trust_folder',
-  TRUST_PARENT = 'trust_parent',
-  DO_NOT_TRUST = 'do_not_trust',
+  TRUST_FOLDER = "trust_folder",
+  TRUST_PARENT = "trust_parent",
+  DO_NOT_TRUST = "do_not_trust",
 }
 
 interface FolderTrustDialogProps {
@@ -26,10 +26,7 @@ interface FolderTrustDialogProps {
   isRestarting?: boolean;
 }
 
-export const FolderTrustDialog: React.FC<FolderTrustDialogProps> = ({
-  onSelect,
-  isRestarting,
-}) => {
+export const FolderTrustDialog: React.FC<FolderTrustDialogProps> = ({ onSelect, isRestarting }) => {
   useEffect(() => {
     const doRelaunch = async () => {
       if (isRestarting) {
@@ -43,7 +40,7 @@ export const FolderTrustDialog: React.FC<FolderTrustDialogProps> = ({
 
   useKeypress(
     (key) => {
-      if (key.name === 'escape') {
+      if (key.name === "escape") {
         onSelect(FolderTrustChoice.DO_NOT_TRUST);
       }
     },
@@ -86,17 +83,12 @@ export const FolderTrustDialog: React.FC<FolderTrustDialogProps> = ({
             Do you trust this folder?
           </Text>
           <Text color={theme.text.primary}>
-            Trusting a folder allows AIRIS Code to execute commands it suggests.
-            This is a security feature to prevent accidental execution in
-            untrusted directories.
+            Trusting a folder allows AIRIS Code to execute commands it suggests. This is a security
+            feature to prevent accidental execution in untrusted directories.
           </Text>
         </Box>
 
-        <RadioButtonSelect
-          items={options}
-          onSelect={onSelect}
-          isFocused={!isRestarting}
-        />
+        <RadioButtonSelect items={options} onSelect={onSelect} isFocused={!isRestarting} />
       </Box>
       {isRestarting && (
         <Box marginLeft={1} marginTop={1}>

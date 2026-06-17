@@ -4,15 +4,12 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { useRef, useCallback } from 'react';
-import type React from 'react';
-import { Box, Text } from 'ink';
-import { theme } from '../semantic-colors.js';
-import type { ConsoleMessageItem } from '../types.js';
-import {
-  ScrollableList,
-  type ScrollableListRef,
-} from './shared/ScrollableList.js';
+import { Box, Text } from "ink";
+import type React from "react";
+import { useCallback, useRef } from "react";
+import { theme } from "../semantic-colors.js";
+import type { ConsoleMessageItem } from "../types.js";
+import { ScrollableList, type ScrollableListRef } from "./shared/ScrollableList.js";
 
 interface DetailedMessagesDisplayProps {
   messages: ConsoleMessageItem[];
@@ -23,9 +20,12 @@ interface DetailedMessagesDisplayProps {
 
 const iconBoxWidth = 3;
 
-export const DetailedMessagesDisplay: React.FC<
-  DetailedMessagesDisplayProps
-> = ({ messages, maxHeight, width, hasFocus }) => {
+export const DetailedMessagesDisplay: React.FC<DetailedMessagesDisplayProps> = ({
+  messages,
+  maxHeight,
+  width,
+  hasFocus,
+}) => {
   const scrollableListRef = useRef<ScrollableListRef<ConsoleMessageItem>>(null);
 
   const borderAndPadding = 3;
@@ -74,22 +74,22 @@ export const DetailedMessagesDisplay: React.FC<
           data={messages}
           renderItem={({ item: msg }: { item: ConsoleMessageItem }) => {
             let textColor = theme.text.primary;
-            let icon = 'ℹ'; // Information source (ℹ)
+            let icon = "ℹ"; // Information source (ℹ)
 
             switch (msg.type) {
-              case 'warn':
+              case "warn":
                 textColor = theme.status.warning;
-                icon = '⚠'; // Warning sign (⚠)
+                icon = "⚠"; // Warning sign (⚠)
                 break;
-              case 'error':
+              case "error":
                 textColor = theme.status.error;
-                icon = '✖'; // Heavy multiplication x (✖)
+                icon = "✖"; // Heavy multiplication x (✖)
                 break;
-              case 'debug':
+              case "debug":
                 textColor = theme.text.secondary; // Or theme.text.secondary
-                icon = '🔍'; // Left-pointing magnifying glass (🔍)
+                icon = "🔍"; // Left-pointing magnifying glass (🔍)
                 break;
-              case 'log':
+              case "log":
               default:
                 // Default textColor and icon are already set
                 break;

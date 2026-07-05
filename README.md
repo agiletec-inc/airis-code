@@ -12,17 +12,7 @@
 
 ## 🌟 Part of the AIRIS Ecosystem
 
-AIRISCode is the **terminal-first coding agent** of the **AIRIS Suite** - providing a unified CLI interface for autonomous coding.
-
-### The AIRIS Suite
-
-| Component | Purpose | For Who |
-|-----------|---------|---------|
-| **[airis-agent](https://github.com/agiletec-inc/airis-agent)** | 🧠 Intelligence layer for all editors (confidence checks, deep research, self-review) | All developers using Claude Code, Cursor, Windsurf, Codex, Gemini CLI |
-| **[airis-mcp-gateway](https://github.com/agiletec-inc/airis-mcp-gateway)** | 🚪 Unified MCP proxy with 90% token reduction via lazy loading | Claude Code users who want faster startup |
-| **[mindbase](https://github.com/agiletec-inc/mindbase)** | 💾 Local cross-session memory with semantic search | Developers who want persistent conversation history |
-| **[airis-workspace](https://github.com/agiletec-inc/airis-workspace)** | 🏗️ Docker-first monorepo manager | Teams building monorepos |
-| **airiscode** (this repo) | 🖥️ Terminal-first autonomous coding agent | CLI-first developers |
+AIRISCode is the **terminal-first coding agent** of the **AIRIS Suite** - providing a unified CLI interface for autonomous coding. See the full [AIRIS Suite](https://github.com/agiletec-inc) on the org page.
 
 ### MCP Servers (Included via Gateway)
 

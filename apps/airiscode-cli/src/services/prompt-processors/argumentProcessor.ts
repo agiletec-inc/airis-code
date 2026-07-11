@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { appendToLastTextPart } from "@airiscode/core";
+import { appendToLastTextPart } from "@airiscode/runtime";
 import type { CommandContext } from "../../ui/commands/types.js";
 import type { IPromptProcessor, PromptPipelineContent } from "./types.js";
 

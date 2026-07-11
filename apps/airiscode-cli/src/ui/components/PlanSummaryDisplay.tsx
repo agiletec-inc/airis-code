@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import type { PlanResultDisplay } from "@airiscode/core";
+import type { PlanResultDisplay } from "@airiscode/runtime";
 import { Box, Text } from "ink";
 import type React from "react";
 import { Colors } from "../colors.js";

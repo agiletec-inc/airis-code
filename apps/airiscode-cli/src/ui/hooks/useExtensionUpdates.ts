@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import type { ExtensionManager } from "@airiscode/core";
+import type { ExtensionManager } from "@airiscode/runtime";
 import { useCallback, useEffect, useMemo, useReducer } from "react";
 import { checkExhaustive } from "../../utils/checks.js";
 import { getErrorMessage } from "../../utils/errors.js";

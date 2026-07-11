@@ -5,7 +5,7 @@
  */
 
 import { randomUUID } from "node:crypto";
-import type { Config, McpToolProgressData, ToolCallRequestInfo } from "@airiscode/core";
+import type { Config, McpToolProgressData, ToolCallRequestInfo } from "@airiscode/runtime";
 import type {
   CLIAssistantMessage,
   CLIMessage,

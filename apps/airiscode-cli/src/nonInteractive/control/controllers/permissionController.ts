@@ -19,8 +19,8 @@ import type {
   ToolExecuteConfirmationDetails,
   ToolMcpConfirmationDetails,
   WaitingToolCall,
-} from "@airiscode/core";
-import { InputFormat, ToolConfirmationOutcome } from "@airiscode/core";
+} from "@airiscode/runtime";
+import { InputFormat, ToolConfirmationOutcome } from "@airiscode/runtime";
 import type {
   CLIControlPermissionRequest,
   CLIControlSetPermissionModeRequest,

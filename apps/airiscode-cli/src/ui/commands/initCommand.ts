@@ -6,7 +6,7 @@
 
 import * as fs from "node:fs";
 import * as path from "node:path";
-import { getCurrentGeminiMdFilename } from "@airiscode/core";
+import { getCurrentGeminiMdFilename } from "@airiscode/runtime";
 import { Text } from "ink";
 import React from "react";
 import { t } from "../../i18n/index.js";

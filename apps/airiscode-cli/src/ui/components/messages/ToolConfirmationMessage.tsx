@@ -10,8 +10,12 @@ import type {
   ToolCallConfirmationDetails,
   ToolExecuteConfirmationDetails,
   ToolMcpConfirmationDetails,
-} from "@airiscode/core";
-import { buildHumanReadableRuleLabel, IdeClient, ToolConfirmationOutcome } from "@airiscode/core";
+} from "@airiscode/runtime";
+import {
+  buildHumanReadableRuleLabel,
+  IdeClient,
+  ToolConfirmationOutcome,
+} from "@airiscode/runtime";
 import { Box, Text } from "ink";
 import type React from "react";
 import { useEffect, useState } from "react";

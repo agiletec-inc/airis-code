@@ -16,7 +16,7 @@ import {
   IdeConnectionType,
   ideContextStore,
   logIdeConnection,
-} from "@airiscode/core";
+} from "@airiscode/runtime";
 import { SettingScope } from "../../config/settings.js";
 import { t } from "../../i18n/index.js";
 import type { CommandContext, SlashCommand, SlashCommandActionReturn } from "./types.js";

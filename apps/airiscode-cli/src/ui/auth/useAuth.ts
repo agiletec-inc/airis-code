@@ -9,8 +9,8 @@ import type {
   ContentGeneratorConfig,
   ModelProvidersConfig,
   ProviderModelConfig,
-} from "@airiscode/core";
-import { AuthEvent, AuthType, getErrorMessage, logAuth } from "@airiscode/core";
+} from "@airiscode/runtime";
+import { AuthEvent, AuthType, getErrorMessage, logAuth } from "@airiscode/runtime";
 import { useCallback, useEffect, useState } from "react";
 import { getPersistScopeForModelSelection } from "../../config/modelProvidersScope.js";
 import type { LoadedSettings } from "../../config/settings.js";

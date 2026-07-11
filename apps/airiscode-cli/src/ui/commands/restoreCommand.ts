@@ -6,7 +6,7 @@
 
 import * as fs from "node:fs/promises";
 import path from "node:path";
-import type { Config } from "@airiscode/core";
+import type { Config } from "@airiscode/runtime";
 import { t } from "../../i18n/index.js";
 import {
   type CommandContext,

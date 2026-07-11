@@ -28,7 +28,7 @@ import { promises as fs } from "node:fs";
 import * as os from "node:os";
 import * as path from "node:path";
 import { promisify } from "node:util";
-import { createDebugLogger } from "@airiscode/core";
+import { createDebugLogger } from "@airiscode/runtime";
 import { t } from "../../i18n/index.js";
 import { isKittyProtocolEnabled } from "./kittyProtocolDetector.js";
 import { VSCODE_SHIFT_ENTER_SEQUENCE } from "./platformConstants.js";

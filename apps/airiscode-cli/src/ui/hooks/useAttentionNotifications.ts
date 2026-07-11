@@ -4,8 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import type { Config } from "@airiscode/core";
-import { fireNotificationHook, NotificationType } from "@airiscode/core";
+import type { Config } from "@airiscode/runtime";
+import { fireNotificationHook, NotificationType } from "@airiscode/runtime";
 import { useEffect, useRef } from "react";
 import type { LoadedSettings } from "../../config/settings.js";
 import {

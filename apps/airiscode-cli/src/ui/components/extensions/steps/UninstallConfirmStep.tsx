@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { createDebugLogger, type Extension } from "@airiscode/core";
+import { createDebugLogger, type Extension } from "@airiscode/runtime";
 import { Box, Text } from "ink";
 import { t } from "../../../../i18n/index.js";
 import { useKeypress } from "../../../hooks/useKeypress.js";

@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { type Extension } from "@airiscode/core";
+import { type Extension } from "@airiscode/runtime";
 import { Box } from "ink";
 import { useMemo, useState } from "react";
 import { t } from "../../../../i18n/index.js";

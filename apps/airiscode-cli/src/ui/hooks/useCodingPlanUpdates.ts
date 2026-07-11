@@ -4,8 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import type { Config, ModelProvidersConfig } from "@airiscode/core";
-import { AuthType } from "@airiscode/core";
+import type { Config, ModelProvidersConfig } from "@airiscode/runtime";
+import { AuthType } from "@airiscode/runtime";
 import { useCallback, useEffect, useState } from "react";
 import { getPersistScopeForModelSelection } from "../../config/modelProvidersScope.js";
 import type { LoadedSettings } from "../../config/settings.js";

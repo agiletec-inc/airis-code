@@ -7,7 +7,7 @@
 import * as fs from "node:fs";
 import path from "node:path";
 import { Writable } from "node:stream";
-import { createDebugLogger } from "@airiscode/core";
+import { createDebugLogger } from "@airiscode/runtime";
 import { ProxyAgent } from "undici";
 import { t } from "../../i18n/index.js";
 import type { CommandContext } from "../../ui/commands/types.js";

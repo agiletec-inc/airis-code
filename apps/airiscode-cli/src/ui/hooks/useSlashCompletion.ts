@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { createDebugLogger } from "@airiscode/core";
+import { createDebugLogger } from "@airiscode/runtime";
 import { AsyncFzf } from "fzf";
 import { useEffect, useMemo, useState } from "react";
 import {

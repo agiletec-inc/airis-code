@@ -22,7 +22,7 @@ import {
   isSuccessStatus,
   isTerminalStatus,
   stripStartupContext,
-} from "@airiscode/core";
+} from "@airiscode/runtime";
 import { type ArenaAgentCardData, type HistoryItemWithoutId, MessageType } from "../types.js";
 import type {
   CommandContext,

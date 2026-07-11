@@ -15,7 +15,7 @@ import {
   isDebugLoggingDegraded,
   logUserPrompt,
   Storage,
-} from "@airiscode/core";
+} from "@airiscode/runtime";
 import { render } from "ink";
 import React from "react";
 import { validateAuthMethod } from "./config/auth.js";

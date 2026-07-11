@@ -26,7 +26,7 @@
  * enum in packages/sdk/typescript/src/types/controlRequests.ts
  */
 
-import { createDebugLogger } from "@airiscode/core";
+import { createDebugLogger } from "@airiscode/runtime";
 // import { HookController } from './controllers/hookController.js';
 import type {
   CLIControlRequest,

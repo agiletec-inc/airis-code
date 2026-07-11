@@ -6,7 +6,7 @@
 
 import * as fs from "node:fs/promises";
 import * as path from "node:path";
-import { createDebugLogger, isNodeError, Storage } from "@airiscode/core";
+import { createDebugLogger, isNodeError, Storage } from "@airiscode/runtime";
 import { useCallback, useEffect, useState } from "react";
 
 const MAX_HISTORY_LENGTH = 100;

@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import type { Config } from "@airiscode/core";
+import type { Config } from "@airiscode/runtime";
 import { render } from "ink-testing-library";
 import type React from "react";
 import { LoadedSettings } from "../config/settings.js";

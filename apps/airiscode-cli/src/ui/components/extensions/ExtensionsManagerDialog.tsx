@@ -4,8 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import type { Config, Extension } from "@airiscode/core";
-import { createDebugLogger, SettingScope } from "@airiscode/core";
+import type { Config, Extension } from "@airiscode/runtime";
+import { createDebugLogger, SettingScope } from "@airiscode/runtime";
 import { Box, Text } from "ink";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { t } from "../../../i18n/index.js";

@@ -11,7 +11,7 @@ import {
   SkillTool,
   ToolNames,
   uiTelemetryService,
-} from "@airiscode/core";
+} from "@airiscode/runtime";
 import { t } from "../../i18n/index.js";
 import type { SlashCommand } from "./types.js";
 import { CommandKind } from "./types.js";

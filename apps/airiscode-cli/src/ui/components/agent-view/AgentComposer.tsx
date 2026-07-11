@@ -17,7 +17,7 @@
  * agent's derived streaming state instead of the main agent's.
  */
 
-import { AgentStatus, APPROVAL_MODES, ApprovalMode, isTerminalStatus } from "@airiscode/core";
+import { AgentStatus, APPROVAL_MODES, ApprovalMode, isTerminalStatus } from "@airiscode/runtime";
 import { Box, Text, useStdin } from "ink";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { t } from "../../../i18n/index.js";

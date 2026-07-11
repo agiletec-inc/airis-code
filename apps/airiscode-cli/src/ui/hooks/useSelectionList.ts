@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { createDebugLogger } from "@airiscode/core";
+import { createDebugLogger } from "@airiscode/runtime";
 import { useEffect, useReducer, useRef } from "react";
 import { useKeypress } from "./useKeypress.js";
 

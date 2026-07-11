@@ -33,7 +33,7 @@ import {
   setGeminiMdFilename as setServerGeminiMdFilename,
   type ToolName,
   WriteFileTool,
-} from "@airiscode/core";
+} from "@airiscode/runtime";
 import yargs, { type Argv } from "yargs";
 import { hideBin } from "yargs/helpers";
 import { authCommand } from "../commands/auth.js";

@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import type { GitService } from "@airiscode/core";
+import type { GitService } from "@airiscode/runtime";
 import { vi } from "vitest";
 import type { LoadedSettings } from "../config/settings.js";
 import type { CommandContext } from "../ui/commands/types.js";

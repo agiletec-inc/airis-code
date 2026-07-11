@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { type ExtensionInstallMetadata } from "@airiscode/core";
+import { type ExtensionInstallMetadata } from "@airiscode/runtime";
 import type { CommandModule } from "yargs";
 import { t } from "../../i18n/index.js";
 import { getErrorMessage } from "../../utils/errors.js";

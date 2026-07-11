@@ -12,7 +12,7 @@ import {
   getAllGeminiMdFilenames,
   getErrorMessage,
   loadServerHierarchicalMemory,
-} from "@airiscode/core";
+} from "@airiscode/runtime";
 import { t } from "../../i18n/index.js";
 import { MessageType } from "../types.js";
 import type { SlashCommand, SlashCommandActionReturn } from "./types.js";

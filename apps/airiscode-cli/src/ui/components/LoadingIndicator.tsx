@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import type { ThoughtSummary } from "@airiscode/core";
+import type { ThoughtSummary } from "@airiscode/runtime";
 import { Box, Text } from "ink";
 import type React from "react";
 import { t } from "../../i18n/index.js";

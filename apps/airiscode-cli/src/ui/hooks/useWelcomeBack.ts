@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { type Config, getProjectSummaryInfo, type ProjectSummaryInfo } from "@airiscode/core";
+import { type Config, getProjectSummaryInfo, type ProjectSummaryInfo } from "@airiscode/runtime";
 import { useCallback, useEffect, useState } from "react";
 import { type Settings } from "../../config/settingsSchema.js";
 

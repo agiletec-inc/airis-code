@@ -6,12 +6,12 @@
 
 import readline from "node:readline";
 import { PassThrough } from "node:stream";
-import type { Config } from "@airiscode/core";
+import type { Config } from "@airiscode/runtime";
 import {
   createDebugLogger,
   KittySequenceOverflowEvent,
   logKittySequenceOverflow,
-} from "@airiscode/core";
+} from "@airiscode/runtime";
 import { useStdin } from "ink";
 import type React from "react";
 import { createContext, useCallback, useContext, useEffect, useRef } from "react";

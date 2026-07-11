@@ -10,7 +10,7 @@ import {
   createDebugLogger,
   getInsightPrompt,
   read as readJsonlFile,
-} from "@airiscode/core";
+} from "@airiscode/runtime";
 import fs from "fs/promises";
 import pLimit from "p-limit";
 import path from "path";

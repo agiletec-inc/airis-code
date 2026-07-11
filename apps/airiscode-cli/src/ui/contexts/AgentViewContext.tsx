@@ -15,7 +15,7 @@
  * in-process-only concerns and to make the feature self-contained.
  */
 
-import { type AgentInteractive, type ApprovalMode, type Config } from "@airiscode/core";
+import { type AgentInteractive, type ApprovalMode, type Config } from "@airiscode/runtime";
 import { createContext, useCallback, useContext, useMemo, useState } from "react";
 import { useArenaInProcess } from "../hooks/useArenaInProcess.js";
 

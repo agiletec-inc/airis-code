@@ -5,8 +5,8 @@
  */
 
 import * as path from "node:path";
-import type { Config } from "@airiscode/core";
-import { ApprovalMode, createDebugLogger, Storage } from "@airiscode/core";
+import type { Config } from "@airiscode/runtime";
+import { ApprovalMode, createDebugLogger, Storage } from "@airiscode/runtime";
 import chalk from "chalk";
 import { Box, Text } from "ink";
 import type React from "react";

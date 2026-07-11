@@ -19,7 +19,7 @@ import {
   type AgentInteractive,
   AgentStatus,
   isTerminalStatus,
-} from "@airiscode/core";
+} from "@airiscode/runtime";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { StreamingState } from "../types.js";
 import { useTimer } from "./useTimer.js";

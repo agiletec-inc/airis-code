@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { CompressionStatus } from "@airiscode/core";
+import { CompressionStatus } from "@airiscode/runtime";
 import { Box, Text } from "ink";
 import Spinner from "ink-spinner";
 import { t } from "../../../i18n/index.js";

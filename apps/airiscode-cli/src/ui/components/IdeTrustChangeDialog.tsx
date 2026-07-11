@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { createDebugLogger } from "@airiscode/core";
+import { createDebugLogger } from "@airiscode/runtime";
 import { Box, Text } from "ink";
 import { relaunchApp } from "../../utils/processUtils.js";
 import { type RestartReason } from "../hooks/useIdeTrustListener.js";

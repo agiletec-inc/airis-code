@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { APPROVAL_MODES, ApprovalMode } from "@airiscode/core";
+import { APPROVAL_MODES, ApprovalMode } from "@airiscode/runtime";
 import { Box, Text } from "ink";
 import type React from "react";
 import { useCallback, useState } from "react";

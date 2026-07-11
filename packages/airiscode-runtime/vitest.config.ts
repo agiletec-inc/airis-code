@@ -8,6 +8,9 @@ import { defineConfig } from "vitest/config";
 
 export default defineConfig({
   test: {
+    pool: "threads",
+    maxWorkers: 16,
+    passWithNoTests: true,
     reporters: ["default", "junit"],
     silent: true,
     setupFiles: ["./test-setup.ts"],
@@ -15,10 +18,10 @@ export default defineConfig({
       junit: "junit.xml",
     },
     coverage: {
-      enabled: true,
+      enabled: false,
       provider: "v8",
       reportsDirectory: "./coverage",
-      include: ["src/**/*"],
+      include: ["src/**/*.{ts,tsx,js,jsx}"],
       reporter: [
         ["text", { file: "full-text-summary.txt" }],
         "html",
@@ -27,12 +30,6 @@ export default defineConfig({
         "cobertura",
         ["json-summary", { outputFile: "coverage-summary.json" }],
       ],
-    },
-    poolOptions: {
-      threads: {
-        minThreads: 8,
-        maxThreads: 16,
-      },
     },
   },
 });

@@ -4,8 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import type { EditorType } from "@airiscode/core";
-import { allowEditorTypeInSandbox, checkHasEditorType } from "@airiscode/core";
+import type { EditorType } from "@airiscode/runtime";
+import { allowEditorTypeInSandbox, checkHasEditorType } from "@airiscode/runtime";
 import { useCallback, useState } from "react";
 import type { LoadedSettings, SettingScope } from "../../config/settings.js";
 import { type HistoryItem, MessageType } from "../types.js";

@@ -4,8 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import type { OAuthDisplayPayload } from "@airiscode/core";
-import { getErrorMessage, MCPOAuthProvider, MCPOAuthTokenStorage } from "@airiscode/core";
+import type { OAuthDisplayPayload } from "@airiscode/runtime";
+import { getErrorMessage, MCPOAuthProvider, MCPOAuthTokenStorage } from "@airiscode/runtime";
 import { Box, Text } from "ink";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { t } from "../../../../i18n/index.js";

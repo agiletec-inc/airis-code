@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import type { Config, Content, GitService, Logger, PartListUnion } from "@airiscode/core";
+import type { Config, Content, GitService, Logger, PartListUnion } from "@airiscode/runtime";
 import type { MutableRefObject, ReactNode } from "react";
 import type { LoadedSettings } from "../../config/settings.js";
 import type { SessionStatsState } from "../contexts/SessionContext.js";

@@ -1,5 +1,5 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import type { McpToolProgressData, SubagentConfig } from "@airiscode/core";
+import type { McpToolProgressData, SubagentConfig } from "@airiscode/runtime";
 
 /**
  * Annotation for attaching metadata to content blocks

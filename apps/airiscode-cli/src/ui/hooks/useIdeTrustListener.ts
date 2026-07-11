@@ -9,7 +9,7 @@ import {
   IDEConnectionStatus,
   IdeClient,
   ideContextStore,
-} from "@airiscode/core";
+} from "@airiscode/runtime";
 import { useCallback, useEffect, useRef, useState, useSyncExternalStore } from "react";
 import { isWorkspaceTrusted } from "../../config/trustedFolders.js";
 import { useSettings } from "../contexts/SettingsContext.js";

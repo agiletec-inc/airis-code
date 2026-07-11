@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import type { Config } from "@airiscode/core";
+import type { Config } from "@airiscode/runtime";
 import {
   createDebugLogger,
   FatalCancellationError,
@@ -13,7 +13,7 @@ import {
   OutputFormat,
   parseAndFormatApiError,
   ToolErrorType,
-} from "@airiscode/core";
+} from "@airiscode/runtime";
 import { writeStderrLine } from "./stdioHelpers.js";
 
 const debugLogger = createDebugLogger("CLI_ERRORS");

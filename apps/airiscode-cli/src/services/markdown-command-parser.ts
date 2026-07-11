@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { normalizeContent, parse as parseYaml } from "@airiscode/core";
+import { normalizeContent, parse as parseYaml } from "@airiscode/runtime";
 import { z } from "zod";
 
 /**

@@ -4,7 +4,7 @@ import type {
   ExtensionRequestOptions,
   SkillConfig,
   SubagentConfig,
-} from "@airiscode/core";
+} from "@airiscode/runtime";
 import chalk from "chalk";
 import prompts from "prompts";
 import { t } from "../../i18n/index.js";

@@ -4,8 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import type { Config } from "@airiscode/core";
-import { appendToLastTextPart, createDebugLogger } from "@airiscode/core";
+import type { Config } from "@airiscode/runtime";
+import { appendToLastTextPart, createDebugLogger } from "@airiscode/runtime";
 import type { SlashCommand, SlashCommandActionReturn } from "../ui/commands/types.js";
 import { CommandKind } from "../ui/commands/types.js";
 import type { ICommandLoader } from "./types.js";

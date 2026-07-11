@@ -6,7 +6,7 @@
 
 import type { SpawnOptions } from "node:child_process";
 import { spawn } from "node:child_process";
-import { createDebugLogger } from "@airiscode/core";
+import { createDebugLogger } from "@airiscode/runtime";
 
 /**
  * Common Windows console code pages (CP) used for encoding conversions.

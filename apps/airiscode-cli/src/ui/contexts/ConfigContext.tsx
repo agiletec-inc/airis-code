@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { type Config } from "@airiscode/core";
+import { type Config } from "@airiscode/runtime";
 import React, { useContext } from "react";
 
 export const ConfigContext = React.createContext<Config | undefined>(undefined);

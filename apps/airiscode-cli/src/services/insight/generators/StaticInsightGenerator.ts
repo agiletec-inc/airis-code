@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { type Config, Storage, updateSymlink } from "@airiscode/core";
+import { type Config, Storage, updateSymlink } from "@airiscode/runtime";
 import fs from "fs/promises";
 import path from "path";
 import type { InsightData, InsightProgressCallback } from "../types/StaticInsightTypes.js";

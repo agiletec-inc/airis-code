@@ -19,8 +19,8 @@ import type {
   ToolCallsUpdateHandler,
   ValidatingToolCall,
   WaitingToolCall,
-} from "@airiscode/core";
-import { CoreToolScheduler, createDebugLogger } from "@airiscode/core";
+} from "@airiscode/runtime";
+import { CoreToolScheduler, createDebugLogger } from "@airiscode/runtime";
 import { useCallback, useMemo, useState } from "react";
 import type { HistoryItemToolGroup, IndividualToolCallDisplay } from "../types.js";
 import { ToolCallStatus } from "../types.js";

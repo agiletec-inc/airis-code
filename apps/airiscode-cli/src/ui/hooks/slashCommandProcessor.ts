@@ -15,7 +15,7 @@ import {
   type PartListUnion,
   SlashCommandStatus,
   ToolConfirmationOutcome,
-} from "@airiscode/core";
+} from "@airiscode/runtime";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { LoadedSettings } from "../../config/settings.js";
 import { BuiltinCommandLoader } from "../../services/BuiltinCommandLoader.js";

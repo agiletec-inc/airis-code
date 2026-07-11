@@ -5,8 +5,8 @@
  */
 
 import * as os from "node:os";
-import type { SandboxConfig } from "@airiscode/core";
-import { FatalSandboxError } from "@airiscode/core";
+import type { SandboxConfig } from "@airiscode/runtime";
+import { FatalSandboxError } from "@airiscode/runtime";
 import commandExists from "command-exists";
 import { getPackageJson } from "../utils/package.js";
 import type { Settings } from "./settings.js";

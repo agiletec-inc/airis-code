@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { createDebugLogger } from "@airiscode/core";
+import { createDebugLogger } from "@airiscode/runtime";
 import { useCallback, useEffect, useReducer } from "react";
 import type { TextBuffer } from "../components/shared/text-buffer.js";
 import { useVimMode } from "../contexts/VimModeContext.js";

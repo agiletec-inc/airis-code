@@ -4,7 +4,13 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { AuthEvent, type AuthType, type Config, getErrorMessage, logAuth } from "@airiscode/core";
+import {
+  AuthEvent,
+  type AuthType,
+  type Config,
+  getErrorMessage,
+  logAuth,
+} from "@airiscode/runtime";
 
 /**
  * Handles the initial authentication flow.

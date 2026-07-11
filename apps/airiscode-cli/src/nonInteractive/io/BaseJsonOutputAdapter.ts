@@ -15,8 +15,8 @@ import type {
   SessionMetrics,
   ToolCallRequestInfo,
   ToolCallResponseInfo,
-} from "@airiscode/core";
-import { GeminiEventType, parseAndFormatApiError, ToolErrorType } from "@airiscode/core";
+} from "@airiscode/runtime";
+import { GeminiEventType, parseAndFormatApiError, ToolErrorType } from "@airiscode/runtime";
 import { functionResponsePartsToString } from "../../utils/nonInteractiveHelpers.js";
 import type {
   CLIAssistantMessage,

@@ -12,7 +12,7 @@
 
 import * as fs from "node:fs";
 import * as path from "node:path";
-import { Storage } from "@airiscode/core";
+import { Storage } from "@airiscode/runtime";
 import { detectSystemLanguage, getLanguageNameFromLocale } from "../i18n/index.js";
 
 const LLM_OUTPUT_LANGUAGE_RULE_FILENAME = "output-language.md";

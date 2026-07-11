@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import type { Config, Content, Part, PartListUnion, ToolCallRequestInfo } from "@airiscode/core";
+import type { Config, Content, Part, PartListUnion, ToolCallRequestInfo } from "@airiscode/runtime";
 import {
   createDebugLogger,
   executeToolCall,
@@ -18,7 +18,7 @@ import {
   SendMessageType,
   shutdownTelemetry,
   uiTelemetryService,
-} from "@airiscode/core";
+} from "@airiscode/runtime";
 import type { LoadedSettings } from "./config/settings.js";
 import type { ControlService } from "./nonInteractive/control/ControlService.js";
 import type { JsonOutputAdapterInterface } from "./nonInteractive/io/BaseJsonOutputAdapter.js";

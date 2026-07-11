@@ -13,7 +13,7 @@
  *   outside the main app.
  */
 
-import type { ListSessionsResult, SessionListItem, SessionService } from "@airiscode/core";
+import type { ListSessionsResult, SessionListItem, SessionService } from "@airiscode/runtime";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   filterSessions,

@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { type SubagentConfig } from "@airiscode/core";
+import { type SubagentConfig } from "@airiscode/runtime";
 import { Box, Text } from "ink";
 import { useEffect, useMemo, useState } from "react";
 import { t } from "../../../../i18n/index.js";

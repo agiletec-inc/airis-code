@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import type { WebSearchProviderConfig } from "@airiscode/core";
+import type { WebSearchProviderConfig } from "@airiscode/runtime";
 import type { Settings } from "./settings.js";
 
 /**

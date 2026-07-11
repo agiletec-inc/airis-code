@@ -8,13 +8,13 @@ import crypto from "node:crypto";
 import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
-import type { AnsiOutput, Config, GeminiClient, ShellExecutionResult } from "@airiscode/core";
+import type { AnsiOutput, Config, GeminiClient, ShellExecutionResult } from "@airiscode/runtime";
 import {
   createDebugLogger,
   isBinary,
   type PartListUnion,
   ShellExecutionService,
-} from "@airiscode/core";
+} from "@airiscode/runtime";
 import { useCallback, useState } from "react";
 import { themeManager } from "../../ui/themes/theme-manager.js";
 import { SHELL_COMMAND_NAME } from "../constants.js";

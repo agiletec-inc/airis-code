@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import type { ApprovalMode, AuthType } from "@airiscode/core";
+import type { ApprovalMode, AuthType } from "@airiscode/runtime";
 import { useCallback } from "react";
 import { SettingScope } from "../../config/settings.js";
 import type { ArenaDialogType } from "./useArenaCommand.js";

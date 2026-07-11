@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { ApprovalMode } from "@airiscode/core";
+import { ApprovalMode } from "@airiscode/runtime";
 import { t } from "../../i18n/index.js";
 import {
   type CommandContext,

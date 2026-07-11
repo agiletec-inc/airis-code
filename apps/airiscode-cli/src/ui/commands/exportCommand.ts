@@ -6,7 +6,7 @@
 
 import * as fs from "node:fs/promises";
 import path from "node:path";
-import { SessionService } from "@airiscode/core";
+import { SessionService } from "@airiscode/runtime";
 import { t } from "../../i18n/index.js";
 import {
   collectSessionData,

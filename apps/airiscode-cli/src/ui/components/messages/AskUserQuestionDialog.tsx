@@ -8,7 +8,7 @@ import {
   type ToolAskUserQuestionConfirmationDetails,
   ToolConfirmationOutcome,
   type ToolConfirmationPayload,
-} from "@airiscode/core";
+} from "@airiscode/runtime";
 import { Box, Text } from "ink";
 import type React from "react";
 import { useState } from "react";

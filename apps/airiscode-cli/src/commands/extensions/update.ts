@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { checkForExtensionUpdate, type ExtensionUpdateInfo } from "@airiscode/core";
+import { checkForExtensionUpdate, type ExtensionUpdateInfo } from "@airiscode/runtime";
 import type { CommandModule } from "yargs";
 import { t } from "../../i18n/index.js";
 import { ExtensionUpdateState } from "../../ui/state/extensions.js";

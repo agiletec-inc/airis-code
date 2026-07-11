@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import type { SessionListItem as SessionData, SessionService } from "@airiscode/core";
+import type { SessionListItem as SessionData, SessionService } from "@airiscode/runtime";
 import { Box, Text } from "ink";
 import { t } from "../../i18n/index.js";
 import { useSessionPicker } from "../hooks/useSessionPicker.js";

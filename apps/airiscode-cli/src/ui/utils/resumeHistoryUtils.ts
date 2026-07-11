@@ -15,7 +15,7 @@ import type {
   ResumedSessionData,
   SlashCommandRecordPayload,
   ToolResultDisplay,
-} from "@airiscode/core";
+} from "@airiscode/runtime";
 import type { HistoryItem, HistoryItemWithoutId, IndividualToolCallDisplay } from "../types.js";
 import { ToolCallStatus } from "../types.js";
 

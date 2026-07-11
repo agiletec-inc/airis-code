@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { HooksConfigSource } from "@airiscode/core";
+import { HooksConfigSource } from "@airiscode/runtime";
 import { Box, Text } from "ink";
 import { t } from "../../../i18n/index.js";
 import { useTerminalSize } from "../../hooks/useTerminalSize.js";

@@ -9,7 +9,7 @@ import {
   type Config,
   type ModelProvidersConfig,
   type ProviderModelConfig,
-} from "@airiscode/core";
+} from "@airiscode/runtime";
 import { t } from "../i18n/index.js";
 import { loadEnvironment, loadSettings, type Settings } from "./settings.js";
 

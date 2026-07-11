@@ -31,7 +31,7 @@ import {
   type SpeculationState,
   Storage,
   startSpeculation,
-} from "@airiscode/core";
+} from "@airiscode/runtime";
 import { type DOMElement, measureElement, useStdin, useStdout } from "ink";
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { validateAuthMethod } from "../config/auth.js";

@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { createDebugLogger } from "@airiscode/core";
+import { createDebugLogger } from "@airiscode/runtime";
 import semver from "semver";
 import type { UpdateInfo } from "update-notifier";
 import updateNotifier from "update-notifier";

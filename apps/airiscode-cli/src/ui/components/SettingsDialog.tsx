@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { type Config, createDebugLogger } from "@airiscode/core";
+import { type Config, createDebugLogger } from "@airiscode/runtime";
 import chalk from "chalk";
 import { Box, Text } from "ink";
 import type React from "react";

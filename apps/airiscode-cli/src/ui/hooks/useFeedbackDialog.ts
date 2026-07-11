@@ -6,7 +6,7 @@ import {
   logUserFeedback,
   UserFeedbackEvent,
   type UserFeedbackRating,
-} from "@airiscode/core";
+} from "@airiscode/runtime";
 import { useCallback, useEffect, useState } from "react";
 import stripJsonComments from "strip-json-comments";
 import { type LoadedSettings, SettingScope, USER_SETTINGS_PATH } from "../../config/settings.js";

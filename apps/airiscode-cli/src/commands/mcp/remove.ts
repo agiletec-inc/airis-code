@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { MCPOAuthTokenStorage } from "@airiscode/core";
+import { MCPOAuthTokenStorage } from "@airiscode/runtime";
 // File for 'qwen mcp remove' command
 import type { CommandModule } from "yargs";
 import { loadSettings, SettingScope } from "../../config/settings.js";

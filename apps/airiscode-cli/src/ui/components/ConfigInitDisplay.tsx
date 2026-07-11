@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { MCPServerStatus, type McpClient } from "@airiscode/core";
+import { MCPServerStatus, type McpClient } from "@airiscode/runtime";
 import { Box, Text } from "ink";
 import { useEffect, useState } from "react";
 import { t } from "../../i18n/index.js";

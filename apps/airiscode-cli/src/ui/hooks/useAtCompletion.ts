@@ -4,8 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import type { Config, FileSearch } from "@airiscode/core";
-import { escapePath, FileSearchFactory } from "@airiscode/core";
+import type { Config, FileSearch } from "@airiscode/runtime";
+import { escapePath, FileSearchFactory } from "@airiscode/runtime";
 import { useEffect, useReducer, useRef } from "react";
 import type { Suggestion } from "../components/SuggestionsDisplay.js";
 import { MAX_SUGGESTIONS_TO_SHOW } from "../components/SuggestionsDisplay.js";

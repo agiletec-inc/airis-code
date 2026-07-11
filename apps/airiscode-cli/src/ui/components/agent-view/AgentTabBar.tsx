@@ -18,7 +18,7 @@
  * Tab indicators:  running,  idle/completed,  failed,  cancelled
  */
 
-import { AgentEventType, AgentStatus } from "@airiscode/core";
+import { AgentEventType, AgentStatus } from "@airiscode/runtime";
 import { Box, Text } from "ink";
 import { useCallback, useEffect, useState } from "react";
 import {

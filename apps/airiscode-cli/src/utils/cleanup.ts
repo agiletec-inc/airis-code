@@ -6,7 +6,7 @@
 
 import { promises as fs } from "node:fs";
 import { join } from "node:path";
-import { Storage } from "@airiscode/core";
+import { Storage } from "@airiscode/runtime";
 
 const cleanupFunctions: Array<(() => void) | (() => Promise<void>)> = [];
 

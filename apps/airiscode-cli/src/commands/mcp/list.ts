@@ -4,8 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import type { MCPServerConfig } from "@airiscode/core";
-import { createTransport, ExtensionManager, MCPServerStatus } from "@airiscode/core";
+import type { MCPServerConfig } from "@airiscode/runtime";
+import { createTransport, ExtensionManager, MCPServerStatus } from "@airiscode/runtime";
 import { Client } from "@modelcontextprotocol/sdk/client/index.js";
 // File for 'qwen mcp list' command
 import type { CommandModule } from "yargs";

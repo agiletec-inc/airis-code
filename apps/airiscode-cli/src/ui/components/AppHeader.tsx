@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { AuthType } from "@airiscode/core";
+import { AuthType } from "@airiscode/runtime";
 import { Box } from "ink";
 import { isCodingPlanConfig } from "../../constants/codingPlan.js";
 import { useConfig } from "../contexts/ConfigContext.js";

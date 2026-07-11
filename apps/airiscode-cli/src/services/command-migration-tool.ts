@@ -10,7 +10,7 @@
 
 import { promises as fs } from "node:fs";
 import path from "node:path";
-import { convertTomlToMarkdown } from "@airiscode/core";
+import { convertTomlToMarkdown } from "@airiscode/runtime";
 import { glob } from "glob";
 import { t } from "../i18n/index.js";
 

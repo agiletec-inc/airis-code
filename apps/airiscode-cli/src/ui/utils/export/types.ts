@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import type { GenerateContentResponseUsageMetadata } from "@airiscode/core";
+import type { GenerateContentResponseUsageMetadata } from "@airiscode/runtime";
 
 /**
  * Universal export message format - SSOT for all export formats.

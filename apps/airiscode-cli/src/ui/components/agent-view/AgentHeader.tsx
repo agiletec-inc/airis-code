@@ -10,7 +10,7 @@
  * branch in a bordered info panel.
  */
 
-import { shortenPath, tildeifyPath } from "@airiscode/core";
+import { shortenPath, tildeifyPath } from "@airiscode/runtime";
 import { Box, Text } from "ink";
 import type React from "react";
 import { useTerminalSize } from "../../hooks/useTerminalSize.js";

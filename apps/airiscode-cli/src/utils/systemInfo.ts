@@ -7,7 +7,7 @@
 import { execSync } from "node:child_process";
 import os from "node:os";
 import process from "node:process";
-import { AuthType, IdeClient } from "@airiscode/core";
+import { AuthType, IdeClient } from "@airiscode/runtime";
 import type { CommandContext } from "../ui/commands/types.js";
 import { formatMemoryUsage } from "../ui/utils/formatters.js";
 import { getCliVersion } from "./version.js";

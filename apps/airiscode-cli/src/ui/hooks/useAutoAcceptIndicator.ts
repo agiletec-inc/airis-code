@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { APPROVAL_MODES, type ApprovalMode, type Config } from "@airiscode/core";
+import { APPROVAL_MODES, type ApprovalMode, type Config } from "@airiscode/runtime";
 import { useEffect, useState } from "react";
 import type { HistoryItemWithoutId } from "../types.js";
 import { MessageType } from "../types.js";

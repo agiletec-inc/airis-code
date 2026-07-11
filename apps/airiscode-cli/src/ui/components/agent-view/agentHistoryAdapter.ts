@@ -17,7 +17,11 @@
  * requires items never shift or be removed, which this guarantees.
  */
 
-import type { AgentMessage, ToolCallConfirmationDetails, ToolResultDisplay } from "@airiscode/core";
+import type {
+  AgentMessage,
+  ToolCallConfirmationDetails,
+  ToolResultDisplay,
+} from "@airiscode/runtime";
 import type { HistoryItem, IndividualToolCallDisplay } from "../../types.js";
 import { ToolCallStatus } from "../../types.js";
 

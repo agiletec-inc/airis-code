@@ -4,7 +4,11 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { AuthType, type Config, type AvailableModel as CoreAvailableModel } from "@airiscode/core";
+import {
+  AuthType,
+  type Config,
+  type AvailableModel as CoreAvailableModel,
+} from "@airiscode/runtime";
 import { t } from "../../i18n/index.js";
 
 export type AvailableModel = {

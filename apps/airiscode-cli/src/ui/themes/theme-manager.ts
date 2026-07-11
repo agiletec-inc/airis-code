@@ -8,7 +8,7 @@ import * as fs from "node:fs";
 import * as os from "node:os";
 import * as path from "node:path";
 import process from "node:process";
-import { createDebugLogger } from "@airiscode/core";
+import { createDebugLogger } from "@airiscode/runtime";
 import { ANSI } from "./ansi.js";
 import { ANSILight } from "./ansi-light.js";
 import { AtomOneDark } from "./atom-one-dark.js";

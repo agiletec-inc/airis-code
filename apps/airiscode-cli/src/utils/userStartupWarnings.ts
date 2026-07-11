@@ -7,7 +7,7 @@
 import fs from "node:fs/promises";
 import * as os from "node:os";
 import path from "node:path";
-import { canUseRipgrep } from "@airiscode/core";
+import { canUseRipgrep } from "@airiscode/runtime";
 
 type WarningCheckOptions = {
   workspaceRoot: string;

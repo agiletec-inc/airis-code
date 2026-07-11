@@ -8,17 +8,17 @@
  * Thin React wrapper around the framework-agnostic controller from core.
  */
 
-import type { Config, FollowupState } from "@airiscode/core";
+import type { Config, FollowupState } from "@airiscode/runtime";
 import {
   createFollowupController,
   INITIAL_FOLLOWUP_STATE,
   logPromptSuggestion,
   PromptSuggestionEvent,
-} from "@airiscode/core";
+} from "@airiscode/runtime";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 // Re-export for consumers that import from here
-export type { FollowupState } from "@airiscode/core";
+export type { FollowupState } from "@airiscode/runtime";
 
 /**
  * Options for the hook

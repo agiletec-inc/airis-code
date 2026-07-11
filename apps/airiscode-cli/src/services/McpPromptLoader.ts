@@ -4,8 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import type { Config } from "@airiscode/core";
-import { getErrorMessage, getMCPServerPrompts } from "@airiscode/core";
+import type { Config } from "@airiscode/runtime";
+import { getErrorMessage, getMCPServerPrompts } from "@airiscode/runtime";
 import type { PromptArgument } from "@modelcontextprotocol/sdk/types.js";
 import type {
   CommandContext,

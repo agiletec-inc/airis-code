@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import type { AgentResultDisplay } from "@airiscode/core";
+import type { AgentResultDisplay } from "@airiscode/runtime";
 import { Box } from "ink";
 import type React from "react";
 import { useMemo, useRef } from "react";

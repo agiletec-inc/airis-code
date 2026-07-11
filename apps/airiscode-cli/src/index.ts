@@ -7,7 +7,7 @@
  */
 
 import "./gemini.js";
-import { FatalError } from "@airiscode/core";
+import { FatalError } from "@airiscode/runtime";
 import { main } from "./gemini.js";
 import { writeStderrLine } from "./utils/stdioHelpers.js";
 

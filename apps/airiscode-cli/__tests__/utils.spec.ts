@@ -4,12 +4,20 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 
 vi.mock("node:os", () => ({
   homedir: () => "/mock/home",
+  default: {
+    homedir: () => "/mock/home",
+  },
+}));
+
+vi.mock("node:fs/promises", () => ({
+  readFile: vi.fn(),
+  writeFile: vi.fn(),
+  readdir: vi.fn(),
+  mkdir: vi.fn(),
 }));
 
 import { loadConfig, saveConfig } from "../src/utils/config.js";
 import { listSessions, loadSession, saveSession } from "../src/utils/session.js";
-
-vi.mock("node:fs/promises");
 
 describe("CLI Utilities", () => {
   beforeEach(() => {
@@ -18,7 +26,9 @@ describe("CLI Utilities", () => {
 
   describe("Config Utility", () => {
     it("should load default config when file does not exist", async () => {
-      vi.mocked(fs.readFile).mockRejectedValue(new Error("File not found"));
+      vi.mocked(fs.readFile).mockRejectedValue(
+        Object.assign(new Error("File not found"), { code: "ENOENT" }),
+      );
       const config = await loadConfig();
       expect(config.plannerModel).toBe("qwen3.5:2b");
     });

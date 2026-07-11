@@ -10,7 +10,7 @@ import {
   type HookConfig,
   type HookDefinition,
   HooksConfigSource,
-} from "@airiscode/core";
+} from "@airiscode/runtime";
 import { Box, Text } from "ink";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { loadSettings, SettingScope } from "../../../config/settings.js";

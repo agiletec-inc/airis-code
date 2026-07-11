@@ -9,7 +9,7 @@ import {
   type Config,
   getErrorMessage,
   type ProviderModelConfig as ModelConfig,
-} from "@airiscode/core";
+} from "@airiscode/runtime";
 import type { CliArgs } from "../../config/config.js";
 import { loadCliConfig } from "../../config/config.js";
 import { getPersistScopeForModelSelection } from "../../config/modelProvidersScope.js";

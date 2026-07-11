@@ -4,8 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import type { SkillConfig } from "@airiscode/core";
-import { createDebugLogger } from "@airiscode/core";
+import type { SkillConfig } from "@airiscode/runtime";
+import { createDebugLogger } from "@airiscode/runtime";
 import { AsyncFzf } from "fzf";
 import { t } from "../../i18n/index.js";
 import { type HistoryItemSkillsList, MessageType } from "../types.js";

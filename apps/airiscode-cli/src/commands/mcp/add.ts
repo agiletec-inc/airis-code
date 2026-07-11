@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import type { MCPServerConfig } from "@airiscode/core";
+import type { MCPServerConfig } from "@airiscode/runtime";
 // File for 'qwen mcp add' command
 import type { CommandModule } from "yargs";
 import { loadSettings, SettingScope } from "../../config/settings.js";

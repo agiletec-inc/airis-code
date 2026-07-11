@@ -15,7 +15,7 @@ WORKDIR /app
 COPY package.json pnpm-workspace.yaml ./
 COPY tsconfig.base.json tsconfig.json ./
 COPY apps/airiscode-cli/package.json ./apps/airiscode-cli/
-COPY packages/airiscode-core/package.json ./packages/airiscode-core/
+COPY packages/airiscode-runtime/package.json ./packages/airiscode-runtime/
 
 RUN pnpm install --frozen-lockfile=false
 

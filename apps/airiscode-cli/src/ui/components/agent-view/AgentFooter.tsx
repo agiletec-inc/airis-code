@@ -10,7 +10,7 @@
  * main-agent-specific concerns (vim mode, shell mode, exit prompts, etc.).
  */
 
-import { ApprovalMode } from "@airiscode/core";
+import { ApprovalMode } from "@airiscode/runtime";
 import { Box, Text } from "ink";
 import type React from "react";
 import { theme } from "../../semantic-colors.js";

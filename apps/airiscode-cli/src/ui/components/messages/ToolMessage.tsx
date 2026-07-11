@@ -11,7 +11,7 @@ import type {
   McpToolProgressData,
   PlanResultDisplay,
   TodoResultDisplay,
-} from "@airiscode/core";
+} from "@airiscode/runtime";
 import { Box, Text } from "ink";
 import React from "react";
 import type { LoadedSettings } from "../../../config/settings.js";

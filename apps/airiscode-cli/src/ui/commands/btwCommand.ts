@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import type { Content, GeminiClient } from "@airiscode/core";
+import type { Content, GeminiClient } from "@airiscode/runtime";
 import { t } from "../../i18n/index.js";
 import type { HistoryItemBtw } from "../types.js";
 import { MessageType } from "../types.js";

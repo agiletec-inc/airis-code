@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import type { MCPServerConfig, MCPServerStatus } from "@airiscode/core";
+import type { MCPServerConfig, MCPServerStatus } from "@airiscode/runtime";
 
 /**
  * MCP管理步骤定义

@@ -4,8 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import type { ChatRecord, Config, Kind, Part } from "@airiscode/core";
-import { ExitPlanModeTool, ToolNames } from "@airiscode/core";
+import type { ChatRecord, Config, Kind, Part } from "@airiscode/runtime";
+import { ExitPlanModeTool, ToolNames } from "@airiscode/runtime";
 import type { ExportMessage, ExportSessionData } from "./types.js";
 
 /**

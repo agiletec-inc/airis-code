@@ -14,7 +14,7 @@ import {
   FatalConfigError,
   getErrorMessage,
   Storage,
-} from "@airiscode/core";
+} from "@airiscode/runtime";
 import * as dotenv from "dotenv";
 import stripJsonComments from "strip-json-comments";
 import { DefaultDark } from "../ui/themes/default.js";

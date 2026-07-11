@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import type { HookRegistryEntry } from "@airiscode/core";
+import type { HookRegistryEntry } from "@airiscode/runtime";
 import { t } from "../../i18n/index.js";
 import type {
   CommandContext,

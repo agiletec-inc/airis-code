@@ -24,7 +24,7 @@ import {
   type Config,
   DISPLAY_MODE,
   type InProcessBackend,
-} from "@airiscode/core";
+} from "@airiscode/runtime";
 import { useEffect, useRef } from "react";
 import type { AgentViewActions } from "../contexts/AgentViewContext.js";
 import { theme } from "../semantic-colors.js";

@@ -4,8 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import type { ModelMetrics, SessionMetrics, ToolCallStats } from "@airiscode/core";
-import { uiTelemetryService } from "@airiscode/core";
+import type { ModelMetrics, SessionMetrics, ToolCallStats } from "@airiscode/runtime";
+import { uiTelemetryService } from "@airiscode/runtime";
 import type React from "react";
 import { createContext, useCallback, useContext, useEffect, useMemo, useState } from "react";
 

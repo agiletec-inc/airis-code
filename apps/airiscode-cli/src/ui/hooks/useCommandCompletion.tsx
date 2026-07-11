@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import type { Config } from "@airiscode/core";
+import type { Config } from "@airiscode/runtime";
 import { useCallback, useEffect, useMemo } from "react";
 import type { CommandContext, SlashCommand } from "../commands/types.js";
 import type { Suggestion } from "../components/SuggestionsDisplay.js";

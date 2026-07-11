@@ -7,7 +7,7 @@
 import fs from "node:fs";
 import fsPromises from "node:fs/promises";
 import path from "node:path";
-import { execCommand, isCommandAvailable } from "@airiscode/core";
+import { execCommand, isCommandAvailable } from "@airiscode/runtime";
 import { useCallback, useEffect, useState } from "react";
 
 export function useGitBranchName(cwd: string): string | undefined {

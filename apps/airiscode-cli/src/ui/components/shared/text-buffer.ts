@@ -8,7 +8,7 @@ import { spawnSync } from "node:child_process";
 import fs from "node:fs";
 import os from "node:os";
 import pathMod from "node:path";
-import { createDebugLogger, unescapePath } from "@airiscode/core";
+import { createDebugLogger, unescapePath } from "@airiscode/runtime";
 import { useCallback, useEffect, useMemo, useReducer, useState } from "react";
 import {
   cpLen,

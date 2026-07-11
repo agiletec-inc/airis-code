@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { getProjectSummaryPrompt } from "@airiscode/core";
+import { getProjectSummaryPrompt } from "@airiscode/runtime";
 import * as fsPromises from "fs/promises";
 import path from "path";
 import { t } from "../../i18n/index.js";

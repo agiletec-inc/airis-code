@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import type { ApprovalMode, AuthType, IdeContext, IdeInfo } from "@airiscode/core";
+import type { ApprovalMode, AuthType, IdeContext, IdeInfo } from "@airiscode/runtime";
 import type { DOMElement } from "ink";
 import { createContext, useContext } from "react";
 import type { QwenAuthState } from "../auth/useAuth.js";

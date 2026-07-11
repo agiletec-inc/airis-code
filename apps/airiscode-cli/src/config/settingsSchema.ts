@@ -11,12 +11,12 @@ import type {
   MCPServerConfig,
   ModelProvidersConfig,
   TelemetrySettings,
-} from "@airiscode/core";
+} from "@airiscode/runtime";
 import {
   ApprovalMode,
   DEFAULT_TRUNCATE_TOOL_OUTPUT_LINES,
   DEFAULT_TRUNCATE_TOOL_OUTPUT_THRESHOLD,
-} from "@airiscode/core";
+} from "@airiscode/runtime";
 import { getLanguageSettingsOptions } from "../i18n/languages.js";
 import type { CustomTheme } from "../ui/themes/theme.js";
 

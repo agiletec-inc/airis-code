@@ -9,7 +9,7 @@ import {
   getScopedEnvContents,
   promptForSetting,
   updateSetting,
-} from "@airiscode/core";
+} from "@airiscode/runtime";
 import type { CommandModule } from "yargs";
 import { t } from "../../i18n/index.js";
 import { writeStdoutLine } from "../../utils/stdioHelpers.js";

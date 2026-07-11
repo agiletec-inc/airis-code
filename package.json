@@ -2,7 +2,8 @@
   "name": "airiscode",
   "version": "0.0.0",
   "private": true,
-  "packageManager": "pnpm@10.21.0",
+  "type": "module",
+  "packageManager": "pnpm@11.9.0",
   "scripts": {
     "build": "turbo run build",
     "test": "turbo run test",
@@ -13,26 +14,10 @@
   },
   "devDependencies": {
     "@biomejs/biome": "^2.4.16",
+    "@types/node": "^20.19.26",
+    "@vitest/coverage-v8": "4.1.9",
+    "turbo": "^2.9.18",
     "typescript": "5.9.3",
-    "vitest": "4.0.15",
-    "turbo": "latest",
-    "turbo-darwin-arm64": "latest"
-  },
-  "_generated": {
-    "by": "airis gen",
-    "managed_fields": [
-      "name",
-      "version",
-      "private",
-      "type",
-      "packageManager",
-      "workspaces"
-    ],
-    "warning": "Only the fields listed in managed_fields are updated by airis gen. Everything else is yours."
-  },
-  "type": "module",
-  "workspaces": [
-    "apps/airiscode-cli",
-    "packages/airiscode-core"
-  ]
+    "vitest": "4.1.9"
+  }
 }

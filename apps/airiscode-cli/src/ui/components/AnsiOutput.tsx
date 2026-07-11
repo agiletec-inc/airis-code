@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import type { AnsiLine, AnsiOutput, AnsiToken } from "@airiscode/core";
+import type { AnsiLine, AnsiOutput, AnsiToken } from "@airiscode/runtime";
 import { Text } from "ink";
 import type React from "react";
 

@@ -12,7 +12,7 @@
  * for internal CLI code (nonInteractiveCli, session managers, etc.).
  */
 
-import type { MCPServerConfig } from "@airiscode/core";
+import type { MCPServerConfig } from "@airiscode/runtime";
 import type { Client } from "@modelcontextprotocol/sdk/client/index.js";
 import type { PermissionSuggestion } from "../../types.js";
 

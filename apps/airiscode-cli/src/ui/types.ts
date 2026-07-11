@@ -13,7 +13,7 @@ import type {
   ToolCallConfirmationDetails,
   ToolConfirmationOutcome,
   ToolResultDisplay,
-} from "@airiscode/core";
+} from "@airiscode/runtime";
 import { type ReactNode } from "react";
 
 export type { ThoughtSummary };

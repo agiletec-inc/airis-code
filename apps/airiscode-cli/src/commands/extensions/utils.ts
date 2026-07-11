@@ -5,7 +5,7 @@
  */
 
 import * as os from "node:os";
-import { type Extension, ExtensionManager } from "@airiscode/core";
+import { type Extension, ExtensionManager } from "@airiscode/runtime";
 import chalk from "chalk";
 import { loadSettings } from "../../config/settings.js";
 import { isWorkspaceTrusted } from "../../config/trustedFolders.js";

@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-// No-op stub. OpenTelemetry has been removed from airiscode-core.
+// No-op stub. OpenTelemetry has been removed from airiscode-runtime.
 // Functions preserved for API compatibility with existing call sites that are
 // gated by isTelemetrySdkInitialized() returning false.
 

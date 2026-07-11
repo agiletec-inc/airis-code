@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { AgentStatus } from "@airiscode/core";
+import { AgentStatus } from "@airiscode/runtime";
 import { theme } from "../semantic-colors.js";
 
 // --- Status Labels ---

@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { Storage } from "@airiscode/core";
+import { Storage } from "@airiscode/runtime";
 import { useEffect, useState } from "react";
 import type { LoadedSettings } from "../../config/settings.js";
 import { detectTomlCommands } from "../../services/command-migration-tool.js";

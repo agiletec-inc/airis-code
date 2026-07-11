@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import type { AgentResultDisplay, AgentStatsSummary, Config } from "@airiscode/core";
+import type { AgentResultDisplay, AgentStatsSummary, Config } from "@airiscode/runtime";
 import { Box, Text } from "ink";
 import React, { useMemo } from "react";
 import { useKeypress } from "../../../hooks/useKeypress.js";

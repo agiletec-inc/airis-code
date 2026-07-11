@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { getGitBranch, SessionService } from "@airiscode/core";
+import { getGitBranch, SessionService } from "@airiscode/runtime";
 import { Box, render, useApp } from "ink";
 import { useState } from "react";
 import { writeStdoutLine } from "../../utils/stdioHelpers.js";

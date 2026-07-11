@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { isDebugLoggingDegraded, Storage } from "@airiscode/core";
+import { isDebugLoggingDegraded, Storage } from "@airiscode/runtime";
 import { Box, Text } from "ink";
 import { useConfig } from "../contexts/ConfigContext.js";
 import { theme } from "../semantic-colors.js";

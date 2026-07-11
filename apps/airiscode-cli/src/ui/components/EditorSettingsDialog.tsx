@@ -4,8 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import type { EditorType } from "@airiscode/core";
-import { createDebugLogger, isEditorAvailable } from "@airiscode/core";
+import type { EditorType } from "@airiscode/runtime";
+import { createDebugLogger, isEditorAvailable } from "@airiscode/runtime";
 import { Box, Text } from "ink";
 import type React from "react";
 import { useState } from "react";

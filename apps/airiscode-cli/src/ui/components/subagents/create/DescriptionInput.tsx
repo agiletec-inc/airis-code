@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { type Config, subagentGenerator } from "@airiscode/core";
+import { type Config, subagentGenerator } from "@airiscode/runtime";
 import { Box, Text } from "ink";
 import Spinner from "ink-spinner";
 import { useCallback, useRef } from "react";

@@ -7,8 +7,8 @@
 import * as fs from "node:fs";
 import * as os from "node:os";
 import * as nodePath from "node:path";
-import type { PermissionManager, RuleType, RuleWithSource } from "@airiscode/core";
-import { isPathWithinRoot } from "@airiscode/core";
+import type { PermissionManager, RuleType, RuleWithSource } from "@airiscode/runtime";
+import { isPathWithinRoot } from "@airiscode/runtime";
 import { Box, Text } from "ink";
 import type React from "react";
 import { useCallback, useEffect, useMemo, useState } from "react";

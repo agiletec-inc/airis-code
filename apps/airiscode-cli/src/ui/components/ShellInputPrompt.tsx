@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { ShellExecutionService } from "@airiscode/core";
+import { ShellExecutionService } from "@airiscode/runtime";
 import type React from "react";
 import { useCallback } from "react";
 import { type Key, keyToAnsi } from "../hooks/keyToAnsi.js";

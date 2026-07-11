@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { ExtensionManager, parseInstallSource } from "@airiscode/core";
+import { ExtensionManager, parseInstallSource } from "@airiscode/runtime";
 import type { CommandModule } from "yargs";
 import { loadSettings } from "../../config/settings.js";
 import { isWorkspaceTrusted } from "../../config/trustedFolders.js";

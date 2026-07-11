@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { type ApprovalMode, type AuthType, type EditorType } from "@airiscode/core";
+import { type ApprovalMode, type AuthType, type EditorType } from "@airiscode/runtime";
 import { createContext, useContext } from "react";
 import { type SettingScope } from "../../config/settings.js";
 import { type AlibabaStandardRegion } from "../../constants/alibabaStandardApiKey.js";

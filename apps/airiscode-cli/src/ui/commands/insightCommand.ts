@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { createDebugLogger, Storage } from "@airiscode/core";
+import { createDebugLogger, Storage } from "@airiscode/runtime";
 import open from "open";
 import { join } from "path";
 import { t } from "../../i18n/index.js";

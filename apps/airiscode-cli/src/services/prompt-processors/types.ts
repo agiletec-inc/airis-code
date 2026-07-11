@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import type { PartUnion } from "@airiscode/core";
+import type { PartUnion } from "@airiscode/runtime";
 import type { CommandContext } from "../../ui/commands/types.js";
 
 /**

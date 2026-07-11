@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { allowEditorTypeInSandbox, checkHasEditorType, type EditorType } from "@airiscode/core";
+import { allowEditorTypeInSandbox, checkHasEditorType, type EditorType } from "@airiscode/runtime";
 
 export interface EditorDisplay {
   name: string;

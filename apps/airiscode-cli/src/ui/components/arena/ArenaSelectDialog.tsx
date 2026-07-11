@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { type ArenaManager, type Config, isSuccessStatus } from "@airiscode/core";
+import { type ArenaManager, type Config, isSuccessStatus } from "@airiscode/runtime";
 import { Box, Text } from "ink";
 import type React from "react";
 import { useCallback, useMemo } from "react";

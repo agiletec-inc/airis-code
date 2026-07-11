@@ -12,7 +12,7 @@ import {
   logModelSlashCommand,
   MAINLINE_CODER_MODEL,
   ModelSlashCommandEvent,
-} from "@airiscode/core";
+} from "@airiscode/runtime";
 import { Box, Text } from "ink";
 import type React from "react";
 import { useCallback, useContext, useMemo, useState } from "react";

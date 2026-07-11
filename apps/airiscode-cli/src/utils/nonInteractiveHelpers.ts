@@ -15,13 +15,13 @@ import type {
   ToolCallRequestInfo,
   ToolCallResponseInfo,
   ToolResultDisplay,
-} from "@airiscode/core";
+} from "@airiscode/runtime";
 import {
   createDebugLogger,
   getMCPServerStatus,
   OutputFormat,
   ToolErrorType,
-} from "@airiscode/core";
+} from "@airiscode/runtime";
 import type {
   JsonOutputAdapterInterface,
   MessageEmitter,

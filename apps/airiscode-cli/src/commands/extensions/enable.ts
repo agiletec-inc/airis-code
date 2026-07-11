@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { FatalConfigError, getErrorMessage } from "@airiscode/core";
+import { FatalConfigError, getErrorMessage } from "@airiscode/runtime";
 import { type CommandModule } from "yargs";
 import { SettingScope } from "../../config/settings.js";
 import { t } from "../../i18n/index.js";

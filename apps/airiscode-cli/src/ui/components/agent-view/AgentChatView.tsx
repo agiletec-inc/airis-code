@@ -26,7 +26,7 @@ import {
   AgentStatus,
   type AgentStatusChangeEvent,
   getGitBranch,
-} from "@airiscode/core";
+} from "@airiscode/runtime";
 import { Box, Static, Text } from "ink";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useAgentViewActions, useAgentViewState } from "../../contexts/AgentViewContext.js";

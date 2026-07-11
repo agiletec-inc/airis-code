@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import type { HookConfig, HookEventName, HooksConfigSource } from "@airiscode/core";
+import type { HookConfig, HookEventName, HooksConfigSource } from "@airiscode/runtime";
 
 /**
  * Exit code description for hooks

@@ -4,8 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import type { PartListUnion } from "@airiscode/core";
-import { type Config, createDebugLogger, Logger, uiTelemetryService } from "@airiscode/core";
+import type { PartListUnion } from "@airiscode/runtime";
+import { type Config, createDebugLogger, Logger, uiTelemetryService } from "@airiscode/runtime";
 import type { LoadedSettings } from "./config/settings.js";
 import { t } from "./i18n/index.js";
 import { BuiltinCommandLoader } from "./services/BuiltinCommandLoader.js";

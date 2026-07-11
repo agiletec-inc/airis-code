@@ -18,7 +18,7 @@ import {
   createDebugLogger,
   type MCPOAuthConfig,
   MCPServerConfig,
-} from "@airiscode/core";
+} from "@airiscode/runtime";
 import { getAvailableCommands } from "../../../nonInteractiveCliCommands.js";
 import type {
   CLIControlInitializeRequest,

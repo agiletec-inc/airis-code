@@ -4,8 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import type { Config, ConfigInitializeOptions } from "@airiscode/core";
-import { createDebugLogger } from "@airiscode/core";
+import type { Config, ConfigInitializeOptions } from "@airiscode/runtime";
+import { createDebugLogger } from "@airiscode/runtime";
 import { createMinimalSettings } from "../config/settings.js";
 import { runNonInteractive } from "../nonInteractiveCli.js";
 import { ControlContext } from "./control/ControlContext.js";

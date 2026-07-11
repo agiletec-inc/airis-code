@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { createDebugLogger } from "@airiscode/core";
+import { createDebugLogger } from "@airiscode/runtime";
 import { type ChildProcess, exec } from "child_process";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useConfig } from "../contexts/ConfigContext.js";

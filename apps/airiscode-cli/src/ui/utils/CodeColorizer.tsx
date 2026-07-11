@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { createDebugLogger } from "@airiscode/core";
+import { createDebugLogger } from "@airiscode/runtime";
 import type { Element, ElementContent, Text as HastText, Root, RootContent } from "hast";
 import { Box, Text } from "ink";
 import { common, createLowlight } from "lowlight";

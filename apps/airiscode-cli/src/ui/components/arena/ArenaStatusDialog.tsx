@@ -12,7 +12,7 @@ import {
   DISPLAY_MODE,
   type InProcessBackend,
   isSettledStatus,
-} from "@airiscode/core";
+} from "@airiscode/runtime";
 import { Box, Text } from "ink";
 import type React from "react";
 import { useEffect, useMemo, useState } from "react";

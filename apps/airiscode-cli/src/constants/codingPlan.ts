@@ -5,7 +5,7 @@
  */
 
 import { createHash } from "node:crypto";
-import type { ProviderModelConfig as ModelConfig } from "@airiscode/core";
+import type { ProviderModelConfig as ModelConfig } from "@airiscode/runtime";
 
 /**
  * Coding plan regions

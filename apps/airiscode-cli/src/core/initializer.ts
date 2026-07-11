@@ -10,7 +10,7 @@ import {
   IdeConnectionEvent,
   IdeConnectionType,
   logIdeConnection,
-} from "@airiscode/core";
+} from "@airiscode/runtime";
 import { type LoadedSettings } from "../config/settings.js";
 import { initializeI18n, type SupportedLanguage } from "../i18n/index.js";
 import { performInitialAuth } from "./auth.js";

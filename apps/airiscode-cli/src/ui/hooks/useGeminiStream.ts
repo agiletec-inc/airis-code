@@ -18,7 +18,7 @@ import type {
   ServerGeminiFinishedEvent,
   ThoughtSummary,
   ToolCallRequestInfo,
-} from "@airiscode/core";
+} from "@airiscode/runtime";
 import {
   ApiCancelEvent,
   ApprovalMode,
@@ -45,7 +45,7 @@ import {
   UnauthorizedError,
   UserPromptEvent,
   UserRetryEvent,
-} from "@airiscode/core";
+} from "@airiscode/runtime";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { LoadedSettings } from "../../config/settings.js";
 import { t } from "../../i18n/index.js";

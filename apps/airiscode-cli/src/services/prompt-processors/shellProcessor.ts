@@ -12,7 +12,7 @@ import {
   flatMapTextParts,
   getShellConfiguration,
   ShellExecutionService,
-} from "@airiscode/core";
+} from "@airiscode/runtime";
 
 import type { CommandContext } from "../../ui/commands/types.js";
 import { themeManager } from "../../ui/themes/theme-manager.js";

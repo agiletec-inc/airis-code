@@ -4,8 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import type { Config } from "@airiscode/core";
-import { createDebugLogger } from "@airiscode/core";
+import type { Config } from "@airiscode/runtime";
+import { createDebugLogger } from "@airiscode/runtime";
 import { aboutCommand } from "../ui/commands/aboutCommand.js";
 import { agentsCommand } from "../ui/commands/agentsCommand.js";
 import { approvalModeCommand } from "../ui/commands/approvalModeCommand.js";

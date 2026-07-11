@@ -1,5 +1,5 @@
-import type { EditorType } from "@airiscode/core";
-import { commandExists as coreCommandExists, editorCommands } from "@airiscode/core";
+import type { EditorType } from "@airiscode/runtime";
+import { commandExists as coreCommandExists, editorCommands } from "@airiscode/runtime";
 import { spawnSync } from "child_process";
 import { useStdin } from "ink";
 import { useCallback } from "react";

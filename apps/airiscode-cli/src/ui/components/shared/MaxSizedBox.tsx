@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { createDebugLogger } from "@airiscode/core";
+import { createDebugLogger } from "@airiscode/runtime";
 import { Box, Text } from "ink";
 import React, { Fragment, useEffect, useId } from "react";
 import stringWidth from "string-width";

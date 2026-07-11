@@ -7,8 +7,8 @@
 import * as fsSync from "node:fs";
 import { promises as fs } from "node:fs";
 import path from "node:path";
-import type { Config } from "@airiscode/core";
-import { createDebugLogger, EXTENSIONS_CONFIG_FILENAME, Storage } from "@airiscode/core";
+import type { Config } from "@airiscode/runtime";
+import { createDebugLogger, EXTENSIONS_CONFIG_FILENAME, Storage } from "@airiscode/runtime";
 import toml from "@iarna/toml";
 import { glob } from "glob";
 import { z } from "zod";

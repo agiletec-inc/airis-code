@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { createDebugLogger } from '@airiscode/core';
+import { createDebugLogger } from '@airiscode/runtime';
 import type { SettingsMigration, MigrationResult } from './types.js';
 
 const debugLogger = createDebugLogger('SETTINGS_MIGRATION');

@@ -12,8 +12,8 @@ import type {
   ToolConfirmationOutcome,
   ToolResultDisplay,
   AgentStatus,
-} from '@airiscode/core';
-import type { PartListUnion } from '@airiscode/core';
+} from '@airiscode/runtime';
+import type { PartListUnion } from '@airiscode/runtime';
 import { type ReactNode } from 'react';
 
 export type { ThoughtSummary };
@@ -34,7 +34,7 @@ export enum StreamingState {
   WaitingForConfirmation = 'waiting_for_confirmation',
 }
 
-// Copied from server/src/core/turn.ts for CLI usage
+// Copied from server/src/runtime/turn.ts for CLI usage
 export enum GeminiEventType {
   Content = 'content',
   ToolCallRequest = 'tool_call_request',

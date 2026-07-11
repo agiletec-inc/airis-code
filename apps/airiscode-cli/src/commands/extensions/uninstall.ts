@@ -7,7 +7,7 @@
 import type { CommandModule } from 'yargs';
 import { getErrorMessage } from '../../utils/errors.js';
 import { writeStdoutLine, writeStderrLine } from '../../utils/stdioHelpers.js';
-import { ExtensionManager } from '@airiscode/core';
+import { ExtensionManager } from '@airiscode/runtime';
 import {
   requestConsentNonInteractive,
   requestConsentOrFail,

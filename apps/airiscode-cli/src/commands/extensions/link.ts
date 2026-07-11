@@ -5,7 +5,7 @@
  */
 
 import type { CommandModule } from 'yargs';
-import { type ExtensionInstallMetadata } from '@airiscode/core';
+import { type ExtensionInstallMetadata } from '@airiscode/runtime';
 import { getErrorMessage } from '../../utils/errors.js';
 import { writeStdoutLine, writeStderrLine } from '../../utils/stdioHelpers.js';
 import {

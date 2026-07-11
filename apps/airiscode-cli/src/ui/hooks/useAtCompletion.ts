@@ -5,8 +5,8 @@
  */
 
 import { useEffect, useReducer, useRef } from 'react';
-import type { Config, FileSearch } from '@airiscode/core';
-import { FileSearchFactory, escapePath } from '@airiscode/core';
+import type { Config, FileSearch } from '@airiscode/runtime';
+import { FileSearchFactory, escapePath } from '@airiscode/runtime';
 import type { Suggestion } from '../components/SuggestionsDisplay.js';
 import { MAX_SUGGESTIONS_TO_SHOW } from '../components/SuggestionsDisplay.js';
 

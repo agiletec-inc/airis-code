@@ -17,7 +17,7 @@ import {
   type HookConfig,
   createDebugLogger,
   HOOKS_CONFIG_FIELDS,
-} from '@airiscode/core';
+} from '@airiscode/runtime';
 import type {
   HooksManagementDialogProps,
   HookEventDisplayInfo,

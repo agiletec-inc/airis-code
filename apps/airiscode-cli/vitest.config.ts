@@ -19,6 +19,8 @@ export default defineConfig({
     exclude: ['**/node_modules/**', '**/dist/**', '**/cypress/**'],
     environment: 'jsdom',
     globals: true,
+    pool: 'threads',
+    maxWorkers: 16,
     reporters: ['default', 'junit'],
     silent: true,
     outputFile: {
@@ -26,24 +28,18 @@ export default defineConfig({
     },
     setupFiles: ['./test-setup.ts'],
     coverage: {
-      enabled: true,
+      enabled: false,
       provider: 'v8',
       reportsDirectory: './coverage',
-      include: ['src/**/*'],
-      reporter: [
-        ['text', { file: 'full-text-summary.txt' }],
-        'html',
+      include: ['src/**/*.{ts,tsx,js,jsx}'],
+        reporter: [
+          ['text', { file: 'full-text-summary.txt' }],
+          'html',
         'json',
         'lcov',
         'cobertura',
         ['json-summary', { outputFile: 'coverage-summary.json' }],
       ],
-    },
-    poolOptions: {
-      threads: {
-        minThreads: 8,
-        maxThreads: 16,
-      },
     },
     server: {
       deps: {

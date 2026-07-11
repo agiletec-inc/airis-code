@@ -16,7 +16,7 @@ import {
   ExtensionManager,
   parseInstallSource,
   createDebugLogger,
-} from '@airiscode/core';
+} from '@airiscode/runtime';
 import open from 'open';
 
 const debugLogger = createDebugLogger('EXTENSIONS_COMMAND');

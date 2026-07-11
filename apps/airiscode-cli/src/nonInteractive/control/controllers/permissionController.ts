@@ -19,11 +19,11 @@ import type {
   ToolExecuteConfirmationDetails,
   ToolMcpConfirmationDetails,
   ApprovalMode,
-} from '@airiscode/core';
+} from '@airiscode/runtime';
 import {
   InputFormat,
   ToolConfirmationOutcome,
-} from '@airiscode/core';
+} from '@airiscode/runtime';
 import type {
   CLIControlPermissionRequest,
   CLIControlSetPermissionModeRequest,

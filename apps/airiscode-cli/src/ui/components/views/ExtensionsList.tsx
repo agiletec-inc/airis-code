@@ -7,7 +7,7 @@
 import { Box, Text } from 'ink';
 import { useUIState } from '../../contexts/UIStateContext.js';
 import { ExtensionUpdateState } from '../../state/extensions.js';
-import { createDebugLogger } from '@airiscode/core';
+import { createDebugLogger } from '@airiscode/runtime';
 
 const debugLogger = createDebugLogger('EXTENSIONS_LIST');
 

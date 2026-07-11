@@ -11,7 +11,7 @@ import {
   type ToolAskUserQuestionConfirmationDetails,
   ToolConfirmationOutcome,
   type ToolConfirmationPayload,
-} from '@airiscode/core';
+} from '@airiscode/runtime';
 import { theme } from '../../semantic-colors.js';
 import { useKeypress } from '../../hooks/useKeypress.js';
 import { TextInput } from '../shared/TextInput.js';

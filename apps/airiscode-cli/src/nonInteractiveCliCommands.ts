@@ -4,14 +4,14 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import type { PartListUnion } from '@airiscode/core';
+import type { PartListUnion } from '@airiscode/runtime';
 import { parseSlashCommand } from './utils/commands.js';
 import {
   Logger,
   uiTelemetryService,
   type Config,
   createDebugLogger,
-} from '@airiscode/core';
+} from '@airiscode/runtime';
 import { CommandService } from './services/CommandService.js';
 import { BuiltinCommandLoader } from './services/BuiltinCommandLoader.js';
 import { BundledSkillLoader } from './services/BundledSkillLoader.js';

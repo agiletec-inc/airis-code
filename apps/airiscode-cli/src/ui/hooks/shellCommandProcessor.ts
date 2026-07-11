@@ -15,13 +15,13 @@ import type {
   Config,
   GeminiClient,
   ShellExecutionResult,
-} from '@airiscode/core';
+} from '@airiscode/runtime';
 import {
   createDebugLogger,
   isBinary,
   ShellExecutionService,
-} from '@airiscode/core';
-import { type PartListUnion } from '@airiscode/core';
+} from '@airiscode/runtime';
+import { type PartListUnion } from '@airiscode/runtime';
 import type { UseHistoryManagerReturn } from './useHistoryManager.js';
 import { SHELL_COMMAND_NAME } from '../constants.js';
 import { formatMemoryUsage } from '../utils/formatters.js';

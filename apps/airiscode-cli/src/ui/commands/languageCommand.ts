@@ -28,7 +28,7 @@ import {
   resolveOutputLanguage,
   updateOutputLanguageFile,
 } from '../../utils/languageUtils.js';
-import { createDebugLogger } from '@airiscode/core';
+import { createDebugLogger } from '@airiscode/runtime';
 
 const debugLogger = createDebugLogger('LANGUAGE_COMMAND');
 

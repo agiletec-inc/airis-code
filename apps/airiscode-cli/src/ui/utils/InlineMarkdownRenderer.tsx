@@ -8,7 +8,7 @@ import React from 'react';
 import { Text } from 'ink';
 import { theme } from '../semantic-colors.js';
 import stringWidth from 'string-width';
-import { createDebugLogger } from '@airiscode/core';
+import { createDebugLogger } from '@airiscode/runtime';
 
 // Constants for Markdown parsing
 const BOLD_MARKER_LENGTH = 2; // For "**"

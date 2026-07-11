@@ -19,11 +19,11 @@ import type {
   ToolCall,
   Status as CoreStatus,
   EditorType,
-} from '@airiscode/core';
+} from '@airiscode/runtime';
 import {
   CoreToolScheduler,
   createDebugLogger,
-} from '@airiscode/core';
+} from '@airiscode/runtime';
 import { useCallback, useState, useMemo } from 'react';
 import type {
   HistoryItemToolGroup,

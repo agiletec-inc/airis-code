@@ -14,7 +14,7 @@ import {
   ToolNames,
   SkillTool,
   type PermissionMode,
-} from '@airiscode/core';
+} from '@airiscode/runtime';
 
 export const clearCommand: SlashCommand = {
   name: 'clear',

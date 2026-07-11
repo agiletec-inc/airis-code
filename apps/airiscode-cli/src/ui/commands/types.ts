@@ -5,8 +5,8 @@
  */
 
 import type { MutableRefObject, ReactNode } from 'react';
-import type { Content, PartListUnion } from '@airiscode/core';
-import type { Config, GitService, Logger } from '@airiscode/core';
+import type { Content, PartListUnion } from '@airiscode/runtime';
+import type { Config, GitService, Logger } from '@airiscode/runtime';
 import type {
   HistoryItemWithoutId,
   HistoryItem,

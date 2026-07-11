@@ -5,7 +5,7 @@
  */
 
 import { useState, useEffect, useCallback } from 'react';
-import { isCommandAvailable, execCommand } from '@airiscode/core';
+import { isCommandAvailable, execCommand } from '@airiscode/runtime';
 import fs from 'node:fs';
 import fsPromises from 'node:fs/promises';
 import path from 'node:path';

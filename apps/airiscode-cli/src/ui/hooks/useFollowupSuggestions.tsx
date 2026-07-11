@@ -14,11 +14,11 @@ import {
   createFollowupController,
   logPromptSuggestion,
   PromptSuggestionEvent,
-} from '@airiscode/core';
-import type { FollowupState, Config } from '@airiscode/core';
+} from '@airiscode/runtime';
+import type { FollowupState, Config } from '@airiscode/runtime';
 
 // Re-export for consumers that import from here
-export type { FollowupState } from '@airiscode/core';
+export type { FollowupState } from '@airiscode/runtime';
 
 /**
  * Options for the hook

@@ -31,7 +31,7 @@ import {
   type ArenaSessionErrorEvent,
   type ArenaSessionStartEvent,
   type ArenaSessionUpdateEvent,
-} from '@airiscode/core';
+} from '@airiscode/runtime';
 import {
   MessageType,
   type ArenaAgentCardData,

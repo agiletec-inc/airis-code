@@ -5,7 +5,7 @@
  */
 
 import { useReducer, useRef, useEffect } from 'react';
-import { createDebugLogger } from '@airiscode/core';
+import { createDebugLogger } from '@airiscode/runtime';
 import { useKeypress } from './useKeypress.js';
 
 export interface SelectionListItem<T> {

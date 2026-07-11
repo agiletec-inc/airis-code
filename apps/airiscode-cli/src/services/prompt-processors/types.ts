@@ -5,7 +5,7 @@
  */
 
 import type { CommandContext } from '../../ui/commands/types.js';
-import type { PartUnion } from '@airiscode/core';
+import type { PartUnion } from '@airiscode/runtime';
 
 /**
  * Defines the input/output type for prompt processors.

@@ -12,7 +12,7 @@ import type {
   CountTokensParameters,
   EmbedContentResponse,
   EmbedContentParameters,
-} from "@airiscode/core-gemini";
+} from "@airiscode/runtime-gemini";
 
 export interface OllamaOptions {
   model: string;

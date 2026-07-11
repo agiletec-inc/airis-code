@@ -5,8 +5,8 @@
  */
 
 import { randomUUID } from 'node:crypto';
-import type { Config, ChatRecord } from '@airiscode/core';
-import type { GenerateContentResponseUsageMetadata } from '@airiscode/core';
+import type { Config, ChatRecord } from '@airiscode/runtime';
+import type { GenerateContentResponseUsageMetadata } from '@airiscode/runtime';
 type SessionContext = any;
 type SessionUpdate = any;
 type ToolCall = any;
@@ -348,7 +348,7 @@ async function extractMetadata(
   // Get git repository name
   let gitRepo: string | undefined;
   if (cwd) {
-    const { getGitRepoName } = await import('@airiscode/core');
+    const { getGitRepoName } = await import('@airiscode/runtime');
     gitRepo = getGitRepoName(cwd);
   }
 

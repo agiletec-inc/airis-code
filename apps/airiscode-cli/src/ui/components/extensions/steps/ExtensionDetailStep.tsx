@@ -6,7 +6,7 @@
 
 import { Box, Text } from 'ink';
 import { theme } from '../../../semantic-colors.js';
-import { type Extension } from '@airiscode/core';
+import { type Extension } from '@airiscode/runtime';
 import { t } from '../../../../i18n/index.js';
 
 interface ExtensionDetailStepProps {

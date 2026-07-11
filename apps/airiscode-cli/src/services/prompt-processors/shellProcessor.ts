@@ -12,7 +12,7 @@ import {
   ShellExecutionService,
   flatMapTextParts,
   checkArgumentSafety,
-} from '@airiscode/core';
+} from '@airiscode/runtime';
 
 import type { CommandContext } from '../../ui/commands/types.js';
 import type { IPromptProcessor, PromptPipelineContent } from './types.js';

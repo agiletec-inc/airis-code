@@ -4,11 +4,11 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import type { Config } from '@airiscode/core';
+import type { Config } from '@airiscode/runtime';
 import {
   getErrorMessage,
   getMCPServerPrompts,
-} from '@airiscode/core';
+} from '@airiscode/runtime';
 import type {
   CommandContext,
   SlashCommand,

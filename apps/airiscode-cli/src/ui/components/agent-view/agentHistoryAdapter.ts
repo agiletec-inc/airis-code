@@ -9,7 +9,7 @@
  *
  * This adapter bridges the sub-agent data model (AgentMessage[] from
  * AgentInteractive) to the shared rendering model (HistoryItem[] consumed by
- * HistoryItemDisplay). It lives in the CLI package so that packages/core types
+ * HistoryItemDisplay). It lives in the CLI package so that packages/runtime types
  * are never coupled to CLI rendering types.
  *
  * ID stability: AgentMessage[] is append-only, so the resulting HistoryItem[]
@@ -21,7 +21,7 @@ import type {
   AgentMessage,
   ToolCallConfirmationDetails,
   ToolResultDisplay,
-} from '@airiscode/core';
+} from '@airiscode/runtime';
 import type { HistoryItem, IndividualToolCallDisplay } from '../../types.js';
 import { ToolCallStatus } from '../../types.js';
 

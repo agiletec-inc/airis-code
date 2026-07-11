@@ -5,7 +5,7 @@
  */
 
 import { Box, Text } from 'ink';
-import { Storage, isDebugLoggingDegraded } from '@airiscode/core';
+import { Storage, isDebugLoggingDegraded } from '@airiscode/runtime';
 import { useConfig } from '../contexts/ConfigContext.js';
 import { theme } from '../semantic-colors.js';
 

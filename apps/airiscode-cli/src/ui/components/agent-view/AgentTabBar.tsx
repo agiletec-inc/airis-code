@@ -20,7 +20,7 @@
 
 import { Box, Text } from 'ink';
 import { useState, useEffect, useCallback } from 'react';
-import { AgentStatus, AgentEventType } from '@airiscode/core';
+import { AgentStatus, AgentEventType } from '@airiscode/runtime';
 import {
   useAgentViewState,
   useAgentViewActions,

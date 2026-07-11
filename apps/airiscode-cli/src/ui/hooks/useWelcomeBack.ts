@@ -9,7 +9,7 @@ import {
   getProjectSummaryInfo,
   type ProjectSummaryInfo,
   type Config,
-} from '@airiscode/core';
+} from '@airiscode/runtime';
 import { type Settings } from '../../config/settingsSchema.js';
 
 export interface WelcomeBackState {

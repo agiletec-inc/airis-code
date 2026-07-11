@@ -10,7 +10,7 @@ import { MessageType } from '../types.js';
 import * as fs from 'node:fs';
 import * as os from 'node:os';
 import * as path from 'node:path';
-import { loadServerHierarchicalMemory } from '@airiscode/core';
+import { loadServerHierarchicalMemory } from '@airiscode/runtime';
 import { t } from '../../i18n/index.js';
 
 export function expandHomeDir(p: string): string {

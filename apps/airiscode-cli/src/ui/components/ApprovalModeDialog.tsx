@@ -8,7 +8,7 @@ import type React from 'react';
 import { useCallback, useState } from 'react';
 import { Box, Text } from 'ink';
 import { theme } from '../semantic-colors.js';
-import { ApprovalMode, APPROVAL_MODES } from '@airiscode/core';
+import { ApprovalMode, APPROVAL_MODES } from '@airiscode/runtime';
 import { RadioButtonSelect } from './shared/RadioButtonSelect.js';
 import type { LoadedSettings } from '../../config/settings.js';
 import { SettingScope } from '../../config/settings.js';

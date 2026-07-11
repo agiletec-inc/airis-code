@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import type { Config, ToolCallRequestInfo } from '@airiscode/core';
+import type { Config, ToolCallRequestInfo } from '@airiscode/runtime';
 import { isSlashCommand } from './ui/utils/commandUtils.js';
 import type { LoadedSettings } from './config/settings.js';
 import {
@@ -20,8 +20,8 @@ import {
   parseAndFormatApiError,
   createDebugLogger,
   SendMessageType,
-} from '@airiscode/core';
-import type { Content, Part, PartListUnion } from '@airiscode/core';
+} from '@airiscode/runtime';
+import type { Content, Part, PartListUnion } from '@airiscode/runtime';
 import type { CLIUserMessage, PermissionMode } from './nonInteractive/types.js';
 import type { JsonOutputAdapterInterface } from './nonInteractive/io/BaseJsonOutputAdapter.js';
 import { JsonOutputAdapter } from './nonInteractive/io/JsonOutputAdapter.js';

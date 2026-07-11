@@ -9,7 +9,7 @@ import {
   getAllGeminiMdFilenames,
   loadServerHierarchicalMemory,
   AIRISCODE_DIR,
-} from '@airiscode/core';
+} from '@airiscode/runtime';
 import path from 'node:path';
 import os from 'node:os';
 import fs from 'node:fs/promises';

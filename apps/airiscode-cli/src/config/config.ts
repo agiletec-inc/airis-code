@@ -30,7 +30,7 @@ import {
   createDebugLogger,
   NativeLspService,
   isToolEnabled,
-} from '@airiscode/core';
+} from '@airiscode/runtime';
 import { extensionsCommand } from '../commands/extensions.js';
 import { hooksCommand } from '../commands/hooks.js';
 import type { Settings } from './settings.js';

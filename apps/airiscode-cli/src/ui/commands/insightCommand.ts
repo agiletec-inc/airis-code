@@ -11,7 +11,7 @@ import type { HistoryItemInsightProgress } from '../types.js';
 import { t } from '../../i18n/index.js';
 import { join } from 'path';
 import { StaticInsightGenerator } from '../../services/insight/generators/StaticInsightGenerator.js';
-import { createDebugLogger, Storage } from '@airiscode/core';
+import { createDebugLogger, Storage } from '@airiscode/runtime';
 import open from 'open';
 
 const logger = createDebugLogger('DataProcessor');

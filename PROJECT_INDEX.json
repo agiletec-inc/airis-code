@@ -194,8 +194,8 @@
         "features": ["tools", "ideIntegration", "mcpClient"]
       },
       {
-        "name": "@airiscode/core-gemini",
-        "path": "packages/core-gemini",
+        "name": "@airiscode/runtime-gemini",
+        "path": "packages/runtime-gemini",
         "status": "built",
         "exports": ["Core utilities"],
         "features": ["geminiSupport"]

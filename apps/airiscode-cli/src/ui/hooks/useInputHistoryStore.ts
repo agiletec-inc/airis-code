@@ -5,7 +5,7 @@
  */
 
 import { useState, useCallback } from 'react';
-import { createDebugLogger } from '@airiscode/core';
+import { createDebugLogger } from '@airiscode/runtime';
 
 interface Logger {
   getPreviousUserMessages(): Promise<string[]>;

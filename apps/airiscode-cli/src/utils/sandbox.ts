@@ -15,8 +15,8 @@ import {
   SETTINGS_DIRECTORY_NAME,
 } from '../config/settings.js';
 import { promisify } from 'node:util';
-import type { Config, SandboxConfig } from '@airiscode/core';
-import { FatalSandboxError } from '@airiscode/core';
+import type { Config, SandboxConfig } from '@airiscode/runtime';
+import { FatalSandboxError } from '@airiscode/runtime';
 import { randomBytes } from 'node:crypto';
 import { writeStderrLine } from './stdioHelpers.js';
 

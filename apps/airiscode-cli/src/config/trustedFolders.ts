@@ -12,7 +12,7 @@ import {
   getErrorMessage,
   isWithinRoot,
   ideContextStore,
-} from '@airiscode/core';
+} from '@airiscode/runtime';
 import type { Settings } from './settings.js';
 import stripJsonComments from 'strip-json-comments';
 import { writeStderrLine } from '../utils/stdioHelpers.js';

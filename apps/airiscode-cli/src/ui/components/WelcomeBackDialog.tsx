@@ -6,7 +6,7 @@
 
 import { Box, Text } from 'ink';
 import { Colors } from '../colors.js';
-import { type ProjectSummaryInfo } from '@airiscode/core';
+import { type ProjectSummaryInfo } from '@airiscode/runtime';
 import {
   RadioButtonSelect,
   type RadioSelectItem,

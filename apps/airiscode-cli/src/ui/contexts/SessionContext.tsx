@@ -18,8 +18,8 @@ import type {
   SessionMetrics,
   ModelMetrics,
   ToolCallStats,
-} from '@airiscode/core';
-import { uiTelemetryService } from '@airiscode/core';
+} from '@airiscode/runtime';
+import { uiTelemetryService } from '@airiscode/runtime';
 
 export enum ToolCallDecision {
   ACCEPT = 'accept',

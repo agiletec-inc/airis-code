@@ -11,13 +11,13 @@ import {
   logIdeConnection,
   IdeConnectionEvent,
   IdeConnectionType,
-} from '@airiscode/core';
+} from '@airiscode/runtime';
 import {
   AIRISCODE_COMPANION_EXTENSION_NAME,
   getIdeInstaller,
   IDEConnectionStatus,
   ideContextStore,
-} from '@airiscode/core';
+} from '@airiscode/runtime';
 import path from 'node:path';
 import type {
   CommandContext,

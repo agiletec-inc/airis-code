@@ -7,7 +7,7 @@
 import type {
   MCPServerConfig,
   MCPServerStatus,
-} from '@airiscode/core';
+} from '@airiscode/runtime';
 
 /**
  * MCP管理步骤定义

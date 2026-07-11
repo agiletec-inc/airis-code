@@ -23,8 +23,8 @@ import type {
   PermissionManager,
   RuleWithSource,
   RuleType,
-} from '@airiscode/core';
-import { isPathWithinRoot } from '@airiscode/core';
+} from '@airiscode/runtime';
+import { isPathWithinRoot } from '@airiscode/runtime';
 
 // ---------------------------------------------------------------------------
 // Types

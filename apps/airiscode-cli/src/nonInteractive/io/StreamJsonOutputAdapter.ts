@@ -9,7 +9,7 @@ import type {
   Config,
   ToolCallRequestInfo,
   McpToolProgressData,
-} from '@airiscode/core';
+} from '@airiscode/runtime';
 import type {
   CLIAssistantMessage,
   CLIMessage,

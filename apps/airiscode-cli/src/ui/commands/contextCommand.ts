@@ -25,7 +25,7 @@ import {
   ToolNames,
   SkillTool,
   buildSkillLlmContent,
-} from '@airiscode/core';
+} from '@airiscode/runtime';
 import { t } from '../../i18n/index.js';
 
 /**

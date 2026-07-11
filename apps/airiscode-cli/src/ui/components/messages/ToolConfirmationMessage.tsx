@@ -16,12 +16,12 @@ import type {
   ToolMcpConfirmationDetails,
   Config,
   EditorType,
-} from '@airiscode/core';
+} from '@airiscode/runtime';
 import {
   IdeClient,
   ToolConfirmationOutcome,
   buildHumanReadableRuleLabel,
-} from '@airiscode/core';
+} from '@airiscode/runtime';
 import type { RadioSelectItem } from '../shared/RadioButtonSelect.js';
 import { RadioButtonSelect } from '../shared/RadioButtonSelect.js';
 import { MaxSizedBox } from '../shared/MaxSizedBox.js';

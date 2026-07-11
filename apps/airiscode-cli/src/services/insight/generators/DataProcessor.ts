@@ -9,7 +9,7 @@ import path from 'path';
 import {
   read as readJsonlFile,
   createDebugLogger,
-} from '@airiscode/core';
+} from '@airiscode/runtime';
 import pLimit from 'p-limit';
 import type {
   InsightData,
@@ -33,7 +33,7 @@ import {
   getInsightPrompt,
   type Config,
   type ChatRecord,
-} from '@airiscode/core';
+} from '@airiscode/runtime';
 
 const logger = createDebugLogger('DataProcessor');
 

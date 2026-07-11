@@ -8,7 +8,7 @@ import {
   type ApprovalMode,
   APPROVAL_MODES,
   type Config,
-} from '@airiscode/core';
+} from '@airiscode/runtime';
 import { useEffect, useState } from 'react';
 import { useKeypress } from './useKeypress.js';
 import type { HistoryItemWithoutId } from '../types.js';

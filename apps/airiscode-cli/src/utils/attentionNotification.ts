@@ -5,7 +5,7 @@
  */
 
 import process from 'node:process';
-import { createDebugLogger } from '@airiscode/core';
+import { createDebugLogger } from '@airiscode/runtime';
 
 export enum AttentionNotificationReason {
   ToolApproval = 'tool_approval',

@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import type { Extension, Config } from '@airiscode/core';
+import type { Extension, Config } from '@airiscode/runtime';
 
 /**
  * Management steps for the extensions manager dialog.

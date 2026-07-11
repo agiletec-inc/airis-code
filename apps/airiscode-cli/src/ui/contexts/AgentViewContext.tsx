@@ -26,7 +26,7 @@ import {
   type AgentInteractive,
   type ApprovalMode,
   type Config,
-} from '@airiscode/core';
+} from '@airiscode/runtime';
 import { useArenaInProcess } from '../hooks/useArenaInProcess.js';
 
 // ─── Types ──────────────────────────────────────────────────

@@ -7,8 +7,8 @@
 import type {
   Config,
   ConfigInitializeOptions,
-} from '@airiscode/core';
-import { createDebugLogger } from '@airiscode/core';
+} from '@airiscode/runtime';
+import { createDebugLogger } from '@airiscode/runtime';
 import { StreamJsonInputReader } from './io/StreamJsonInputReader.js';
 import { StreamJsonOutputAdapter } from './io/StreamJsonOutputAdapter.js';
 import { ControlContext } from './control/ControlContext.js';

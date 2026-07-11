@@ -6,7 +6,7 @@
 
 import { execSync } from 'node:child_process';
 import { ProxyAgent } from 'undici';
-import { createDebugLogger } from '@airiscode/core';
+import { createDebugLogger } from '@airiscode/runtime';
 
 const debugLogger = createDebugLogger('GIT');
 

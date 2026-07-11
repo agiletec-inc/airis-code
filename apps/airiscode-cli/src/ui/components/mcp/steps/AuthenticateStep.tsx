@@ -15,8 +15,8 @@ import {
   MCPOAuthProvider,
   MCPOAuthTokenStorage,
   getErrorMessage,
-} from '@airiscode/core';
-import type { OAuthDisplayPayload } from '@airiscode/core';
+} from '@airiscode/runtime';
+import type { OAuthDisplayPayload } from '@airiscode/runtime';
 import { appEvents, AppEvent } from '../../../../utils/events.js';
 
 type AuthState = 'idle' | 'authenticating' | 'success' | 'error';

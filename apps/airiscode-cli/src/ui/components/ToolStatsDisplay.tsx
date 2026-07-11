@@ -16,7 +16,7 @@ import {
   USER_AGREEMENT_RATE_MEDIUM,
 } from '../utils/displayUtils.js';
 import { useSessionStats } from '../contexts/SessionContext.js';
-import type { ToolCallStats } from '@airiscode/core';
+import type { ToolCallStats } from '@airiscode/runtime';
 import { t } from '../../i18n/index.js';
 
 const TOOL_NAME_COL_WIDTH = 25;

@@ -15,7 +15,7 @@ import {
   getErrorMessage,
   Storage,
   createDebugLogger,
-} from '@airiscode/core';
+} from '@airiscode/runtime';
 import stripJsonComments from 'strip-json-comments';
 import { DefaultLight } from '../ui/themes/default-light.js';
 import { DefaultDark } from '../ui/themes/default.js';

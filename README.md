@@ -92,7 +92,8 @@ airiscode --version
 
 **Prerequisites:**
 - Node.js >= 20.0.0
-- pnpm >= 8.0.0 (install: `npm install -g pnpm`)
+- pnpm 11.x (the repo pins pnpm via the root `packageManager` field and
+  `pnpm-workspace.yaml`)
 
 **Setup:**
 ```bash

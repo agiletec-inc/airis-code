@@ -5,8 +5,8 @@
  */
 
 import { useCallback, useEffect, useState } from 'react';
-import type { Config, ModelProvidersConfig } from '@airiscode/core';
-import { AuthType } from '@airiscode/core';
+import type { Config, ModelProvidersConfig } from '@airiscode/runtime';
+import { AuthType } from '@airiscode/runtime';
 import type { LoadedSettings } from '../../config/settings.js';
 import { getPersistScopeForModelSelection } from '../../config/modelProvidersScope.js';
 import {

@@ -11,12 +11,12 @@ import type {
   AuthType,
   ChatCompressionSettings,
   ModelProvidersConfig,
-} from '@airiscode/core';
+} from '@airiscode/runtime';
 import {
   ApprovalMode,
   DEFAULT_TRUNCATE_TOOL_OUTPUT_LINES,
   DEFAULT_TRUNCATE_TOOL_OUTPUT_THRESHOLD,
-} from '@airiscode/core';
+} from '@airiscode/runtime';
 import type { CustomTheme } from '../ui/themes/theme.js';
 import { getLanguageSettingsOptions } from '../i18n/languages.js';
 

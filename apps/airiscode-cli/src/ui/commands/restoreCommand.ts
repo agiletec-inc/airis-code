@@ -12,7 +12,7 @@ import {
   type SlashCommandActionReturn,
   CommandKind,
 } from './types.js';
-import type { Config } from '@airiscode/core';
+import type { Config } from '@airiscode/runtime';
 import { t } from '../../i18n/index.js';
 
 async function restoreAction(

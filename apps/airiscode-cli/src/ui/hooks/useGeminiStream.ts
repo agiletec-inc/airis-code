@@ -17,7 +17,7 @@ import type {
   ThoughtSummary,
   ToolCallRequestInfo,
   GeminiErrorEventValue,
-} from '@airiscode/core';
+} from '@airiscode/runtime';
 import {
   GeminiEventType as ServerGeminiEventType,
   SendMessageType,
@@ -41,8 +41,8 @@ import {
   ApiCancelEvent,
   isSupportedImageMimeType,
   getUnsupportedImageFormatWarning,
-} from '@airiscode/core';
-import { type Part, type PartListUnion, FinishReason } from '@airiscode/core';
+} from '@airiscode/runtime';
+import { type Part, type PartListUnion, FinishReason } from '@airiscode/runtime';
 import type {
   HistoryItem,
   HistoryItemWithoutId,

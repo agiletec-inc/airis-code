@@ -11,7 +11,7 @@ import type {
   SlashCommand,
   SlashCommandActionReturn,
 } from './types.js';
-import { getCurrentGeminiMdFilename } from '@airiscode/core';
+import { getCurrentGeminiMdFilename } from '@airiscode/runtime';
 import { CommandKind } from './types.js';
 import { Text } from 'ink';
 import React from 'react';

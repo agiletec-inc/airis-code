@@ -16,7 +16,7 @@ import { theme } from '../../semantic-colors.js';
 import { SHELL_COMMAND_NAME, SHELL_NAME } from '../../constants.js';
 import { useConfig } from '../../contexts/ConfigContext.js';
 import { useVerboseMode } from '../../contexts/VerboseModeContext.js';
-import type { AgentResultDisplay } from '@airiscode/core';
+import type { AgentResultDisplay } from '@airiscode/runtime';
 
 function isAgentWithPendingConfirmation(
   rd: IndividualToolCallDisplay['resultDisplay'],

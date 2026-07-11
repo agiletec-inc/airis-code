@@ -29,7 +29,7 @@ import {
 } from '../../utils/settingsUtils.js';
 import { updateOutputLanguageFile } from '../../utils/languageUtils.js';
 import { useVimMode } from '../contexts/VimModeContext.js';
-import { createDebugLogger, type Config } from '@airiscode/core';
+import { createDebugLogger, type Config } from '@airiscode/runtime';
 import { useKeypress } from '../hooks/useKeypress.js';
 import chalk from 'chalk';
 import { cpSlice, cpLen, stripUnsafeCharacters } from '../utils/textUtils.js';

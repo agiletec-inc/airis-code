@@ -1,10 +1,10 @@
 import { useCallback } from 'react';
 import { useStdin } from 'ink';
-import type { EditorType } from '@airiscode/core';
+import type { EditorType } from '@airiscode/runtime';
 import {
   editorCommands,
   commandExists as coreCommandExists,
-} from '@airiscode/core';
+} from '@airiscode/runtime';
 import { spawnSync } from 'child_process';
 import { useSettings } from '../contexts/SettingsContext.js';
 

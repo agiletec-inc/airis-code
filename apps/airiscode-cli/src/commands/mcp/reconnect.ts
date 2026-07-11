@@ -11,9 +11,9 @@ import {
   Config,
   FileDiscoveryService,
   ExtensionManager,
-} from '@airiscode/core';
+} from '@airiscode/runtime';
 import { isWorkspaceTrusted } from '../../config/trustedFolders.js';
-import type { MCPServerConfig } from '@airiscode/core';
+import type { MCPServerConfig } from '@airiscode/runtime';
 
 async function getMcpServersFromConfig(
   extensionManager?: ExtensionManager,

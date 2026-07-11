@@ -11,7 +11,7 @@ import { ExtensionUpdateState } from '../../ui/state/extensions.js';
 import {
   checkForExtensionUpdate,
   type ExtensionUpdateInfo,
-} from '@airiscode/core';
+} from '@airiscode/runtime';
 import { getExtensionManager } from './utils.js';
 import { t } from '../../i18n/index.js';
 

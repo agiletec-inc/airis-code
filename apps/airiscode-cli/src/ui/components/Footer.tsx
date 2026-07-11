@@ -18,7 +18,7 @@ import { useUIState } from '../contexts/UIStateContext.js';
 import { useConfig } from '../contexts/ConfigContext.js';
 import { useVimMode } from '../contexts/VimModeContext.js';
 import { useVerboseMode } from '../contexts/VerboseModeContext.js';
-import { ApprovalMode } from '@airiscode/core';
+import { ApprovalMode } from '@airiscode/runtime';
 import { t } from '../../i18n/index.js';
 
 export const Footer: React.FC = () => {

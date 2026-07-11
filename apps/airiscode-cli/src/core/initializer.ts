@@ -10,7 +10,7 @@ import {
   IdeConnectionType,
   logIdeConnection,
   type Config,
-} from '@airiscode/core';
+} from '@airiscode/runtime';
 import { type LoadedSettings } from '../config/settings.js';
 import { performInitialAuth } from './auth.js';
 import { validateTheme } from './theme.js';

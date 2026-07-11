@@ -5,7 +5,7 @@
  */
 
 import * as path from 'node:path';
-import type { Part, FunctionCall } from '@airiscode/core';
+import type { Part, FunctionCall } from '@airiscode/runtime';
 import type {
   ResumedSessionData,
   ConversationRecord,
@@ -14,7 +14,7 @@ import type {
   ToolResultDisplay,
   SlashCommandRecordPayload,
   AtCommandRecordPayload,
-} from '@airiscode/core';
+} from '@airiscode/runtime';
 import type {
   HistoryItem,
   HistoryItemWithoutId,

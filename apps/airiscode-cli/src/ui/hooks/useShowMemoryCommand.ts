@@ -6,9 +6,9 @@
 
 import type { Message } from '../types.js';
 import { MessageType } from '../types.js';
-import type { Config } from '@airiscode/core';
+import type { Config } from '@airiscode/runtime';
 import type { LoadedSettings } from '../../config/settings.js';
-import { createDebugLogger } from '@airiscode/core';
+import { createDebugLogger } from '@airiscode/runtime';
 
 const debugLogger = createDebugLogger('SHOW_MEMORY');
 

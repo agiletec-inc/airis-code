@@ -5,7 +5,7 @@
  */
 
 import type { CommandModule } from 'yargs';
-import { createDebugLogger } from '@airiscode/core';
+import { createDebugLogger } from '@airiscode/runtime';
 
 const debugLogger = createDebugLogger('HOOKS_UI');
 

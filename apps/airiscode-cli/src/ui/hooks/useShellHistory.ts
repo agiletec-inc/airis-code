@@ -11,7 +11,7 @@ import {
   createDebugLogger,
   isNodeError,
   Storage,
-} from '@airiscode/core';
+} from '@airiscode/runtime';
 
 const MAX_HISTORY_LENGTH = 100;
 const debugLogger = createDebugLogger('SHELL_HISTORY');

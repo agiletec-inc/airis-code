@@ -10,7 +10,7 @@ import {
   getErrorMessage,
   logAuth,
   AuthEvent,
-} from '@airiscode/core';
+} from '@airiscode/runtime';
 
 /**
  * Handles the initial authentication flow.

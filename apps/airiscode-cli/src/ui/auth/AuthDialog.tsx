@@ -6,7 +6,7 @@
 
 import type React from 'react';
 import { useState } from 'react';
-import { AuthType } from '@airiscode/core';
+import { AuthType } from '@airiscode/runtime';
 import { Box, Text } from 'ink';
 import Link from 'ink-link';
 import { theme } from '../semantic-colors.js';

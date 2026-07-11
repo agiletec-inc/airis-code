@@ -6,7 +6,7 @@
 
 import type { SlashCommand } from '../ui/commands/types.js';
 import type { ICommandLoader } from './types.js';
-import { createDebugLogger } from '@airiscode/core';
+import { createDebugLogger } from '@airiscode/runtime';
 
 const debugLogger = createDebugLogger('CLI_COMMANDS');
 

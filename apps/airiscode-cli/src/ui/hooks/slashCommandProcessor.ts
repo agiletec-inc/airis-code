@@ -5,7 +5,7 @@
  */
 
 import { useCallback, useMemo, useEffect, useRef, useState } from 'react';
-import { type PartListUnion } from '@airiscode/core';
+import { type PartListUnion } from '@airiscode/runtime';
 import type { UseHistoryManagerReturn } from './useHistoryManager.js';
 import type { ArenaDialogType } from './useArenaCommand.js';
 import {
@@ -18,7 +18,7 @@ import {
   SlashCommandStatus,
   ToolConfirmationOutcome,
   IdeClient,
-} from '@airiscode/core';
+} from '@airiscode/runtime';
 import { useSessionStats } from '../contexts/SessionContext.js';
 import type {
   Message,

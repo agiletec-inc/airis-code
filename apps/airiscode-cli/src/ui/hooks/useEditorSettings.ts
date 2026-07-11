@@ -7,11 +7,11 @@
 import { useState, useCallback } from 'react';
 import type { LoadedSettings, SettingScope } from '../../config/settings.js';
 import { type HistoryItem, MessageType } from '../types.js';
-import type { EditorType } from '@airiscode/core';
+import type { EditorType } from '@airiscode/runtime';
 import {
   allowEditorTypeInSandbox,
   checkHasEditorType,
-} from '@airiscode/core';
+} from '@airiscode/runtime';
 
 interface UseEditorSettingsReturn {
   isEditorDialogOpen: boolean;

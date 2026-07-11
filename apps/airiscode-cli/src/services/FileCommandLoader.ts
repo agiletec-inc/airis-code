@@ -10,12 +10,12 @@ import path from 'node:path';
 import toml from '@iarna/toml';
 import { glob } from 'glob';
 import { z } from 'zod';
-import type { Config } from '@airiscode/core';
+import type { Config } from '@airiscode/runtime';
 import {
   createDebugLogger,
   EXTENSIONS_CONFIG_FILENAME,
   Storage,
-} from '@airiscode/core';
+} from '@airiscode/runtime';
 import type { ICommandLoader } from './types.js';
 import {
   parseMarkdownCommand,

@@ -13,14 +13,14 @@ import type {
   ToolCallResponseInfo,
   SessionMetrics,
   McpToolProgressData,
-} from '@airiscode/core';
+} from '@airiscode/runtime';
 import {
   OutputFormat,
   ToolErrorType,
   createDebugLogger,
   getMCPServerStatus,
-} from '@airiscode/core';
-import type { Part, PartListUnion } from '@airiscode/core';
+} from '@airiscode/runtime';
+import type { Part, PartListUnion } from '@airiscode/runtime';
 import type {
   CLIUserMessage,
   Usage,

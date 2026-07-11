@@ -4,8 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import type { SandboxConfig } from '@airiscode/core';
-import { FatalSandboxError } from '@airiscode/core';
+import type { SandboxConfig } from '@airiscode/runtime';
+import { FatalSandboxError } from '@airiscode/runtime';
 import commandExists from 'command-exists';
 import * as os from 'node:os';
 import { getPackageJson } from '../utils/package.js';

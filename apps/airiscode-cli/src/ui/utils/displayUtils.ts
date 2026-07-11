@@ -5,7 +5,7 @@
  */
 
 import { theme } from '../semantic-colors.js';
-import { AgentStatus } from '@airiscode/core';
+import { AgentStatus } from '@airiscode/runtime';
 
 // --- Status Labels ---
 

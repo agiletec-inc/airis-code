@@ -8,12 +8,12 @@
 import type { CommandModule } from 'yargs';
 import { loadSettings } from '../../config/settings.js';
 import { writeStdoutLine } from '../../utils/stdioHelpers.js';
-import type { MCPServerConfig } from '@airiscode/core';
+import type { MCPServerConfig } from '@airiscode/runtime';
 import {
   MCPServerStatus,
   createTransport,
   ExtensionManager,
-} from '@airiscode/core';
+} from '@airiscode/runtime';
 import { Client } from '@modelcontextprotocol/sdk/client/index.js';
 import { isWorkspaceTrusted } from '../../config/trustedFolders.js';
 

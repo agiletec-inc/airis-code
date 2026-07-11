@@ -8,7 +8,7 @@ import {
   flatMapTextParts,
   readPathFromWorkspace,
   createDebugLogger,
-} from '@airiscode/core';
+} from '@airiscode/runtime';
 import type { CommandContext } from '../../ui/commands/types.js';
 import { MessageType } from '../../ui/types.js';
 import {

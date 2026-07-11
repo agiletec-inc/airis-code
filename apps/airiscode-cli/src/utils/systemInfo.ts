@@ -9,7 +9,7 @@ import os from 'node:os';
 import { execSync } from 'node:child_process';
 import type { CommandContext } from '../ui/commands/types.js';
 import { getCliVersion } from './version.js';
-import { IdeClient, AuthType } from '@airiscode/core';
+import { IdeClient, AuthType } from '@airiscode/runtime';
 import { formatMemoryUsage } from '../ui/utils/formatters.js';
 const GIT_COMMIT_INFO = 'dev';
 

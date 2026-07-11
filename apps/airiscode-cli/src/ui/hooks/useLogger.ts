@@ -5,8 +5,8 @@
  */
 
 import { useState, useEffect } from 'react';
-import type { Storage } from '@airiscode/core';
-import { Logger } from '@airiscode/core';
+import type { Storage } from '@airiscode/runtime';
+import { Logger } from '@airiscode/runtime';
 
 /**
  * Hook to manage the logger instance.

@@ -21,7 +21,7 @@ import type { SlashCommand, SlashCommandActionReturn } from './types.js';
 import { CommandKind } from './types.js';
 import { getUrlOpenCommand } from '../../ui/utils/commandUtils.js';
 import { t } from '../../i18n/index.js';
-import { createDebugLogger } from '@airiscode/core';
+import { createDebugLogger } from '@airiscode/runtime';
 
 const debugLogger = createDebugLogger('SETUP_GITHUB');
 

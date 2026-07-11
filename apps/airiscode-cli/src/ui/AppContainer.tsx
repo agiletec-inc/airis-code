@@ -53,7 +53,7 @@ import {
   IDLE_SPECULATION,
   ApprovalMode,
   type PermissionMode,
-} from '@airiscode/core';
+} from '@airiscode/runtime';
 import { buildResumedHistoryItems } from './utils/resumeHistoryUtils.js';
 import { validateAuthMethod } from '../config/auth.js';
 import { loadHierarchicalGeminiMemory } from '../config/config.js';
@@ -92,7 +92,7 @@ import { useGeminiStream } from './hooks/useGeminiStream.js';
 import { useVim } from './hooks/vim.js';
 import { isBtwCommand } from './utils/commandUtils.js';
 import { type LoadedSettings, SettingScope } from '../config/settings.js';
-import { type InitializationResult } from '../core/initializer.js';
+import { type InitializationResult } from '../runtime/initializer.js';
 import { useFocus } from './hooks/useFocus.js';
 import { useBracketedPaste } from './hooks/useBracketedPaste.js';
 import { useKeypress, type Key } from './hooks/useKeypress.js';

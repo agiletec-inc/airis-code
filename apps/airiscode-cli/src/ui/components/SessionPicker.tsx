@@ -8,7 +8,7 @@ import { Box, Text } from 'ink';
 import type {
   SessionListItem as SessionData,
   SessionService,
-} from '@airiscode/core';
+} from '@airiscode/runtime';
 import { theme } from '../semantic-colors.js';
 import { useSessionPicker } from '../hooks/useSessionPicker.js';
 import { formatRelativeTime } from '../utils/formatters.js';

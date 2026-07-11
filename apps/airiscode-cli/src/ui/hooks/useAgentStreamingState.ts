@@ -20,7 +20,7 @@ import {
   isTerminalStatus,
   type AgentInteractive,
   type AgentEventEmitter,
-} from '@airiscode/core';
+} from '@airiscode/runtime';
 import { StreamingState } from '../types.js';
 import { useTimer } from './useTimer.js';
 

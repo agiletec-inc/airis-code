@@ -10,7 +10,7 @@ import type {
   AnsiLine,
   AnsiOutput,
   AnsiToken,
-} from '@airiscode/core';
+} from '@airiscode/runtime';
 
 const DEFAULT_HEIGHT = 24;
 

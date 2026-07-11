@@ -12,7 +12,7 @@ import {
   type SubmitPromptActionReturn,
 } from './types.js';
 import { t } from '../../i18n/index.js';
-import { ApprovalMode } from '@airiscode/core';
+import { ApprovalMode } from '@airiscode/runtime';
 
 export const planCommand: SlashCommand = {
   name: 'plan',

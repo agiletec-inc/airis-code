@@ -11,7 +11,7 @@ import {
   resolveModelConfig,
   type ModelConfigSourcesInput,
   type ProviderModelConfig,
-} from '@airiscode/core';
+} from '@airiscode/runtime';
 import type { Settings } from '../config/settings.js';
 
 export interface CliGenerationConfigInputs {

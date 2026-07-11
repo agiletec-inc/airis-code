@@ -7,7 +7,7 @@
 import fs from 'node:fs/promises';
 import os from 'node:os';
 import { join as pathJoin } from 'node:path';
-import { getErrorMessage } from '@airiscode/core';
+import { getErrorMessage } from '@airiscode/runtime';
 
 const warningsFilePath = pathJoin(os.tmpdir(), 'airiscode-warnings.txt');
 

@@ -8,7 +8,7 @@
 
 import './gemini.js';
 import { main } from './gemini.js';
-import { FatalError } from '@airiscode/core';
+import { FatalError } from '@airiscode/runtime';
 import { writeStderrLine } from './utils/stdioHelpers.js';
 
 // --- Global Entry Point ---

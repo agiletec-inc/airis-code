@@ -11,7 +11,7 @@ import {
   ArenaSessionStatus,
   createDebugLogger,
   type Config,
-} from '@airiscode/core';
+} from '@airiscode/runtime';
 import { theme } from '../../semantic-colors.js';
 import { useKeypress } from '../../hooks/useKeypress.js';
 import { MessageType, type HistoryItemWithoutId } from '../../types.js';

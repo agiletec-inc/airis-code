@@ -6,15 +6,15 @@
 
 import * as fs from 'node:fs/promises';
 import * as path from 'node:path';
-import type { PartListUnion } from '@airiscode/core';
-import type { Config } from '@airiscode/core';
+import type { PartListUnion } from '@airiscode/runtime';
+import type { Config } from '@airiscode/runtime';
 import {
   getErrorMessage,
   isNodeError,
   Storage,
   unescapePath,
   readManyFiles,
-} from '@airiscode/core';
+} from '@airiscode/runtime';
 import type {
   HistoryItemToolGroup,
   HistoryItemWithoutId,

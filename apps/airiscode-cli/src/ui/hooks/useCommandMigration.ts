@@ -5,7 +5,7 @@
  */
 
 import { useEffect, useState } from 'react';
-import { Storage } from '@airiscode/core';
+import { Storage } from '@airiscode/runtime';
 import { detectTomlCommands } from '../../services/command-migration-tool.js';
 import type { LoadedSettings } from '../../config/settings.js';
 

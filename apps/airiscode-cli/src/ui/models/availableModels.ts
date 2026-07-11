@@ -8,7 +8,7 @@ import {
   AuthType,
   type Config,
   type AvailableModel as CoreAvailableModel,
-} from '@airiscode/core';
+} from '@airiscode/runtime';
 import { t } from '../../i18n/index.js';
 
 export type AvailableModel = {

@@ -4,8 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import type { Config } from '@airiscode/core';
-import { OutputFormat } from '@airiscode/core';
+import type { Config } from '@airiscode/runtime';
+import { OutputFormat } from '@airiscode/runtime';
 import { validateAuthMethod } from './config/auth.js';
 import { type LoadedSettings } from './config/settings.js';
 import { JsonOutputAdapter } from './nonInteractive/io/JsonOutputAdapter.js';

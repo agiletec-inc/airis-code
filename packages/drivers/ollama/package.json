@@ -8,7 +8,7 @@
     "build": "tsc -b"
   },
   "dependencies": {
-    "@airiscode/core-gemini": "workspace:*",
+    "@airiscode/runtime-gemini": "workspace:*",
     "@airiscode/drivers": "workspace:*"
   },
   "devDependencies": {

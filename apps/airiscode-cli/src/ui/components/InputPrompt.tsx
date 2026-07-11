@@ -18,7 +18,7 @@ import { useShellHistory } from '../hooks/useShellHistory.js';
 import { useReverseSearchCompletion } from '../hooks/useReverseSearchCompletion.js';
 import { useCommandCompletion } from '../hooks/useCommandCompletion.js';
 import { useFollowupSuggestionsCLI } from '../hooks/useFollowupSuggestions.js';
-import type { Config } from '@airiscode/core';
+import type { Config } from '@airiscode/runtime';
 import type { Key } from '../hooks/useKeypress.js';
 import { keyMatchers, Command } from '../keyMatchers.js';
 import type { CommandContext, SlashCommand } from '../commands/types.js';
@@ -26,7 +26,7 @@ import {
   ApprovalMode,
   Storage,
   createDebugLogger,
-} from '@airiscode/core';
+} from '@airiscode/runtime';
 import {
   parseInputForHighlighting,
   buildSegmentsForVisualSlice,

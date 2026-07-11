@@ -18,7 +18,7 @@ import type {
   ListSessionsResult,
   SessionListItem,
   SessionService,
-} from '@airiscode/core';
+} from '@airiscode/runtime';
 import {
   filterSessions,
   SESSION_PAGE_SIZE,

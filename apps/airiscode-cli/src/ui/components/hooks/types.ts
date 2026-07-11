@@ -8,7 +8,7 @@ import type {
   HookConfig,
   HooksConfigSource,
   HookEventName,
-} from '@airiscode/core';
+} from '@airiscode/runtime';
 
 /**
  * Exit code description for hooks

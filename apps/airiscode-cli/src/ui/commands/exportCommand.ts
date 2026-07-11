@@ -12,7 +12,7 @@ import {
   type MessageActionReturn,
   CommandKind,
 } from './types.js';
-import { SessionService } from '@airiscode/core';
+import { SessionService } from '@airiscode/runtime';
 import {
   collectSessionData,
   normalizeSessionData,

@@ -17,11 +17,11 @@ import { RadioButtonSelect } from './shared/RadioButtonSelect.js';
 import { ScopeSelector } from './shared/ScopeSelector.js';
 import type { LoadedSettings } from '../../config/settings.js';
 import { SettingScope } from '../../config/settings.js';
-import type { EditorType } from '@airiscode/core';
+import type { EditorType } from '@airiscode/runtime';
 import {
   createDebugLogger,
   isEditorAvailable,
-} from '@airiscode/core';
+} from '@airiscode/runtime';
 import { useKeypress } from '../hooks/useKeypress.js';
 import { t } from '../../i18n/index.js';
 

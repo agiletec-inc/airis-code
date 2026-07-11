@@ -8,7 +8,7 @@ import {
   allowEditorTypeInSandbox,
   checkHasEditorType,
   type EditorType,
-} from '@airiscode/core';
+} from '@airiscode/runtime';
 
 export interface EditorDisplay {
   name: string;

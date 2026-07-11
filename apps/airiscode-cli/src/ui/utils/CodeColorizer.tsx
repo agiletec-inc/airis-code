@@ -21,7 +21,7 @@ import {
   MINIMUM_MAX_HEIGHT,
 } from '../components/shared/MaxSizedBox.js';
 import type { LoadedSettings } from '../../config/settings.js';
-import { createDebugLogger } from '@airiscode/core';
+import { createDebugLogger } from '@airiscode/runtime';
 
 // Configure theming and parsing utilities.
 const lowlight = createLowlight(common);

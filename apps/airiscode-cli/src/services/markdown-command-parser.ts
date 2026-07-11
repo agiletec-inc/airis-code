@@ -8,7 +8,7 @@ import { z } from 'zod';
 import {
   parse as parseYaml,
   normalizeContent,
-} from '@airiscode/core';
+} from '@airiscode/runtime';
 
 /**
  * Defines the Zod schema for a Markdown command definition file.

@@ -5,7 +5,7 @@
  */
 
 import { useState, useCallback } from 'react';
-import type { ApprovalMode, Config } from '@airiscode/core';
+import type { ApprovalMode, Config } from '@airiscode/runtime';
 import type { LoadedSettings, SettingScope } from '../../config/settings.js';
 
 interface UseApprovalModeCommandReturn {

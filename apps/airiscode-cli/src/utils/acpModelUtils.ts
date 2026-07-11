@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { AuthType } from '@airiscode/core';
+import { AuthType } from '@airiscode/runtime';
 import { z } from 'zod';
 
 /**

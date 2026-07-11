@@ -5,7 +5,7 @@
  */
 
 import React, { useContext } from 'react';
-import { type Config } from '@airiscode/core';
+import { type Config } from '@airiscode/runtime';
 
 export const ConfigContext = React.createContext<Config | undefined>(undefined);
 

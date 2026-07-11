@@ -5,7 +5,7 @@
  */
 
 import { type CommandModule } from 'yargs';
-import { FatalConfigError, getErrorMessage } from '@airiscode/core';
+import { FatalConfigError, getErrorMessage } from '@airiscode/runtime';
 import { SettingScope } from '../../config/settings.js';
 import { writeStdoutLine } from '../../utils/stdioHelpers.js';
 import { getExtensionManager } from './utils.js';

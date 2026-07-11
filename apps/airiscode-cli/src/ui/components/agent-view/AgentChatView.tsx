@@ -28,7 +28,7 @@ import {
   AgentEventType,
   getGitBranch,
   type AgentStatusChangeEvent,
-} from '@airiscode/core';
+} from '@airiscode/runtime';
 import {
   useAgentViewState,
   useAgentViewActions,

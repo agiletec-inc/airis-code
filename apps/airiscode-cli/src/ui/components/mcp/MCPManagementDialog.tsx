@@ -30,7 +30,7 @@ import {
   type AnyDeclarativeTool,
   type DiscoveredMCPPrompt,
   createDebugLogger,
-} from '@airiscode/core';
+} from '@airiscode/runtime';
 import { loadSettings, SettingScope } from '../../../config/settings.js';
 import { isToolValid, getToolInvalidReasons } from './utils.js';
 import { useTerminalSize } from '../../hooks/useTerminalSize.js';

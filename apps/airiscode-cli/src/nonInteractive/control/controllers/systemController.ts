@@ -26,7 +26,7 @@ import {
   MCPServerConfig,
   AuthProviderType,
   type MCPOAuthConfig,
-} from '@airiscode/core';
+} from '@airiscode/runtime';
 
 const debugLogger = createDebugLogger('SYSTEM_CONTROLLER');
 

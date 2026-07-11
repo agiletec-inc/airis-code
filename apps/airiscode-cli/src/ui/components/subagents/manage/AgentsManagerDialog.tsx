@@ -16,8 +16,8 @@ import { ColorSelector } from '../create/ColorSelector.js';
 import { MANAGEMENT_STEPS } from '../types.js';
 import { theme } from '../../../semantic-colors.js';
 import { getColorForDisplay, shouldShowColor } from '../utils.js';
-import type { SubagentConfig, Config } from '@airiscode/core';
-import { createDebugLogger } from '@airiscode/core';
+import type { SubagentConfig, Config } from '@airiscode/runtime';
+import { createDebugLogger } from '@airiscode/runtime';
 import { useKeypress } from '../../../hooks/useKeypress.js';
 import { t } from '../../../../i18n/index.js';
 

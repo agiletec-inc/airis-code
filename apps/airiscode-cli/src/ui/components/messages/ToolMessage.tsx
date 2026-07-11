@@ -20,7 +20,7 @@ import type {
   AnsiOutput,
   Config,
   McpToolProgressData,
-} from '@airiscode/core';
+} from '@airiscode/runtime';
 import { AgentExecutionDisplay } from '../subagents/index.js';
 import { PlanSummaryDisplay } from '../PlanSummaryDisplay.js';
 import { ShellInputPrompt } from '../ShellInputPrompt.js';

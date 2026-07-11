@@ -13,13 +13,13 @@ import type {
   ServerGeminiStreamEvent,
   AgentResultDisplay,
   McpToolProgressData,
-} from '@airiscode/core';
+} from '@airiscode/runtime';
 import {
   GeminiEventType,
   ToolErrorType,
   parseAndFormatApiError,
-} from '@airiscode/core';
-import type { Part, GenerateContentResponseUsageMetadata } from '@airiscode/core';
+} from '@airiscode/runtime';
+import type { Part, GenerateContentResponseUsageMetadata } from '@airiscode/runtime';
 import type {
   CLIAssistantMessage,
   CLIMessage,

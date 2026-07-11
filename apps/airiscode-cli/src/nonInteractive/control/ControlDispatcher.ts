@@ -38,7 +38,7 @@ import type {
   ControlResponse,
   ControlRequestPayload,
 } from '../types.js';
-import { createDebugLogger } from '@airiscode/core';
+import { createDebugLogger } from '@airiscode/runtime';
 
 const debugLogger = createDebugLogger('CONTROL_DISPATCHER');
 

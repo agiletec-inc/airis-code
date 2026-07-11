@@ -13,7 +13,7 @@ import type {
   InsightProgressCallback,
 } from '../types/StaticInsightTypes.js';
 
-import { updateSymlink, Storage, type Config } from '@airiscode/core';
+import { updateSymlink, Storage, type Config } from '@airiscode/runtime';
 
 export class StaticInsightGenerator {
   private dataProcessor: DataProcessor;

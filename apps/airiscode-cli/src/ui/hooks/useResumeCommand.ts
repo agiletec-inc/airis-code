@@ -10,7 +10,7 @@ import {
   type Config,
   SessionStartSource,
   type PermissionMode,
-} from '@airiscode/core';
+} from '@airiscode/runtime';
 import { buildResumedHistoryItems } from '../utils/resumeHistoryUtils.js';
 import type { UseHistoryManagerReturn } from './useHistoryManager.js';
 

@@ -9,7 +9,7 @@ import {
   getErrorMessage,
   type Config,
   type ProviderModelConfig as ModelConfig,
-} from '@airiscode/core';
+} from '@airiscode/runtime';
 import { writeStdoutLine, writeStderrLine } from '../../utils/stdioHelpers.js';
 import { t } from '../../i18n/index.js';
 import {

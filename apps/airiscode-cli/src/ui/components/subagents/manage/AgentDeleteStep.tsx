@@ -5,8 +5,8 @@
  */
 
 import { Box, Text } from 'ink';
-import { type SubagentConfig } from '@airiscode/core';
-import { createDebugLogger } from '@airiscode/core';
+import { type SubagentConfig } from '@airiscode/runtime';
+import { createDebugLogger } from '@airiscode/runtime';
 import type { StepNavigationProps } from '../types.js';
 import { theme } from '../../../semantic-colors.js';
 import { useKeypress } from '../../../hooks/useKeypress.js';

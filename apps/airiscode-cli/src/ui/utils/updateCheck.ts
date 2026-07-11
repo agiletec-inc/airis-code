@@ -8,7 +8,7 @@ import type { UpdateInfo } from 'update-notifier';
 import updateNotifier from 'update-notifier';
 import semver from 'semver';
 import { getPackageJson } from '../../utils/package.js';
-import { createDebugLogger } from '@airiscode/core';
+import { createDebugLogger } from '@airiscode/runtime';
 
 const debugLogger = createDebugLogger('UPDATE_CHECK');
 

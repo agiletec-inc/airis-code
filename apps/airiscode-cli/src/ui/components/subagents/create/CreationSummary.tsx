@@ -10,8 +10,8 @@ import type { WizardStepProps } from '../types.js';
 import type {
   SubagentManager,
   SubagentConfig,
-} from '@airiscode/core';
-import { createDebugLogger } from '@airiscode/core';
+} from '@airiscode/runtime';
+import { createDebugLogger } from '@airiscode/runtime';
 import { theme } from '../../../semantic-colors.js';
 import { shouldShowColor, getColorForDisplay } from '../utils.js';
 import { useLaunchEditor } from '../../../hooks/useLaunchEditor.js';

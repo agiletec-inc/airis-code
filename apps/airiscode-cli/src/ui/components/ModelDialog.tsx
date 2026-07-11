@@ -15,7 +15,7 @@ import {
   type AvailableModel as CoreAvailableModel,
   type ContentGeneratorConfig,
   type InputModalities,
-} from '@airiscode/core';
+} from '@airiscode/runtime';
 import { useKeypress } from '../hooks/useKeypress.js';
 import { theme } from '../semantic-colors.js';
 import { DescriptiveRadioButtonSelect } from './shared/DescriptiveRadioButtonSelect.js';

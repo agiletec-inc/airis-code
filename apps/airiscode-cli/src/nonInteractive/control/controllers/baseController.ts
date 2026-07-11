@@ -16,8 +16,8 @@
  */
 
 import { randomUUID } from 'node:crypto';
-import type { DebugLogger } from '@airiscode/core';
-import { createDebugLogger } from '@airiscode/core';
+import type { DebugLogger } from '@airiscode/runtime';
+import { createDebugLogger } from '@airiscode/runtime';
 import type { IControlContext } from '../ControlContext.js';
 import type {
   ControlRequestPayload,

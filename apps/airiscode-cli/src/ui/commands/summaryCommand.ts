@@ -11,7 +11,7 @@ import {
   CommandKind,
   type SlashCommandActionReturn,
 } from './types.js';
-import { getProjectSummaryPrompt } from '@airiscode/core';
+import { getProjectSummaryPrompt } from '@airiscode/runtime';
 import type { HistoryItemSummary } from '../types.js';
 import { t } from '../../i18n/index.js';
 

@@ -5,8 +5,8 @@
  */
 
 import { Box, Text } from 'ink';
-import { type Extension } from '@airiscode/core';
-import { createDebugLogger } from '@airiscode/core';
+import { type Extension } from '@airiscode/runtime';
+import { createDebugLogger } from '@airiscode/runtime';
 import { theme } from '../../../semantic-colors.js';
 import { useKeypress } from '../../../hooks/useKeypress.js';
 import { t } from '../../../../i18n/index.js';

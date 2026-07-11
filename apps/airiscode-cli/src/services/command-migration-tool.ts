@@ -11,7 +11,7 @@
 import { promises as fs } from 'node:fs';
 import path from 'node:path';
 import { glob } from 'glob';
-import { convertTomlToMarkdown } from '@airiscode/core';
+import { convertTomlToMarkdown } from '@airiscode/runtime';
 import { t } from '../i18n/index.js';
 
 export interface MigrationResult {

@@ -12,7 +12,7 @@ import type {
 } from './types.js';
 import { CommandKind } from './types.js';
 import { t } from '../../i18n/index.js';
-import type { HookRegistryEntry } from '@airiscode/core';
+import type { HookRegistryEntry } from '@airiscode/runtime';
 
 /**
  * Format hook source for display

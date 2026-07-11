@@ -11,7 +11,7 @@ import {
   Storage,
   type Config,
   createDebugLogger,
-} from '@airiscode/core';
+} from '@airiscode/runtime';
 import { render } from 'ink';
 import dns from 'node:dns';
 import os from 'node:os';
@@ -26,7 +26,7 @@ import { getSettingsWarnings, loadSettings } from './config/settings.js';
 import {
   initializeApp,
   type InitializationResult,
-} from './core/initializer.js';
+} from './runtime/initializer.js';
 import { runNonInteractive } from './nonInteractiveCli.js';
 import { runNonInteractiveStreamJson } from './nonInteractive/session.js';
 import { AppContainer } from './ui/AppContainer.js';

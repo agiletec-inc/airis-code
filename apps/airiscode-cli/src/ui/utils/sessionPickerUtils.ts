@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import type { SessionListItem } from '@airiscode/core';
+import type { SessionListItem } from '@airiscode/runtime';
 
 /**
  * State for managing loaded sessions in the session picker.

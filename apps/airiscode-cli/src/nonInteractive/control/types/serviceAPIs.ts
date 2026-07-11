@@ -13,7 +13,7 @@
  */
 
 import type { Client } from '@modelcontextprotocol/sdk/client/index.js';
-import type { MCPServerConfig } from '@airiscode/core';
+import type { MCPServerConfig } from '@airiscode/runtime';
 import type { PermissionSuggestion } from '../../types.js';
 
 /**

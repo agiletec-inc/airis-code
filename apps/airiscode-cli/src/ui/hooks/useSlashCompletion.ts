@@ -6,7 +6,7 @@
 
 import { useState, useEffect, useMemo } from 'react';
 import { AsyncFzf } from 'fzf';
-import { createDebugLogger } from '@airiscode/core';
+import { createDebugLogger } from '@airiscode/runtime';
 import type { Suggestion } from '../components/SuggestionsDisplay.js';
 import {
   CommandKind,

@@ -24,7 +24,7 @@ import {
   isTerminalStatus,
   ApprovalMode,
   APPROVAL_MODES,
-} from '@airiscode/core';
+} from '@airiscode/runtime';
 import {
   useAgentViewState,
   useAgentViewActions,

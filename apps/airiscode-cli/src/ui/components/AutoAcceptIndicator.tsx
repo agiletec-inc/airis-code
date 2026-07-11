@@ -7,7 +7,7 @@
 import type React from 'react';
 import { Text } from 'ink';
 import { theme } from '../semantic-colors.js';
-import { ApprovalMode } from '@airiscode/core';
+import { ApprovalMode } from '@airiscode/runtime';
 import { t } from '../../i18n/index.js';
 
 interface AutoAcceptIndicatorProps {

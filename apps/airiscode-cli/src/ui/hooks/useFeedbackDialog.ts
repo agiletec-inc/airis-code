@@ -7,7 +7,7 @@ import {
   UserFeedbackEvent,
   type UserFeedbackRating,
   isNodeError,
-} from '@airiscode/core';
+} from '@airiscode/runtime';
 import { StreamingState, MessageType, type HistoryItem } from '../types.js';
 import {
   SettingScope,

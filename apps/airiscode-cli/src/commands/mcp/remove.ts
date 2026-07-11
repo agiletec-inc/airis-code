@@ -8,7 +8,7 @@
 import type { CommandModule } from 'yargs';
 import { loadSettings, SettingScope } from '../../config/settings.js';
 import { writeStdoutLine } from '../../utils/stdioHelpers.js';
-import { MCPOAuthTokenStorage } from '@airiscode/core';
+import { MCPOAuthTokenStorage } from '@airiscode/runtime';
 
 async function removeMcpServer(
   name: string,

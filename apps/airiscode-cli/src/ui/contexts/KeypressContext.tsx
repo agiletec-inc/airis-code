@@ -4,12 +4,12 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import type { Config } from '@airiscode/core';
+import type { Config } from '@airiscode/runtime';
 import {
   KittySequenceOverflowEvent,
   logKittySequenceOverflow,
   createDebugLogger,
-} from '@airiscode/core';
+} from '@airiscode/runtime';
 import { useStdin } from 'ink';
 import type React from 'react';
 import {

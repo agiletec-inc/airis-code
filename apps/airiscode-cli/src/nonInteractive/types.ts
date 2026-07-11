@@ -2,7 +2,7 @@
 import type {
   SubagentConfig,
   McpToolProgressData,
-} from '@airiscode/core';
+} from '@airiscode/runtime';
 
 /**
  * Annotation for attaching metadata to content blocks

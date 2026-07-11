@@ -937,7 +937,7 @@ packages:
       '@types/node':
         optional: true
 
-  '@inquirer/runtime@10.3.2':
+  '@inquirer/core@10.3.2':
     resolution: {integrity: sha512-43RTuEbfP8MbKzedNqBrlhhNKVwoK//vUFNW3Q3vZ88BLcrs4kYpGg+B2mm5p2K/HfygoCxuKwJJiv8PbGmE0A==}
     engines: {node: '>=18'}
     peerDependencies:
@@ -3331,12 +3331,12 @@ snapshots:
 
   '@inquirer/confirm@5.1.21(@types/node@20.19.26)':
     dependencies:
-      '@inquirer/runtime': 10.3.2(@types/node@20.19.26)
+      '@inquirer/core': 10.3.2(@types/node@20.19.26)
       '@inquirer/type': 3.0.10(@types/node@20.19.26)
     optionalDependencies:
       '@types/node': 20.19.26
 
-  '@inquirer/runtime@10.3.2(@types/node@20.19.26)':
+  '@inquirer/core@10.3.2(@types/node@20.19.26)':
     dependencies:
       '@inquirer/ansi': 1.0.2
       '@inquirer/figures': 1.0.15

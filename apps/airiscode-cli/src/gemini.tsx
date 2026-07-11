@@ -26,7 +26,7 @@ import { getSettingsWarnings, loadSettings } from './config/settings.js';
 import {
   initializeApp,
   type InitializationResult,
-} from './runtime/initializer.js';
+} from './core/initializer.js';
 import { runNonInteractive } from './nonInteractiveCli.js';
 import { runNonInteractiveStreamJson } from './nonInteractive/session.js';
 import { AppContainer } from './ui/AppContainer.js';

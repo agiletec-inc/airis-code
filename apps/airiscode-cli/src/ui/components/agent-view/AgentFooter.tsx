@@ -10,12 +10,12 @@
  * main-agent-specific concerns (vim mode, shell mode, exit prompts, etc.).
  */
 
-import type React from 'react';
-import { Box, Text } from 'ink';
-import { ApprovalMode } from '@airiscode/runtime';
-import { AutoAcceptIndicator } from '../AutoAcceptIndicator.js';
-import { ContextUsageDisplay } from '../ContextUsageDisplay.js';
-import { theme } from '../../semantic-colors.js';
+import { ApprovalMode } from "@airiscode/runtime";
+import { Box, Text } from "ink";
+import type React from "react";
+import { theme } from "../../semantic-colors.js";
+import { AutoAcceptIndicator } from "../AutoAcceptIndicator.js";
+import { ContextUsageDisplay } from "../ContextUsageDisplay.js";
 
 interface AgentFooterProps {
   approvalMode: ApprovalMode | undefined;
@@ -30,8 +30,7 @@ export const AgentFooter: React.FC<AgentFooterProps> = ({
   contextWindowSize,
   terminalWidth,
 }) => {
-  const showApproval =
-    approvalMode !== undefined && approvalMode !== ApprovalMode.DEFAULT;
+  const showApproval = approvalMode !== undefined && approvalMode !== ApprovalMode.DEFAULT;
   const showContext = promptTokenCount > 0 && contextWindowSize !== undefined;
 
   if (!showApproval && !showContext) {
@@ -39,16 +38,9 @@ export const AgentFooter: React.FC<AgentFooterProps> = ({
   }
 
   return (
-    <Box
-      justifyContent="space-between"
-      width="100%"
-      flexDirection="row"
-      alignItems="center"
-    >
+    <Box justifyContent="space-between" width="100%" flexDirection="row" alignItems="center">
       <Box marginLeft={2}>
-        {showApproval ? (
-          <AutoAcceptIndicator approvalMode={approvalMode} />
-        ) : null}
+        {showApproval ? <AutoAcceptIndicator approvalMode={approvalMode} /> : null}
       </Box>
       <Box marginRight={2}>
         {showContext && (

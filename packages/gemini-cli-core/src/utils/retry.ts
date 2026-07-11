@@ -4,20 +4,20 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import type { GenerateContentResponse } from '@google/genai';
-import { ApiError } from '@google/genai';
-import { AuthType } from '../core/contentGenerator.js';
+import type { GenerateContentResponse } from "@google/genai";
+import { ApiError } from "@google/genai";
+import { classifyFailureKind } from "../availability/errorClassification.js";
+import type { RetryAvailabilityContext } from "../availability/modelPolicy.js";
+import { applyAvailabilityTransition } from "../availability/policyHelpers.js";
+import { AuthType } from "../core/contentGenerator.js";
+import { debugLogger } from "./debugLogger.js";
+import { createAbortError, delay } from "./delay.js";
 import {
-  TerminalQuotaError,
-  RetryableQuotaError,
   classifyGoogleError,
-} from './googleQuotaErrors.js';
-import { delay, createAbortError } from './delay.js';
-import { debugLogger } from './debugLogger.js';
-import { getErrorStatus, ModelNotFoundError } from './httpErrors.js';
-import type { RetryAvailabilityContext } from '../availability/modelPolicy.js';
-import { classifyFailureKind } from '../availability/errorClassification.js';
-import { applyAvailabilityTransition } from '../availability/policyHelpers.js';
+  RetryableQuotaError,
+  TerminalQuotaError,
+} from "./googleQuotaErrors.js";
+import { getErrorStatus, ModelNotFoundError } from "./httpErrors.js";
 
 export type { RetryAvailabilityContext };
 
@@ -27,10 +27,7 @@ export interface RetryOptions {
   maxDelayMs: number;
   shouldRetryOnError: (error: Error, retryFetchErrors?: boolean) => boolean;
   shouldRetryOnContent?: (content: GenerateContentResponse) => boolean;
-  onPersistent429?: (
-    authType?: string,
-    error?: unknown,
-  ) => Promise<string | boolean | null>;
+  onPersistent429?: (authType?: string, error?: unknown) => Promise<string | boolean | null>;
   authType?: string;
   retryFetchErrors?: boolean;
   signal?: AbortSignal;
@@ -45,20 +42,20 @@ const DEFAULT_RETRY_OPTIONS: RetryOptions = {
 };
 
 const RETRYABLE_NETWORK_CODES = [
-  'ECONNRESET',
-  'ETIMEDOUT',
-  'EPIPE',
-  'ENOTFOUND',
-  'EAI_AGAIN',
-  'ECONNREFUSED',
+  "ECONNRESET",
+  "ETIMEDOUT",
+  "EPIPE",
+  "ENOTFOUND",
+  "EAI_AGAIN",
+  "ECONNREFUSED",
 ];
 
 function getNetworkErrorCode(error: unknown): string | undefined {
   const getCode = (obj: unknown): string | undefined => {
-    if (typeof obj !== 'object' || obj === null) {
+    if (typeof obj !== "object" || obj === null) {
       return undefined;
     }
-    if ('code' in obj && typeof (obj as { code: unknown }).code === 'string') {
+    if ("code" in obj && typeof (obj as { code: unknown }).code === "string") {
       return (obj as { code: string }).code;
     }
     return undefined;
@@ -69,14 +66,14 @@ function getNetworkErrorCode(error: unknown): string | undefined {
     return directCode;
   }
 
-  if (typeof error === 'object' && error !== null && 'cause' in error) {
+  if (typeof error === "object" && error !== null && "cause" in error) {
     return getCode((error as { cause: unknown }).cause);
   }
 
   return undefined;
 }
 
-const FETCH_FAILED_MESSAGE = 'fetch failed';
+const FETCH_FAILED_MESSAGE = "fetch failed";
 
 /**
  * Default predicate function to determine if a retry should be attempted.
@@ -85,10 +82,7 @@ const FETCH_FAILED_MESSAGE = 'fetch failed';
  * @param retryFetchErrors Whether to retry on specific fetch errors.
  * @returns True if the error is a transient error, false otherwise.
  */
-export function isRetryableError(
-  error: Error | unknown,
-  retryFetchErrors?: boolean,
-): boolean {
+export function isRetryableError(error: Error | unknown, retryFetchErrors?: boolean): boolean {
   // Check for common network error codes
   const errorCode = getNetworkErrorCode(error);
   if (errorCode && RETRYABLE_NETWORK_CODES.includes(errorCode)) {
@@ -134,7 +128,7 @@ export async function retryWithBackoff<T>(
   }
 
   if (options?.maxAttempts !== undefined && options.maxAttempts <= 0) {
-    throw new Error('maxAttempts must be a positive number.');
+    throw new Error("maxAttempts must be a positive number.");
   }
 
   const cleanOptions = options
@@ -169,10 +163,7 @@ export async function retryWithBackoff<T>(
     try {
       const result = await fn();
 
-      if (
-        shouldRetryOnContent &&
-        shouldRetryOnContent(result as GenerateContentResponse)
-      ) {
+      if (shouldRetryOnContent && shouldRetryOnContent(result as GenerateContentResponse)) {
         const jitter = currentDelay * 0.3 * (Math.random() * 2 - 1);
         const delayWithJitter = Math.max(0, currentDelay + jitter);
         await delay(delayWithJitter, signal);
@@ -187,14 +178,13 @@ export async function retryWithBackoff<T>(
 
       return result;
     } catch (error) {
-      if (error instanceof Error && error.name === 'AbortError') {
+      if (error instanceof Error && error.name === "AbortError") {
         throw error;
       }
 
       const classifiedError = classifyGoogleError(error);
       const failureKind = classifyFailureKind(classifiedError);
-      const appliedImmediate =
-        failureKind === 'terminal' || failureKind === 'not_found';
+      const appliedImmediate = failureKind === "terminal" || failureKind === "not_found";
       if (appliedImmediate) {
         applyAvailabilityTransition(getAvailabilityContext, failureKind);
       }
@@ -207,49 +197,40 @@ export async function retryWithBackoff<T>(
       ) {
         if (onPersistent429 && authType === AuthType.LOGIN_WITH_GOOGLE) {
           try {
-            const fallbackModel = await onPersistent429(
-              authType,
-              classifiedError,
-            );
+            const fallbackModel = await onPersistent429(authType, classifiedError);
             if (fallbackModel) {
               attempt = 0; // Reset attempts and retry with the new model.
               currentDelay = initialDelayMs;
               continue;
             }
           } catch (fallbackError) {
-            debugLogger.warn('Fallback to Flash model failed:', fallbackError);
+            debugLogger.warn("Fallback to Flash model failed:", fallbackError);
           }
         }
         // Terminal/not_found already recorded; nothing else to mark here.
         throw classifiedError; // Throw if no fallback or fallback failed.
       }
 
-      const is500 =
-        errorCode !== undefined && errorCode >= 500 && errorCode < 600;
+      const is500 = errorCode !== undefined && errorCode >= 500 && errorCode < 600;
 
       if (classifiedError instanceof RetryableQuotaError || is500) {
         if (attempt >= maxAttempts) {
           if (onPersistent429 && authType === AuthType.LOGIN_WITH_GOOGLE) {
             try {
-              const fallbackModel = await onPersistent429(
-                authType,
-                classifiedError,
-              );
+              const fallbackModel = await onPersistent429(authType, classifiedError);
               if (fallbackModel) {
                 attempt = 0; // Reset attempts and retry with the new model.
                 currentDelay = initialDelayMs;
                 continue;
               }
             } catch (fallbackError) {
-              console.warn('Model fallback failed:', fallbackError);
+              console.warn("Model fallback failed:", fallbackError);
             }
           }
           if (!appliedImmediate) {
             applyAvailabilityTransition(getAvailabilityContext, failureKind);
           }
-          throw classifiedError instanceof RetryableQuotaError
-            ? classifiedError
-            : error;
+          throw classifiedError instanceof RetryableQuotaError ? classifiedError : error;
         }
 
         if (classifiedError instanceof RetryableQuotaError) {
@@ -272,10 +253,7 @@ export async function retryWithBackoff<T>(
       }
 
       // Generic retry logic for other errors
-      if (
-        attempt >= maxAttempts ||
-        !shouldRetryOnError(error as Error, retryFetchErrors)
-      ) {
+      if (attempt >= maxAttempts || !shouldRetryOnError(error as Error, retryFetchErrors)) {
         if (!appliedImmediate) {
           applyAvailabilityTransition(getAvailabilityContext, failureKind);
         }
@@ -293,7 +271,7 @@ export async function retryWithBackoff<T>(
     }
   }
 
-  throw new Error('Retry attempts exhausted');
+  throw new Error("Retry attempts exhausted");
 }
 
 /**
@@ -302,11 +280,7 @@ export async function retryWithBackoff<T>(
  * @param error The error that caused the retry.
  * @param errorStatus The HTTP status code of the error, if available.
  */
-function logRetryAttempt(
-  attempt: number,
-  error: unknown,
-  errorStatus?: number,
-): void {
+function logRetryAttempt(attempt: number, error: unknown, errorStatus?: number): void {
   let message = `Attempt ${attempt} failed. Retrying with backoff...`;
   if (errorStatus) {
     message = `Attempt ${attempt} failed with status ${errorStatus}. Retrying with backoff...`;
@@ -318,16 +292,13 @@ function logRetryAttempt(
     console.error(message, error);
   } else if (error instanceof Error) {
     // Fallback for errors that might not have a status but have a message
-    if (error.message.includes('429')) {
+    if (error.message.includes("429")) {
       debugLogger.warn(
         `Attempt ${attempt} failed with 429 error (no Retry-After header). Retrying with backoff...`,
         error,
       );
     } else if (error.message.match(/5\d{2}/)) {
-      console.error(
-        `Attempt ${attempt} failed with 5xx error. Retrying with backoff...`,
-        error,
-      );
+      console.error(`Attempt ${attempt} failed with 5xx error. Retrying with backoff...`, error);
     } else {
       debugLogger.warn(message, error); // Default to warn for other errors
     }

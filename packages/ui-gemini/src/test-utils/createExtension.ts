@@ -4,22 +4,19 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import * as fs from 'node:fs';
-import * as path from 'node:path';
-import {
-  type MCPServerConfig,
-  type ExtensionInstallMetadata,
-} from '@airiscode/gemini-cli-core';
+import * as fs from "node:fs";
+import * as path from "node:path";
+import { type ExtensionInstallMetadata, type MCPServerConfig } from "@airiscode/gemini-cli-core";
+import type { ExtensionSetting } from "../config/extensions/extensionSettings.js";
 import {
   EXTENSIONS_CONFIG_FILENAME,
   INSTALL_METADATA_FILENAME,
-} from '../config/extensions/variables.js';
-import type { ExtensionSetting } from '../config/extensions/extensionSettings.js';
+} from "../config/extensions/variables.js";
 
 export function createExtension({
-  extensionsDir = 'extensions-dir',
-  name = 'my-extension',
-  version = '1.0.0',
+  extensionsDir = "extensions-dir",
+  name = "my-extension",
+  version = "1.0.0",
   addContextFile = false,
   contextFileName = undefined as string | undefined,
   mcpServers = {} as Record<string, MCPServerConfig>,
@@ -34,18 +31,15 @@ export function createExtension({
   );
 
   if (addContextFile) {
-    fs.writeFileSync(path.join(extDir, 'GEMINI.md'), 'context');
+    fs.writeFileSync(path.join(extDir, "GEMINI.md"), "context");
   }
 
   if (contextFileName) {
-    fs.writeFileSync(path.join(extDir, contextFileName), 'context');
+    fs.writeFileSync(path.join(extDir, contextFileName), "context");
   }
 
   if (installMetadata) {
-    fs.writeFileSync(
-      path.join(extDir, INSTALL_METADATA_FILENAME),
-      JSON.stringify(installMetadata),
-    );
+    fs.writeFileSync(path.join(extDir, INSTALL_METADATA_FILENAME), JSON.stringify(installMetadata));
   }
   return extDir;
 }

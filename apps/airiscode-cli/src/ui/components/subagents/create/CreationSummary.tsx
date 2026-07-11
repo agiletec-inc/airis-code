@@ -4,21 +4,18 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { useCallback, useState, useEffect } from 'react';
-import { Box, Text } from 'ink';
-import type { WizardStepProps } from '../types.js';
-import type {
-  SubagentManager,
-  SubagentConfig,
-} from '@airiscode/runtime';
-import { createDebugLogger } from '@airiscode/runtime';
-import { theme } from '../../../semantic-colors.js';
-import { shouldShowColor, getColorForDisplay } from '../utils.js';
-import { useLaunchEditor } from '../../../hooks/useLaunchEditor.js';
-import { useKeypress } from '../../../hooks/useKeypress.js';
-import { t } from '../../../../i18n/index.js';
+import type { SubagentConfig, SubagentManager } from "@airiscode/runtime";
+import { createDebugLogger } from "@airiscode/runtime";
+import { Box, Text } from "ink";
+import { useCallback, useEffect, useState } from "react";
+import { t } from "../../../../i18n/index.js";
+import { useKeypress } from "../../../hooks/useKeypress.js";
+import { useLaunchEditor } from "../../../hooks/useLaunchEditor.js";
+import { theme } from "../../../semantic-colors.js";
+import type { WizardStepProps } from "../types.js";
+import { getColorForDisplay, shouldShowColor } from "../utils.js";
 
-const debugLogger = createDebugLogger('SUBAGENT_CREATION_SUMMARY');
+const debugLogger = createDebugLogger("SUBAGENT_CREATION_SUMMARY");
 
 /**
  * Step 6: Final confirmation and actions.
@@ -37,7 +34,7 @@ export function CreationSummary({
 
   const truncateText = (text: string, maxLength: number): string => {
     if (text.length <= maxLength) return text;
-    return text.substring(0, maxLength - 3) + '...';
+    return text.substring(0, maxLength - 3) + "...";
   };
 
   // Check for warnings
@@ -52,16 +49,11 @@ export function CreationSummary({
         const subagentManager = config.getSubagentManager();
 
         // Check for name conflicts
-        const isAvailable = await subagentManager.isNameAvailable(
-          state.generatedName,
-        );
+        const isAvailable = await subagentManager.isNameAvailable(state.generatedName);
         if (!isAvailable) {
-          const existing = await subagentManager.loadSubagent(
-            state.generatedName,
-          );
+          const existing = await subagentManager.loadSubagent(state.generatedName);
           if (existing) {
-            const conflictLevel =
-              existing.level === 'project' ? 'project' : 'user';
+            const conflictLevel = existing.level === "project" ? "project" : "user";
             const targetLevel = state.location;
 
             if (conflictLevel === targetLevel) {
@@ -71,12 +63,11 @@ export function CreationSummary({
                   { name: state.generatedName, level: conflictLevel },
                 ),
               );
-            } else if (targetLevel === 'project') {
+            } else if (targetLevel === "project") {
               allWarnings.push(
-                t(
-                  'Name "{{name}}" exists at user level - project level will take precedence',
-                  { name: state.generatedName },
-                ),
+                t('Name "{{name}}" exists at user level - project level will take precedence', {
+                  name: state.generatedName,
+                }),
               );
             } else {
               allWarnings.push(
@@ -90,20 +81,20 @@ export function CreationSummary({
         }
       } catch (error) {
         // Silently handle errors in warning checks
-        debugLogger.warn('Error checking subagent name availability:', error);
+        debugLogger.warn("Error checking subagent name availability:", error);
       }
 
       // Check length warnings
       if (state.generatedDescription.length > 1000) {
         allWarnings.push(
-          t('Description is over {{length}} characters', {
+          t("Description is over {{length}} characters", {
             length: state.generatedDescription.length.toString(),
           }),
         );
       }
       if (state.generatedSystemPrompt.length > 10000) {
         allWarnings.push(
-          t('System prompt is over {{length}} characters', {
+          t("System prompt is over {{length}} characters", {
             length: state.generatedSystemPrompt.length.toString(),
           }),
         );
@@ -122,14 +113,13 @@ export function CreationSummary({
   ]);
 
   // If no tools explicitly selected, it means "all tools" for this agent
-  const toolsDisplay =
-    state.selectedTools.length === 0 ? '*' : state.selectedTools.join(', ');
+  const toolsDisplay = state.selectedTools.length === 0 ? "*" : state.selectedTools.join(", ");
 
   // Common method to save subagent configuration
   const saveSubagent = useCallback(async (): Promise<SubagentManager> => {
     // Create SubagentManager instance
     if (!config) {
-      throw new Error('Configuration not available');
+      throw new Error("Configuration not available");
     }
     const subagentManager = config.getSubagentManager();
 
@@ -139,10 +129,8 @@ export function CreationSummary({
       description: state.generatedDescription,
       systemPrompt: state.generatedSystemPrompt,
       level: state.location,
-      filePath: '', // Will be set by manager
-      tools: Array.isArray(state.selectedTools)
-        ? state.selectedTools
-        : undefined,
+      filePath: "", // Will be set by manager
+      tools: Array.isArray(state.selectedTools) ? state.selectedTools : undefined,
       color: state.color,
     };
 
@@ -171,9 +159,7 @@ export function CreationSummary({
       await saveSubagent();
       showSuccessAndClose();
     } catch (error) {
-      setSaveError(
-        error instanceof Error ? error.message : 'Unknown error occurred',
-      );
+      setSaveError(error instanceof Error ? error.message : "Unknown error occurred");
     }
   }, [saveSubagent, showSuccessAndClose]);
 
@@ -186,10 +172,7 @@ export function CreationSummary({
       const subagentManager = await saveSubagent();
 
       // Get the file path of the created subagent
-      const subagentFilePath = subagentManager.getSubagentPath(
-        state.generatedName,
-        state.location,
-      );
+      const subagentFilePath = subagentManager.getSubagentPath(state.generatedName, state.location);
 
       // Launch editor with the actual subagent file
       await launchEditor(subagentFilePath);
@@ -198,30 +181,24 @@ export function CreationSummary({
       showSuccessAndClose();
     } catch (error) {
       setSaveError(
-        t('Failed to save and edit subagent: {{error}}', {
-          error: error instanceof Error ? error.message : 'Unknown error',
+        t("Failed to save and edit subagent: {{error}}", {
+          error: error instanceof Error ? error.message : "Unknown error",
         }),
       );
     }
-  }, [
-    saveSubagent,
-    showSuccessAndClose,
-    state.generatedName,
-    state.location,
-    launchEditor,
-  ]);
+  }, [saveSubagent, showSuccessAndClose, state.generatedName, state.location, launchEditor]);
 
   // Handle keyboard input
   useKeypress(
     (key) => {
       if (saveSuccess) return;
 
-      if (key.name === 'return' || key.sequence === 's') {
+      if (key.name === "return" || key.sequence === "s") {
         handleSave();
         return;
       }
 
-      if (key.sequence === 'e') {
+      if (key.sequence === "e") {
         handleEdit();
         return;
       }
@@ -234,7 +211,7 @@ export function CreationSummary({
       <Box flexDirection="column" gap={1}>
         <Box>
           <Text bold color={theme.status.success}>
-            {t('✅ Subagent Created Successfully!')}
+            {t("✅ Subagent Created Successfully!")}
           </Text>
         </Box>
         <Box>
@@ -253,56 +230,50 @@ export function CreationSummary({
     <Box flexDirection="column" gap={1}>
       <Box flexDirection="column">
         <Box>
-          <Text color={theme.text.primary}>{t('Name: ')}</Text>
-          <Text color={getColorForDisplay(state.color)}>
-            {state.generatedName}
-          </Text>
+          <Text color={theme.text.primary}>{t("Name: ")}</Text>
+          <Text color={getColorForDisplay(state.color)}>{state.generatedName}</Text>
         </Box>
 
         <Box>
-          <Text color={theme.text.primary}>{t('Location: ')}</Text>
+          <Text color={theme.text.primary}>{t("Location: ")}</Text>
           <Text>
-            {state.location === 'project'
-              ? t('Project Level (.airiscode/agents/)')
-              : t('User Level (~/.airiscode/agents/)')}
+            {state.location === "project"
+              ? t("Project Level (.airiscode/agents/)")
+              : t("User Level (~/.airiscode/agents/)")}
           </Text>
         </Box>
 
         <Box>
-          <Text color={theme.text.primary}>{t('Tools: ')}</Text>
+          <Text color={theme.text.primary}>{t("Tools: ")}</Text>
           <Text>{toolsDisplay}</Text>
         </Box>
 
         {shouldShowColor(state.color) && (
           <Box>
-            <Text color={theme.text.primary}>{t('Color: ')}</Text>
+            <Text color={theme.text.primary}>{t("Color: ")}</Text>
             <Text color={getColorForDisplay(state.color)}>{state.color}</Text>
           </Box>
         )}
 
         <Box marginTop={1}>
-          <Text color={theme.text.primary}>{t('Description:')}</Text>
+          <Text color={theme.text.primary}>{t("Description:")}</Text>
         </Box>
         <Box padding={1} paddingBottom={0}>
-          <Text wrap="wrap">
-            {truncateText(state.generatedDescription, 250)}
-          </Text>
+          <Text wrap="wrap">{truncateText(state.generatedDescription, 250)}</Text>
         </Box>
 
         <Box marginTop={1}>
-          <Text color={theme.text.primary}>{t('System Prompt:')}</Text>
+          <Text color={theme.text.primary}>{t("System Prompt:")}</Text>
         </Box>
         <Box padding={1} paddingBottom={0}>
-          <Text wrap="wrap">
-            {truncateText(state.generatedSystemPrompt, 250)}
-          </Text>
+          <Text wrap="wrap">{truncateText(state.generatedSystemPrompt, 250)}</Text>
         </Box>
       </Box>
 
       {saveError && (
         <Box flexDirection="column">
           <Text bold color={theme.status.error}>
-            {t('❌ Error saving subagent:')}
+            {t("❌ Error saving subagent:")}
           </Text>
           <Box flexDirection="column" padding={1} paddingBottom={0}>
             <Text color={theme.status.error} wrap="wrap">
@@ -315,7 +286,7 @@ export function CreationSummary({
       {warnings.length > 0 && (
         <Box flexDirection="column">
           <Text bold color={theme.status.warning}>
-            {t('Warnings:')}
+            {t("Warnings:")}
           </Text>
           <Box flexDirection="column" padding={1} paddingBottom={0}>
             {warnings.map((warning, index) => (

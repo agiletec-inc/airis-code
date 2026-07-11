@@ -4,20 +4,20 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { act } from 'react';
-import { renderHook } from '../../test-utils/render.js';
-import { waitFor } from '../../test-utils/async.js';
-import { useSessionResume } from './useSessionResume.js';
 import type {
   Config,
-  ResumedSessionData,
   ConversationRecord,
   MessageRecord,
-} from '@airiscode/gemini-cli-core';
-import type { UseHistoryManagerReturn } from './useHistoryManager.js';
-import type { HistoryItemWithoutId } from '../types.js';
+  ResumedSessionData,
+} from "@airiscode/gemini-cli-core";
+import { act } from "react";
+import { waitFor } from "../../test-utils/async.js";
+import { renderHook } from "../../test-utils/render.js";
+import type { HistoryItemWithoutId } from "../types.js";
+import type { UseHistoryManagerReturn } from "./useHistoryManager.js";
+import { useSessionResume } from "./useSessionResume.js";
 
-describe('useSessionResume', () => {
+describe("useSessionResume", () => {
   // Mock dependencies
   const mockGeminiClient = {
     resumeChat: vi.fn(),
@@ -55,43 +55,39 @@ describe('useSessionResume', () => {
     mockHistoryManager = createMockHistoryManager();
   });
 
-  describe('loadHistoryForResume', () => {
-    it('should return a loadHistoryForResume callback', () => {
+  describe("loadHistoryForResume", () => {
+    it("should return a loadHistoryForResume callback", () => {
       const { result } = renderHook(() => useSessionResume(getDefaultProps()));
 
       expect(result.current.loadHistoryForResume).toBeInstanceOf(Function);
     });
 
-    it('should clear history and add items when loading history', () => {
+    it("should clear history and add items when loading history", () => {
       const { result } = renderHook(() => useSessionResume(getDefaultProps()));
 
       const uiHistory: HistoryItemWithoutId[] = [
-        { type: 'user', text: 'Hello' },
-        { type: 'gemini', text: 'Hi there!' },
+        { type: "user", text: "Hello" },
+        { type: "gemini", text: "Hi there!" },
       ];
 
       const clientHistory = [
-        { role: 'user' as const, parts: [{ text: 'Hello' }] },
-        { role: 'model' as const, parts: [{ text: 'Hi there!' }] },
+        { role: "user" as const, parts: [{ text: "Hello" }] },
+        { role: "model" as const, parts: [{ text: "Hi there!" }] },
       ];
 
       const resumedData: ResumedSessionData = {
         conversation: {
-          sessionId: 'test-123',
-          projectHash: 'project-123',
-          startTime: '2025-01-01T00:00:00Z',
-          lastUpdated: '2025-01-01T01:00:00Z',
+          sessionId: "test-123",
+          projectHash: "project-123",
+          startTime: "2025-01-01T00:00:00Z",
+          lastUpdated: "2025-01-01T01:00:00Z",
           messages: [] as MessageRecord[],
         },
-        filePath: '/path/to/session.json',
+        filePath: "/path/to/session.json",
       };
 
       act(() => {
-        result.current.loadHistoryForResume(
-          uiHistory,
-          clientHistory,
-          resumedData,
-        );
+        result.current.loadHistoryForResume(uiHistory, clientHistory, resumedData);
       });
 
       expect(mockSetQuittingMessages).toHaveBeenCalledWith(null);
@@ -99,24 +95,21 @@ describe('useSessionResume', () => {
       expect(mockHistoryManager.addItem).toHaveBeenCalledTimes(2);
       expect(mockHistoryManager.addItem).toHaveBeenNthCalledWith(
         1,
-        { type: 'user', text: 'Hello' },
+        { type: "user", text: "Hello" },
         0,
         true,
       );
       expect(mockHistoryManager.addItem).toHaveBeenNthCalledWith(
         2,
-        { type: 'gemini', text: 'Hi there!' },
+        { type: "gemini", text: "Hi there!" },
         1,
         true,
       );
       expect(mockRefreshStatic).toHaveBeenCalled();
-      expect(mockGeminiClient.resumeChat).toHaveBeenCalledWith(
-        clientHistory,
-        resumedData,
-      );
+      expect(mockGeminiClient.resumeChat).toHaveBeenCalledWith(clientHistory, resumedData);
     });
 
-    it('should not load history if Gemini client is not initialized', () => {
+    it("should not load history if Gemini client is not initialized", () => {
       const { result } = renderHook(() =>
         useSessionResume({
           ...getDefaultProps(),
@@ -124,29 +117,21 @@ describe('useSessionResume', () => {
         }),
       );
 
-      const uiHistory: HistoryItemWithoutId[] = [
-        { type: 'user', text: 'Hello' },
-      ];
-      const clientHistory = [
-        { role: 'user' as const, parts: [{ text: 'Hello' }] },
-      ];
+      const uiHistory: HistoryItemWithoutId[] = [{ type: "user", text: "Hello" }];
+      const clientHistory = [{ role: "user" as const, parts: [{ text: "Hello" }] }];
       const resumedData: ResumedSessionData = {
         conversation: {
-          sessionId: 'test-123',
-          projectHash: 'project-123',
-          startTime: '2025-01-01T00:00:00Z',
-          lastUpdated: '2025-01-01T01:00:00Z',
+          sessionId: "test-123",
+          projectHash: "project-123",
+          startTime: "2025-01-01T00:00:00Z",
+          lastUpdated: "2025-01-01T01:00:00Z",
           messages: [] as MessageRecord[],
         },
-        filePath: '/path/to/session.json',
+        filePath: "/path/to/session.json",
       };
 
       act(() => {
-        result.current.loadHistoryForResume(
-          uiHistory,
-          clientHistory,
-          resumedData,
-        );
+        result.current.loadHistoryForResume(uiHistory, clientHistory, resumedData);
       });
 
       expect(mockHistoryManager.clearItems).not.toHaveBeenCalled();
@@ -154,18 +139,18 @@ describe('useSessionResume', () => {
       expect(mockGeminiClient.resumeChat).not.toHaveBeenCalled();
     });
 
-    it('should handle empty history arrays', () => {
+    it("should handle empty history arrays", () => {
       const { result } = renderHook(() => useSessionResume(getDefaultProps()));
 
       const resumedData: ResumedSessionData = {
         conversation: {
-          sessionId: 'test-123',
-          projectHash: 'project-123',
-          startTime: '2025-01-01T00:00:00Z',
-          lastUpdated: '2025-01-01T01:00:00Z',
+          sessionId: "test-123",
+          projectHash: "project-123",
+          startTime: "2025-01-01T00:00:00Z",
+          lastUpdated: "2025-01-01T01:00:00Z",
           messages: [] as MessageRecord[],
         },
-        filePath: '/path/to/session.json',
+        filePath: "/path/to/session.json",
       };
 
       act(() => {
@@ -179,11 +164,9 @@ describe('useSessionResume', () => {
     });
   });
 
-  describe('callback stability', () => {
-    it('should maintain stable loadHistoryForResume reference across renders', () => {
-      const { result, rerender } = renderHook(() =>
-        useSessionResume(getDefaultProps()),
-      );
+  describe("callback stability", () => {
+    it("should maintain stable loadHistoryForResume reference across renders", () => {
+      const { result, rerender } = renderHook(() => useSessionResume(getDefaultProps()));
 
       const initialCallback = result.current.loadHistoryForResume;
 
@@ -192,7 +175,7 @@ describe('useSessionResume', () => {
       expect(result.current.loadHistoryForResume).toBe(initialCallback);
     });
 
-    it('should update callback when config changes', () => {
+    it("should update callback when config changes", () => {
       const { result, rerender } = renderHook(
         ({ config }: { config: Config }) =>
           useSessionResume({
@@ -216,8 +199,8 @@ describe('useSessionResume', () => {
     });
   });
 
-  describe('automatic resume on mount', () => {
-    it('should not resume when resumedSessionData is not provided', () => {
+  describe("automatic resume on mount", () => {
+    it("should not resume when resumedSessionData is not provided", () => {
       renderHook(() => useSessionResume(getDefaultProps()));
 
       expect(mockHistoryManager.clearItems).not.toHaveBeenCalled();
@@ -225,18 +208,18 @@ describe('useSessionResume', () => {
       expect(mockGeminiClient.resumeChat).not.toHaveBeenCalled();
     });
 
-    it('should not resume when user is authenticating', () => {
+    it("should not resume when user is authenticating", () => {
       const conversation: ConversationRecord = {
-        sessionId: 'auto-resume-123',
-        projectHash: 'project-123',
-        startTime: '2025-01-01T00:00:00Z',
-        lastUpdated: '2025-01-01T01:00:00Z',
+        sessionId: "auto-resume-123",
+        projectHash: "project-123",
+        startTime: "2025-01-01T00:00:00Z",
+        lastUpdated: "2025-01-01T01:00:00Z",
         messages: [
           {
-            id: 'msg-1',
-            timestamp: '2025-01-01T00:01:00Z',
-            content: 'Test message',
-            type: 'user',
+            id: "msg-1",
+            timestamp: "2025-01-01T00:01:00Z",
+            content: "Test message",
+            type: "user",
           },
         ] as MessageRecord[],
       };
@@ -246,7 +229,7 @@ describe('useSessionResume', () => {
           ...getDefaultProps(),
           resumedSessionData: {
             conversation,
-            filePath: '/path/to/session.json',
+            filePath: "/path/to/session.json",
           },
           isAuthenticating: true,
         }),
@@ -257,18 +240,18 @@ describe('useSessionResume', () => {
       expect(mockGeminiClient.resumeChat).not.toHaveBeenCalled();
     });
 
-    it('should not resume when Gemini client is not initialized', () => {
+    it("should not resume when Gemini client is not initialized", () => {
       const conversation: ConversationRecord = {
-        sessionId: 'auto-resume-123',
-        projectHash: 'project-123',
-        startTime: '2025-01-01T00:00:00Z',
-        lastUpdated: '2025-01-01T01:00:00Z',
+        sessionId: "auto-resume-123",
+        projectHash: "project-123",
+        startTime: "2025-01-01T00:00:00Z",
+        lastUpdated: "2025-01-01T01:00:00Z",
         messages: [
           {
-            id: 'msg-1',
-            timestamp: '2025-01-01T00:01:00Z',
-            content: 'Test message',
-            type: 'user',
+            id: "msg-1",
+            timestamp: "2025-01-01T00:01:00Z",
+            content: "Test message",
+            type: "user",
           },
         ] as MessageRecord[],
       };
@@ -278,7 +261,7 @@ describe('useSessionResume', () => {
           ...getDefaultProps(),
           resumedSessionData: {
             conversation,
-            filePath: '/path/to/session.json',
+            filePath: "/path/to/session.json",
           },
           isGeminiClientInitialized: false,
         }),
@@ -289,24 +272,24 @@ describe('useSessionResume', () => {
       expect(mockGeminiClient.resumeChat).not.toHaveBeenCalled();
     });
 
-    it('should automatically resume session when resumedSessionData is provided', async () => {
+    it("should automatically resume session when resumedSessionData is provided", async () => {
       const conversation: ConversationRecord = {
-        sessionId: 'auto-resume-123',
-        projectHash: 'project-123',
-        startTime: '2025-01-01T00:00:00Z',
-        lastUpdated: '2025-01-01T01:00:00Z',
+        sessionId: "auto-resume-123",
+        projectHash: "project-123",
+        startTime: "2025-01-01T00:00:00Z",
+        lastUpdated: "2025-01-01T01:00:00Z",
         messages: [
           {
-            id: 'msg-1',
-            timestamp: '2025-01-01T00:01:00Z',
-            content: 'Hello from resumed session',
-            type: 'user',
+            id: "msg-1",
+            timestamp: "2025-01-01T00:01:00Z",
+            content: "Hello from resumed session",
+            type: "user",
           },
           {
-            id: 'msg-2',
-            timestamp: '2025-01-01T00:02:00Z',
-            content: 'Welcome back!',
-            type: 'gemini',
+            id: "msg-2",
+            timestamp: "2025-01-01T00:02:00Z",
+            content: "Welcome back!",
+            type: "gemini",
           },
         ] as MessageRecord[],
       };
@@ -316,7 +299,7 @@ describe('useSessionResume', () => {
           ...getDefaultProps(),
           resumedSessionData: {
             conversation,
-            filePath: '/path/to/session.json',
+            filePath: "/path/to/session.json",
           },
         }),
       );
@@ -328,31 +311,31 @@ describe('useSessionResume', () => {
       expect(mockHistoryManager.addItem).toHaveBeenCalledTimes(2);
       expect(mockHistoryManager.addItem).toHaveBeenNthCalledWith(
         1,
-        { type: 'user', text: 'Hello from resumed session' },
+        { type: "user", text: "Hello from resumed session" },
         0,
         true,
       );
       expect(mockHistoryManager.addItem).toHaveBeenNthCalledWith(
         2,
-        { type: 'gemini', text: 'Welcome back!' },
+        { type: "gemini", text: "Welcome back!" },
         1,
         true,
       );
       expect(mockGeminiClient.resumeChat).toHaveBeenCalled();
     });
 
-    it('should only resume once even if props change', async () => {
+    it("should only resume once even if props change", async () => {
       const conversation: ConversationRecord = {
-        sessionId: 'auto-resume-123',
-        projectHash: 'project-123',
-        startTime: '2025-01-01T00:00:00Z',
-        lastUpdated: '2025-01-01T01:00:00Z',
+        sessionId: "auto-resume-123",
+        projectHash: "project-123",
+        startTime: "2025-01-01T00:00:00Z",
+        lastUpdated: "2025-01-01T01:00:00Z",
         messages: [
           {
-            id: 'msg-1',
-            timestamp: '2025-01-01T00:01:00Z',
-            content: 'Test message',
-            type: 'user',
+            id: "msg-1",
+            timestamp: "2025-01-01T00:01:00Z",
+            content: "Test message",
+            type: "user",
           },
         ] as MessageRecord[],
       };
@@ -364,7 +347,7 @@ describe('useSessionResume', () => {
             refreshStatic,
             resumedSessionData: {
               conversation,
-              filePath: '/path/to/session.json',
+              filePath: "/path/to/session.json",
             },
           }),
         {
@@ -376,38 +359,35 @@ describe('useSessionResume', () => {
         expect(mockHistoryManager.clearItems).toHaveBeenCalled();
       });
 
-      const clearItemsCallCount = (
-        mockHistoryManager.clearItems as ReturnType<typeof vi.fn>
-      ).mock.calls.length;
+      const clearItemsCallCount = (mockHistoryManager.clearItems as ReturnType<typeof vi.fn>).mock
+        .calls.length;
 
       // Rerender with different refreshStatic
       const newRefreshStatic = vi.fn();
       rerender({ refreshStatic: newRefreshStatic });
 
       // Should not resume again
-      expect(mockHistoryManager.clearItems).toHaveBeenCalledTimes(
-        clearItemsCallCount,
-      );
+      expect(mockHistoryManager.clearItems).toHaveBeenCalledTimes(clearItemsCallCount);
     });
 
-    it('should convert session messages correctly during auto-resume', async () => {
+    it("should convert session messages correctly during auto-resume", async () => {
       const conversation: ConversationRecord = {
-        sessionId: 'auto-resume-with-tools',
-        projectHash: 'project-123',
-        startTime: '2025-01-01T00:00:00Z',
-        lastUpdated: '2025-01-01T01:00:00Z',
+        sessionId: "auto-resume-with-tools",
+        projectHash: "project-123",
+        startTime: "2025-01-01T00:00:00Z",
+        lastUpdated: "2025-01-01T01:00:00Z",
         messages: [
           {
-            id: 'msg-1',
-            timestamp: '2025-01-01T00:01:00Z',
-            content: '/help',
-            type: 'user',
+            id: "msg-1",
+            timestamp: "2025-01-01T00:01:00Z",
+            content: "/help",
+            type: "user",
           },
           {
-            id: 'msg-2',
-            timestamp: '2025-01-01T00:02:00Z',
-            content: 'Regular message',
-            type: 'user',
+            id: "msg-2",
+            timestamp: "2025-01-01T00:02:00Z",
+            content: "Regular message",
+            type: "user",
           },
         ] as MessageRecord[],
       };
@@ -417,7 +397,7 @@ describe('useSessionResume', () => {
           ...getDefaultProps(),
           resumedSessionData: {
             conversation,
-            filePath: '/path/to/session.json',
+            filePath: "/path/to/session.json",
           },
         }),
       );
@@ -433,8 +413,8 @@ describe('useSessionResume', () => {
       // Should only have the non-slash-command message
       expect(clientHistory).toHaveLength(1);
       expect(clientHistory[0]).toEqual({
-        role: 'user',
-        parts: [{ text: 'Regular message' }],
+        role: "user",
+        parts: [{ text: "Regular message" }],
       });
 
       // But UI history should have both

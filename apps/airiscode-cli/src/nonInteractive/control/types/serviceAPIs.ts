@@ -12,9 +12,9 @@
  * for internal CLI code (nonInteractiveCli, session managers, etc.).
  */
 
-import type { Client } from '@modelcontextprotocol/sdk/client/index.js';
-import type { MCPServerConfig } from '@airiscode/runtime';
-import type { PermissionSuggestion } from '../../types.js';
+import type { MCPServerConfig } from "@airiscode/runtime";
+import type { Client } from "@modelcontextprotocol/sdk/client/index.js";
+import type { PermissionSuggestion } from "../../types.js";
 
 /**
  * Permission Service API
@@ -32,9 +32,7 @@ export interface PermissionServiceAPI {
    * @param confirmationDetails - Tool confirmation details (type, title, metadata)
    * @returns Array of permission suggestions or null if details are invalid
    */
-  buildPermissionSuggestions(
-    confirmationDetails: unknown,
-  ): PermissionSuggestion[] | null;
+  buildPermissionSuggestions(confirmationDetails: unknown): PermissionSuggestion[] | null;
 
   /**
    * Get callback for monitoring tool call status updates

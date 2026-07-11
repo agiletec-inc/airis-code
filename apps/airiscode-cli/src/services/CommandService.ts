@@ -4,11 +4,11 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import type { SlashCommand } from '../ui/commands/types.js';
-import type { ICommandLoader } from './types.js';
-import { createDebugLogger } from '@airiscode/runtime';
+import { createDebugLogger } from "@airiscode/runtime";
+import type { SlashCommand } from "../ui/commands/types.js";
+import type { ICommandLoader } from "./types.js";
 
-const debugLogger = createDebugLogger('CLI_COMMANDS');
+const debugLogger = createDebugLogger("CLI_COMMANDS");
 
 /**
  * Orchestrates the discovery and loading of all slash commands for the CLI.
@@ -47,20 +47,15 @@ export class CommandService {
    * @param signal An AbortSignal to cancel the loading process.
    * @returns A promise that resolves to a new, fully initialized `CommandService` instance.
    */
-  static async create(
-    loaders: ICommandLoader[],
-    signal: AbortSignal,
-  ): Promise<CommandService> {
-    const results = await Promise.allSettled(
-      loaders.map((loader) => loader.loadCommands(signal)),
-    );
+  static async create(loaders: ICommandLoader[], signal: AbortSignal): Promise<CommandService> {
+    const results = await Promise.allSettled(loaders.map((loader) => loader.loadCommands(signal)));
 
     const allCommands: SlashCommand[] = [];
     for (const result of results) {
-      if (result.status === 'fulfilled') {
+      if (result.status === "fulfilled") {
         allCommands.push(...result.value);
       } else {
-        debugLogger.debug('A command loader failed:', result.reason);
+        debugLogger.debug("A command loader failed:", result.reason);
       }
     }
 

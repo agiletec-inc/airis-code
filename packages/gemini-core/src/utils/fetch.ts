@@ -4,9 +4,9 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { getErrorMessage, isNodeError } from './errors.js';
-import { URL } from 'node:url';
-import { ProxyAgent, setGlobalDispatcher } from 'undici';
+import { URL } from "node:url";
+import { ProxyAgent, setGlobalDispatcher } from "undici";
+import { getErrorMessage, isNodeError } from "./errors.js";
 
 const PRIVATE_IP_RANGES = [
   /^10\./,
@@ -24,7 +24,7 @@ export class FetchError extends Error {
     public code?: string,
   ) {
     super(message);
-    this.name = 'FetchError';
+    this.name = "FetchError";
   }
 }
 
@@ -37,10 +37,7 @@ export function isPrivateIp(url: string): boolean {
   }
 }
 
-export async function fetchWithTimeout(
-  url: string,
-  timeout: number,
-): Promise<Response> {
+export async function fetchWithTimeout(url: string, timeout: number): Promise<Response> {
   const controller = new AbortController();
   const timeoutId = setTimeout(() => controller.abort(), timeout);
 
@@ -48,8 +45,8 @@ export async function fetchWithTimeout(
     const response = await fetch(url, { signal: controller.signal });
     return response;
   } catch (error) {
-    if (isNodeError(error) && error.code === 'ABORT_ERR') {
-      throw new FetchError(`Request timed out after ${timeout}ms`, 'ETIMEDOUT');
+    if (isNodeError(error) && error.code === "ABORT_ERR") {
+      throw new FetchError(`Request timed out after ${timeout}ms`, "ETIMEDOUT");
     }
     throw new FetchError(getErrorMessage(error));
   } finally {

@@ -4,54 +4,50 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { Box, Text } from 'ink';
-import { RadioButtonSelect } from '../../shared/RadioButtonSelect.js';
-import { type Extension } from '@airiscode/runtime';
-import { theme } from '../../../semantic-colors.js';
-import { t } from '../../../../i18n/index.js';
+import { type Extension } from "@airiscode/runtime";
+import { Box, Text } from "ink";
+import { t } from "../../../../i18n/index.js";
+import { theme } from "../../../semantic-colors.js";
+import { RadioButtonSelect } from "../../shared/RadioButtonSelect.js";
 
 interface ScopeSelectStepProps {
   selectedExtension: Extension | null;
-  mode: 'disable' | 'enable';
-  onScopeSelect: (scope: 'user' | 'workspace') => void;
+  mode: "disable" | "enable";
+  onScopeSelect: (scope: "user" | "workspace") => void;
 }
 
-export function ScopeSelectStep({
-  selectedExtension,
-  mode,
-  onScopeSelect,
-}: ScopeSelectStepProps) {
+export function ScopeSelectStep({ selectedExtension, mode, onScopeSelect }: ScopeSelectStepProps) {
   const scopeItems = [
     {
-      key: 'user',
+      key: "user",
       get label() {
-        return t('User (global)');
+        return t("User (global)");
       },
-      value: 'user' as const,
+      value: "user" as const,
     },
     {
-      key: 'workspace',
+      key: "workspace",
       get label() {
-        return t('Workspace (project-specific)');
+        return t("Workspace (project-specific)");
       },
-      value: 'workspace' as const,
+      value: "workspace" as const,
     },
   ];
 
-  const handleSelect = (value: 'user' | 'workspace') => {
+  const handleSelect = (value: "user" | "workspace") => {
     onScopeSelect(value);
   };
 
   if (!selectedExtension) {
     return (
       <Box>
-        <Text color={theme.status.error}>{t('No extension selected')}</Text>
+        <Text color={theme.status.error}>{t("No extension selected")}</Text>
       </Box>
     );
   }
 
   const title =
-    mode === 'disable'
+    mode === "disable"
       ? t('Disable "{{name}}" - Select Scope', { name: selectedExtension.name })
       : t('Enable "{{name}}" - Select Scope', { name: selectedExtension.name });
 
@@ -59,11 +55,7 @@ export function ScopeSelectStep({
     <Box flexDirection="column" gap={1}>
       <Text color={theme.text.primary}>{title}</Text>
       <Box>
-        <RadioButtonSelect
-          items={scopeItems}
-          onSelect={handleSelect}
-          showNumbers={false}
-        />
+        <RadioButtonSelect items={scopeItems} onSelect={handleSelect} showNumbers={false} />
       </Box>
     </Box>
   );

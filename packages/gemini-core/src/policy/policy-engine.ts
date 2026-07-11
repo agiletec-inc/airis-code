@@ -4,14 +4,10 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { type FunctionCall } from '@google/genai';
-import {
-  PolicyDecision,
-  type PolicyEngineConfig,
-  type PolicyRule,
-} from './types.js';
-import { stableStringify } from './stable-stringify.js';
-import { debugLogger } from '../utils/debugLogger.js';
+import { type FunctionCall } from "@google/genai";
+import { debugLogger } from "../utils/debugLogger.js";
+import { stableStringify } from "./stable-stringify.js";
+import { PolicyDecision, type PolicyEngineConfig, type PolicyRule } from "./types.js";
 
 function ruleMatches(
   rule: PolicyRule,
@@ -22,7 +18,7 @@ function ruleMatches(
   // Check tool name if specified
   if (rule.toolName) {
     // Support wildcard patterns: "serverName__*" matches "serverName__anyTool"
-    if (rule.toolName.endsWith('__*')) {
+    if (rule.toolName.endsWith("__*")) {
       const prefix = rule.toolName.slice(0, -3); // Remove "__*"
       if (serverName !== undefined) {
         // Robust check: if serverName is provided, it MUST match the prefix exactly.
@@ -32,7 +28,7 @@ function ruleMatches(
         }
       }
       // Always verify the prefix, even if serverName matched
-      if (!toolCall.name || !toolCall.name.startsWith(prefix + '__')) {
+      if (!toolCall.name || !toolCall.name.startsWith(prefix + "__")) {
         return false;
       }
     } else if (toolCall.name !== rule.toolName) {
@@ -47,10 +43,7 @@ function ruleMatches(
       return false;
     }
     // Use stable JSON stringification with sorted keys to ensure consistent matching
-    if (
-      stringifiedArgs === undefined ||
-      !rule.argsPattern.test(stringifiedArgs)
-    ) {
+    if (stringifiedArgs === undefined || !rule.argsPattern.test(stringifiedArgs)) {
       return false;
     }
   }
@@ -64,9 +57,7 @@ export class PolicyEngine {
   private readonly nonInteractive: boolean;
 
   constructor(config: PolicyEngineConfig = {}) {
-    this.rules = (config.rules ?? []).sort(
-      (a, b) => (b.priority ?? 0) - (a.priority ?? 0),
-    );
+    this.rules = (config.rules ?? []).sort((a, b) => (b.priority ?? 0) - (a.priority ?? 0));
     this.defaultDecision = config.defaultDecision ?? PolicyDecision.ASK_USER;
     this.nonInteractive = config.nonInteractive ?? false;
   }
@@ -74,10 +65,7 @@ export class PolicyEngine {
   /**
    * Check if a tool call is allowed based on the configured policies.
    */
-  check(
-    toolCall: FunctionCall,
-    serverName: string | undefined,
-  ): PolicyDecision {
+  check(toolCall: FunctionCall, serverName: string | undefined): PolicyDecision {
     let stringifiedArgs: string | undefined;
     // Compute stringified args once before the loop
     if (toolCall.args && this.rules.some((rule) => rule.argsPattern)) {
@@ -92,7 +80,7 @@ export class PolicyEngine {
     for (const rule of this.rules) {
       if (ruleMatches(rule, toolCall, stringifiedArgs, serverName)) {
         debugLogger.debug(
-          `[PolicyEngine.check] MATCHED rule: toolName=${rule.toolName}, decision=${rule.decision}, priority=${rule.priority}, argsPattern=${rule.argsPattern?.source || 'none'}`,
+          `[PolicyEngine.check] MATCHED rule: toolName=${rule.toolName}, decision=${rule.decision}, priority=${rule.priority}, argsPattern=${rule.argsPattern?.source || "none"}`,
         );
         return this.applyNonInteractiveMode(rule.decision);
       }

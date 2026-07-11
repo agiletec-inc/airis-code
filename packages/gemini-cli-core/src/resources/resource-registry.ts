@@ -4,10 +4,9 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import type { Resource } from '@modelcontextprotocol/sdk/types.js';
+import type { Resource } from "@modelcontextprotocol/sdk/types.js";
 
-const resourceKey = (serverName: string, uri: string): string =>
-  `${serverName}::${uri}`;
+const resourceKey = (serverName: string, uri: string): string => `${serverName}::${uri}`;
 
 export interface MCPResource extends Resource {
   serverName: string;
@@ -49,7 +48,7 @@ export class ResourceRegistry {
    * Format: serverName:uri (e.g., "myserver:file:///data.txt")
    */
   findResourceByUri(identifier: string): MCPResource | undefined {
-    const colonIndex = identifier.indexOf(':');
+    const colonIndex = identifier.indexOf(":");
     if (colonIndex <= 0) {
       return undefined;
     }

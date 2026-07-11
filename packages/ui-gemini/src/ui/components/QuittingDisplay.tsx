@@ -4,10 +4,10 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { Box } from 'ink';
-import { useUIState } from '../contexts/UIStateContext.js';
-import { HistoryItemDisplay } from './HistoryItemDisplay.js';
-import { useTerminalSize } from '../hooks/useTerminalSize.js';
+import { Box } from "ink";
+import { useUIState } from "../contexts/UIStateContext.js";
+import { useTerminalSize } from "../hooks/useTerminalSize.js";
+import { HistoryItemDisplay } from "./HistoryItemDisplay.js";
 
 export const QuittingDisplay = () => {
   const uiState = useUIState();
@@ -24,9 +24,7 @@ export const QuittingDisplay = () => {
       {uiState.quittingMessages.map((item) => (
         <HistoryItemDisplay
           key={item.id}
-          availableTerminalHeight={
-            uiState.constrainHeight ? availableTerminalHeight : undefined
-          }
+          availableTerminalHeight={uiState.constrainHeight ? availableTerminalHeight : undefined}
           terminalWidth={terminalWidth}
           item={item}
           isPending={false}

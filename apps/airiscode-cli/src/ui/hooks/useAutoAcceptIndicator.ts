@@ -4,15 +4,11 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import {
-  type ApprovalMode,
-  APPROVAL_MODES,
-  type Config,
-} from '@airiscode/runtime';
-import { useEffect, useState } from 'react';
-import { useKeypress } from './useKeypress.js';
-import type { HistoryItemWithoutId } from '../types.js';
-import { MessageType } from '../types.js';
+import { APPROVAL_MODES, type ApprovalMode, type Config } from "@airiscode/runtime";
+import { useEffect, useState } from "react";
+import type { HistoryItemWithoutId } from "../types.js";
+import { MessageType } from "../types.js";
+import { useKeypress } from "./useKeypress.js";
 
 export interface UseAutoAcceptIndicatorArgs {
   config: Config;
@@ -31,8 +27,7 @@ export function useAutoAcceptIndicator({
   disabled,
 }: UseAutoAcceptIndicatorArgs): ApprovalMode {
   const currentConfigValue = config.getApprovalMode();
-  const [showAutoAcceptIndicator, setShowAutoAcceptIndicator] =
-    useState(currentConfigValue);
+  const [showAutoAcceptIndicator, setShowAutoAcceptIndicator] = useState(currentConfigValue);
 
   useEffect(() => {
     setShowAutoAcceptIndicator(currentConfigValue);
@@ -43,12 +38,9 @@ export function useAutoAcceptIndicator({
       // Handle Shift+Tab to cycle through all modes
       // On Windows, Shift+Tab is indistinguishable from Tab (\t) in some terminals,
       // so we allow Tab to switch modes as well to support the shortcut.
-      const isShiftTab = key.shift && key.name === 'tab';
+      const isShiftTab = key.shift && key.name === "tab";
       const isWindowsTab =
-        process.platform === 'win32' &&
-        key.name === 'tab' &&
-        !key.ctrl &&
-        !key.meta;
+        process.platform === "win32" && key.name === "tab" && !key.ctrl && !key.meta;
 
       if (isShiftTab || isWindowsTab) {
         // On Windows, check if we should block Tab key when autocomplete is active
@@ -59,8 +51,7 @@ export function useAutoAcceptIndicator({
 
         const currentMode = config.getApprovalMode();
         const currentIndex = APPROVAL_MODES.indexOf(currentMode);
-        const nextIndex =
-          currentIndex === -1 ? 0 : (currentIndex + 1) % APPROVAL_MODES.length;
+        const nextIndex = currentIndex === -1 ? 0 : (currentIndex + 1) % APPROVAL_MODES.length;
         const nextApprovalMode = APPROVAL_MODES[nextIndex];
 
         try {

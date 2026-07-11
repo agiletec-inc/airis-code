@@ -4,17 +4,17 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { describe, it, expect, beforeEach, vi } from 'vitest';
-import { createMockCommandContext } from '../../test-utils/mockCommandContext.js';
-import { type CommandContext } from '../../ui/commands/types.js';
-import { AtFileProcessor } from './atFileProcessor.js';
-import { MessageType } from '../../ui/types.js';
-import type { Config } from '@airiscode/gemini-cli-core';
-import type { PartUnion } from '@google/genai';
+import type { Config } from "@airiscode/gemini-cli-core";
+import type { PartUnion } from "@google/genai";
+import { beforeEach, describe, expect, it, vi } from "vitest";
+import { createMockCommandContext } from "../../test-utils/mockCommandContext.js";
+import { type CommandContext } from "../../ui/commands/types.js";
+import { MessageType } from "../../ui/types.js";
+import { AtFileProcessor } from "./atFileProcessor.js";
 
 // Mock the core dependency
 const mockReadPathFromWorkspace = vi.hoisted(() => vi.fn());
-vi.mock('@airiscode/gemini-cli-core', async (importOriginal) => {
+vi.mock("@airiscode/gemini-cli-core", async (importOriginal) => {
   const original = await importOriginal<object>();
   return {
     ...original,
@@ -22,7 +22,7 @@ vi.mock('@airiscode/gemini-cli-core', async (importOriginal) => {
   };
 });
 
-describe('AtFileProcessor', () => {
+describe("AtFileProcessor", () => {
   let context: CommandContext;
   let mockConfig: Config;
 
@@ -41,23 +41,21 @@ describe('AtFileProcessor', () => {
 
     // Default mock success behavior: return content wrapped in a text part.
     mockReadPathFromWorkspace.mockImplementation(
-      async (path: string): Promise<PartUnion[]> => [
-        { text: `content of ${path}` },
-      ],
+      async (path: string): Promise<PartUnion[]> => [{ text: `content of ${path}` }],
     );
   });
 
-  it('should not change the prompt if no @{ trigger is present', async () => {
+  it("should not change the prompt if no @{ trigger is present", async () => {
     const processor = new AtFileProcessor();
-    const prompt: PartUnion[] = [{ text: 'This is a simple prompt.' }];
+    const prompt: PartUnion[] = [{ text: "This is a simple prompt." }];
     const result = await processor.process(prompt, context);
     expect(result).toEqual(prompt);
     expect(mockReadPathFromWorkspace).not.toHaveBeenCalled();
   });
 
-  it('should not change the prompt if config service is missing', async () => {
+  it("should not change the prompt if config service is missing", async () => {
     const processor = new AtFileProcessor();
-    const prompt: PartUnion[] = [{ text: 'Analyze @{file.txt}' }];
+    const prompt: PartUnion[] = [{ text: "Analyze @{file.txt}" }];
     const contextWithoutConfig = createMockCommandContext({
       services: {
         config: null,
@@ -68,115 +66,94 @@ describe('AtFileProcessor', () => {
     expect(mockReadPathFromWorkspace).not.toHaveBeenCalled();
   });
 
-  describe('Parsing Logic', () => {
-    it('should replace a single valid @{path/to/file.txt} placeholder', async () => {
+  describe("Parsing Logic", () => {
+    it("should replace a single valid @{path/to/file.txt} placeholder", async () => {
       const processor = new AtFileProcessor();
-      const prompt: PartUnion[] = [
-        { text: 'Analyze this file: @{path/to/file.txt}' },
-      ];
+      const prompt: PartUnion[] = [{ text: "Analyze this file: @{path/to/file.txt}" }];
       const result = await processor.process(prompt, context);
-      expect(mockReadPathFromWorkspace).toHaveBeenCalledWith(
-        'path/to/file.txt',
-        mockConfig,
-      );
+      expect(mockReadPathFromWorkspace).toHaveBeenCalledWith("path/to/file.txt", mockConfig);
       expect(result).toEqual([
-        { text: 'Analyze this file: ' },
-        { text: 'content of path/to/file.txt' },
+        { text: "Analyze this file: " },
+        { text: "content of path/to/file.txt" },
       ]);
     });
 
-    it('should replace multiple different @{...} placeholders', async () => {
+    it("should replace multiple different @{...} placeholders", async () => {
       const processor = new AtFileProcessor();
-      const prompt: PartUnion[] = [
-        { text: 'Compare @{file1.js} with @{file2.js}' },
-      ];
+      const prompt: PartUnion[] = [{ text: "Compare @{file1.js} with @{file2.js}" }];
       const result = await processor.process(prompt, context);
       expect(mockReadPathFromWorkspace).toHaveBeenCalledTimes(2);
-      expect(mockReadPathFromWorkspace).toHaveBeenCalledWith(
-        'file1.js',
-        mockConfig,
-      );
-      expect(mockReadPathFromWorkspace).toHaveBeenCalledWith(
-        'file2.js',
-        mockConfig,
-      );
+      expect(mockReadPathFromWorkspace).toHaveBeenCalledWith("file1.js", mockConfig);
+      expect(mockReadPathFromWorkspace).toHaveBeenCalledWith("file2.js", mockConfig);
       expect(result).toEqual([
-        { text: 'Compare ' },
-        { text: 'content of file1.js' },
-        { text: ' with ' },
-        { text: 'content of file2.js' },
+        { text: "Compare " },
+        { text: "content of file1.js" },
+        { text: " with " },
+        { text: "content of file2.js" },
       ]);
     });
 
-    it('should handle placeholders at the beginning, middle, and end', async () => {
+    it("should handle placeholders at the beginning, middle, and end", async () => {
       const processor = new AtFileProcessor();
-      const prompt: PartUnion[] = [
-        { text: '@{start.txt} in the @{middle.txt} and @{end.txt}' },
-      ];
+      const prompt: PartUnion[] = [{ text: "@{start.txt} in the @{middle.txt} and @{end.txt}" }];
       const result = await processor.process(prompt, context);
       expect(result).toEqual([
-        { text: 'content of start.txt' },
-        { text: ' in the ' },
-        { text: 'content of middle.txt' },
-        { text: ' and ' },
-        { text: 'content of end.txt' },
+        { text: "content of start.txt" },
+        { text: " in the " },
+        { text: "content of middle.txt" },
+        { text: " and " },
+        { text: "content of end.txt" },
       ]);
     });
 
-    it('should correctly parse paths that contain balanced braces', async () => {
+    it("should correctly parse paths that contain balanced braces", async () => {
       const processor = new AtFileProcessor();
-      const prompt: PartUnion[] = [
-        { text: 'Analyze @{path/with/{braces}/file.txt}' },
-      ];
+      const prompt: PartUnion[] = [{ text: "Analyze @{path/with/{braces}/file.txt}" }];
       const result = await processor.process(prompt, context);
       expect(mockReadPathFromWorkspace).toHaveBeenCalledWith(
-        'path/with/{braces}/file.txt',
+        "path/with/{braces}/file.txt",
         mockConfig,
       );
       expect(result).toEqual([
-        { text: 'Analyze ' },
-        { text: 'content of path/with/{braces}/file.txt' },
+        { text: "Analyze " },
+        { text: "content of path/with/{braces}/file.txt" },
       ]);
     });
 
-    it('should throw an error if the prompt contains an unclosed trigger', async () => {
+    it("should throw an error if the prompt contains an unclosed trigger", async () => {
       const processor = new AtFileProcessor();
-      const prompt: PartUnion[] = [{ text: 'Hello @{world' }];
+      const prompt: PartUnion[] = [{ text: "Hello @{world" }];
       // The new parser throws an error for unclosed injections.
-      await expect(processor.process(prompt, context)).rejects.toThrow(
-        /Unclosed injection/,
-      );
+      await expect(processor.process(prompt, context)).rejects.toThrow(/Unclosed injection/);
     });
   });
 
-  describe('Integration and Error Handling', () => {
-    it('should leave the placeholder unmodified if readPathFromWorkspace throws', async () => {
+  describe("Integration and Error Handling", () => {
+    it("should leave the placeholder unmodified if readPathFromWorkspace throws", async () => {
       const processor = new AtFileProcessor();
-      const prompt: PartUnion[] = [
-        { text: 'Analyze @{not-found.txt} and @{good-file.txt}' },
-      ];
+      const prompt: PartUnion[] = [{ text: "Analyze @{not-found.txt} and @{good-file.txt}" }];
       mockReadPathFromWorkspace.mockImplementation(async (path: string) => {
-        if (path === 'not-found.txt') {
-          throw new Error('File not found');
+        if (path === "not-found.txt") {
+          throw new Error("File not found");
         }
         return [{ text: `content of ${path}` }];
       });
 
       const result = await processor.process(prompt, context);
       expect(result).toEqual([
-        { text: 'Analyze ' },
-        { text: '@{not-found.txt}' }, // Placeholder is preserved as a text part
-        { text: ' and ' },
-        { text: 'content of good-file.txt' },
+        { text: "Analyze " },
+        { text: "@{not-found.txt}" }, // Placeholder is preserved as a text part
+        { text: " and " },
+        { text: "content of good-file.txt" },
       ]);
     });
   });
 
-  describe('UI Feedback', () => {
-    it('should call ui.addItem with an ERROR on failure', async () => {
+  describe("UI Feedback", () => {
+    it("should call ui.addItem with an ERROR on failure", async () => {
       const processor = new AtFileProcessor();
-      const prompt: PartUnion[] = [{ text: 'Analyze @{bad-file.txt}' }];
-      mockReadPathFromWorkspace.mockRejectedValue(new Error('Access denied'));
+      const prompt: PartUnion[] = [{ text: "Analyze @{bad-file.txt}" }];
+      mockReadPathFromWorkspace.mockRejectedValue(new Error("Access denied"));
 
       await processor.process(prompt, context);
 
@@ -190,16 +167,16 @@ describe('AtFileProcessor', () => {
       );
     });
 
-    it('should call ui.addItem with a WARNING if the file was ignored', async () => {
+    it("should call ui.addItem with a WARNING if the file was ignored", async () => {
       const processor = new AtFileProcessor();
-      const prompt: PartUnion[] = [{ text: 'Analyze @{ignored.txt}' }];
+      const prompt: PartUnion[] = [{ text: "Analyze @{ignored.txt}" }];
       // Simulate an ignored file by returning an empty array.
       mockReadPathFromWorkspace.mockResolvedValue([]);
 
       const result = await processor.process(prompt, context);
 
       // The placeholder should be removed, resulting in only the prefix.
-      expect(result).toEqual([{ text: 'Analyze ' }]);
+      expect(result).toEqual([{ text: "Analyze " }]);
 
       expect(context.ui.addItem).toHaveBeenCalledTimes(1);
       expect(context.ui.addItem).toHaveBeenCalledWith(
@@ -211,9 +188,9 @@ describe('AtFileProcessor', () => {
       );
     });
 
-    it('should NOT call ui.addItem on success', async () => {
+    it("should NOT call ui.addItem on success", async () => {
       const processor = new AtFileProcessor();
-      const prompt: PartUnion[] = [{ text: 'Analyze @{good-file.txt}' }];
+      const prompt: PartUnion[] = [{ text: "Analyze @{good-file.txt}" }];
       await processor.process(prompt, context);
       expect(context.ui.addItem).not.toHaveBeenCalled();
     });

@@ -4,28 +4,24 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import type { AgentDefinition } from './types.js';
+import { z } from "zod";
+import { GEMINI_MODEL_ALIAS_PRO } from "../config/models.js";
 import {
   GLOB_TOOL_NAME,
   GREP_TOOL_NAME,
   LS_TOOL_NAME,
   READ_FILE_TOOL_NAME,
-} from '../tools/tool-names.js';
-import { GEMINI_MODEL_ALIAS_PRO } from '../config/models.js';
-import { z } from 'zod';
+} from "../tools/tool-names.js";
+import type { AgentDefinition } from "./types.js";
 
 // Define a type that matches the outputConfig schema for type safety.
 const CodebaseInvestigationReportSchema = z.object({
   SummaryOfFindings: z
     .string()
-    .describe(
-      "A summary of the investigation's conclusions and insights for the main agent.",
-    ),
+    .describe("A summary of the investigation's conclusions and insights for the main agent."),
   ExplorationTrace: z
     .array(z.string())
-    .describe(
-      'A step-by-step list of actions and tools used during the investigation.',
-    ),
+    .describe("A step-by-step list of actions and tools used during the investigation."),
   RelevantLocations: z
     .array(
       z.object({
@@ -34,63 +30,62 @@ const CodebaseInvestigationReportSchema = z.object({
         KeySymbols: z.array(z.string()),
       }),
     )
-    .describe('A list of relevant files and the key symbols within them.'),
+    .describe("A list of relevant files and the key symbols within them."),
 });
 
 /**
  * A Proof-of-Concept subagent specialized in analyzing codebase structure,
  * dependencies, and technologies.
  */
-export const CodebaseInvestigatorAgent: AgentDefinition<
-  typeof CodebaseInvestigationReportSchema
-> = {
-  name: 'codebase_investigator',
-  displayName: 'Codebase Investigator Agent',
-  description: `The specialized tool for codebase analysis, architectural mapping, and understanding system-wide dependencies. 
+export const CodebaseInvestigatorAgent: AgentDefinition<typeof CodebaseInvestigationReportSchema> =
+  {
+    name: "codebase_investigator",
+    displayName: "Codebase Investigator Agent",
+    description: `The specialized tool for codebase analysis, architectural mapping, and understanding system-wide dependencies. 
     Invoke this tool for tasks like vague requests, bug root-cause analysis, system refactoring, comprehensive feature implementation or to answer questions about the codebase that require investigation. 
     It returns a structured report with key file paths, symbols, and actionable architectural insights.`,
-  inputConfig: {
-    inputs: {
-      objective: {
-        description: `A comprehensive and detailed description of the user's ultimate goal. 
+    inputConfig: {
+      inputs: {
+        objective: {
+          description: `A comprehensive and detailed description of the user's ultimate goal. 
           You must include original user's objective as well as questions and any extra context and questions you may have.`,
-        type: 'string',
-        required: true,
+          type: "string",
+          required: true,
+        },
       },
     },
-  },
-  outputConfig: {
-    outputName: 'report',
-    description: 'The final investigation report as a JSON object.',
-    schema: CodebaseInvestigationReportSchema,
-  },
+    outputConfig: {
+      outputName: "report",
+      description: "The final investigation report as a JSON object.",
+      schema: CodebaseInvestigationReportSchema,
+    },
 
-  // The 'output' parameter is now strongly typed as CodebaseInvestigationReportSchema
-  processOutput: (output) => JSON.stringify(output, null, 2),
+    // The 'output' parameter is now strongly typed as CodebaseInvestigationReportSchema
+    processOutput: (output) => JSON.stringify(output, null, 2),
 
-  modelConfig: {
-    model: GEMINI_MODEL_ALIAS_PRO,
-    temp: 0.1,
-    top_p: 0.95,
-    thinkingBudget: -1,
-  },
+    modelConfig: {
+      model: GEMINI_MODEL_ALIAS_PRO,
+      temp: 0.1,
+      top_p: 0.95,
+      thinkingBudget: -1,
+    },
 
-  runConfig: {
-    max_time_minutes: 5,
-    max_turns: 15,
-  },
+    runConfig: {
+      max_time_minutes: 5,
+      max_turns: 15,
+    },
 
-  toolConfig: {
-    // Grant access only to read-only tools.
-    tools: [LS_TOOL_NAME, READ_FILE_TOOL_NAME, GLOB_TOOL_NAME, GREP_TOOL_NAME],
-  },
+    toolConfig: {
+      // Grant access only to read-only tools.
+      tools: [LS_TOOL_NAME, READ_FILE_TOOL_NAME, GLOB_TOOL_NAME, GREP_TOOL_NAME],
+    },
 
-  promptConfig: {
-    query: `Your task is to do a deep investigation of the codebase to find all relevant files, code locations, architectural mental map and insights to solve  for the following user objective:
+    promptConfig: {
+      query: `Your task is to do a deep investigation of the codebase to find all relevant files, code locations, architectural mental map and insights to solve  for the following user objective:
 <objective>
 \${objective}
 </objective>`,
-    systemPrompt: `You are **Codebase Investigator**, a hyper-specialized AI agent and an expert in reverse-engineering complex software projects. You are a sub-agent within a larger development system.
+      systemPrompt: `You are **Codebase Investigator**, a hyper-specialized AI agent and an expert in reverse-engineering complex software projects. You are a sub-agent within a larger development system.
 Your **SOLE PURPOSE** is to build a complete mental model of the code relevant to a given investigation. You must identify all relevant files, understand their roles, and foresee the direct architectural consequences of potential changes.
 You are a sub-agent in a larger system. Your only responsibility is to provide deep, actionable context.
 - **DO:** Find the key modules, classes, and functions that are part of the problem and its solution.
@@ -149,5 +144,5 @@ When you are finished, you **MUST** call the \`complete_task\` tool. The \`repor
 }
 \`\`\`
 `,
-  },
-};
+    },
+  };

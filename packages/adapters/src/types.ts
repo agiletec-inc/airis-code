@@ -2,7 +2,7 @@
  * Type definitions for adapter processes
  */
 
-import { PolicyProfile } from '@airiscode/policies';
+import { PolicyProfile } from "@airiscode/policies";
 
 /**
  * Options for spawning an adapter process
@@ -75,7 +75,7 @@ export interface AdapterMetadata {
 /**
  * Adapter status
  */
-export type AdapterStatus = 'idle' | 'spawning' | 'ready' | 'busy' | 'error' | 'terminated';
+export type AdapterStatus = "idle" | "spawning" | "ready" | "busy" | "error" | "terminated";
 
 /**
  * Adapter state information

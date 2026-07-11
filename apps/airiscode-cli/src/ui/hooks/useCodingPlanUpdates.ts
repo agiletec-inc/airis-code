@@ -4,18 +4,18 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { useCallback, useEffect, useState } from 'react';
-import type { Config, ModelProvidersConfig } from '@airiscode/runtime';
-import { AuthType } from '@airiscode/runtime';
-import type { LoadedSettings } from '../../config/settings.js';
-import { getPersistScopeForModelSelection } from '../../config/modelProvidersScope.js';
+import type { Config, ModelProvidersConfig } from "@airiscode/runtime";
+import { AuthType } from "@airiscode/runtime";
+import { useCallback, useEffect, useState } from "react";
+import { getPersistScopeForModelSelection } from "../../config/modelProvidersScope.js";
+import type { LoadedSettings } from "../../config/settings.js";
 import {
-  isCodingPlanConfig,
-  getCodingPlanConfig,
-  CodingPlanRegion,
   CODING_PLAN_ENV_KEY,
-} from '../../constants/codingPlan.js';
-import { t } from '../../i18n/index.js';
+  CodingPlanRegion,
+  getCodingPlanConfig,
+  isCodingPlanConfig,
+} from "../../constants/codingPlan.js";
+import { t } from "../../i18n/index.js";
 
 export interface CodingPlanUpdateRequest {
   prompt: string;
@@ -30,14 +30,9 @@ export interface CodingPlanUpdateRequest {
 export function useCodingPlanUpdates(
   settings: LoadedSettings,
   config: Config,
-  addItem: (
-    item: { type: 'info' | 'error' | 'warning'; text: string },
-    timestamp: number,
-  ) => void,
+  addItem: (item: { type: "info" | "error" | "warning"; text: string }, timestamp: number) => void,
 ) {
-  const [updateRequest, setUpdateRequest] = useState<
-    CodingPlanUpdateRequest | undefined
-  >();
+  const [updateRequest, setUpdateRequest] = useState<CodingPlanUpdateRequest | undefined>();
 
   /**
    * Execute the Coding Plan configuration update.
@@ -51,18 +46,15 @@ export function useCodingPlanUpdates(
         const persistScope = getPersistScopeForModelSelection(settings);
 
         // Get current configs
-        const currentConfigs =
-          (
-            settings.merged.modelProviders as any
-          )?.[AuthType.USE_OPENAI] || [];
+        const currentConfigs = (settings.merged.modelProviders as any)?.[AuthType.USE_OPENAI] || [];
 
         // Filter out all Coding Plan configs (since they are mutually exclusive)
         // Keep only non-Coding-Plan user custom configs
         const nonCodingPlanConfigs = currentConfigs.filter(
           (cfg: any) =>
             !isCodingPlanConfig(
-              cfg['baseUrl'] as string | undefined,
-              cfg['envKey'] as string | undefined,
+              cfg["baseUrl"] as string | undefined,
+              cfg["envKey"] as string | undefined,
             ),
         );
 
@@ -83,46 +75,36 @@ export function useCodingPlanUpdates(
 
         // Record the user's current model before the update
         const previousModel = config.getModel();
-        const previousModelStillAvailable = newConfigs.some(
-          (cfg) => cfg.id === previousModel,
-        );
+        const previousModelStillAvailable = newConfigs.some((cfg) => cfg.id === previousModel);
 
         // Hot-reload model providers configuration first (in-memory only)
         const updatedModelProviders = {
-          ...(settings.merged.modelProviders as
-            | Record<string, unknown>
-            | undefined),
+          ...(settings.merged.modelProviders as Record<string, unknown> | undefined),
           [AuthType.USE_OPENAI]: updatedConfigs,
         };
-        config.reloadModelProvidersConfig(
-          updatedModelProviders as unknown as ModelProvidersConfig,
-        );
+        config.reloadModelProvidersConfig(updatedModelProviders as unknown as ModelProvidersConfig);
 
         // Refresh auth with the new configuration
         // This validates the configuration before persisting
         await config.refreshAuth(AuthType.USE_OPENAI);
 
         // Persist to settings only after successful auth refresh
-        settings.setValue(
-          persistScope,
-          `modelProviders.${AuthType.USE_OPENAI}`,
-          updatedConfigs,
-        );
+        settings.setValue(persistScope, `modelProviders.${AuthType.USE_OPENAI}`, updatedConfigs);
 
         // Update the version (single version field for backward compatibility)
-        settings.setValue(persistScope, 'codingPlan.version', version);
+        settings.setValue(persistScope, "codingPlan.version", version);
 
         // Update the region
-        settings.setValue(persistScope, 'codingPlan.region', region);
+        settings.setValue(persistScope, "codingPlan.region", region);
 
         const activeModel = config.getModel();
 
         if (previousModelStillAvailable && activeModel === previousModel) {
           addItem(
             {
-              type: 'info',
-              text: t('{{region}} configuration updated successfully.', {
-                region: t('Alibaba Cloud Coding Plan'),
+              type: "info",
+              text: t("{{region}} configuration updated successfully.", {
+                region: t("Alibaba Cloud Coding Plan"),
               }),
             },
             Date.now(),
@@ -130,10 +112,10 @@ export function useCodingPlanUpdates(
         } else {
           addItem(
             {
-              type: 'info',
+              type: "info",
               text: t(
                 '{{region}} configuration updated successfully. Model switched to "{{model}}".',
-                { region: t('Alibaba Cloud Coding Plan'), model: activeModel },
+                { region: t("Alibaba Cloud Coding Plan"), model: activeModel },
               ),
             },
             Date.now(),
@@ -142,22 +124,19 @@ export function useCodingPlanUpdates(
 
         addItem(
           {
-            type: 'info',
-            text: t(
-              'Tip: Use /model to switch between available Coding Plan models.',
-            ),
+            type: "info",
+            text: t("Tip: Use /model to switch between available Coding Plan models."),
           },
           Date.now(),
         );
 
         return true;
       } catch (error) {
-        const errorMessage =
-          error instanceof Error ? error.message : String(error);
+        const errorMessage = error instanceof Error ? error.message : String(error);
         addItem(
           {
-            type: 'error',
-            text: t('Failed to update Coding Plan configuration: {{message}}', {
+            type: "error",
+            text: t("Failed to update Coding Plan configuration: {{message}}", {
               message: errorMessage,
             }),
           },
@@ -198,10 +177,9 @@ export function useCodingPlanUpdates(
     // Check if version matches
     if (savedVersion !== currentVersion) {
       setUpdateRequest({
-        prompt: t(
-          'New model configurations are available for {{region}}. Update now?',
-          { region: t('Alibaba Cloud Coding Plan') },
-        ),
+        prompt: t("New model configurations are available for {{region}}. Update now?", {
+          region: t("Alibaba Cloud Coding Plan"),
+        }),
         onConfirm: async (confirmed: boolean) => {
           setUpdateRequest(undefined);
           if (confirmed) {

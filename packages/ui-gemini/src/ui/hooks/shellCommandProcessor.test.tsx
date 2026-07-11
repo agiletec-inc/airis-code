@@ -4,64 +4,52 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { act } from 'react';
-import { render } from '../../test-utils/render.js';
-import { waitFor } from '../../test-utils/async.js';
-import {
-  vi,
-  describe,
-  it,
-  expect,
-  beforeEach,
-  afterEach,
-  type Mock,
-} from 'vitest';
+import { act } from "react";
+import { afterEach, beforeEach, describe, expect, it, type Mock, vi } from "vitest";
+import { waitFor } from "../../test-utils/async.js";
+import { render } from "../../test-utils/render.js";
 
 const mockIsBinary = vi.hoisted(() => vi.fn());
 const mockShellExecutionService = vi.hoisted(() => vi.fn());
-vi.mock('@airiscode/gemini-cli-core', async (importOriginal) => {
-  const actual =
-    await importOriginal<typeof import('@airiscode/gemini-cli-core')>();
+vi.mock("@airiscode/gemini-cli-core", async (importOriginal) => {
+  const actual = await importOriginal<typeof import("@airiscode/gemini-cli-core")>();
   return {
     ...actual,
     ShellExecutionService: { execute: mockShellExecutionService },
     isBinary: mockIsBinary,
   };
 });
-vi.mock('node:fs');
-vi.mock('node:os', async (importOriginal) => {
-  const actual = await importOriginal<typeof import('node:os')>();
+vi.mock("node:fs");
+vi.mock("node:os", async (importOriginal) => {
+  const actual = await importOriginal<typeof import("node:os")>();
   const mocked = {
     ...actual,
-    homedir: vi.fn(() => '/home/user'),
-    platform: vi.fn(() => 'linux'),
-    tmpdir: vi.fn(() => '/tmp'),
+    homedir: vi.fn(() => "/home/user"),
+    platform: vi.fn(() => "linux"),
+    tmpdir: vi.fn(() => "/tmp"),
   };
   return {
     ...mocked,
     default: mocked,
   };
 });
-vi.mock('node:crypto');
-vi.mock('../utils/textUtils.js');
+vi.mock("node:crypto");
+vi.mock("../utils/textUtils.js");
 
-import {
-  useShellCommandProcessor,
-  OUTPUT_UPDATE_INTERVAL_MS,
-} from './shellCommandProcessor.js';
+import * as crypto from "node:crypto";
+import * as fs from "node:fs";
+import * as os from "node:os";
+import * as path from "node:path";
 import {
   type Config,
   type GeminiClient,
   type ShellExecutionResult,
   type ShellOutputEvent,
-} from '@airiscode/gemini-cli-core';
-import * as fs from 'node:fs';
-import * as os from 'node:os';
-import * as path from 'node:path';
-import * as crypto from 'node:crypto';
-import { ToolCallStatus } from '../types.js';
+} from "@airiscode/gemini-cli-core";
+import { ToolCallStatus } from "../types.js";
+import { OUTPUT_UPDATE_INTERVAL_MS, useShellCommandProcessor } from "./shellCommandProcessor.js";
 
-describe('useShellCommandProcessor', () => {
+describe("useShellCommandProcessor", () => {
   let addItemToHistoryMock: Mock;
   let setPendingHistoryItemMock: Mock;
   let onExecMock: Mock;
@@ -83,7 +71,7 @@ describe('useShellCommandProcessor', () => {
     onDebugMessageMock = vi.fn();
     setShellInputFocusedMock = vi.fn();
     mockConfig = {
-      getTargetDir: () => '/test/dir',
+      getTargetDir: () => "/test/dir",
       getEnableInteractiveShell: () => false,
       getShellExecutionConfig: () => ({
         terminalHeight: 20,
@@ -92,11 +80,9 @@ describe('useShellCommandProcessor', () => {
     } as Config;
     mockGeminiClient = { addHistory: vi.fn() } as unknown as GeminiClient;
 
-    vi.mocked(os.platform).mockReturnValue('linux');
-    vi.mocked(os.tmpdir).mockReturnValue('/tmp');
-    (vi.mocked(crypto.randomBytes) as Mock).mockReturnValue(
-      Buffer.from('abcdef', 'hex'),
-    );
+    vi.mocked(os.platform).mockReturnValue("linux");
+    vi.mocked(os.tmpdir).mockReturnValue("/tmp");
+    (vi.mocked(crypto.randomBytes) as Mock).mockReturnValue(Buffer.from("abcdef", "hex"));
     mockIsBinary.mockReturnValue(false);
     vi.mocked(fs.existsSync).mockReturnValue(false);
 
@@ -138,42 +124,42 @@ describe('useShellCommandProcessor', () => {
   const createMockServiceResult = (
     overrides: Partial<ShellExecutionResult> = {},
   ): ShellExecutionResult => ({
-    rawOutput: Buffer.from(overrides.output || ''),
-    output: 'Success',
+    rawOutput: Buffer.from(overrides.output || ""),
+    output: "Success",
     exitCode: 0,
     signal: null,
     error: null,
     aborted: false,
     pid: 12345,
-    executionMethod: 'child_process',
+    executionMethod: "child_process",
     ...overrides,
   });
 
-  it('should initiate command execution and set pending state', async () => {
+  it("should initiate command execution and set pending state", async () => {
     const { result } = renderProcessorHook();
 
     await act(async () => {
-      result.current.handleShellCommand('ls -l', new AbortController().signal);
+      result.current.handleShellCommand("ls -l", new AbortController().signal);
     });
 
     expect(addItemToHistoryMock).toHaveBeenCalledWith(
-      { type: 'user_shell', text: 'ls -l' },
+      { type: "user_shell", text: "ls -l" },
       expect.any(Number),
     );
     expect(setPendingHistoryItemMock).toHaveBeenCalledWith({
-      type: 'tool_group',
+      type: "tool_group",
       tools: [
         expect.objectContaining({
-          name: 'Shell Command',
+          name: "Shell Command",
           status: ToolCallStatus.Executing,
         }),
       ],
     });
-    const tmpFile = path.join(os.tmpdir(), 'shell_pwd_abcdef.tmp');
+    const tmpFile = path.join(os.tmpdir(), "shell_pwd_abcdef.tmp");
     const wrappedCommand = `{ ls -l; }; __code=$?; pwd > "${tmpFile}"; exit $__code`;
     expect(mockShellExecutionService).toHaveBeenCalledWith(
       wrappedCommand,
-      '/test/dir',
+      "/test/dir",
       expect.any(Function),
       expect.any(Object),
       false,
@@ -182,19 +168,16 @@ describe('useShellCommandProcessor', () => {
     expect(onExecMock).toHaveBeenCalledWith(expect.any(Promise));
   });
 
-  it('should handle successful execution and update history correctly', async () => {
+  it("should handle successful execution and update history correctly", async () => {
     const { result } = renderProcessorHook();
 
     act(() => {
-      result.current.handleShellCommand(
-        'echo "ok"',
-        new AbortController().signal,
-      );
+      result.current.handleShellCommand('echo "ok"', new AbortController().signal);
     });
     const execPromise = onExecMock.mock.calls[0][0];
 
     act(() => {
-      resolveExecutionPromise(createMockServiceResult({ output: 'ok' }));
+      resolveExecutionPromise(createMockServiceResult({ output: "ok" }));
     });
     await act(async () => await execPromise);
 
@@ -205,7 +188,7 @@ describe('useShellCommandProcessor', () => {
         tools: [
           expect.objectContaining({
             status: ToolCallStatus.Success,
-            resultDisplay: 'ok',
+            resultDisplay: "ok",
           }),
         ],
       }),
@@ -214,58 +197,48 @@ describe('useShellCommandProcessor', () => {
     expect(setShellInputFocusedMock).toHaveBeenCalledWith(false);
   });
 
-  it('should handle command failure and display error status', async () => {
+  it("should handle command failure and display error status", async () => {
     const { result } = renderProcessorHook();
 
     act(() => {
-      result.current.handleShellCommand(
-        'bad-cmd',
-        new AbortController().signal,
-      );
+      result.current.handleShellCommand("bad-cmd", new AbortController().signal);
     });
     const execPromise = onExecMock.mock.calls[0][0];
 
     act(() => {
-      resolveExecutionPromise(
-        createMockServiceResult({ exitCode: 127, output: 'not found' }),
-      );
+      resolveExecutionPromise(createMockServiceResult({ exitCode: 127, output: "not found" }));
     });
     await act(async () => await execPromise);
 
     const finalHistoryItem = addItemToHistoryMock.mock.calls[1][0];
     expect(finalHistoryItem.tools[0].status).toBe(ToolCallStatus.Error);
-    expect(finalHistoryItem.tools[0].resultDisplay).toContain(
-      'Command exited with code 127',
-    );
-    expect(finalHistoryItem.tools[0].resultDisplay).toContain('not found');
+    expect(finalHistoryItem.tools[0].resultDisplay).toContain("Command exited with code 127");
+    expect(finalHistoryItem.tools[0].resultDisplay).toContain("not found");
     expect(setShellInputFocusedMock).toHaveBeenCalledWith(false);
   });
 
-  describe('UI Streaming and Throttling', () => {
+  describe("UI Streaming and Throttling", () => {
     beforeEach(() => {
-      vi.useFakeTimers({ toFake: ['Date'] });
+      vi.useFakeTimers({ toFake: ["Date"] });
     });
     afterEach(() => {
       vi.useRealTimers();
     });
 
-    it('should update UI for text streams (non-interactive)', async () => {
+    it("should update UI for text streams (non-interactive)", async () => {
       const { result } = renderProcessorHook();
       await act(async () => {
-        result.current.handleShellCommand(
-          'stream',
-          new AbortController().signal,
-        );
+        result.current.handleShellCommand("stream", new AbortController().signal);
       });
 
       // Verify it's using the non-pty shell
       const wrappedCommand = `{ stream; }; __code=$?; pwd > "${path.join(
         os.tmpdir(),
-        'shell_pwd_abcdef.tmp',
+        "shell_pwd_abcdef.tmp",
       )}"; exit $__code`;
       expect(mockShellExecutionService).toHaveBeenCalledWith(
         wrappedCommand,
-        '/test/dir',
+        "/test/dir",
         expect.any(Function),
         expect.any(Object),
         false, // enableInteractiveShell
@@ -286,8 +259,8 @@ describe('useShellCommandProcessor', () => {
       // Simulate first output chunk
       act(() => {
         mockShellOutputCallback({
-          type: 'data',
-          chunk: 'hello',
+          type: "data",
+          chunk: "hello",
         });
       });
       // A UI update should have occurred.
@@ -295,13 +268,13 @@ describe('useShellCommandProcessor', () => {
 
       const streamUpdateFn1 = setPendingHistoryItemMock.mock.calls[2][0];
       const stateAfterStream1 = streamUpdateFn1(stateAfterPid);
-      expect(stateAfterStream1.tools[0].resultDisplay).toBe('hello');
+      expect(stateAfterStream1.tools[0].resultDisplay).toBe("hello");
 
       // Simulate second output chunk
       act(() => {
         mockShellOutputCallback({
-          type: 'data',
-          chunk: ' world',
+          type: "data",
+          chunk: " world",
         });
       });
       // Another UI update should have occurred.
@@ -309,34 +282,31 @@ describe('useShellCommandProcessor', () => {
 
       const streamUpdateFn2 = setPendingHistoryItemMock.mock.calls[3][0];
       const stateAfterStream2 = streamUpdateFn2(stateAfterStream1);
-      expect(stateAfterStream2.tools[0].resultDisplay).toBe('hello world');
+      expect(stateAfterStream2.tools[0].resultDisplay).toBe("hello world");
     });
 
-    it('should show binary progress messages correctly', async () => {
+    it("should show binary progress messages correctly", async () => {
       const { result } = renderProcessorHook();
       act(() => {
-        result.current.handleShellCommand(
-          'cat img',
-          new AbortController().signal,
-        );
+        result.current.handleShellCommand("cat img", new AbortController().signal);
       });
 
       // Should immediately show the detection message
       act(() => {
-        mockShellOutputCallback({ type: 'binary_detected' });
+        mockShellOutputCallback({ type: "binary_detected" });
       });
       await act(async () => {
         await vi.advanceTimersByTimeAsync(OUTPUT_UPDATE_INTERVAL_MS + 1);
       });
       // Send another event to trigger the update
       act(() => {
-        mockShellOutputCallback({ type: 'binary_progress', bytesReceived: 0 });
+        mockShellOutputCallback({ type: "binary_progress", bytesReceived: 0 });
       });
 
       // The state update is functional, so we test it by executing it.
       const updaterFn1 = setPendingHistoryItemMock.mock.lastCall?.[0];
       if (!updaterFn1) {
-        throw new Error('setPendingHistoryItem was not called');
+        throw new Error("setPendingHistoryItem was not called");
       }
       const initialState = setPendingHistoryItemMock.mock.calls[0][0];
       const stateAfterBinaryDetected = updaterFn1(initialState);
@@ -345,7 +315,7 @@ describe('useShellCommandProcessor', () => {
         expect.objectContaining({
           tools: [
             expect.objectContaining({
-              resultDisplay: '[Binary output detected. Halting stream...]',
+              resultDisplay: "[Binary output detected. Halting stream...]",
             }),
           ],
         }),
@@ -357,21 +327,21 @@ describe('useShellCommandProcessor', () => {
       });
       act(() => {
         mockShellOutputCallback({
-          type: 'binary_progress',
+          type: "binary_progress",
           bytesReceived: 2048,
         });
       });
 
       const updaterFn2 = setPendingHistoryItemMock.mock.lastCall?.[0];
       if (!updaterFn2) {
-        throw new Error('setPendingHistoryItem was not called');
+        throw new Error("setPendingHistoryItem was not called");
       }
       const stateAfterProgress = updaterFn2(stateAfterBinaryDetected);
       expect(stateAfterProgress).toEqual(
         expect.objectContaining({
           tools: [
             expect.objectContaining({
-              resultDisplay: '[Receiving binary output... 2.0 KB received]',
+              resultDisplay: "[Receiving binary output... 2.0 KB received]",
             }),
           ],
         }),
@@ -379,17 +349,17 @@ describe('useShellCommandProcessor', () => {
     });
   });
 
-  it('should not wrap the command on Windows', async () => {
-    vi.mocked(os.platform).mockReturnValue('win32');
+  it("should not wrap the command on Windows", async () => {
+    vi.mocked(os.platform).mockReturnValue("win32");
     const { result } = renderProcessorHook();
 
     await act(async () => {
-      result.current.handleShellCommand('dir', new AbortController().signal);
+      result.current.handleShellCommand("dir", new AbortController().signal);
     });
 
     expect(mockShellExecutionService).toHaveBeenCalledWith(
-      'dir',
-      '/test/dir',
+      "dir",
+      "/test/dir",
       expect.any(Function),
       expect.any(Object),
       false,
@@ -402,20 +372,18 @@ describe('useShellCommandProcessor', () => {
     await act(async () => await onExecMock.mock.calls[0][0]);
   });
 
-  it('should handle command abort and display cancelled status', async () => {
+  it("should handle command abort and display cancelled status", async () => {
     const { result } = renderProcessorHook();
     const abortController = new AbortController();
 
     act(() => {
-      result.current.handleShellCommand('sleep 5', abortController.signal);
+      result.current.handleShellCommand("sleep 5", abortController.signal);
     });
     const execPromise = onExecMock.mock.calls[0][0];
 
     act(() => {
       abortController.abort();
-      resolveExecutionPromise(
-        createMockServiceResult({ aborted: true, output: 'Canceled' }),
-      );
+      resolveExecutionPromise(createMockServiceResult({ aborted: true, output: "Canceled" }));
     });
     await act(async () => await execPromise);
 
@@ -426,46 +394,38 @@ describe('useShellCommandProcessor', () => {
     expect(setShellInputFocusedMock).toHaveBeenCalledWith(false);
   });
 
-  it('should handle binary output result correctly', async () => {
+  it("should handle binary output result correctly", async () => {
     const { result } = renderProcessorHook();
     const binaryBuffer = Buffer.from([0x89, 0x50, 0x4e, 0x47]);
     mockIsBinary.mockReturnValue(true);
 
     act(() => {
-      result.current.handleShellCommand(
-        'cat image.png',
-        new AbortController().signal,
-      );
+      result.current.handleShellCommand("cat image.png", new AbortController().signal);
     });
     const execPromise = onExecMock.mock.calls[0][0];
 
     act(() => {
-      resolveExecutionPromise(
-        createMockServiceResult({ rawOutput: binaryBuffer }),
-      );
+      resolveExecutionPromise(createMockServiceResult({ rawOutput: binaryBuffer }));
     });
     await act(async () => await execPromise);
 
     const finalHistoryItem = addItemToHistoryMock.mock.calls[1][0];
     expect(finalHistoryItem.tools[0].status).toBe(ToolCallStatus.Success);
     expect(finalHistoryItem.tools[0].resultDisplay).toBe(
-      '[Command produced binary output, which is not shown.]',
+      "[Command produced binary output, which is not shown.]",
     );
   });
 
-  it('should handle promise rejection and show an error', async () => {
+  it("should handle promise rejection and show an error", async () => {
     const { result } = renderProcessorHook();
-    const testError = new Error('Unexpected failure');
+    const testError = new Error("Unexpected failure");
     mockShellExecutionService.mockImplementation(() => ({
       pid: 12345,
       result: Promise.reject(testError),
     }));
 
     act(() => {
-      result.current.handleShellCommand(
-        'a-command',
-        new AbortController().signal,
-      );
+      result.current.handleShellCommand("a-command", new AbortController().signal);
     });
     const execPromise = onExecMock.mock.calls[0][0];
 
@@ -474,14 +434,14 @@ describe('useShellCommandProcessor', () => {
     expect(setPendingHistoryItemMock).toHaveBeenCalledWith(null);
     expect(addItemToHistoryMock).toHaveBeenCalledTimes(2);
     expect(addItemToHistoryMock.mock.calls[1][0]).toEqual({
-      type: 'error',
-      text: 'An unexpected error occurred: Unexpected failure',
+      type: "error",
+      text: "An unexpected error occurred: Unexpected failure",
     });
     expect(setShellInputFocusedMock).toHaveBeenCalledWith(false);
   });
 
-  it('should handle synchronous errors during execution and clean up resources', async () => {
-    const testError = new Error('Synchronous spawn error');
+  it("should handle synchronous errors during execution and clean up resources", async () => {
+    const testError = new Error("Synchronous spawn error");
     mockShellExecutionService.mockImplementation(() => {
       throw testError;
     });
@@ -491,10 +451,7 @@ describe('useShellCommandProcessor', () => {
     const { result } = renderProcessorHook();
 
     act(() => {
-      result.current.handleShellCommand(
-        'a-command',
-        new AbortController().signal,
-      );
+      result.current.handleShellCommand("a-command", new AbortController().signal);
     });
     const execPromise = onExecMock.mock.calls[0][0];
 
@@ -503,27 +460,24 @@ describe('useShellCommandProcessor', () => {
     expect(setPendingHistoryItemMock).toHaveBeenCalledWith(null);
     expect(addItemToHistoryMock).toHaveBeenCalledTimes(2);
     expect(addItemToHistoryMock.mock.calls[1][0]).toEqual({
-      type: 'error',
-      text: 'An unexpected error occurred: Synchronous spawn error',
+      type: "error",
+      text: "An unexpected error occurred: Synchronous spawn error",
     });
-    const tmpFile = path.join(os.tmpdir(), 'shell_pwd_abcdef.tmp');
+    const tmpFile = path.join(os.tmpdir(), "shell_pwd_abcdef.tmp");
     // Verify that the temporary file was cleaned up
     expect(vi.mocked(fs.unlinkSync)).toHaveBeenCalledWith(tmpFile);
     expect(setShellInputFocusedMock).toHaveBeenCalledWith(false);
   });
 
-  describe('Directory Change Warning', () => {
-    it('should show a warning if the working directory changes', async () => {
-      const tmpFile = path.join(os.tmpdir(), 'shell_pwd_abcdef.tmp');
+  describe("Directory Change Warning", () => {
+    it("should show a warning if the working directory changes", async () => {
+      const tmpFile = path.join(os.tmpdir(), "shell_pwd_abcdef.tmp");
       vi.mocked(fs.existsSync).mockReturnValue(true);
-      vi.mocked(fs.readFileSync).mockReturnValue('/test/dir/new'); // A different directory
+      vi.mocked(fs.readFileSync).mockReturnValue("/test/dir/new"); // A different directory
 
       const { result } = renderProcessorHook();
       act(() => {
-        result.current.handleShellCommand(
-          'cd new',
-          new AbortController().signal,
-        );
+        result.current.handleShellCommand("cd new", new AbortController().signal);
       });
       const execPromise = onExecMock.mock.calls[0][0];
 
@@ -539,13 +493,13 @@ describe('useShellCommandProcessor', () => {
       expect(vi.mocked(fs.unlinkSync)).toHaveBeenCalledWith(tmpFile);
     });
 
-    it('should NOT show a warning if the directory does not change', async () => {
+    it("should NOT show a warning if the directory does not change", async () => {
       vi.mocked(fs.existsSync).mockReturnValue(true);
-      vi.mocked(fs.readFileSync).mockReturnValue('/test/dir'); // The same directory
+      vi.mocked(fs.readFileSync).mockReturnValue("/test/dir"); // The same directory
 
       const { result } = renderProcessorHook();
       act(() => {
-        result.current.handleShellCommand('ls', new AbortController().signal);
+        result.current.handleShellCommand("ls", new AbortController().signal);
       });
       const execPromise = onExecMock.mock.calls[0][0];
 
@@ -555,11 +509,11 @@ describe('useShellCommandProcessor', () => {
       await act(async () => await execPromise);
 
       const finalHistoryItem = addItemToHistoryMock.mock.calls[1][0];
-      expect(finalHistoryItem.tools[0].resultDisplay).not.toContain('WARNING');
+      expect(finalHistoryItem.tools[0].resultDisplay).not.toContain("WARNING");
     });
   });
 
-  describe('ActiveShellPtyId management', () => {
+  describe("ActiveShellPtyId management", () => {
     beforeEach(() => {
       // The real service returns a promise that resolves with the pid and result promise
       mockShellExecutionService.mockImplementation((_cmd, _cwd, callback) => {
@@ -573,26 +527,26 @@ describe('useShellCommandProcessor', () => {
       });
     });
 
-    it('should have activeShellPtyId as null initially', () => {
+    it("should have activeShellPtyId as null initially", () => {
       const { result } = renderProcessorHook();
       expect(result.current.activeShellPtyId).toBeNull();
     });
 
-    it('should set activeShellPtyId when a command with a PID starts', async () => {
+    it("should set activeShellPtyId when a command with a PID starts", async () => {
       const { result } = renderProcessorHook();
 
       await act(async () => {
-        result.current.handleShellCommand('ls', new AbortController().signal);
+        result.current.handleShellCommand("ls", new AbortController().signal);
       });
 
       expect(result.current.activeShellPtyId).toBe(12345);
     });
 
-    it('should update the pending history item with the ptyId', async () => {
+    it("should update the pending history item with the ptyId", async () => {
       const { result } = renderProcessorHook();
 
       await act(async () => {
-        result.current.handleShellCommand('ls', new AbortController().signal);
+        result.current.handleShellCommand("ls", new AbortController().signal);
       });
 
       await waitFor(() => {
@@ -602,7 +556,7 @@ describe('useShellCommandProcessor', () => {
 
       // The state update is functional, so we test it by executing it.
       const updaterFn = setPendingHistoryItemMock.mock.lastCall?.[0];
-      expect(typeof updaterFn).toBe('function');
+      expect(typeof updaterFn).toBe("function");
 
       // The initial state is the first call to setPendingHistoryItem
       const initialState = setPendingHistoryItemMock.mock.calls[0][0];
@@ -611,11 +565,11 @@ describe('useShellCommandProcessor', () => {
       expect(stateAfterPid.tools[0].ptyId).toBe(12345);
     });
 
-    it('should reset activeShellPtyId to null after successful execution', async () => {
+    it("should reset activeShellPtyId to null after successful execution", async () => {
       const { result } = renderProcessorHook();
 
       await act(async () => {
-        result.current.handleShellCommand('ls', new AbortController().signal);
+        result.current.handleShellCommand("ls", new AbortController().signal);
       });
       const execPromise = onExecMock.mock.calls[0][0];
 
@@ -629,14 +583,11 @@ describe('useShellCommandProcessor', () => {
       expect(result.current.activeShellPtyId).toBeNull();
     });
 
-    it('should reset activeShellPtyId to null after failed execution', async () => {
+    it("should reset activeShellPtyId to null after failed execution", async () => {
       const { result } = renderProcessorHook();
 
       await act(async () => {
-        result.current.handleShellCommand(
-          'bad-cmd',
-          new AbortController().signal,
-        );
+        result.current.handleShellCommand("bad-cmd", new AbortController().signal);
       });
       const execPromise = onExecMock.mock.calls[0][0];
 
@@ -650,7 +601,7 @@ describe('useShellCommandProcessor', () => {
       expect(result.current.activeShellPtyId).toBeNull();
     });
 
-    it('should reset activeShellPtyId to null if execution promise rejects', async () => {
+    it("should reset activeShellPtyId to null if execution promise rejects", async () => {
       let rejectResultPromise: (reason?: unknown) => void;
       mockShellExecutionService.mockImplementation(() =>
         Promise.resolve({
@@ -663,14 +614,14 @@ describe('useShellCommandProcessor', () => {
       const { result } = renderProcessorHook();
 
       await act(async () => {
-        result.current.handleShellCommand('cmd', new AbortController().signal);
+        result.current.handleShellCommand("cmd", new AbortController().signal);
       });
       const execPromise = onExecMock.mock.calls[0][0];
 
       expect(result.current.activeShellPtyId).toBe(12345);
 
       await act(async () => {
-        rejectResultPromise(new Error('Failure'));
+        rejectResultPromise(new Error("Failure"));
       });
 
       await act(async () => await execPromise);
@@ -678,16 +629,16 @@ describe('useShellCommandProcessor', () => {
       expect(result.current.activeShellPtyId).toBeNull();
     });
 
-    it('should not set activeShellPtyId on synchronous execution error and should remain null', async () => {
+    it("should not set activeShellPtyId on synchronous execution error and should remain null", async () => {
       mockShellExecutionService.mockImplementation(() => {
-        throw new Error('Sync Error');
+        throw new Error("Sync Error");
       });
       const { result } = renderProcessorHook();
 
       expect(result.current.activeShellPtyId).toBeNull(); // Pre-condition
 
       act(() => {
-        result.current.handleShellCommand('cmd', new AbortController().signal);
+        result.current.handleShellCommand("cmd", new AbortController().signal);
       });
       const execPromise = onExecMock.mock.calls[0][0];
 
@@ -700,7 +651,7 @@ describe('useShellCommandProcessor', () => {
       expect(result.current.activeShellPtyId).toBeNull();
     });
 
-    it('should not set activeShellPtyId if service does not return a PID', async () => {
+    it("should not set activeShellPtyId if service does not return a PID", async () => {
       mockShellExecutionService.mockImplementation((_cmd, _cwd, callback) => {
         mockShellOutputCallback = callback;
         return Promise.resolve({
@@ -714,7 +665,7 @@ describe('useShellCommandProcessor', () => {
       const { result } = renderProcessorHook();
 
       act(() => {
-        result.current.handleShellCommand('ls', new AbortController().signal);
+        result.current.handleShellCommand("ls", new AbortController().signal);
       });
 
       // Let microtasks run

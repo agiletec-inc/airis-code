@@ -4,16 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import {
-  ChatRecordingService,
-  generateSummary,
-  type Config,
-} from '@airiscode/gemini-cli-core';
-import {
-  formatRelativeTime,
-  SessionSelector,
-  type SessionInfo,
-} from './sessionUtils.js';
+import { ChatRecordingService, type Config, generateSummary } from "@airiscode/gemini-cli-core";
+import { formatRelativeTime, type SessionInfo, SessionSelector } from "./sessionUtils.js";
 
 export async function listSessions(config: Config): Promise<void> {
   // Generate summary for most recent session if needed
@@ -23,39 +15,31 @@ export async function listSessions(config: Config): Promise<void> {
   const sessions = await sessionSelector.listSessions();
 
   if (sessions.length === 0) {
-    console.log('No previous sessions found for this project.');
+    console.log("No previous sessions found for this project.");
     return;
   }
 
   console.log(`\nAvailable sessions for this project (${sessions.length}):\n`);
 
   sessions
-    .sort(
-      (a, b) =>
-        new Date(a.startTime).getTime() - new Date(b.startTime).getTime(),
-    )
+    .sort((a, b) => new Date(a.startTime).getTime() - new Date(b.startTime).getTime())
     .forEach((session, index) => {
-      const current = session.isCurrentSession ? ', current' : '';
+      const current = session.isCurrentSession ? ", current" : "";
       const time = formatRelativeTime(session.lastUpdated);
       const title =
         session.displayName.length > 100
-          ? session.displayName.slice(0, 97) + '...'
+          ? session.displayName.slice(0, 97) + "..."
           : session.displayName;
-      console.log(
-        `  ${index + 1}. ${title} (${time}${current}) [${session.id}]`,
-      );
+      console.log(`  ${index + 1}. ${title} (${time}${current}) [${session.id}]`);
     });
 }
 
-export async function deleteSession(
-  config: Config,
-  sessionIndex: string,
-): Promise<void> {
+export async function deleteSession(config: Config, sessionIndex: string): Promise<void> {
   const sessionSelector = new SessionSelector(config);
   const sessions = await sessionSelector.listSessions();
 
   if (sessions.length === 0) {
-    console.error('No sessions found for this project.');
+    console.error("No sessions found for this project.");
     return;
   }
 
@@ -67,9 +51,7 @@ export async function deleteSession(
   let sessionToDelete: SessionInfo;
 
   // Try to find by UUID first
-  const sessionByUuid = sortedSessions.find(
-    (session) => session.id === sessionIndex,
-  );
+  const sessionByUuid = sortedSessions.find((session) => session.id === sessionIndex);
   if (sessionByUuid) {
     sessionToDelete = sessionByUuid;
   } else {
@@ -86,7 +68,7 @@ export async function deleteSession(
 
   // Prevent deleting the current session
   if (sessionToDelete.isCurrentSession) {
-    console.error('Cannot delete the current active session.');
+    console.error("Cannot delete the current active session.");
     return;
   }
 
@@ -101,7 +83,7 @@ export async function deleteSession(
     );
   } catch (error) {
     console.error(
-      `Failed to delete session: ${error instanceof Error ? error.message : 'Unknown error'}`,
+      `Failed to delete session: ${error instanceof Error ? error.message : "Unknown error"}`,
     );
   }
 }

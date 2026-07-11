@@ -4,18 +4,18 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+import fs from "node:fs/promises";
+import path from "node:path";
+import toml from "@iarna/toml";
+import { type ZodError, z } from "zod";
 import {
-  type PolicyRule,
-  PolicyDecision,
   type ApprovalMode,
+  InProcessCheckerType,
+  PolicyDecision,
+  type PolicyRule,
   type SafetyCheckerConfig,
   type SafetyCheckerRule,
-  InProcessCheckerType,
-} from './types.js';
-import fs from 'node:fs/promises';
-import path from 'node:path';
-import toml from '@iarna/toml';
-import { z, type ZodError } from 'zod';
+} from "./types.js";
 
 /**
  * Schema for a single policy rule in the TOML file (before transformation).
@@ -34,14 +34,14 @@ const PolicyRuleSchema = z.object({
   // - Tier 3 (admin): range [3.000, 3.999]
   priority: z
     .number({
-      required_error: 'priority is required',
-      invalid_type_error: 'priority must be a number',
+      required_error: "priority is required",
+      invalid_type_error: "priority must be a number",
     })
-    .int({ message: 'priority must be an integer' })
-    .min(0, { message: 'priority must be >= 0' })
+    .int({ message: "priority must be an integer" })
+    .min(0, { message: "priority must be >= 0" })
     .max(999, {
       message:
-        'priority must be <= 999 to prevent tier overflow. Priorities >= 1000 would jump to the next tier.',
+        "priority must be <= 999 to prevent tier overflow. Priorities >= 1000 would jump to the next tier.",
     }),
   modes: z.array(z.string()).optional(),
 });
@@ -57,15 +57,15 @@ const SafetyCheckerRuleSchema = z.object({
   commandRegex: z.string().optional(),
   priority: z.number().int().default(0),
   modes: z.array(z.string()).optional(),
-  checker: z.discriminatedUnion('type', [
+  checker: z.discriminatedUnion("type", [
     z.object({
-      type: z.literal('in-process'),
+      type: z.literal("in-process"),
       name: z.nativeEnum(InProcessCheckerType),
       required_context: z.array(z.string()).optional(),
       config: z.record(z.unknown()).optional(),
     }),
     z.object({
-      type: z.literal('external'),
+      type: z.literal("external"),
       name: z.string(),
       required_context: z.array(z.string()).optional(),
       config: z.record(z.unknown()).optional(),
@@ -90,11 +90,11 @@ type PolicyRuleToml = z.infer<typeof PolicyRuleSchema>;
  * Types of errors that can occur while loading policy files.
  */
 export type PolicyFileErrorType =
-  | 'file_read'
-  | 'toml_parse'
-  | 'schema_validation'
-  | 'rule_validation'
-  | 'regex_compilation';
+  | "file_read"
+  | "toml_parse"
+  | "schema_validation"
+  | "rule_validation"
+  | "regex_compilation";
 
 /**
  * Detailed error information for policy file loading failures.
@@ -102,7 +102,7 @@ export type PolicyFileErrorType =
 export interface PolicyFileError {
   filePath: string;
   fileName: string;
-  tier: 'default' | 'user' | 'admin';
+  tier: "default" | "user" | "admin";
   ruleIndex?: number;
   errorType: PolicyFileErrorType;
   message: string;
@@ -127,17 +127,17 @@ export interface PolicyLoadResult {
  * @returns The escaped string safe for use in a regex
  */
 function escapeRegex(str: string): string {
-  return str.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  return str.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 }
 
 /**
  * Converts a tier number to a human-readable tier name.
  */
-function getTierName(tier: number): 'default' | 'user' | 'admin' {
-  if (tier === 1) return 'default';
-  if (tier === 2) return 'user';
-  if (tier === 3) return 'admin';
-  return 'default';
+function getTierName(tier: number): "default" | "user" | "admin" {
+  if (tier === 1) return "default";
+  if (tier === 2) return "user";
+  if (tier === 3) return "admin";
+  return "default";
 }
 
 /**
@@ -146,10 +146,10 @@ function getTierName(tier: number): 'default' | 'user' | 'admin' {
 function formatSchemaError(error: ZodError, ruleIndex: number): string {
   const issues = error.issues
     .map((issue) => {
-      const path = issue.path.join('.');
+      const path = issue.path.join(".");
       return `  - Field "${path}": ${issue.message}`;
     })
-    .join('\n');
+    .join("\n");
   return `Invalid policy rule (rule #${ruleIndex + 1}):\n${issues}`;
 }
 
@@ -157,17 +157,14 @@ function formatSchemaError(error: ZodError, ruleIndex: number): string {
  * Validates shell command convenience syntax rules.
  * Returns an error message if invalid, or null if valid.
  */
-function validateShellCommandSyntax(
-  rule: PolicyRuleToml,
-  ruleIndex: number,
-): string | null {
+function validateShellCommandSyntax(rule: PolicyRuleToml, ruleIndex: number): string | null {
   const hasCommandPrefix = rule.commandPrefix !== undefined;
   const hasCommandRegex = rule.commandRegex !== undefined;
   const hasArgsPattern = rule.argsPattern !== undefined;
 
   if (hasCommandPrefix || hasCommandRegex) {
     // Must have exactly toolName = "run_shell_command"
-    if (rule.toolName !== 'run_shell_command' || Array.isArray(rule.toolName)) {
+    if (rule.toolName !== "run_shell_command" || Array.isArray(rule.toolName)) {
       return (
         `Rule #${ruleIndex + 1}: commandPrefix and commandRegex can only be used with toolName = "run_shell_command"\n` +
         `  Found: toolName = ${JSON.stringify(rule.toolName)}\n` +
@@ -242,11 +239,11 @@ export async function loadPoliciesFromToml(
     try {
       const dirEntries = await fs.readdir(dir, { withFileTypes: true });
       filesToLoad = dirEntries
-        .filter((entry) => entry.isFile() && entry.name.endsWith('.toml'))
+        .filter((entry) => entry.isFile() && entry.name.endsWith(".toml"))
         .map((entry) => entry.name);
     } catch (e) {
       const error = e as NodeJS.ErrnoException;
-      if (error.code === 'ENOENT') {
+      if (error.code === "ENOENT") {
         // Directory doesn't exist, skip it (not an error)
         continue;
       }
@@ -254,7 +251,7 @@ export async function loadPoliciesFromToml(
         filePath: dir,
         fileName: path.basename(dir),
         tier: tierName,
-        errorType: 'file_read',
+        errorType: "file_read",
         message: `Failed to read policy directory`,
         details: error.message,
       });
@@ -266,7 +263,7 @@ export async function loadPoliciesFromToml(
 
       try {
         // Read file
-        const fileContent = await fs.readFile(filePath, 'utf-8');
+        const fileContent = await fs.readFile(filePath, "utf-8");
 
         // Parse TOML
         let parsed: unknown;
@@ -278,11 +275,10 @@ export async function loadPoliciesFromToml(
             filePath,
             fileName: file,
             tier: tierName,
-            errorType: 'toml_parse',
-            message: 'TOML parsing failed',
+            errorType: "toml_parse",
+            message: "TOML parsing failed",
             details: error.message,
-            suggestion:
-              'Check for syntax errors like missing quotes, brackets, or commas',
+            suggestion: "Check for syntax errors like missing quotes, brackets, or commas",
           });
           continue;
         }
@@ -294,11 +290,11 @@ export async function loadPoliciesFromToml(
             filePath,
             fileName: file,
             tier: tierName,
-            errorType: 'schema_validation',
-            message: 'Schema validation failed',
+            errorType: "schema_validation",
+            message: "Schema validation failed",
             details: formatSchemaError(validationResult.error, 0),
             suggestion:
-              'Ensure all required fields (decision, priority) are present with correct types',
+              "Ensure all required fields (decision, priority) are present with correct types",
           });
           continue;
         }
@@ -314,8 +310,8 @@ export async function loadPoliciesFromToml(
               fileName: file,
               tier: tierName,
               ruleIndex: i,
-              errorType: 'rule_validation',
-              message: 'Invalid shell command syntax',
+              errorType: "rule_validation",
+              message: "Invalid shell command syntax",
               details: validationError,
             });
             // Continue to next rule, don't skip the entire file
@@ -348,9 +344,7 @@ export async function loadPoliciesFromToml(
             // Expand command prefixes to multiple patterns
             const argsPatterns: Array<string | undefined> =
               commandPrefixes.length > 0
-                ? commandPrefixes.map(
-                    (prefix) => `"command":"${escapeRegex(prefix)}`,
-                  )
+                ? commandPrefixes.map((prefix) => `"command":"${escapeRegex(prefix)}`)
                 : [effectiveArgsPattern];
 
             // For each argsPattern, expand toolName arrays
@@ -389,11 +383,11 @@ export async function loadPoliciesFromToml(
                       filePath,
                       fileName: file,
                       tier: tierName,
-                      errorType: 'regex_compilation',
-                      message: 'Invalid regex pattern',
+                      errorType: "regex_compilation",
+                      message: "Invalid regex pattern",
                       details: `Pattern: ${argsPattern}\nError: ${error.message}`,
                       suggestion:
-                        'Check regex syntax for errors like unmatched brackets or invalid escape sequences',
+                        "Check regex syntax for errors like unmatched brackets or invalid escape sequences",
                     });
                     // Skip this rule if regex compilation fails
                     return null;
@@ -409,9 +403,7 @@ export async function loadPoliciesFromToml(
         rules.push(...parsedRules);
 
         // Transform checkers
-        const parsedCheckers: SafetyCheckerRule[] = (
-          validationResult.data.safety_checker ?? []
-        )
+        const parsedCheckers: SafetyCheckerRule[] = (validationResult.data.safety_checker ?? [])
           .filter((checker) => {
             if (!checker.modes || checker.modes.length === 0) {
               return true;
@@ -433,9 +425,7 @@ export async function loadPoliciesFromToml(
 
             const argsPatterns: Array<string | undefined> =
               commandPrefixes.length > 0
-                ? commandPrefixes.map(
-                    (prefix) => `"command":"${escapeRegex(prefix)}`,
-                  )
+                ? commandPrefixes.map((prefix) => `"command":"${escapeRegex(prefix)}`)
                 : [effectiveArgsPattern];
 
             return argsPatterns.flatMap((argsPattern) => {
@@ -470,8 +460,8 @@ export async function loadPoliciesFromToml(
                       filePath,
                       fileName: file,
                       tier: tierName,
-                      errorType: 'regex_compilation',
-                      message: 'Invalid regex pattern in safety checker',
+                      errorType: "regex_compilation",
+                      message: "Invalid regex pattern in safety checker",
                       details: `Pattern: ${argsPattern}\nError: ${error.message}`,
                     });
                     return null;
@@ -488,13 +478,13 @@ export async function loadPoliciesFromToml(
       } catch (e) {
         const error = e as NodeJS.ErrnoException;
         // Catch-all for unexpected errors
-        if (error.code !== 'ENOENT') {
+        if (error.code !== "ENOENT") {
           errors.push({
             filePath,
             fileName: file,
             tier: tierName,
-            errorType: 'file_read',
-            message: 'Failed to read policy file',
+            errorType: "file_read",
+            message: "Failed to read policy file",
             details: error.message,
           });
         }

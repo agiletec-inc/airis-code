@@ -4,35 +4,29 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import open from 'open';
-import {
-  type CommandContext,
-  type SlashCommand,
-  CommandKind,
-} from './types.js';
-import { MessageType } from '../types.js';
-import { getExtendedSystemInfo } from '../../utils/systemInfo.js';
-import { getSystemInfoFields } from '../../utils/systemInfoFields.js';
-import { t } from '../../i18n/index.js';
+import open from "open";
+import { t } from "../../i18n/index.js";
+import { getExtendedSystemInfo } from "../../utils/systemInfo.js";
+import { getSystemInfoFields } from "../../utils/systemInfoFields.js";
+import { MessageType } from "../types.js";
+import { type CommandContext, CommandKind, type SlashCommand } from "./types.js";
 
 export const bugCommand: SlashCommand = {
-  name: 'bug',
+  name: "bug",
   get description() {
-    return t('submit a bug report');
+    return t("submit a bug report");
   },
   kind: CommandKind.BUILT_IN,
   action: async (context: CommandContext, args?: string): Promise<void> => {
-    const bugDescription = (args || '').trim();
+    const bugDescription = (args || "").trim();
     const systemInfo = await getExtendedSystemInfo(context);
 
     const fields = getSystemInfoFields(systemInfo);
 
-    const info = fields
-      .map((field) => `${field.label}: ${field.value}`)
-      .join('\n');
+    const info = fields.map((field) => `${field.label}: ${field.value}`).join("\n");
 
     let bugReportUrl =
-      'https://github.com/QwenLM/airiscode/issues/new?template=bug_report.yml&title={title}&info={info}';
+      "https://github.com/QwenLM/airiscode/issues/new?template=bug_report.yml&title={title}&info={info}";
 
     const bugCommandSettings = context.services.config?.getBugCommand();
     if (bugCommandSettings?.urlTemplate) {
@@ -40,8 +34,8 @@ export const bugCommand: SlashCommand = {
     }
 
     bugReportUrl = bugReportUrl
-      .replace('{title}', encodeURIComponent(bugDescription))
-      .replace('{info}', encodeURIComponent(`\n${info}\n`));
+      .replace("{title}", encodeURIComponent(bugDescription))
+      .replace("{info}", encodeURIComponent(`\n${info}\n`));
 
     context.ui.addItem(
       {
@@ -54,8 +48,7 @@ export const bugCommand: SlashCommand = {
     try {
       await open(bugReportUrl);
     } catch (error) {
-      const errorMessage =
-        error instanceof Error ? error.message : String(error);
+      const errorMessage = error instanceof Error ? error.message : String(error);
       context.ui.addItem(
         {
           type: MessageType.ERROR,

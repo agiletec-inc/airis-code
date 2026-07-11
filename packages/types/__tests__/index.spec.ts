@@ -1,8 +1,8 @@
-import { describe, it, expect } from 'vitest';
-import { ok, err } from '../src/common.js';
+import { describe, expect, it } from "vitest";
+import { err, ok } from "../src/common.js";
 
-describe('@airiscode/types', () => {
-  it('should export common types', () => {
+describe("@airiscode/types", () => {
+  it("should export common types", () => {
     const result = ok(42);
     expect(result.ok).toBe(true);
     if (result.ok) {
@@ -10,11 +10,11 @@ describe('@airiscode/types', () => {
     }
   });
 
-  it('should handle error results', () => {
-    const result = err(new Error('test error'));
+  it("should handle error results", () => {
+    const result = err(new Error("test error"));
     expect(result.ok).toBe(false);
     if (!result.ok) {
-      expect(result.error.message).toBe('test error');
+      expect(result.error.message).toBe("test error");
     }
   });
 });

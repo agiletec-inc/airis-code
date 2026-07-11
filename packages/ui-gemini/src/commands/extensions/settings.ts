@@ -4,16 +4,16 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import type { CommandModule } from 'yargs';
+import { debugLogger } from "@airiscode/gemini-cli-core";
+import type { CommandModule } from "yargs";
 import {
-  updateSetting,
-  promptForSetting,
   ExtensionSettingScope,
   getScopedEnvContents,
-} from '../../config/extensions/extensionSettings.js';
-import { getExtensionAndManager } from './utils.js';
-import { debugLogger } from '@airiscode/gemini-cli-core';
-import { exitCli } from '../utils.js';
+  promptForSetting,
+  updateSetting,
+} from "../../config/extensions/extensionSettings.js";
+import { exitCli } from "../utils.js";
+import { getExtensionAndManager } from "./utils.js";
 
 // --- SET COMMAND ---
 interface SetArgs {
@@ -23,25 +23,25 @@ interface SetArgs {
 }
 
 const setCommand: CommandModule<object, SetArgs> = {
-  command: 'set [--scope] <name> <setting>',
-  describe: 'Set a specific setting for an extension.',
+  command: "set [--scope] <name> <setting>",
+  describe: "Set a specific setting for an extension.",
   builder: (yargs) =>
     yargs
-      .positional('name', {
-        describe: 'Name of the extension to configure.',
-        type: 'string',
+      .positional("name", {
+        describe: "Name of the extension to configure.",
+        type: "string",
         demandOption: true,
       })
-      .positional('setting', {
-        describe: 'The setting to configure (name or env var).',
-        type: 'string',
+      .positional("setting", {
+        describe: "The setting to configure (name or env var).",
+        type: "string",
         demandOption: true,
       })
-      .option('scope', {
-        describe: 'The scope to set the setting in.',
-        type: 'string',
-        choices: ['user', 'workspace'],
-        default: 'user',
+      .option("scope", {
+        describe: "The scope to set the setting in.",
+        type: "string",
+        choices: ["user", "workspace"],
+        default: "user",
       }),
   handler: async (args) => {
     const { name, setting, scope } = args;
@@ -49,13 +49,9 @@ const setCommand: CommandModule<object, SetArgs> = {
     if (!extension || !extensionManager) {
       return;
     }
-    const extensionConfig = extensionManager.loadExtensionConfig(
-      extension.path,
-    );
+    const extensionConfig = extensionManager.loadExtensionConfig(extension.path);
     if (!extensionConfig) {
-      debugLogger.error(
-        `Could not find configuration for extension "${name}".`,
-      );
+      debugLogger.error(`Could not find configuration for extension "${name}".`);
       return;
     }
     await updateSetting(
@@ -75,12 +71,12 @@ interface ListArgs {
 }
 
 const listCommand: CommandModule<object, ListArgs> = {
-  command: 'list <name>',
-  describe: 'List all settings for an extension.',
+  command: "list <name>",
+  describe: "List all settings for an extension.",
   builder: (yargs) =>
-    yargs.positional('name', {
-      describe: 'Name of the extension.',
-      type: 'string',
+    yargs.positional("name", {
+      describe: "Name of the extension.",
+      type: "string",
       demandOption: true,
     }),
   handler: async (args) => {
@@ -89,14 +85,8 @@ const listCommand: CommandModule<object, ListArgs> = {
     if (!extension || !extensionManager) {
       return;
     }
-    const extensionConfig = extensionManager.loadExtensionConfig(
-      extension.path,
-    );
-    if (
-      !extensionConfig ||
-      !extensionConfig.settings ||
-      extensionConfig.settings.length === 0
-    ) {
+    const extensionConfig = extensionManager.loadExtensionConfig(extension.path);
+    if (!extensionConfig || !extensionConfig.settings || extensionConfig.settings.length === 0) {
       debugLogger.log(`Extension "${name}" has no settings to configure.`);
       return;
     }
@@ -117,18 +107,18 @@ const listCommand: CommandModule<object, ListArgs> = {
     for (const setting of extensionConfig.settings) {
       const value = mergedSettings[setting.envVar];
       let displayValue: string;
-      let scopeInfo = '';
+      let scopeInfo = "";
 
       if (workspaceSettings[setting.envVar] !== undefined) {
-        scopeInfo = ' (workspace)';
+        scopeInfo = " (workspace)";
       } else if (userSettings[setting.envVar] !== undefined) {
-        scopeInfo = ' (user)';
+        scopeInfo = " (user)";
       }
 
       if (value === undefined) {
-        displayValue = '[not set]';
+        displayValue = "[not set]";
       } else if (setting.sensitive) {
-        displayValue = '[value stored in keychain]';
+        displayValue = "[value stored in keychain]";
       } else {
         displayValue = value;
       }
@@ -143,13 +133,13 @@ const listCommand: CommandModule<object, ListArgs> = {
 
 // --- SETTINGS COMMAND ---
 export const settingsCommand: CommandModule = {
-  command: 'settings <command>',
-  describe: 'Manage extension settings.',
+  command: "settings <command>",
+  describe: "Manage extension settings.",
   builder: (yargs) =>
     yargs
       .command(setCommand)
       .command(listCommand)
-      .demandCommand(1, 'You need to specify a command (set or list).')
+      .demandCommand(1, "You need to specify a command (set or list).")
       .version(false),
   handler: () => {
     // This handler is not called when a subcommand is provided.

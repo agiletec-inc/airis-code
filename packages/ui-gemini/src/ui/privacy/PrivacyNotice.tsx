@@ -4,24 +4,18 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { Box } from 'ink';
-import { type Config, AuthType } from '@airiscode/gemini-cli-core';
-import { GeminiPrivacyNotice } from './GeminiPrivacyNotice.js';
-import { CloudPaidPrivacyNotice } from './CloudPaidPrivacyNotice.js';
-import { CloudFreePrivacyNotice } from './CloudFreePrivacyNotice.js';
+import { AuthType, type Config } from "@airiscode/gemini-cli-core";
+import { Box } from "ink";
+import { CloudFreePrivacyNotice } from "./CloudFreePrivacyNotice.js";
+import { CloudPaidPrivacyNotice } from "./CloudPaidPrivacyNotice.js";
+import { GeminiPrivacyNotice } from "./GeminiPrivacyNotice.js";
 
 interface PrivacyNoticeProps {
   onExit: () => void;
   config: Config;
 }
 
-const PrivacyNoticeText = ({
-  config,
-  onExit,
-}: {
-  config: Config;
-  onExit: () => void;
-}) => {
+const PrivacyNoticeText = ({ config, onExit }: { config: Config; onExit: () => void }) => {
   const authType = config.getContentGeneratorConfig()?.authType;
 
   switch (authType) {

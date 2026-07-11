@@ -4,21 +4,14 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { MergeStrategy } from '../config/settingsSchema.js';
+import { MergeStrategy } from "../config/settingsSchema.js";
 
-export type Mergeable =
-  | string
-  | number
-  | boolean
-  | null
-  | undefined
-  | object
-  | Mergeable[];
+export type Mergeable = string | number | boolean | null | undefined | object | Mergeable[];
 
 export type MergeableObject = Record<string, Mergeable>;
 
 function isPlainObject(item: unknown): item is MergeableObject {
-  return !!item && typeof item === 'object' && !Array.isArray(item);
+  return !!item && typeof item === "object" && !Array.isArray(item);
 }
 
 function mergeRecursively(
@@ -28,7 +21,7 @@ function mergeRecursively(
   path: string[] = [],
 ) {
   for (const key of Object.keys(source)) {
-    if (key === '__proto__' || key === 'constructor' || key === 'prototype') {
+    if (key === "__proto__" || key === "constructor" || key === "prototype") {
       continue;
     }
     const newPath = [...path, key];
@@ -37,10 +30,8 @@ function mergeRecursively(
     const mergeStrategy = getMergeStrategyForPath(newPath);
 
     if (mergeStrategy === MergeStrategy.SHALLOW_MERGE && objValue && srcValue) {
-      const obj1 =
-        typeof objValue === 'object' && objValue !== null ? objValue : {};
-      const obj2 =
-        typeof srcValue === 'object' && srcValue !== null ? srcValue : {};
+      const obj1 = typeof objValue === "object" && objValue !== null ? objValue : {};
+      const obj2 = typeof srcValue === "object" && srcValue !== null ? srcValue : {};
       target[key] = { ...obj1, ...obj2 };
       continue;
     }
@@ -61,12 +52,7 @@ function mergeRecursively(
       mergeRecursively(objValue, srcValue, getMergeStrategyForPath, newPath);
     } else if (isPlainObject(srcValue)) {
       target[key] = {};
-      mergeRecursively(
-        target[key] as MergeableObject,
-        srcValue,
-        getMergeStrategyForPath,
-        newPath,
-      );
+      mergeRecursively(target[key] as MergeableObject, srcValue, getMergeStrategyForPath, newPath);
     } else {
       target[key] = srcValue;
     }

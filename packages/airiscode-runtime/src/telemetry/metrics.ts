@@ -8,9 +8,9 @@
 // Functions preserved for API compatibility with existing call sites that are
 // gated by isTelemetrySdkInitialized() returning false.
 
-import { SERVICE_NAME, EVENT_CHAT_COMPRESSION } from './constants.js';
-import type { Config } from '../config/config.js';
-import type { ModelSlashCommandEvent } from './types.js';
+import type { Config } from "../config/config.js";
+import { EVENT_CHAT_COMPRESSION, SERVICE_NAME } from "./constants.js";
+import type { ModelSlashCommandEvent } from "./types.js";
 
 export const SUBAGENT_EXECUTION_COUNT = `${SERVICE_NAME}.subagent.execution.count`;
 
@@ -25,39 +25,39 @@ export type MetricDefinitions = Record<
 >;
 
 export enum FileOperation {
-  CREATE = 'create',
-  READ = 'read',
-  UPDATE = 'update',
+  CREATE = "create",
+  READ = "read",
+  UPDATE = "update",
 }
 
 export enum PerformanceMetricType {
-  STARTUP = 'startup',
-  MEMORY = 'memory',
-  CPU = 'cpu',
-  TOOL_EXECUTION = 'tool_execution',
-  API_REQUEST = 'api_request',
-  TOKEN_EFFICIENCY = 'token_efficiency',
+  STARTUP = "startup",
+  MEMORY = "memory",
+  CPU = "cpu",
+  TOOL_EXECUTION = "tool_execution",
+  API_REQUEST = "api_request",
+  TOKEN_EFFICIENCY = "token_efficiency",
 }
 
 export enum MemoryMetricType {
-  HEAP_USED = 'heap_used',
-  HEAP_TOTAL = 'heap_total',
-  EXTERNAL = 'external',
-  RSS = 'rss',
+  HEAP_USED = "heap_used",
+  HEAP_TOTAL = "heap_total",
+  EXTERNAL = "external",
+  RSS = "rss",
 }
 
 export enum ToolExecutionPhase {
-  VALIDATION = 'validation',
-  PREPARATION = 'preparation',
-  EXECUTION = 'execution',
-  RESULT_PROCESSING = 'result_processing',
+  VALIDATION = "validation",
+  PREPARATION = "preparation",
+  EXECUTION = "execution",
+  RESULT_PROCESSING = "result_processing",
 }
 
 export enum ApiRequestPhase {
-  REQUEST_PREPARATION = 'request_preparation',
-  NETWORK_LATENCY = 'network_latency',
-  RESPONSE_PROCESSING = 'response_processing',
-  TOKEN_PROCESSING = 'token_processing',
+  REQUEST_PREPARATION = "request_preparation",
+  NETWORK_LATENCY = "network_latency",
+  RESPONSE_PROCESSING = "response_processing",
+  TOKEN_PROCESSING = "token_processing",
 }
 
 // `Meter` shape kept loose so that existing callers that store the result do
@@ -83,8 +83,8 @@ export function recordToolCallMetrics(
   _attributes: {
     function_name: string;
     success: boolean;
-    decision?: 'accept' | 'reject' | 'modify' | 'auto_accept';
-    tool_type?: 'native' | 'mcp';
+    decision?: "accept" | "reject" | "modify" | "auto_accept";
+    tool_type?: "native" | "mcp";
   },
 ): void {
   return;
@@ -95,7 +95,7 @@ export function recordTokenUsageMetrics(
   _tokenCount: number,
   _attributes: {
     model: string;
-    type: 'input' | 'output' | 'thought' | 'cache' | 'tool';
+    type: "input" | "output" | "thought" | "cache" | "tool";
   },
 ): void {
   return;
@@ -159,10 +159,7 @@ export function recordContentRetryFailure(_config: Config): void {
   return;
 }
 
-export function recordModelSlashCommand(
-  _config: Config,
-  _event: ModelSlashCommandEvent,
-): void {
+export function recordModelSlashCommand(_config: Config, _event: ModelSlashCommandEvent): void {
   return;
 }
 
@@ -204,10 +201,7 @@ export function recordCpuUsage(
   return;
 }
 
-export function recordToolQueueDepth(
-  _config: Config,
-  _queueDepth: number,
-): void {
+export function recordToolQueueDepth(_config: Config, _queueDepth: number): void {
   return;
 }
 
@@ -260,7 +254,7 @@ export function recordPerformanceRegression(
   _config: Config,
   _attributes: {
     metric: string;
-    severity: 'low' | 'medium' | 'high';
+    severity: "low" | "medium" | "high";
     current_value: number;
     baseline_value: number;
   },
@@ -291,7 +285,7 @@ export function isPerformanceMonitoringActive(): boolean {
 export function recordSubagentExecutionMetrics(
   _config: Config,
   _subagentName: string,
-  _status: 'started' | 'completed' | 'failed' | 'cancelled',
+  _status: "started" | "completed" | "failed" | "cancelled",
   _terminateReason?: string,
 ): void {
   return;

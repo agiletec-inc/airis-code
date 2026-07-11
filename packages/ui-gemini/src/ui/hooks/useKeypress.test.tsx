@@ -4,25 +4,25 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { act } from 'react';
-import { render } from '../../test-utils/render.js';
-import { useKeypress } from './useKeypress.js';
-import { KeypressProvider } from '../contexts/KeypressContext.js';
-import { useStdin } from 'ink';
-import { EventEmitter } from 'node:events';
-import type { Mock } from 'vitest';
+import { EventEmitter } from "node:events";
+import { useStdin } from "ink";
+import { act } from "react";
+import type { Mock } from "vitest";
+import { render } from "../../test-utils/render.js";
+import { KeypressProvider } from "../contexts/KeypressContext.js";
+import { useKeypress } from "./useKeypress.js";
 
 // Mock the 'ink' module to control stdin
-vi.mock('ink', async (importOriginal) => {
-  const original = await importOriginal<typeof import('ink')>();
+vi.mock("ink", async (importOriginal) => {
+  const original = await importOriginal<typeof import("ink")>();
   return {
     ...original,
     useStdin: vi.fn(),
   };
 });
 
-const PASTE_START = '\x1B[200~';
-const PASTE_END = '\x1B[201~';
+const PASTE_START = "\x1B[200~";
+const PASTE_END = "\x1B[201~";
 
 class MockStdin extends EventEmitter {
   isTTY = true;
@@ -34,7 +34,7 @@ class MockStdin extends EventEmitter {
   pause = vi.fn();
 
   write(text: string) {
-    this.emit('data', text);
+    this.emit("data", text);
   }
 }
 
@@ -70,48 +70,48 @@ describe(`useKeypress`, () => {
   });
 
   afterEach(() => {
-    Object.defineProperty(process.versions, 'node', {
+    Object.defineProperty(process.versions, "node", {
       value: originalNodeVersion,
       configurable: true,
     });
   });
 
-  it('should not listen if isActive is false', () => {
+  it("should not listen if isActive is false", () => {
     renderKeypressHook(false);
-    act(() => stdin.write('a'));
+    act(() => stdin.write("a"));
     expect(onKeypress).not.toHaveBeenCalled();
   });
 
   it.each([
-    { key: { name: 'a', sequence: 'a' } },
-    { key: { name: 'left', sequence: '\x1b[D' } },
-    { key: { name: 'right', sequence: '\x1b[C' } },
-    { key: { name: 'up', sequence: '\x1b[A' } },
-    { key: { name: 'down', sequence: '\x1b[B' } },
-    { key: { name: 'tab', sequence: '\x1b[Z', shift: true } },
-  ])('should listen for keypress when active for key $key.name', ({ key }) => {
+    { key: { name: "a", sequence: "a" } },
+    { key: { name: "left", sequence: "\x1b[D" } },
+    { key: { name: "right", sequence: "\x1b[C" } },
+    { key: { name: "up", sequence: "\x1b[A" } },
+    { key: { name: "down", sequence: "\x1b[B" } },
+    { key: { name: "tab", sequence: "\x1b[Z", shift: true } },
+  ])("should listen for keypress when active for key $key.name", ({ key }) => {
     renderKeypressHook(true);
     act(() => stdin.write(key.sequence));
     expect(onKeypress).toHaveBeenCalledWith(expect.objectContaining(key));
   });
 
-  it('should set and release raw mode', () => {
+  it("should set and release raw mode", () => {
     const { unmount } = renderKeypressHook(true);
     expect(mockSetRawMode).toHaveBeenCalledWith(true);
     unmount();
     expect(mockSetRawMode).toHaveBeenCalledWith(false);
   });
 
-  it('should stop listening after being unmounted', () => {
+  it("should stop listening after being unmounted", () => {
     const { unmount } = renderKeypressHook(true);
     unmount();
-    act(() => stdin.write('a'));
+    act(() => stdin.write("a"));
     expect(onKeypress).not.toHaveBeenCalled();
   });
 
-  it('should correctly identify alt+enter (meta key)', () => {
+  it("should correctly identify alt+enter (meta key)", () => {
     renderKeypressHook(true);
-    const key = { name: 'return', sequence: '\x1B\r' };
+    const key = { name: "return", sequence: "\x1B\r" };
     act(() => stdin.write(key.sequence));
     expect(onKeypress).toHaveBeenCalledWith(
       expect.objectContaining({ ...key, meta: true, paste: false }),
@@ -120,26 +120,26 @@ describe(`useKeypress`, () => {
 
   describe.each([
     {
-      description: 'PASTE_WORKAROUND true',
-      setup: () => vi.stubEnv('PASTE_WORKAROUND', 'true'),
+      description: "PASTE_WORKAROUND true",
+      setup: () => vi.stubEnv("PASTE_WORKAROUND", "true"),
     },
     {
-      description: 'PASTE_WORKAROUND false',
-      setup: () => vi.stubEnv('PASTE_WORKAROUND', 'false'),
+      description: "PASTE_WORKAROUND false",
+      setup: () => vi.stubEnv("PASTE_WORKAROUND", "false"),
     },
-  ])('in $description', ({ setup }) => {
+  ])("in $description", ({ setup }) => {
     beforeEach(() => {
       setup();
     });
 
-    it('should process a paste as a single event', () => {
+    it("should process a paste as a single event", () => {
       renderKeypressHook(true);
-      const pasteText = 'hello world';
+      const pasteText = "hello world";
       act(() => stdin.write(PASTE_START + pasteText + PASTE_END));
 
       expect(onKeypress).toHaveBeenCalledTimes(1);
       expect(onKeypress).toHaveBeenCalledWith({
-        name: '',
+        name: "",
         ctrl: false,
         meta: false,
         shift: false,
@@ -149,34 +149,30 @@ describe(`useKeypress`, () => {
       });
     });
 
-    it('should handle keypress interspersed with pastes', () => {
+    it("should handle keypress interspersed with pastes", () => {
       renderKeypressHook(true);
 
-      const keyA = { name: 'a', sequence: 'a' };
-      act(() => stdin.write('a'));
-      expect(onKeypress).toHaveBeenCalledWith(
-        expect.objectContaining({ ...keyA, paste: false }),
-      );
+      const keyA = { name: "a", sequence: "a" };
+      act(() => stdin.write("a"));
+      expect(onKeypress).toHaveBeenCalledWith(expect.objectContaining({ ...keyA, paste: false }));
 
-      const pasteText = 'pasted';
+      const pasteText = "pasted";
       act(() => stdin.write(PASTE_START + pasteText + PASTE_END));
       expect(onKeypress).toHaveBeenCalledWith(
         expect.objectContaining({ paste: true, sequence: pasteText }),
       );
 
-      const keyB = { name: 'b', sequence: 'b' };
-      act(() => stdin.write('b'));
-      expect(onKeypress).toHaveBeenCalledWith(
-        expect.objectContaining({ ...keyB, paste: false }),
-      );
+      const keyB = { name: "b", sequence: "b" };
+      act(() => stdin.write("b"));
+      expect(onKeypress).toHaveBeenCalledWith(expect.objectContaining({ ...keyB, paste: false }));
 
       expect(onKeypress).toHaveBeenCalledTimes(3);
     });
 
-    it('should handle lone pastes', () => {
+    it("should handle lone pastes", () => {
       renderKeypressHook(true);
 
-      const pasteText = 'pasted';
+      const pasteText = "pasted";
       act(() => {
         stdin.write(PASTE_START);
         stdin.write(pasteText);
@@ -189,37 +185,26 @@ describe(`useKeypress`, () => {
       expect(onKeypress).toHaveBeenCalledTimes(1);
     });
 
-    it('should handle paste false alarm', async () => {
+    it("should handle paste false alarm", async () => {
       renderKeypressHook(true);
 
       act(() => {
         stdin.write(PASTE_START.slice(0, 5));
-        stdin.write('do');
+        stdin.write("do");
       });
 
-      expect(onKeypress).toHaveBeenCalledWith(
-        expect.objectContaining({ sequence: '\x1B[200d' }),
-      );
-      expect(onKeypress).toHaveBeenCalledWith(
-        expect.objectContaining({ sequence: 'o' }),
-      );
+      expect(onKeypress).toHaveBeenCalledWith(expect.objectContaining({ sequence: "\x1B[200d" }));
+      expect(onKeypress).toHaveBeenCalledWith(expect.objectContaining({ sequence: "o" }));
       expect(onKeypress).toHaveBeenCalledTimes(2);
     });
 
-    it('should handle back to back pastes', () => {
+    it("should handle back to back pastes", () => {
       renderKeypressHook(true);
 
-      const pasteText1 = 'herp';
-      const pasteText2 = 'derp';
+      const pasteText1 = "herp";
+      const pasteText2 = "derp";
       act(() => {
-        stdin.write(
-          PASTE_START +
-            pasteText1 +
-            PASTE_END +
-            PASTE_START +
-            pasteText2 +
-            PASTE_END,
-        );
+        stdin.write(PASTE_START + pasteText1 + PASTE_END + PASTE_START + pasteText2 + PASTE_END);
       });
       expect(onKeypress).toHaveBeenCalledWith(
         expect.objectContaining({ paste: true, sequence: pasteText1 }),
@@ -231,16 +216,14 @@ describe(`useKeypress`, () => {
       expect(onKeypress).toHaveBeenCalledTimes(2);
     });
 
-    it('should handle pastes split across writes', async () => {
+    it("should handle pastes split across writes", async () => {
       renderKeypressHook(true);
 
-      const keyA = { name: 'a', sequence: 'a' };
-      act(() => stdin.write('a'));
-      expect(onKeypress).toHaveBeenCalledWith(
-        expect.objectContaining({ ...keyA, paste: false }),
-      );
+      const keyA = { name: "a", sequence: "a" };
+      act(() => stdin.write("a"));
+      expect(onKeypress).toHaveBeenCalledWith(expect.objectContaining({ ...keyA, paste: false }));
 
-      const pasteText = 'pasted';
+      const pasteText = "pasted";
       await act(async () => {
         stdin.write(PASTE_START.slice(0, 3));
         vi.advanceTimersByTime(40);
@@ -254,11 +237,9 @@ describe(`useKeypress`, () => {
         expect.objectContaining({ paste: true, sequence: pasteText }),
       );
 
-      const keyB = { name: 'b', sequence: 'b' };
-      act(() => stdin.write('b'));
-      expect(onKeypress).toHaveBeenCalledWith(
-        expect.objectContaining({ ...keyB, paste: false }),
-      );
+      const keyB = { name: "b", sequence: "b" };
+      act(() => stdin.write("b"));
+      expect(onKeypress).toHaveBeenCalledWith(expect.objectContaining({ ...keyB, paste: false }));
 
       expect(onKeypress).toHaveBeenCalledTimes(3);
     });

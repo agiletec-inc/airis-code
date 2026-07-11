@@ -4,26 +4,18 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import {
-  BaseDeclarativeTool,
-  Kind,
-  type ToolInvocation,
-  type ToolResult,
-} from '../tools/tools.js';
-import type { Config } from '../config/config.js';
-import type { AgentDefinition, AgentInputs } from './types.js';
-import { convertInputConfigToJsonSchema } from './schema-utils.js';
-import { SubagentInvocation } from './invocation.js';
-import type { MessageBus } from '../confirmation-bus/message-bus.js';
+import type { Config } from "../config/config.js";
+import type { MessageBus } from "../confirmation-bus/message-bus.js";
+import { BaseDeclarativeTool, Kind, type ToolInvocation, type ToolResult } from "../tools/tools.js";
+import { SubagentInvocation } from "./invocation.js";
+import { convertInputConfigToJsonSchema } from "./schema-utils.js";
+import type { AgentDefinition, AgentInputs } from "./types.js";
 
 /**
  * A tool wrapper that dynamically exposes a subagent as a standard,
  * strongly-typed `DeclarativeTool`.
  */
-export class SubagentToolWrapper extends BaseDeclarativeTool<
-  AgentInputs,
-  ToolResult
-> {
+export class SubagentToolWrapper extends BaseDeclarativeTool<AgentInputs, ToolResult> {
   /**
    * Constructs the tool wrapper.
    *
@@ -40,9 +32,7 @@ export class SubagentToolWrapper extends BaseDeclarativeTool<
     messageBus?: MessageBus,
   ) {
     // Dynamically generate the JSON schema required for the tool definition.
-    const parameterSchema = convertInputConfigToJsonSchema(
-      definition.inputConfig,
-    );
+    const parameterSchema = convertInputConfigToJsonSchema(definition.inputConfig);
 
     super(
       definition.name,
@@ -65,14 +55,7 @@ export class SubagentToolWrapper extends BaseDeclarativeTool<
    * @param params The validated input parameters from the parent agent's call.
    * @returns A `ToolInvocation` instance ready for execution.
    */
-  protected createInvocation(
-    params: AgentInputs,
-  ): ToolInvocation<AgentInputs, ToolResult> {
-    return new SubagentInvocation(
-      params,
-      this.definition,
-      this.config,
-      this.messageBus,
-    );
+  protected createInvocation(params: AgentInputs): ToolInvocation<AgentInputs, ToolResult> {
+    return new SubagentInvocation(params, this.definition, this.config, this.messageBus);
   }
 }

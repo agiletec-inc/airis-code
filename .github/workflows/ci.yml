@@ -1,19 +1,17 @@
 name: CI
-
 on:
-  push:
-    branches: [main]
   pull_request:
-    branches: [main]
-  workflow_dispatch:
-
+  merge_group:
 concurrency:
   group: ci-${{ github.ref }}
   cancel-in-progress: true
-
 jobs:
+  secret-scan:
+    uses: agiletec-inc/.github/.github/workflows/secret-scan.yml@main
   ci:
     uses: agiletec-inc/.github/.github/workflows/node-pnpm-ci.yml@main
     with:
-      node-version: '22'
+      # Fork-in-progress (Qwen Code): keep the deliberate turbo-scoped gate.
+      # Full baseline (typecheck/audit/whole-repo lint) deferred until the
+      # dormant Layer 2 packages are removed.
       run-command: pnpm turbo run build lint test

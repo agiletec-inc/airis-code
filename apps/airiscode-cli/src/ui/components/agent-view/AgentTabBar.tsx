@@ -18,17 +18,17 @@
  * Tab indicators:  running,  idle/completed,  failed,  cancelled
  */
 
-import { Box, Text } from 'ink';
-import { useState, useEffect, useCallback } from 'react';
-import { AgentStatus, AgentEventType } from '@airiscode/runtime';
+import { AgentEventType, AgentStatus } from "@airiscode/runtime";
+import { Box, Text } from "ink";
+import { useCallback, useEffect, useState } from "react";
 import {
-  useAgentViewState,
-  useAgentViewActions,
   type RegisteredAgent,
-} from '../../contexts/AgentViewContext.js';
-import { useKeypress } from '../../hooks/useKeypress.js';
-import { useUIState } from '../../contexts/UIStateContext.js';
-import { theme } from '../../semantic-colors.js';
+  useAgentViewActions,
+  useAgentViewState,
+} from "../../contexts/AgentViewContext.js";
+import { useUIState } from "../../contexts/UIStateContext.js";
+import { useKeypress } from "../../hooks/useKeypress.js";
+import { theme } from "../../semantic-colors.js";
 
 // ─── Status Indicators ──────────────────────────────────────
 
@@ -40,27 +40,25 @@ function statusIndicator(agent: RegisteredAgent): {
   switch (status) {
     case AgentStatus.RUNNING:
     case AgentStatus.INITIALIZING:
-      return { symbol: '\u25CF', color: theme.status.warning }; // ● running
+      return { symbol: "\u25CF", color: theme.status.warning }; // ● running
     case AgentStatus.IDLE:
-      return { symbol: '\u25CF', color: theme.status.success }; // ● idle (ready)
+      return { symbol: "\u25CF", color: theme.status.success }; // ● idle (ready)
     case AgentStatus.COMPLETED:
-      return { symbol: '\u2713', color: theme.status.success }; // ✓ completed
+      return { symbol: "\u2713", color: theme.status.success }; // ✓ completed
     case AgentStatus.FAILED:
-      return { symbol: '\u2717', color: theme.status.error }; // ✗ failed
+      return { symbol: "\u2717", color: theme.status.error }; // ✗ failed
     case AgentStatus.CANCELLED:
-      return { symbol: '\u25CB', color: theme.text.secondary }; // ○ cancelled
+      return { symbol: "\u25CB", color: theme.text.secondary }; // ○ cancelled
     default:
-      return { symbol: '\u25CB', color: theme.text.secondary }; // ○ fallback
+      return { symbol: "\u25CB", color: theme.text.secondary }; // ○ fallback
   }
 }
 
 // ─── Component ──────────────────────────────────────────────
 
 export const AgentTabBar: React.FC = () => {
-  const { activeView, agents, agentShellFocused, agentTabBarFocused } =
-    useAgentViewState();
-  const { switchToNext, switchToPrevious, setAgentTabBarFocused } =
-    useAgentViewActions();
+  const { activeView, agents, agentShellFocused, agentTabBarFocused } = useAgentViewState();
+  const { switchToNext, switchToPrevious, setAgentTabBarFocused } = useAgentViewActions();
   const { embeddedShellFocused } = useUIState();
 
   useKeypress(
@@ -68,18 +66,13 @@ export const AgentTabBar: React.FC = () => {
       if (embeddedShellFocused || agentShellFocused) return;
       if (!agentTabBarFocused) return;
 
-      if (key.name === 'left') {
+      if (key.name === "left") {
         switchToPrevious();
-      } else if (key.name === 'right') {
+      } else if (key.name === "right") {
         switchToNext();
-      } else if (key.name === 'up') {
+      } else if (key.name === "up") {
         setAgentTabBarFocused(false);
-      } else if (
-        key.sequence &&
-        key.sequence.length === 1 &&
-        !key.ctrl &&
-        !key.meta
-      ) {
+      } else if (key.sequence && key.sequence.length === 1 && !key.ctrl && !key.meta) {
         // Printable character → return focus to input (key falls through
         // to BaseTextInput's useKeypress and gets typed normally)
         setAgentTabBarFocused(false);
@@ -100,9 +93,7 @@ export const AgentTabBar: React.FC = () => {
       const emitter = agent.interactiveAgent.getEventEmitter();
       if (emitter) {
         emitter.on(AgentEventType.STATUS_CHANGE, forceRender);
-        cleanups.push(() =>
-          emitter.off(AgentEventType.STATUS_CHANGE, forceRender),
-        );
+        cleanups.push(() => emitter.off(AgentEventType.STATUS_CHANGE, forceRender));
       }
     }
     return () => cleanups.forEach((fn) => fn());
@@ -111,29 +102,25 @@ export const AgentTabBar: React.FC = () => {
   const isFocused = agentTabBarFocused;
 
   // Navigation hint varies by context
-  const hint = isFocused ? '\u2190/\u2192 switch  \u2191 input' : '\u2193 tabs';
+  const hint = isFocused ? "\u2190/\u2192 switch  \u2191 input" : "\u2193 tabs";
 
   return (
     <Box flexDirection="row" paddingX={1}>
       {/* Main tab */}
       <Box marginRight={1}>
         <Text
-          bold={activeView === 'main'}
+          bold={activeView === "main"}
           dimColor={!isFocused}
-          backgroundColor={
-            activeView === 'main' ? theme.border.default : undefined
-          }
-          color={
-            activeView === 'main' ? theme.text.primary : theme.text.secondary
-          }
+          backgroundColor={activeView === "main" ? theme.border.default : undefined}
+          color={activeView === "main" ? theme.text.primary : theme.text.secondary}
         >
-          {' Main '}
+          {" Main "}
         </Text>
       </Box>
 
       {/* Separator */}
       <Text dimColor={!isFocused} color={theme.border.default}>
-        {'\u2502'}
+        {"\u2502"}
       </Text>
 
       {/* Agent tabs */}

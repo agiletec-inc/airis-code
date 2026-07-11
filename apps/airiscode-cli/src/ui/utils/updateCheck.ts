@@ -4,13 +4,13 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import type { UpdateInfo } from 'update-notifier';
-import updateNotifier from 'update-notifier';
-import semver from 'semver';
-import { getPackageJson } from '../../utils/package.js';
-import { createDebugLogger } from '@airiscode/runtime';
+import { createDebugLogger } from "@airiscode/runtime";
+import semver from "semver";
+import type { UpdateInfo } from "update-notifier";
+import updateNotifier from "update-notifier";
+import { getPackageJson } from "../../utils/package.js";
 
-const debugLogger = createDebugLogger('UPDATE_CHECK');
+const debugLogger = createDebugLogger("UPDATE_CHECK");
 
 export const FETCH_TIMEOUT_MS = 2000;
 
@@ -23,19 +23,14 @@ export interface UpdateObject {
  * From a nightly and stable update, determines which is the "best" one to offer.
  * The rule is to always prefer nightly if the base versions are the same.
  */
-function getBestAvailableUpdate(
-  nightly?: UpdateInfo,
-  stable?: UpdateInfo,
-): UpdateInfo | null {
+function getBestAvailableUpdate(nightly?: UpdateInfo, stable?: UpdateInfo): UpdateInfo | null {
   if (!nightly) return stable || null;
   if (!stable) return nightly || null;
 
   const nightlyVer = nightly.latest;
   const stableVer = stable.latest;
 
-  if (
-    semver.coerce(stableVer)?.version === semver.coerce(nightlyVer)?.version
-  ) {
+  if (semver.coerce(stableVer)?.version === semver.coerce(nightlyVer)?.version) {
     return nightly;
   }
 
@@ -45,7 +40,7 @@ function getBestAvailableUpdate(
 export async function checkForUpdates(): Promise<UpdateObject | null> {
   try {
     // Skip update check when running from source (development mode)
-    if (process.env['DEV'] === 'true') {
+    if (process.env["DEV"] === "true") {
       return null;
     }
     const packageJson = await getPackageJson();
@@ -54,8 +49,8 @@ export async function checkForUpdates(): Promise<UpdateObject | null> {
     }
 
     const { name, version: currentVersion } = packageJson;
-    const isNightly = currentVersion.includes('nightly');
-    const createNotifier = (distTag: 'latest' | 'nightly') =>
+    const isNightly = currentVersion.includes("nightly");
+    const createNotifier = (distTag: "latest" | "nightly") =>
       updateNotifier({
         pkg: {
           name,
@@ -68,14 +63,11 @@ export async function checkForUpdates(): Promise<UpdateObject | null> {
 
     if (isNightly) {
       const [nightlyUpdateInfo, latestUpdateInfo] = await Promise.all([
-        createNotifier('nightly').fetchInfo(),
-        createNotifier('latest').fetchInfo(),
+        createNotifier("nightly").fetchInfo(),
+        createNotifier("latest").fetchInfo(),
       ]);
 
-      const bestUpdate = getBestAvailableUpdate(
-        nightlyUpdateInfo,
-        latestUpdateInfo,
-      );
+      const bestUpdate = getBestAvailableUpdate(nightlyUpdateInfo, latestUpdateInfo);
 
       if (bestUpdate && semver.gt(bestUpdate.latest, currentVersion)) {
         const message = `A new version of AIRIS Code is available! ${currentVersion} → ${bestUpdate.latest}`;
@@ -85,7 +77,7 @@ export async function checkForUpdates(): Promise<UpdateObject | null> {
         };
       }
     } else {
-      const updateInfo = await createNotifier('latest').fetchInfo();
+      const updateInfo = await createNotifier("latest").fetchInfo();
 
       if (updateInfo && semver.gt(updateInfo.latest, currentVersion)) {
         const message = `AIRIS Code update available! ${currentVersion} → ${updateInfo.latest}`;
@@ -98,7 +90,7 @@ export async function checkForUpdates(): Promise<UpdateObject | null> {
 
     return null;
   } catch (e) {
-    debugLogger.warn('Failed to check for updates: ' + e);
+    debugLogger.warn("Failed to check for updates: " + e);
     return null;
   }
 }

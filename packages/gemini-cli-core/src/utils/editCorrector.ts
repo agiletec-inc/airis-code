@@ -4,24 +4,21 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import type { Content } from '@google/genai';
-import type { GeminiClient } from '../core/client.js';
-import type { BaseLlmClient } from '../core/baseLlmClient.js';
-import type { EditToolParams } from '../tools/edit.js';
+import * as fs from "node:fs";
+import type { Content } from "@google/genai";
+import type { BaseLlmClient } from "../core/baseLlmClient.js";
+import type { GeminiClient } from "../core/client.js";
+import type { EditToolParams } from "../tools/edit.js";
 import {
   EDIT_TOOL_NAME,
   GREP_TOOL_NAME,
   READ_FILE_TOOL_NAME,
   READ_MANY_FILES_TOOL_NAME,
   WRITE_FILE_TOOL_NAME,
-} from '../tools/tool-names.js';
-import { LruCache } from './LruCache.js';
-import {
-  isFunctionResponse,
-  isFunctionCall,
-} from '../utils/messageInspectors.js';
-import * as fs from 'node:fs';
-import { promptIdContext } from './promptIdContext.js';
+} from "../tools/tool-names.js";
+import { isFunctionCall, isFunctionResponse } from "../utils/messageInspectors.js";
+import { LruCache } from "./LruCache.js";
+import { promptIdContext } from "./promptIdContext.js";
 
 const CODE_CORRECTION_SYSTEM_PROMPT = `
 You are an expert code-editing assistant. Your task is to analyze a failed edit attempt and provide a corrected version of the text snippets.
@@ -38,9 +35,7 @@ function getPromptId(): string {
 const MAX_CACHE_SIZE = 50;
 
 // Cache for ensureCorrectEdit results
-const editCorrectionCache = new LruCache<string, CorrectedEditResult>(
-  MAX_CACHE_SIZE,
-);
+const editCorrectionCache = new LruCache<string, CorrectedEditResult>(MAX_CACHE_SIZE);
 
 // Cache for ensureCorrectFileContent results
 const fileContentCorrectionCache = new LruCache<string, string>(MAX_CACHE_SIZE);
@@ -69,7 +64,7 @@ export interface CorrectedEditResult {
  * @returns -1 if the timestamp could not be extracted, else the timestamp (as a number)
  */
 function getTimestampFromFunctionId(fcnId: string): number {
-  const idParts = fcnId.split('-');
+  const idParts = fcnId.split("-");
   if (idParts.length > 2) {
     const timestamp = parseInt(idParts[1], 10);
     if (!isNaN(timestamp)) {
@@ -86,10 +81,7 @@ function getTimestampFromFunctionId(fcnId: string): number {
  * @param client the geminiClient, so that we can get the history
  * @returns a DateTime (as a number) of when the last edit occurred, or -1 if no edit was found.
  */
-async function findLastEditTimestamp(
-  filePath: string,
-  client: GeminiClient,
-): Promise<number> {
+async function findLastEditTimestamp(filePath: string, client: GeminiClient): Promise<number> {
   const history = (await client.getHistory()) ?? [];
 
   // Tools that may reference the file path in their FunctionResponse `output`.
@@ -126,9 +118,9 @@ async function findLastEditTimestamp(
         toolsInResp.has(part.functionResponse.name)
       ) {
         const { response } = part.functionResponse;
-        if (response && !('error' in response) && 'output' in response) {
+        if (response && !("error" in response) && "output" in response) {
           id = part.functionResponse.id;
-          content = response['output'];
+          content = response["output"];
         }
       }
 
@@ -140,8 +132,8 @@ async function findLastEditTimestamp(
       // as the best guess to if error/failed occurred with the response.
       const stringified = JSON.stringify(content);
       if (
-        !stringified.includes('Error') && // only applicable for functionResponse
-        !stringified.includes('Failed') && // only applicable for functionResponse
+        !stringified.includes("Error") && // only applicable for functionResponse
+        !stringified.includes("Failed") && // only applicable for functionResponse
         stringified.includes(filePath)
       ) {
         return getTimestampFromFunctionId(id);
@@ -179,8 +171,7 @@ export async function ensureCorrectEdit(
 
   let finalNewString = originalParams.new_string;
   const newStringPotentiallyEscaped =
-    unescapeStringForGeminiBug(originalParams.new_string) !==
-    originalParams.new_string;
+    unescapeStringForGeminiBug(originalParams.new_string) !== originalParams.new_string;
 
   const expectedReplacements = originalParams.expected_replacements ?? 1;
 
@@ -228,9 +219,7 @@ export async function ensureCorrectEdit(
     return result;
   } else {
     // occurrences is 0 or some other unexpected state initially
-    const unescapedOldStringAttempt = unescapeStringForGeminiBug(
-      originalParams.old_string,
-    );
+    const unescapedOldStringAttempt = unescapeStringForGeminiBug(originalParams.old_string);
     occurrences = countOccurrences(currentContent, unescapedOldStringAttempt);
 
     if (occurrences === expectedReplacements) {
@@ -249,10 +238,7 @@ export async function ensureCorrectEdit(
         // In order to keep from clobbering edits made outside our system,
         // let's check if there was a more recent edit to the file than what
         // our system has done
-        const lastEditedByUsTime = await findLastEditTimestamp(
-          filePath,
-          geminiClient,
-        );
+        const lastEditedByUsTime = await findLastEditTimestamp(filePath, geminiClient);
 
         // Add a 1-second buffer to account for timing inaccuracies. If the file
         // was modified more than a second after the last edit tool was run, we
@@ -279,10 +265,7 @@ export async function ensureCorrectEdit(
         unescapedOldStringAttempt,
         abortSignal,
       );
-      const llmOldOccurrences = countOccurrences(
-        currentContent,
-        llmCorrectedOldString,
-      );
+      const llmOldOccurrences = countOccurrences(currentContent, llmCorrectedOldString);
 
       if (llmOldOccurrences === expectedReplacements) {
         finalOldString = llmCorrectedOldString;
@@ -352,33 +335,28 @@ export async function ensureCorrectFileContent(
     return cachedResult;
   }
 
-  const contentPotentiallyEscaped =
-    unescapeStringForGeminiBug(content) !== content;
+  const contentPotentiallyEscaped = unescapeStringForGeminiBug(content) !== content;
   if (!contentPotentiallyEscaped) {
     fileContentCorrectionCache.set(content, content);
     return content;
   }
 
-  const correctedContent = await correctStringEscaping(
-    content,
-    baseLlmClient,
-    abortSignal,
-  );
+  const correctedContent = await correctStringEscaping(content, baseLlmClient, abortSignal);
   fileContentCorrectionCache.set(content, correctedContent);
   return correctedContent;
 }
 
 // Define the expected JSON schema for the LLM response for old_string correction
 const OLD_STRING_CORRECTION_SCHEMA: Record<string, unknown> = {
-  type: 'object',
+  type: "object",
   properties: {
     corrected_target_snippet: {
-      type: 'string',
+      type: "string",
       description:
-        'The corrected version of the target snippet that exactly and uniquely matches a segment within the provided file content.',
+        "The corrected version of the target snippet that exactly and uniquely matches a segment within the provided file content.",
     },
   },
-  required: ['corrected_target_snippet'],
+  required: ["corrected_target_snippet"],
 };
 
 export async function correctOldStringMismatch(
@@ -402,17 +380,17 @@ File Content:
 ${fileContent}
 \`\`\`
 
-For example, if the problematic target snippet was "\\\\\\nconst greeting = \`Hello \\\\\`\${name}\\\\\`\`;" and the file content had content that looked like "\nconst greeting = \`Hello ${'\\`'}\${name}${'\\`'}\`;", then corrected_target_snippet should likely be "\nconst greeting = \`Hello ${'\\`'}\${name}${'\\`'}\`;" to fix the incorrect escaping to match the original file content.
+For example, if the problematic target snippet was "\\\\\\nconst greeting = \`Hello \\\\\`\${name}\\\\\`\`;" and the file content had content that looked like "\nconst greeting = \`Hello ${"\\`"}\${name}${"\\`"}\`;", then corrected_target_snippet should likely be "\nconst greeting = \`Hello ${"\\`"}\${name}${"\\`"}\`;" to fix the incorrect escaping to match the original file content.
 If the differences are only in whitespace or formatting, apply similar whitespace/formatting changes to the corrected_target_snippet.
 
 Return ONLY the corrected target snippet in the specified JSON format with the key 'corrected_target_snippet'. If no clear, unique match can be found, return an empty string for 'corrected_target_snippet'.
 `.trim();
 
-  const contents: Content[] = [{ role: 'user', parts: [{ text: prompt }] }];
+  const contents: Content[] = [{ role: "user", parts: [{ text: prompt }] }];
 
   try {
     const result = await baseLlmClient.generateJson({
-      modelConfigKey: { model: 'edit-corrector' },
+      modelConfigKey: { model: "edit-corrector" },
       contents,
       schema: OLD_STRING_CORRECTION_SCHEMA,
       abortSignal,
@@ -422,10 +400,10 @@ Return ONLY the corrected target snippet in the specified JSON format with the k
 
     if (
       result &&
-      typeof result['corrected_target_snippet'] === 'string' &&
-      result['corrected_target_snippet'].length > 0
+      typeof result["corrected_target_snippet"] === "string" &&
+      result["corrected_target_snippet"].length > 0
     ) {
-      return result['corrected_target_snippet'];
+      return result["corrected_target_snippet"];
     } else {
       return problematicSnippet;
     }
@@ -434,10 +412,7 @@ Return ONLY the corrected target snippet in the specified JSON format with the k
       throw error;
     }
 
-    console.error(
-      'Error during LLM call for old string snippet correction:',
-      error,
-    );
+    console.error("Error during LLM call for old string snippet correction:", error);
 
     return problematicSnippet;
   }
@@ -445,15 +420,15 @@ Return ONLY the corrected target snippet in the specified JSON format with the k
 
 // Define the expected JSON schema for the new_string correction LLM response
 const NEW_STRING_CORRECTION_SCHEMA: Record<string, unknown> = {
-  type: 'object',
+  type: "object",
   properties: {
     corrected_new_string: {
-      type: 'string',
+      type: "string",
       description:
-        'The original_new_string adjusted to be a suitable replacement for the corrected_old_string, while maintaining the original intent of the change.',
+        "The original_new_string adjusted to be a suitable replacement for the corrected_old_string, while maintaining the original intent of the change.",
     },
   },
-  required: ['corrected_new_string'],
+  required: ["corrected_new_string"],
 };
 
 /**
@@ -491,17 +466,17 @@ ${originalNewString}
 
 Task: Based on the differences between original_old_string and corrected_old_string, and the content of original_new_string, generate a corrected_new_string. This corrected_new_string should be what original_new_string would have been if it was designed to replace corrected_old_string directly, while maintaining the spirit of the original transformation.
 
-For example, if original_old_string was "\\\\\\nconst greeting = \`Hello \\\\\`\${name}\\\\\`\`;" and corrected_old_string is "\nconst greeting = \`Hello ${'\\`'}\${name}${'\\`'}\`;", and original_new_string was "\\\\\\nconst greeting = \`Hello \\\\\`\${name} \${lastName}\\\\\`\`;", then corrected_new_string should likely be "\nconst greeting = \`Hello ${'\\`'}\${name} \${lastName}${'\\`'}\`;" to fix the incorrect escaping.
+For example, if original_old_string was "\\\\\\nconst greeting = \`Hello \\\\\`\${name}\\\\\`\`;" and corrected_old_string is "\nconst greeting = \`Hello ${"\\`"}\${name}${"\\`"}\`;", and original_new_string was "\\\\\\nconst greeting = \`Hello \\\\\`\${name} \${lastName}\\\\\`\`;", then corrected_new_string should likely be "\nconst greeting = \`Hello ${"\\`"}\${name} \${lastName}${"\\`"}\`;" to fix the incorrect escaping.
 If the differences are only in whitespace or formatting, apply similar whitespace/formatting changes to the corrected_new_string.
 
 Return ONLY the corrected string in the specified JSON format with the key 'corrected_new_string'. If no adjustment is deemed necessary or possible, return the original_new_string.
   `.trim();
 
-  const contents: Content[] = [{ role: 'user', parts: [{ text: prompt }] }];
+  const contents: Content[] = [{ role: "user", parts: [{ text: prompt }] }];
 
   try {
     const result = await baseLlmClient.generateJson({
-      modelConfigKey: { model: 'edit-corrector' },
+      modelConfigKey: { model: "edit-corrector" },
       contents,
       schema: NEW_STRING_CORRECTION_SCHEMA,
       abortSignal,
@@ -511,10 +486,10 @@ Return ONLY the corrected string in the specified JSON format with the key 'corr
 
     if (
       result &&
-      typeof result['corrected_new_string'] === 'string' &&
-      result['corrected_new_string'].length > 0
+      typeof result["corrected_new_string"] === "string" &&
+      result["corrected_new_string"].length > 0
     ) {
-      return result['corrected_new_string'];
+      return result["corrected_new_string"];
     } else {
       return originalNewString;
     }
@@ -523,21 +498,21 @@ Return ONLY the corrected string in the specified JSON format with the key 'corr
       throw error;
     }
 
-    console.error('Error during LLM call for new_string correction:', error);
+    console.error("Error during LLM call for new_string correction:", error);
     return originalNewString;
   }
 }
 
 const CORRECT_NEW_STRING_ESCAPING_SCHEMA: Record<string, unknown> = {
-  type: 'object',
+  type: "object",
   properties: {
     corrected_new_string_escaping: {
-      type: 'string',
+      type: "string",
       description:
-        'The new_string with corrected escaping, ensuring it is a proper replacement for the old_string, especially considering potential over-escaping issues from previous LLM generations.',
+        "The new_string with corrected escaping, ensuring it is a proper replacement for the old_string, especially considering potential over-escaping issues from previous LLM generations.",
     },
   },
-  required: ['corrected_new_string_escaping'],
+  required: ["corrected_new_string_escaping"],
 };
 
 export async function correctNewStringEscaping(
@@ -567,11 +542,11 @@ If potentially_problematic_new_string is console.log(\\"Hello World\\"), it shou
 Return ONLY the corrected string in the specified JSON format with the key 'corrected_new_string_escaping'. If no escaping correction is needed, return the original potentially_problematic_new_string.
   `.trim();
 
-  const contents: Content[] = [{ role: 'user', parts: [{ text: prompt }] }];
+  const contents: Content[] = [{ role: "user", parts: [{ text: prompt }] }];
 
   try {
     const result = await baseLlmClient.generateJson({
-      modelConfigKey: { model: 'edit-corrector' },
+      modelConfigKey: { model: "edit-corrector" },
       contents,
       schema: CORRECT_NEW_STRING_ESCAPING_SCHEMA,
       abortSignal,
@@ -581,10 +556,10 @@ Return ONLY the corrected string in the specified JSON format with the key 'corr
 
     if (
       result &&
-      typeof result['corrected_new_string_escaping'] === 'string' &&
-      result['corrected_new_string_escaping'].length > 0
+      typeof result["corrected_new_string_escaping"] === "string" &&
+      result["corrected_new_string_escaping"].length > 0
     ) {
-      return result['corrected_new_string_escaping'];
+      return result["corrected_new_string_escaping"];
     } else {
       return potentiallyProblematicNewString;
     }
@@ -593,24 +568,21 @@ Return ONLY the corrected string in the specified JSON format with the key 'corr
       throw error;
     }
 
-    console.error(
-      'Error during LLM call for new_string escaping correction:',
-      error,
-    );
+    console.error("Error during LLM call for new_string escaping correction:", error);
     return potentiallyProblematicNewString;
   }
 }
 
 const CORRECT_STRING_ESCAPING_SCHEMA: Record<string, unknown> = {
-  type: 'object',
+  type: "object",
   properties: {
     corrected_string_escaping: {
-      type: 'string',
+      type: "string",
       description:
-        'The string with corrected escaping, ensuring it is valid, specially considering potential over-escaping issues from previous LLM generations.',
+        "The string with corrected escaping, ensuring it is valid, specially considering potential over-escaping issues from previous LLM generations.",
     },
   },
-  required: ['corrected_string_escaping'],
+  required: ["corrected_string_escaping"],
 };
 
 export async function correctStringEscaping(
@@ -634,11 +606,11 @@ If potentially_problematic_string is console.log(\\"Hello World\\"), it should b
 Return ONLY the corrected string in the specified JSON format with the key 'corrected_string_escaping'. If no escaping correction is needed, return the original potentially_problematic_string.
   `.trim();
 
-  const contents: Content[] = [{ role: 'user', parts: [{ text: prompt }] }];
+  const contents: Content[] = [{ role: "user", parts: [{ text: prompt }] }];
 
   try {
     const result = await baseLlmClient.generateJson({
-      modelConfigKey: { model: 'edit-corrector' },
+      modelConfigKey: { model: "edit-corrector" },
       contents,
       schema: CORRECT_STRING_ESCAPING_SCHEMA,
       abortSignal,
@@ -648,10 +620,10 @@ Return ONLY the corrected string in the specified JSON format with the key 'corr
 
     if (
       result &&
-      typeof result['corrected_string_escaping'] === 'string' &&
-      result['corrected_string_escaping'].length > 0
+      typeof result["corrected_string_escaping"] === "string" &&
+      result["corrected_string_escaping"].length > 0
     ) {
-      return result['corrected_string_escaping'];
+      return result["corrected_string_escaping"];
     } else {
       return potentiallyProblematicString;
     }
@@ -660,10 +632,7 @@ Return ONLY the corrected string in the specified JSON format with the key 'corr
       throw error;
     }
 
-    console.error(
-      'Error during LLM call for string escaping correction:',
-      error,
-    );
+    console.error("Error during LLM call for string escaping correction:", error);
     return potentiallyProblematicString;
   }
 }
@@ -676,10 +645,7 @@ function trimPairIfPossible(
 ) {
   const trimmedTargetString = target.trim();
   if (target.length !== trimmedTargetString.length) {
-    const trimmedTargetOccurrences = countOccurrences(
-      currentContent,
-      trimmedTargetString,
-    );
+    const trimmedTargetOccurrences = countOccurrences(currentContent, trimmedTargetString);
 
     if (trimmedTargetOccurrences === expectedReplacements) {
       const trimmedReactiveString = trimIfTargetTrims.trim();
@@ -710,43 +676,40 @@ export function unescapeStringForGeminiBug(inputString: string): string {
   //        string might have something like "\\\n" (a literal backslash followed by a newline).
   // g : Global flag, to replace all occurrences.
 
-  return inputString.replace(
-    /\\+(n|t|r|'|"|`|\\|\n)/g,
-    (match, capturedChar) => {
-      // 'match' is the entire erroneous sequence, e.g., if the input (in memory) was "\\\\`", match is "\\\\`".
-      // 'capturedChar' is the character that determines the true meaning, e.g., '`'.
+  return inputString.replace(/\\+(n|t|r|'|"|`|\\|\n)/g, (match, capturedChar) => {
+    // 'match' is the entire erroneous sequence, e.g., if the input (in memory) was "\\\\`", match is "\\\\`".
+    // 'capturedChar' is the character that determines the true meaning, e.g., '`'.
 
-      switch (capturedChar) {
-        case 'n':
-          return '\n'; // Correctly escaped: \n (newline character)
-        case 't':
-          return '\t'; // Correctly escaped: \t (tab character)
-        case 'r':
-          return '\r'; // Correctly escaped: \r (carriage return character)
-        case "'":
-          return "'"; // Correctly escaped: ' (apostrophe character)
-        case '"':
-          return '"'; // Correctly escaped: " (quotation mark character)
-        case '`':
-          return '`'; // Correctly escaped: ` (backtick character)
-        case '\\': // This handles when 'capturedChar' is a literal backslash
-          return '\\'; // Replace escaped backslash (e.g., "\\\\") with single backslash
-        case '\n': // This handles when 'capturedChar' is an actual newline
-          return '\n'; // Replace the whole erroneous sequence (e.g., "\\\n" in memory) with a clean newline
-        default:
-          // This fallback should ideally not be reached if the regex captures correctly.
-          // It would return the original matched sequence if an unexpected character was captured.
-          return match;
-      }
-    },
-  );
+    switch (capturedChar) {
+      case "n":
+        return "\n"; // Correctly escaped: \n (newline character)
+      case "t":
+        return "\t"; // Correctly escaped: \t (tab character)
+      case "r":
+        return "\r"; // Correctly escaped: \r (carriage return character)
+      case "'":
+        return "'"; // Correctly escaped: ' (apostrophe character)
+      case '"':
+        return '"'; // Correctly escaped: " (quotation mark character)
+      case "`":
+        return "`"; // Correctly escaped: ` (backtick character)
+      case "\\": // This handles when 'capturedChar' is a literal backslash
+        return "\\"; // Replace escaped backslash (e.g., "\\\\") with single backslash
+      case "\n": // This handles when 'capturedChar' is an actual newline
+        return "\n"; // Replace the whole erroneous sequence (e.g., "\\\n" in memory) with a clean newline
+      default:
+        // This fallback should ideally not be reached if the regex captures correctly.
+        // It would return the original matched sequence if an unexpected character was captured.
+        return match;
+    }
+  });
 }
 
 /**
  * Counts occurrences of a substring in a string
  */
 export function countOccurrences(str: string, substr: string): number {
-  if (substr === '') {
+  if (substr === "") {
     return 0;
   }
   let count = 0;

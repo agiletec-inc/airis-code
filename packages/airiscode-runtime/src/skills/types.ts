@@ -11,7 +11,7 @@
  * - 'extension': Provided by an installed extension
  * - 'bundled': Built-in skills shipped with airiscode
  */
-export type SkillLevel = 'project' | 'user' | 'extension' | 'bundled';
+export type SkillLevel = "project" | "user" | "extension" | "bundled";
 
 /**
  * Core configuration for a skill as stored in SKILL.md files.
@@ -93,7 +93,7 @@ export class SkillError extends Error {
     readonly skillName?: string,
   ) {
     super(message);
-    this.name = 'SkillError';
+    this.name = "SkillError";
   }
 }
 
@@ -101,12 +101,11 @@ export class SkillError extends Error {
  * Error codes for skill operations.
  */
 export const SkillErrorCode = {
-  NOT_FOUND: 'NOT_FOUND',
-  INVALID_CONFIG: 'INVALID_CONFIG',
-  INVALID_NAME: 'INVALID_NAME',
-  FILE_ERROR: 'FILE_ERROR',
-  PARSE_ERROR: 'PARSE_ERROR',
+  NOT_FOUND: "NOT_FOUND",
+  INVALID_CONFIG: "INVALID_CONFIG",
+  INVALID_NAME: "INVALID_NAME",
+  FILE_ERROR: "FILE_ERROR",
+  PARSE_ERROR: "PARSE_ERROR",
 } as const;
 
-export type SkillErrorCode =
-  (typeof SkillErrorCode)[keyof typeof SkillErrorCode];
+export type SkillErrorCode = (typeof SkillErrorCode)[keyof typeof SkillErrorCode];

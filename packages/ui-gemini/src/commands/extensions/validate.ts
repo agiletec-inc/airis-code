@@ -4,18 +4,18 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import type { CommandModule } from 'yargs';
-import { debugLogger } from '@airiscode/gemini-cli-core';
-import * as fs from 'node:fs';
-import * as path from 'node:path';
-import semver from 'semver';
-import { getErrorMessage } from '../../utils/errors.js';
-import type { ExtensionConfig } from '../../config/extension.js';
-import { ExtensionManager } from '../../config/extension-manager.js';
-import { requestConsentNonInteractive } from '../../config/extensions/consent.js';
-import { promptForSetting } from '../../config/extensions/extensionSettings.js';
-import { loadSettings } from '../../config/settings.js';
-import { exitCli } from '../utils.js';
+import * as fs from "node:fs";
+import * as path from "node:path";
+import { debugLogger } from "@airiscode/gemini-cli-core";
+import semver from "semver";
+import type { CommandModule } from "yargs";
+import type { ExtensionConfig } from "../../config/extension.js";
+import { ExtensionManager } from "../../config/extension-manager.js";
+import { requestConsentNonInteractive } from "../../config/extensions/consent.js";
+import { promptForSetting } from "../../config/extensions/extensionSettings.js";
+import { loadSettings } from "../../config/settings.js";
+import { getErrorMessage } from "../../utils/errors.js";
+import { exitCli } from "../utils.js";
 
 interface ValidateArgs {
   path: string;
@@ -40,8 +40,7 @@ async function validateExtension(args: ValidateArgs) {
     settings: loadSettings(workspaceDir).merged,
   });
   const absoluteInputPath = path.resolve(args.path);
-  const extensionConfig: ExtensionConfig =
-    extensionManager.loadExtensionConfig(absoluteInputPath);
+  const extensionConfig: ExtensionConfig = extensionManager.loadExtensionConfig(absoluteInputPath);
   const warnings: string[] = [];
   const errors: string[] = [];
 
@@ -52,10 +51,7 @@ async function validateExtension(args: ValidateArgs) {
 
     const missingContextFiles: string[] = [];
     for (const contextFilePath of contextFileNames) {
-      const contextFileAbsolutePath = path.resolve(
-        absoluteInputPath,
-        contextFilePath,
-      );
+      const contextFileAbsolutePath = path.resolve(absoluteInputPath, contextFilePath);
       if (!fs.existsSync(contextFileAbsolutePath)) {
         missingContextFiles.push(contextFilePath);
       }
@@ -74,33 +70,33 @@ async function validateExtension(args: ValidateArgs) {
   }
 
   if (warnings.length > 0) {
-    debugLogger.warn('Validation warnings:');
+    debugLogger.warn("Validation warnings:");
     for (const warning of warnings) {
       debugLogger.warn(`  - ${warning}`);
     }
   }
 
   if (errors.length > 0) {
-    debugLogger.error('Validation failed with the following errors:');
+    debugLogger.error("Validation failed with the following errors:");
     for (const error of errors) {
       debugLogger.error(`  - ${error}`);
     }
-    throw new Error('Extension validation failed.');
+    throw new Error("Extension validation failed.");
   }
 }
 
 export const validateCommand: CommandModule = {
-  command: 'validate <path>',
-  describe: 'Validates an extension from a local path.',
+  command: "validate <path>",
+  describe: "Validates an extension from a local path.",
   builder: (yargs) =>
-    yargs.positional('path', {
-      describe: 'The path of the extension to validate.',
-      type: 'string',
+    yargs.positional("path", {
+      describe: "The path of the extension to validate.",
+      type: "string",
       demandOption: true,
     }),
   handler: async (args) => {
     await handleValidate({
-      path: args['path'] as string,
+      path: args["path"] as string,
     });
     await exitCli();
   },

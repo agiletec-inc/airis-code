@@ -5,22 +5,16 @@
  */
 
 import {
-  useCallback,
-  useEffect,
-  useState,
-  useSyncExternalStore,
-  useRef,
-} from 'react';
-import {
-  IdeClient,
-  IDEConnectionStatus,
-  ideContextStore,
   type IDEConnectionState,
-} from '@airiscode/runtime';
-import { useSettings } from '../contexts/SettingsContext.js';
-import { isWorkspaceTrusted } from '../../config/trustedFolders.js';
+  IDEConnectionStatus,
+  IdeClient,
+  ideContextStore,
+} from "@airiscode/runtime";
+import { useCallback, useEffect, useRef, useState, useSyncExternalStore } from "react";
+import { isWorkspaceTrusted } from "../../config/trustedFolders.js";
+import { useSettings } from "../contexts/SettingsContext.js";
 
-export type RestartReason = 'NONE' | 'CONNECTION_CHANGE' | 'TRUST_CHANGE';
+export type RestartReason = "NONE" | "CONNECTION_CHANGE" | "TRUST_CHANGE";
 
 /**
  * This hook listens for trust status updates from the IDE companion extension.
@@ -33,19 +27,19 @@ export function useIdeTrustListener() {
     IDEConnectionStatus.Disconnected,
   );
   const previousTrust = useRef<boolean | undefined>(undefined);
-  const [restartReason, setRestartReason] = useState<RestartReason>('NONE');
+  const [restartReason, setRestartReason] = useState<RestartReason>("NONE");
   const [needsRestart, setNeedsRestart] = useState(false);
 
   const subscribe = useCallback((onStoreChange: () => void) => {
     const handleStatusChange = (state: IDEConnectionState) => {
       setConnectionStatus(state.status);
-      setRestartReason('CONNECTION_CHANGE');
+      setRestartReason("CONNECTION_CHANGE");
       // Also notify useSyncExternalStore that the data has changed
       onStoreChange();
     };
 
     const handleTrustChange = () => {
-      setRestartReason('TRUST_CHANGE');
+      setRestartReason("TRUST_CHANGE");
       onStoreChange();
     };
 
@@ -77,10 +71,7 @@ export function useIdeTrustListener() {
     const currentTrust = isWorkspaceTrusted(settings.merged).isTrusted;
     // Trigger a restart if the overall trust status for the CLI has changed,
     // but not on the initial trust value.
-    if (
-      previousTrust.current !== undefined &&
-      previousTrust.current !== currentTrust
-    ) {
+    if (previousTrust.current !== undefined && previousTrust.current !== currentTrust) {
       setNeedsRestart(true);
     }
     previousTrust.current = currentTrust;

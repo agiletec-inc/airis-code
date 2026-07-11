@@ -4,12 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { BaseWebSearchProvider } from '../base-provider.js';
-import type {
-  WebSearchResult,
-  WebSearchResultItem,
-  TavilyProviderConfig,
-} from '../types.js';
+import { BaseWebSearchProvider } from "../base-provider.js";
+import type { TavilyProviderConfig, WebSearchResult, WebSearchResultItem } from "../types.js";
 
 interface TavilyResultItem {
   title: string;
@@ -29,7 +25,7 @@ interface TavilySearchResponse {
  * Web search provider using Tavily API.
  */
 export class TavilyProvider extends BaseWebSearchProvider {
-  readonly name = 'Tavily';
+  readonly name = "Tavily";
 
   constructor(private readonly config: TavilyProviderConfig) {
     super();
@@ -39,19 +35,16 @@ export class TavilyProvider extends BaseWebSearchProvider {
     return !!this.config.apiKey;
   }
 
-  protected async performSearch(
-    query: string,
-    signal: AbortSignal,
-  ): Promise<WebSearchResult> {
-    const response = await fetch('https://api.tavily.com/search', {
-      method: 'POST',
+  protected async performSearch(query: string, signal: AbortSignal): Promise<WebSearchResult> {
+    const response = await fetch("https://api.tavily.com/search", {
+      method: "POST",
       headers: {
-        'Content-Type': 'application/json',
+        "Content-Type": "application/json",
       },
       body: JSON.stringify({
         api_key: this.config.apiKey,
         query,
-        search_depth: this.config.searchDepth || 'advanced',
+        search_depth: this.config.searchDepth || "advanced",
         max_results: this.config.maxResults || 5,
         include_answer: this.config.includeAnswer !== false,
       }),
@@ -59,9 +52,9 @@ export class TavilyProvider extends BaseWebSearchProvider {
     });
 
     if (!response.ok) {
-      const text = await response.text().catch(() => '');
+      const text = await response.text().catch(() => "");
       throw new Error(
-        `API error: ${response.status} ${response.statusText}${text ? ` - ${text}` : ''}`,
+        `API error: ${response.status} ${response.statusText}${text ? ` - ${text}` : ""}`,
       );
     }
 

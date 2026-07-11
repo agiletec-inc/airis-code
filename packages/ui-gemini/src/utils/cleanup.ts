@@ -4,14 +4,10 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { promises as fs } from 'node:fs';
-import { join } from 'node:path';
-import {
-  Storage,
-  shutdownTelemetry,
-  isTelemetrySdkInitialized,
-} from '@airiscode/gemini-cli-core';
-import type { Config } from '@airiscode/gemini-cli-core';
+import { promises as fs } from "node:fs";
+import { join } from "node:path";
+import type { Config } from "@airiscode/gemini-cli-core";
+import { isTelemetrySdkInitialized, Storage, shutdownTelemetry } from "@airiscode/gemini-cli-core";
 
 const cleanupFunctions: Array<(() => void) | (() => Promise<void>)> = [];
 const syncCleanupFunctions: Array<() => void> = [];
@@ -69,7 +65,7 @@ export async function runExitCleanup() {
 export async function cleanupCheckpoints() {
   const storage = new Storage(process.cwd());
   const tempDir = storage.getProjectTempDir();
-  const checkpointsDir = join(tempDir, 'checkpoints');
+  const checkpointsDir = join(tempDir, "checkpoints");
   try {
     await fs.rm(checkpointsDir, { recursive: true, force: true });
   } catch {

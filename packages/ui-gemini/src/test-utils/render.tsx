@@ -4,44 +4,41 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { render as inkRender } from 'ink-testing-library';
-import { Box } from 'ink';
-import type React from 'react';
-import { vi } from 'vitest';
-import { act, useState } from 'react';
-import { LoadedSettings, type Settings } from '../config/settings.js';
-import { KeypressProvider } from '../ui/contexts/KeypressContext.js';
-import { SettingsContext } from '../ui/contexts/SettingsContext.js';
-import { ShellFocusContext } from '../ui/contexts/ShellFocusContext.js';
-import { UIStateContext, type UIState } from '../ui/contexts/UIStateContext.js';
-import { StreamingState } from '../ui/types.js';
-import { ConfigContext } from '../ui/contexts/ConfigContext.js';
-import { calculateMainAreaWidth } from '../ui/utils/ui-sizing.js';
-import { VimModeProvider } from '../ui/contexts/VimModeContext.js';
-import { MouseProvider } from '../ui/contexts/MouseContext.js';
-import { ScrollProvider } from '../ui/contexts/ScrollProvider.js';
-import { StreamingContext } from '../ui/contexts/StreamingContext.js';
-import {
-  type UIActions,
-  UIActionsContext,
-} from '../ui/contexts/UIActionsContext.js';
-
-import { type Config } from '@airiscode/gemini-cli-core';
+import { type Config } from "@airiscode/gemini-cli-core";
+import { Box } from "ink";
+import { render as inkRender } from "ink-testing-library";
+import type React from "react";
+import { act, useState } from "react";
+import { vi } from "vitest";
+import { LoadedSettings, type Settings } from "../config/settings.js";
+import { ConfigContext } from "../ui/contexts/ConfigContext.js";
+import { KeypressProvider } from "../ui/contexts/KeypressContext.js";
+import { MouseProvider } from "../ui/contexts/MouseContext.js";
+import { ScrollProvider } from "../ui/contexts/ScrollProvider.js";
+import { SettingsContext } from "../ui/contexts/SettingsContext.js";
+import { ShellFocusContext } from "../ui/contexts/ShellFocusContext.js";
+import { StreamingContext } from "../ui/contexts/StreamingContext.js";
+import { type UIActions, UIActionsContext } from "../ui/contexts/UIActionsContext.js";
+import { type UIState, UIStateContext } from "../ui/contexts/UIStateContext.js";
+import { VimModeProvider } from "../ui/contexts/VimModeContext.js";
+import { StreamingState } from "../ui/types.js";
+import { calculateMainAreaWidth } from "../ui/utils/ui-sizing.js";
 
 // Wrapper around ink-testing-library's render that ensures act() is called
 export const render = (
   tree: React.ReactElement,
   terminalWidth?: number,
 ): ReturnType<typeof inkRender> => {
-  let renderResult: ReturnType<typeof inkRender> =
-    undefined as unknown as ReturnType<typeof inkRender>;
+  let renderResult: ReturnType<typeof inkRender> = undefined as unknown as ReturnType<
+    typeof inkRender
+  >;
   act(() => {
     renderResult = inkRender(tree);
   });
 
   if (terminalWidth !== undefined && renderResult?.stdout) {
     // Override the columns getter on the stdout instance provided by ink-testing-library
-    Object.defineProperty(renderResult.stdout, 'columns', {
+    Object.defineProperty(renderResult.stdout, "columns", {
       get: () => terminalWidth,
       configurable: true,
     });
@@ -71,7 +68,7 @@ export const render = (
 };
 
 export const simulateClick = async (
-  stdin: ReturnType<typeof inkRender>['stdin'],
+  stdin: ReturnType<typeof inkRender>["stdin"],
   col: number,
   row: number,
   button: 0 | 1 | 2 = 0, // 0 for left, 1 for middle, 2 for right
@@ -84,9 +81,8 @@ export const simulateClick = async (
 };
 
 const mockConfig = {
-  getModel: () => 'gemini-pro',
-  getTargetDir: () =>
-    '/Users/test/project/foo/bar/and/some/more/directories/to/make/it/long',
+  getModel: () => "gemini-pro",
+  getTargetDir: () => "/Users/test/project/foo/bar/and/some/more/directories/to/make/it/long",
   getDebugMode: () => false,
   isTrustedFolder: () => true,
   getIdeMode: () => false,
@@ -103,23 +99,21 @@ const configProxy = new Proxy(mockConfig, {
 });
 
 export const mockSettings = new LoadedSettings(
-  { path: '', settings: {}, originalSettings: {} },
-  { path: '', settings: {}, originalSettings: {} },
-  { path: '', settings: {}, originalSettings: {} },
-  { path: '', settings: {}, originalSettings: {} },
+  { path: "", settings: {}, originalSettings: {} },
+  { path: "", settings: {}, originalSettings: {} },
+  { path: "", settings: {}, originalSettings: {} },
+  { path: "", settings: {}, originalSettings: {} },
   true,
   new Set(),
 );
 
-export const createMockSettings = (
-  overrides: Partial<Settings>,
-): LoadedSettings => {
+export const createMockSettings = (overrides: Partial<Settings>): LoadedSettings => {
   const settings = overrides as Settings;
   return new LoadedSettings(
-    { path: '', settings: {}, originalSettings: {} },
-    { path: '', settings: {}, originalSettings: {} },
-    { path: '', settings, originalSettings: settings },
-    { path: '', settings: {}, originalSettings: {} },
+    { path: "", settings: {}, originalSettings: {} },
+    { path: "", settings: {}, originalSettings: {} },
+    { path: "", settings, originalSettings: settings },
+    { path: "", settings: {}, originalSettings: {} },
     true,
     new Set(),
   );
@@ -132,7 +126,7 @@ const baseMockUiState = {
   streamingState: StreamingState.Idle,
   mainAreaWidth: 100,
   terminalWidth: 120,
-  currentModel: 'gemini-pro',
+  currentModel: "gemini-pro",
 };
 
 const mockUIActions: UIActions = {

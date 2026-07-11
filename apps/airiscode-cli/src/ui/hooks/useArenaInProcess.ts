@@ -15,19 +15,19 @@
  * initialized.
  */
 
-import { useEffect, useRef } from 'react';
 import {
-  ArenaEventType,
-  ArenaSessionStatus,
-  DISPLAY_MODE,
   type ArenaAgentStartEvent,
+  ArenaEventType,
   type ArenaManager,
   type ArenaSessionCompleteEvent,
+  ArenaSessionStatus,
   type Config,
+  DISPLAY_MODE,
   type InProcessBackend,
-} from '@airiscode/runtime';
-import type { AgentViewActions } from '../contexts/AgentViewContext.js';
-import { theme } from '../semantic-colors.js';
+} from "@airiscode/runtime";
+import { useEffect, useRef } from "react";
+import type { AgentViewActions } from "../contexts/AgentViewContext.js";
+import { theme } from "../semantic-colors.js";
 
 const AGENT_COLORS = [
   theme.text.accent,
@@ -44,10 +44,7 @@ const AGENT_COLORS = [
  * Called by AgentViewProvider — accepts config and actions directly so the
  * hook has no dependency on AgentViewContext (avoiding a circular import).
  */
-export function useArenaInProcess(
-  config: Config | null,
-  actions: AgentViewActions,
-): void {
+export function useArenaInProcess(config: Config | null, actions: AgentViewActions): void {
   const actionsRef = useRef(actions);
   actionsRef.current = actions;
 

@@ -4,13 +4,13 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { z } from 'zod';
+import { z } from "zod";
 import {
   getSettingsSchema,
-  type SettingDefinition,
-  type SettingCollectionDefinition,
   SETTINGS_SCHEMA_DEFINITIONS,
-} from './settingsSchema.js';
+  type SettingCollectionDefinition,
+  type SettingDefinition,
+} from "./settingsSchema.js";
 
 // Helper to build Zod schema from the JSON-schema-like definitions
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -22,32 +22,28 @@ function buildZodSchemaFromJsonSchema(def: any): z.ZodTypeAny {
     );
   }
 
-  if (def.type === 'string') {
+  if (def.type === "string") {
     if (def.enum) return z.enum(def.enum as [string, ...string[]]);
     return z.string();
   }
-  if (def.type === 'number') return z.number();
-  if (def.type === 'boolean') return z.boolean();
+  if (def.type === "number") return z.number();
+  if (def.type === "boolean") return z.boolean();
 
-  if (def.type === 'array') {
+  if (def.type === "array") {
     if (def.items) {
       return z.array(buildZodSchemaFromJsonSchema(def.items));
     }
     return z.array(z.unknown());
   }
 
-  if (def.type === 'object') {
+  if (def.type === "object") {
     let schema;
     if (def.properties) {
       const shape: Record<string, z.ZodTypeAny> = {};
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       for (const [key, propDef] of Object.entries(def.properties) as any) {
         let propSchema = buildZodSchemaFromJsonSchema(propDef);
-        if (
-          def.required &&
-          Array.isArray(def.required) &&
-          def.required.includes(key)
-        ) {
+        if (def.required && Array.isArray(def.required) && def.required.includes(key)) {
           // keep it required
         } else {
           propSchema = propSchema.optional();
@@ -61,10 +57,8 @@ function buildZodSchemaFromJsonSchema(def: any): z.ZodTypeAny {
 
     if (def.additionalProperties === false) {
       schema = schema.strict();
-    } else if (typeof def.additionalProperties === 'object') {
-      schema = schema.catchall(
-        buildZodSchemaFromJsonSchema(def.additionalProperties),
-      );
+    } else if (typeof def.additionalProperties === "object") {
+      schema = schema.catchall(buildZodSchemaFromJsonSchema(def.additionalProperties));
     }
 
     return schema;
@@ -80,14 +74,12 @@ function buildEnumSchema(
   options: ReadonlyArray<{ value: string | number | boolean; label: string }>,
 ): z.ZodTypeAny {
   if (!options || options.length === 0) {
-    throw new Error(
-      `Enum type must have options defined. Check your settings schema definition.`,
-    );
+    throw new Error(`Enum type must have options defined. Check your settings schema definition.`);
   }
   const values = options.map((opt) => opt.value);
-  if (values.every((v) => typeof v === 'string')) {
+  if (values.every((v) => typeof v === "string")) {
     return z.enum(values as [string, ...string[]]);
-  } else if (values.every((v) => typeof v === 'number')) {
+  } else if (values.every((v) => typeof v === "number")) {
     return z.union(
       values.map((v) => z.literal(v)) as [
         z.ZodLiteral<number>,
@@ -122,15 +114,13 @@ function buildObjectShapeFromProperties(
 /**
  * Builds a Zod schema for primitive types (string, number, boolean)
  */
-function buildPrimitiveSchema(
-  type: 'string' | 'number' | 'boolean',
-): z.ZodTypeAny {
+function buildPrimitiveSchema(type: "string" | "number" | "boolean"): z.ZodTypeAny {
   switch (type) {
-    case 'string':
+    case "string":
       return z.string();
-    case 'number':
+    case "number":
       return z.number();
-    case 'boolean':
+    case "boolean":
       return z.boolean();
     default:
       return z.unknown();
@@ -147,14 +137,12 @@ for (const [name, def] of Object.entries(SETTINGS_SCHEMA_DEFINITIONS)) {
 /**
  * Recursively builds a Zod schema from a SettingDefinition
  */
-function buildZodSchemaFromDefinition(
-  definition: SettingDefinition,
-): z.ZodTypeAny {
+function buildZodSchemaFromDefinition(definition: SettingDefinition): z.ZodTypeAny {
   let baseSchema: z.ZodTypeAny;
 
   // Special handling for TelemetrySettings which can be boolean or object
-  if (definition.ref === 'TelemetrySettings') {
-    const objectSchema = REF_SCHEMAS['TelemetrySettings'];
+  if (definition.ref === "TelemetrySettings") {
+    const objectSchema = REF_SCHEMAS["TelemetrySettings"];
     if (objectSchema) {
       return z.union([z.boolean(), objectSchema]).optional();
     }
@@ -166,18 +154,18 @@ function buildZodSchemaFromDefinition(
   }
 
   switch (definition.type) {
-    case 'string':
-    case 'number':
-    case 'boolean':
+    case "string":
+    case "number":
+    case "boolean":
       baseSchema = buildPrimitiveSchema(definition.type);
       break;
 
-    case 'enum': {
+    case "enum": {
       baseSchema = buildEnumSchema(definition.options!);
       break;
     }
 
-    case 'array':
+    case "array":
       if (definition.items) {
         const itemSchema = buildZodSchemaFromCollection(definition.items);
         baseSchema = z.array(itemSchema);
@@ -186,21 +174,17 @@ function buildZodSchemaFromDefinition(
       }
       break;
 
-    case 'object':
+    case "object":
       if (definition.properties) {
         const shape = buildObjectShapeFromProperties(definition.properties);
         baseSchema = z.object(shape).passthrough();
 
         if (definition.additionalProperties) {
-          const additionalSchema = buildZodSchemaFromCollection(
-            definition.additionalProperties,
-          );
+          const additionalSchema = buildZodSchemaFromCollection(definition.additionalProperties);
           baseSchema = z.object(shape).catchall(additionalSchema);
         }
       } else if (definition.additionalProperties) {
-        const valueSchema = buildZodSchemaFromCollection(
-          definition.additionalProperties,
-        );
+        const valueSchema = buildZodSchemaFromCollection(definition.additionalProperties);
         baseSchema = z.record(z.string(), valueSchema);
       } else {
         baseSchema = z.record(z.string(), z.unknown());
@@ -218,31 +202,29 @@ function buildZodSchemaFromDefinition(
 /**
  * Builds a Zod schema from a SettingCollectionDefinition
  */
-function buildZodSchemaFromCollection(
-  collection: SettingCollectionDefinition,
-): z.ZodTypeAny {
+function buildZodSchemaFromCollection(collection: SettingCollectionDefinition): z.ZodTypeAny {
   if (collection.ref && collection.ref in REF_SCHEMAS) {
     return REF_SCHEMAS[collection.ref];
   }
 
   switch (collection.type) {
-    case 'string':
-    case 'number':
-    case 'boolean':
+    case "string":
+    case "number":
+    case "boolean":
       return buildPrimitiveSchema(collection.type);
 
-    case 'enum': {
+    case "enum": {
       return buildEnumSchema(collection.options!);
     }
 
-    case 'array':
+    case "array":
       if (collection.properties) {
         const shape = buildObjectShapeFromProperties(collection.properties);
         return z.array(z.object(shape));
       }
       return z.array(z.unknown());
 
-    case 'object':
+    case "object":
       if (collection.properties) {
         const shape = buildObjectShapeFromProperties(collection.properties);
         return z.object(shape).passthrough();
@@ -285,13 +267,10 @@ export function validateSettings(data: unknown): {
 /**
  * Format a Zod error into a helpful error message
  */
-export function formatValidationError(
-  error: z.ZodError,
-  filePath: string,
-): string {
+export function formatValidationError(error: z.ZodError, filePath: string): string {
   const lines: string[] = [];
   lines.push(`Invalid configuration in ${filePath}:`);
-  lines.push('');
+  lines.push("");
 
   const MAX_ERRORS_TO_DISPLAY = 5;
   const displayedIssues = error.issues.slice(0, MAX_ERRORS_TO_DISPLAY);
@@ -299,33 +278,29 @@ export function formatValidationError(
   for (const issue of displayedIssues) {
     const path = issue.path.reduce(
       (acc, curr) =>
-        typeof curr === 'number'
-          ? `${acc}[${curr}]`
-          : `${acc ? acc + '.' : ''}${curr}`,
-      '',
+        typeof curr === "number" ? `${acc}[${curr}]` : `${acc ? acc + "." : ""}${curr}`,
+      "",
     );
-    lines.push(`Error in: ${path || '(root)'}`);
+    lines.push(`Error in: ${path || "(root)"}`);
     lines.push(`    ${issue.message}`);
 
-    if (issue.code === 'invalid_type') {
+    if (issue.code === "invalid_type") {
       const expected = issue.expected;
       const received = issue.received;
       lines.push(`Expected: ${expected}, but received: ${received}`);
     }
-    lines.push('');
+    lines.push("");
   }
 
   if (error.issues.length > MAX_ERRORS_TO_DISPLAY) {
-    lines.push(
-      `...and ${error.issues.length - MAX_ERRORS_TO_DISPLAY} more errors.`,
-    );
-    lines.push('');
+    lines.push(`...and ${error.issues.length - MAX_ERRORS_TO_DISPLAY} more errors.`);
+    lines.push("");
   }
 
-  lines.push('Please fix the configuration and try again.');
+  lines.push("Please fix the configuration and try again.");
   lines.push(
-    'See: https://github.com/google-gemini/gemini-cli/blob/main/docs/get-started/configuration.md',
+    "See: https://github.com/google-gemini/gemini-cli/blob/main/docs/get-started/configuration.md",
   );
 
-  return lines.join('\n');
+  return lines.join("\n");
 }

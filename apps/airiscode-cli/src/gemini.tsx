@@ -4,74 +4,62 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+import dns from "node:dns";
+import os from "node:os";
+import { basename } from "node:path";
+import v8 from "node:v8";
 import {
+  type Config,
+  createDebugLogger,
   InputFormat,
   isDebugLoggingDegraded,
   logUserPrompt,
   Storage,
-  type Config,
-  createDebugLogger,
-} from '@airiscode/runtime';
-import { render } from 'ink';
-import dns from 'node:dns';
-import os from 'node:os';
-import { basename } from 'node:path';
-import v8 from 'node:v8';
-import React from 'react';
-import { validateAuthMethod } from './config/auth.js';
-import * as cliConfig from './config/config.js';
-import { loadCliConfig, parseArguments } from './config/config.js';
-import type { DnsResolutionOrder, LoadedSettings } from './config/settings.js';
-import { getSettingsWarnings, loadSettings } from './config/settings.js';
-import {
-  initializeApp,
-  type InitializationResult,
-} from './core/initializer.js';
-import { runNonInteractive } from './nonInteractiveCli.js';
-import { runNonInteractiveStreamJson } from './nonInteractive/session.js';
-import { AppContainer } from './ui/AppContainer.js';
-import { setMaxSizedBoxDebugging } from './ui/components/shared/MaxSizedBox.js';
-import { KeypressProvider } from './ui/contexts/KeypressContext.js';
-import { SessionStatsProvider } from './ui/contexts/SessionContext.js';
-import { SettingsContext } from './ui/contexts/SettingsContext.js';
-import { VimModeProvider } from './ui/contexts/VimModeContext.js';
-import { AgentViewProvider } from './ui/contexts/AgentViewContext.js';
-import { useKittyKeyboardProtocol } from './ui/hooks/useKittyKeyboardProtocol.js';
-import { themeManager } from './ui/themes/theme-manager.js';
-import { detectAndEnableKittyProtocol } from './ui/utils/kittyProtocolDetector.js';
-import { checkForUpdates } from './ui/utils/updateCheck.js';
-import {
-  cleanupCheckpoints,
-  registerCleanup,
-  runExitCleanup,
-} from './utils/cleanup.js';
-import { AppEvent, appEvents } from './utils/events.js';
-import { handleAutoUpdate } from './utils/handleAutoUpdate.js';
-import { readStdin } from './utils/readStdin.js';
-import {
-  relaunchAppInChildProcess,
-  relaunchOnExitCode,
-} from './utils/relaunch.js';
-import { start_sandbox } from './utils/sandbox.js';
-import { getStartupWarnings } from './utils/startupWarnings.js';
-import { getUserStartupWarnings } from './utils/userStartupWarnings.js';
-import { getCliVersion } from './utils/version.js';
-import { writeStderrLine } from './utils/stdioHelpers.js';
-import { computeWindowTitle } from './utils/windowTitle.js';
-import { validateNonInteractiveAuth } from './validateNonInterActiveAuth.js';
-import { showResumeSessionPicker } from './ui/components/StandaloneSessionPicker.js';
-import { initializeLlmOutputLanguage } from './utils/languageUtils.js';
+} from "@airiscode/runtime";
+import { render } from "ink";
+import React from "react";
+import { validateAuthMethod } from "./config/auth.js";
+import * as cliConfig from "./config/config.js";
+import { loadCliConfig, parseArguments } from "./config/config.js";
+import type { DnsResolutionOrder, LoadedSettings } from "./config/settings.js";
+import { getSettingsWarnings, loadSettings } from "./config/settings.js";
+import { type InitializationResult, initializeApp } from "./core/initializer.js";
+import { runNonInteractiveStreamJson } from "./nonInteractive/session.js";
+import { runNonInteractive } from "./nonInteractiveCli.js";
+import { AppContainer } from "./ui/AppContainer.js";
+import { showResumeSessionPicker } from "./ui/components/StandaloneSessionPicker.js";
+import { setMaxSizedBoxDebugging } from "./ui/components/shared/MaxSizedBox.js";
+import { AgentViewProvider } from "./ui/contexts/AgentViewContext.js";
+import { KeypressProvider } from "./ui/contexts/KeypressContext.js";
+import { SessionStatsProvider } from "./ui/contexts/SessionContext.js";
+import { SettingsContext } from "./ui/contexts/SettingsContext.js";
+import { VimModeProvider } from "./ui/contexts/VimModeContext.js";
+import { useKittyKeyboardProtocol } from "./ui/hooks/useKittyKeyboardProtocol.js";
+import { themeManager } from "./ui/themes/theme-manager.js";
+import { detectAndEnableKittyProtocol } from "./ui/utils/kittyProtocolDetector.js";
+import { checkForUpdates } from "./ui/utils/updateCheck.js";
+import { cleanupCheckpoints, registerCleanup, runExitCleanup } from "./utils/cleanup.js";
+import { AppEvent, appEvents } from "./utils/events.js";
+import { handleAutoUpdate } from "./utils/handleAutoUpdate.js";
+import { initializeLlmOutputLanguage } from "./utils/languageUtils.js";
+import { readStdin } from "./utils/readStdin.js";
+import { relaunchAppInChildProcess, relaunchOnExitCode } from "./utils/relaunch.js";
+import { start_sandbox } from "./utils/sandbox.js";
+import { getStartupWarnings } from "./utils/startupWarnings.js";
+import { writeStderrLine } from "./utils/stdioHelpers.js";
+import { getUserStartupWarnings } from "./utils/userStartupWarnings.js";
+import { getCliVersion } from "./utils/version.js";
+import { computeWindowTitle } from "./utils/windowTitle.js";
+import { validateNonInteractiveAuth } from "./validateNonInterActiveAuth.js";
 
-const debugLogger = createDebugLogger('STARTUP');
+const debugLogger = createDebugLogger("STARTUP");
 
-export function validateDnsResolutionOrder(
-  order: string | undefined,
-): DnsResolutionOrder {
-  const defaultValue: DnsResolutionOrder = 'ipv4first';
+export function validateDnsResolutionOrder(order: string | undefined): DnsResolutionOrder {
+  const defaultValue: DnsResolutionOrder = "ipv4first";
   if (order === undefined) {
     return defaultValue;
   }
-  if (order === 'ipv4first' || order === 'verbatim') {
+  if (order === "ipv4first" || order === "verbatim") {
     return order;
   }
   // We don't want to throw here, just warn and use the default.
@@ -84,19 +72,15 @@ export function validateDnsResolutionOrder(
 function getNodeMemoryArgs(isDebugMode: boolean): string[] {
   const totalMemoryMB = os.totalmem() / (1024 * 1024);
   const heapStats = v8.getHeapStatistics();
-  const currentMaxOldSpaceSizeMb = Math.floor(
-    heapStats.heap_size_limit / 1024 / 1024,
-  );
+  const currentMaxOldSpaceSizeMb = Math.floor(heapStats.heap_size_limit / 1024 / 1024);
 
   // Set target to 50% of total memory
   const targetMaxOldSpaceSizeInMB = Math.floor(totalMemoryMB * 0.5);
   if (isDebugMode) {
-    writeStderrLine(
-      `Current heap size ${currentMaxOldSpaceSizeMb.toFixed(2)} MB`,
-    );
+    writeStderrLine(`Current heap size ${currentMaxOldSpaceSizeMb.toFixed(2)} MB`);
   }
 
-  if (process.env['AIRISCODE_NO_RELAUNCH']) {
+  if (process.env["AIRISCODE_NO_RELAUNCH"]) {
     return [];
   }
 
@@ -112,12 +96,13 @@ function getNodeMemoryArgs(isDebugMode: boolean): string[] {
   return [];
 }
 
-import { loadSandboxConfig } from './config/sandboxConfig.js';
+import { loadSandboxConfig } from "./config/sandboxConfig.js";
+
 const runAcpAgent = null as any;
 
 export function setupUnhandledRejectionHandler() {
   let unhandledRejectionOccurred = false;
-  process.on('unhandledRejection', (reason, _promise) => {
+  process.on("unhandledRejection", (reason, _promise) => {
     const errorMessage = `=========================================
 This is an unexpected error. Please file a bug report using the /bug tool.
 CRITICAL: Unhandled Promise Rejection!
@@ -127,7 +112,7 @@ Reason: ${reason}${
         ? `
 Stack trace:
 ${reason.stack}`
-        : ''
+        : ""
     }`;
     appEvents.emit(AppEvent.LogError, errorMessage);
     if (!unhandledRejectionOccurred) {
@@ -150,16 +135,14 @@ export async function startInteractiveUI(
   // Create wrapper component to use hooks inside render
   const AppWrapper = () => {
     const kittyProtocolStatus = useKittyKeyboardProtocol();
-    const nodeMajorVersion = parseInt(process.versions.node.split('.')[0], 10);
+    const nodeMajorVersion = parseInt(process.versions.node.split(".")[0], 10);
     return (
       <SettingsContext.Provider value={settings}>
         <KeypressProvider
           kittyProtocolEnabled={kittyProtocolStatus.enabled}
           config={config}
           debugKeystrokeLogging={settings.merged.general?.debugKeystrokeLogging}
-          pasteWorkaround={
-            process.platform === 'win32' || nodeMajorVersion < 20
-          }
+          pasteWorkaround={process.platform === "win32" || nodeMajorVersion < 20}
         >
           <SessionStatsProvider sessionId={config.getSessionId()}>
             <VimModeProvider settings={settings}>
@@ -180,7 +163,7 @@ export async function startInteractiveUI(
   };
 
   const instance = render(
-    process.env['DEBUG'] ? (
+    process.env["DEBUG"] ? (
       <React.StrictMode>
         <AppWrapper />
       </React.StrictMode>
@@ -219,7 +202,7 @@ export async function main() {
   // Check for invalid input combinations early to prevent crashes
   if (argv.promptInteractive && !process.stdin.isTTY) {
     writeStderrLine(
-      'Error: The --prompt-interactive flag cannot be used when input is piped from stdin.',
+      "Error: The --prompt-interactive flag cannot be used when input is piped from stdin.",
     );
     process.exit(1);
   }
@@ -237,14 +220,12 @@ export async function main() {
     if (!themeManager.setActiveTheme(settings.merged.ui?.theme)) {
       // If the theme is not found during initial load, log a warning and continue.
       // The useThemeCommand hook in AppContainer.tsx will handle opening the dialog.
-      writeStderrLine(
-        `Warning: Theme "${settings.merged.ui?.theme}" not found.`,
-      );
+      writeStderrLine(`Warning: Theme "${settings.merged.ui?.theme}" not found.`);
     }
   }
 
   // hop into sandbox if we are outside and sandboxing is enabled
-  if (!process.env['SANDBOX']) {
+  if (!process.env["SANDBOX"]) {
     const memoryArgs = settings.merged.advanced?.autoConfigureMemory
       ? getNodeMemoryArgs(isDebugMode)
       : [];
@@ -256,12 +237,7 @@ export async function main() {
     // another way to decouple refreshAuth from requiring a config.
 
     if (sandboxConfig) {
-      const partialConfig = await loadCliConfig(
-        settings.merged,
-        argv,
-        undefined,
-        [],
-      );
+      const partialConfig = await loadCliConfig(settings.merged, argv, undefined, []);
 
       if (!settings.merged.security?.auth?.useExternal) {
         // Validate authentication here because the sandbox will interfere with the Oauth2 web redirect.
@@ -287,29 +263,23 @@ export async function main() {
       // intact via stdio: 'inherit'.
       const inputFormat = argv.inputFormat as string | undefined;
       const isAcpMode = argv.acp || argv.experimentalAcp;
-      let stdinData = '';
-      if (!process.stdin.isTTY && inputFormat !== 'stream-json' && !isAcpMode) {
+      let stdinData = "";
+      if (!process.stdin.isTTY && inputFormat !== "stream-json" && !isAcpMode) {
         stdinData = await readStdin();
       }
 
       // This function is a copy of the one from sandbox.ts
       // It is moved here to decouple sandbox.ts from the CLI's argument structure.
-      const injectStdinIntoArgs = (
-        args: string[],
-        stdinData?: string,
-      ): string[] => {
+      const injectStdinIntoArgs = (args: string[], stdinData?: string): string[] => {
         const finalArgs = [...args];
         if (stdinData) {
-          const promptIndex = finalArgs.findIndex(
-            (arg) => arg === '--prompt' || arg === '-p',
-          );
+          const promptIndex = finalArgs.findIndex((arg) => arg === "--prompt" || arg === "-p");
           if (promptIndex > -1 && finalArgs.length > promptIndex + 1) {
             // If there's a prompt argument, prepend stdin to it
-            finalArgs[promptIndex + 1] =
-              `${stdinData}\n\n${finalArgs[promptIndex + 1]}`;
+            finalArgs[promptIndex + 1] = `${stdinData}\n\n${finalArgs[promptIndex + 1]}`;
           } else {
             // If there's no prompt argument, add stdin as the prompt
-            finalArgs.push('--prompt', stdinData);
+            finalArgs.push("--prompt", stdinData);
           }
         }
         return finalArgs;
@@ -332,11 +302,8 @@ export async function main() {
   // Set the runtime output dir early so the picker can find sessions stored
   // under a custom runtimeOutputDir (setRuntimeBaseDir is idempotent and will
   // be called again inside loadCliConfig).
-  if (argv.resume === '') {
-    Storage.setRuntimeBaseDir(
-      settings.merged.advanced?.runtimeOutputDir,
-      process.cwd(),
-    );
+  if (argv.resume === "") {
+    Storage.setRuntimeBaseDir(settings.merged.advanced?.runtimeOutputDir, process.cwd());
     const selectedSessionId = await showResumeSessionPicker();
     if (!selectedSessionId) {
       // User cancelled or no sessions available
@@ -355,12 +322,7 @@ export async function main() {
   initializeLlmOutputLanguage(settings.merged.general?.outputLanguage);
 
   {
-    const config = await loadCliConfig(
-      settings.merged,
-      argv,
-      process.cwd(),
-      argv.extensions,
-    );
+    const config = await loadCliConfig(settings.merged, argv, process.cwd(), argv.extensions);
 
     // Register cleanup for MCP clients as early as possible
     // This ensures MCP server subprocesses are properly terminated on exit
@@ -383,10 +345,10 @@ export async function main() {
       process.stdin.setRawMode(true);
 
       // This cleanup isn't strictly needed but may help in certain situations.
-      process.on('SIGTERM', () => {
+      process.on("SIGTERM", () => {
         process.stdin.setRawMode(wasRaw);
       });
-      process.on('SIGINT', () => {
+      process.on("SIGINT", () => {
         process.stdin.setRawMode(wasRaw);
       });
 
@@ -400,7 +362,7 @@ export async function main() {
     // In TTY mode, ignore stream-json input format to prevent process from hanging
     const inputFormat = process.stdin.isTTY
       ? InputFormat.TEXT
-      : typeof config.getInputFormat === 'function'
+      : typeof config.getInputFormat === "function"
         ? config.getInputFormat()
         : InputFormat.TEXT;
 
@@ -445,14 +407,10 @@ export async function main() {
 
     // Print debug mode notice to stderr for non-interactive mode
     if (config.getDebugMode()) {
-      writeStderrLine('Debug mode enabled');
-      writeStderrLine(
-        `Logging to: ${Storage.getDebugLogPath(config.getSessionId())}`,
-      );
+      writeStderrLine("Debug mode enabled");
+      writeStderrLine(`Logging to: ${Storage.getDebugLogPath(config.getSessionId())}`);
       if (isDebugLoggingDegraded()) {
-        writeStderrLine(
-          'Warning: Debug logging is degraded (write failures occurred)',
-        );
+        writeStderrLine("Warning: Debug logging is degraded (write failures occurred)");
       }
     }
 
@@ -480,11 +438,11 @@ export async function main() {
     const prompt_id = Math.random().toString(16).slice(2);
 
     if (inputFormat === InputFormat.STREAM_JSON) {
-      const trimmedInput = (input ?? '').trim();
+      const trimmedInput = (input ?? "").trim();
 
       await runNonInteractiveStreamJson(
         nonInteractiveConfig,
-        trimmedInput.length > 0 ? trimmedInput : '',
+        trimmedInput.length > 0 ? trimmedInput : "",
       );
       await runExitCleanup();
       process.exit(0);
@@ -498,8 +456,8 @@ export async function main() {
     }
 
     logUserPrompt(config, {
-      'event.name': 'user_prompt',
-      'event.timestamp': new Date().toISOString(),
+      "event.name": "user_prompt",
+      "event.timestamp": new Date().toISOString(),
       prompt: input,
       prompt_id,
       auth_type: config.getContentGeneratorConfig()?.authType,
@@ -520,7 +478,7 @@ function setWindowTitle(title: string, settings: LoadedSettings) {
     const windowTitle = computeWindowTitle(title);
     process.stdout.write(`\x1b]2;${windowTitle}\x07`);
 
-    process.on('exit', () => {
+    process.on("exit", () => {
       process.stdout.write(`\x1b]2;\x07`);
     });
   }

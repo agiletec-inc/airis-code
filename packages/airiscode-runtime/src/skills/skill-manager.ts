@@ -4,31 +4,26 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import * as fs from 'fs/promises';
-import * as fsSync from 'fs';
-import * as path from 'path';
-import * as os from 'os';
-import { fileURLToPath } from 'url';
-import { watch as watchFs, type FSWatcher } from 'chokidar';
-import { parse as parseYaml } from '../utils/yaml-parser.js';
-import type {
-  SkillConfig,
-  SkillLevel,
-  ListSkillsOptions,
-  SkillValidationResult,
-} from './types.js';
-import { SkillError, SkillErrorCode } from './types.js';
-import type { Config } from '../config/config.js';
-import { validateConfig } from './skill-load.js';
-import { createDebugLogger } from '../utils/debugLogger.js';
-import { normalizeContent } from '../utils/textUtils.js';
-import { SKILL_PROVIDER_CONFIG_DIRS } from '../config/storage.js';
+import { type FSWatcher, watch as watchFs } from "chokidar";
+import * as fsSync from "fs";
+import * as fs from "fs/promises";
+import * as os from "os";
+import * as path from "path";
+import { fileURLToPath } from "url";
+import type { Config } from "../config/config.js";
+import { SKILL_PROVIDER_CONFIG_DIRS } from "../config/storage.js";
+import { createDebugLogger } from "../utils/debugLogger.js";
+import { normalizeContent } from "../utils/textUtils.js";
+import { parse as parseYaml } from "../utils/yaml-parser.js";
+import { validateConfig } from "./skill-load.js";
+import type { ListSkillsOptions, SkillConfig, SkillLevel, SkillValidationResult } from "./types.js";
+import { SkillError, SkillErrorCode } from "./types.js";
 
-const debugLogger = createDebugLogger('SKILL_MANAGER');
+const debugLogger = createDebugLogger("SKILL_MANAGER");
 
-const AIRISCODE_CONFIG_DIR = '.airiscode';
-const SKILLS_CONFIG_DIR = 'skills';
-const SKILL_MANIFEST_FILE = 'SKILL.md';
+const AIRISCODE_CONFIG_DIR = ".airiscode";
+const SKILLS_CONFIG_DIR = "skills";
+const SKILL_MANIFEST_FILE = "SKILL.md";
 
 /**
  * Manages skill configurations stored as directories containing SKILL.md files.
@@ -44,10 +39,7 @@ export class SkillManager {
   private readonly bundledSkillsDir: string;
 
   constructor(private readonly config: Config) {
-    this.bundledSkillsDir = path.join(
-      path.dirname(fileURLToPath(import.meta.url)),
-      'bundled',
-    );
+    this.bundledSkillsDir = path.join(path.dirname(fileURLToPath(import.meta.url)), "bundled");
   }
 
   /**
@@ -69,7 +61,7 @@ export class SkillManager {
       try {
         listener();
       } catch (error) {
-        debugLogger.warn('Skill change listener threw an error:', error);
+        debugLogger.warn("Skill change listener threw an error:", error);
       }
     }
   }
@@ -90,39 +82,35 @@ export class SkillManager {
    */
   async listSkills(options: ListSkillsOptions = {}): Promise<SkillConfig[]> {
     debugLogger.debug(
-      `Listing skills${options.level ? ` at level: ${options.level}` : ''}${options.force ? ' (forced refresh)' : ''}`,
+      `Listing skills${options.level ? ` at level: ${options.level}` : ""}${options.force ? " (forced refresh)" : ""}`,
     );
     const skills: SkillConfig[] = [];
     const seenNames = new Set<string>();
 
     const levelsToCheck: SkillLevel[] = options.level
       ? [options.level]
-      : ['project', 'user', 'extension', 'bundled'];
+      : ["project", "user", "extension", "bundled"];
 
     // Check if we should use cache or force refresh
     const shouldUseCache = !options.force && this.skillsCache !== null;
 
     // Initialize cache if it doesn't exist or we're forcing a refresh
     if (!shouldUseCache) {
-      debugLogger.debug('Cache miss or force refresh, reloading skills');
+      debugLogger.debug("Cache miss or force refresh, reloading skills");
       await this.refreshCache();
     } else {
-      debugLogger.debug('Using cached skills');
+      debugLogger.debug("Using cached skills");
     }
 
     // Collect skills from each level (precedence: project > user > extension > bundled)
     for (const level of levelsToCheck) {
       const levelSkills = this.skillsCache?.get(level) || [];
-      debugLogger.debug(
-        `Processing ${levelSkills.length} ${level} level skills`,
-      );
+      debugLogger.debug(`Processing ${levelSkills.length} ${level} level skills`);
 
       for (const skill of levelSkills) {
         // Skip if we've already seen this name (precedence: project > user > extension > bundled)
         if (seenNames.has(skill.name)) {
-          debugLogger.debug(
-            `Skipping duplicate skill: ${skill.name} (${level})`,
-          );
+          debugLogger.debug(`Skipping duplicate skill: ${skill.name} (${level})`);
           continue;
         }
 
@@ -147,13 +135,8 @@ export class SkillManager {
    * @param level - Optional level to limit search to
    * @returns SkillConfig or null if not found
    */
-  async loadSkill(
-    name: string,
-    level?: SkillLevel,
-  ): Promise<SkillConfig | null> {
-    debugLogger.debug(
-      `Loading skill: ${name}${level ? ` at level: ${level}` : ''}`,
-    );
+  async loadSkill(name: string, level?: SkillLevel): Promise<SkillConfig | null> {
+    debugLogger.debug(`Loading skill: ${name}${level ? ` at level: ${level}` : ""}`);
 
     if (level) {
       const skill = await this.findSkillByNameAtLevel(name, level);
@@ -166,28 +149,28 @@ export class SkillManager {
     }
 
     // Try project level first
-    const projectSkill = await this.findSkillByNameAtLevel(name, 'project');
+    const projectSkill = await this.findSkillByNameAtLevel(name, "project");
     if (projectSkill) {
       debugLogger.debug(`Found skill ${name} at project level`);
       return projectSkill;
     }
 
     // Try user level
-    const userSkill = await this.findSkillByNameAtLevel(name, 'user');
+    const userSkill = await this.findSkillByNameAtLevel(name, "user");
     if (userSkill) {
       debugLogger.debug(`Found skill ${name} at user level`);
       return userSkill;
     }
 
     // Try extension level
-    const extensionSkill = await this.findSkillByNameAtLevel(name, 'extension');
+    const extensionSkill = await this.findSkillByNameAtLevel(name, "extension");
     if (extensionSkill) {
       debugLogger.debug(`Found skill ${name} at extension level`);
       return extensionSkill;
     }
 
     // Try bundled level (lowest precedence)
-    const bundledSkill = await this.findSkillByNameAtLevel(name, 'bundled');
+    const bundledSkill = await this.findSkillByNameAtLevel(name, "bundled");
     if (bundledSkill) {
       debugLogger.debug(`Found skill ${name} at bundled level`);
     } else {
@@ -206,22 +189,15 @@ export class SkillManager {
    * @param level - Optional level to limit search to
    * @returns SkillConfig or null if not found
    */
-  async loadSkillForRuntime(
-    name: string,
-    level?: SkillLevel,
-  ): Promise<SkillConfig | null> {
-    debugLogger.debug(
-      `Loading skill for runtime: ${name}${level ? ` at level: ${level}` : ''}`,
-    );
+  async loadSkillForRuntime(name: string, level?: SkillLevel): Promise<SkillConfig | null> {
+    debugLogger.debug(`Loading skill for runtime: ${name}${level ? ` at level: ${level}` : ""}`);
     const skill = await this.loadSkill(name, level);
     if (!skill) {
       debugLogger.debug(`Skill not found for runtime: ${name}`);
       return null;
     }
 
-    debugLogger.info(
-      `Skill loaded for runtime: ${name} from ${skill.filePath}`,
-    );
+    debugLogger.info(`Skill loaded for runtime: ${name} from ${skill.filePath}`);
     return skill;
   }
 
@@ -239,11 +215,11 @@ export class SkillManager {
    * Refreshes the skills cache by loading all skills from disk.
    */
   async refreshCache(): Promise<void> {
-    debugLogger.info('Refreshing skills cache...');
+    debugLogger.info("Refreshing skills cache...");
     const skillsCache = new Map<SkillLevel, SkillConfig[]>();
     this.parseErrors.clear();
 
-    const levels: SkillLevel[] = ['project', 'user', 'extension', 'bundled'];
+    const levels: SkillLevel[] = ["project", "user", "extension", "bundled"];
     let totalSkills = 0;
 
     for (const level of levels) {
@@ -254,9 +230,7 @@ export class SkillManager {
     }
 
     this.skillsCache = skillsCache;
-    debugLogger.info(
-      `Skills cache refreshed: ${totalSkills} total skills loaded`,
-    );
+    debugLogger.info(`Skills cache refreshed: ${totalSkills} total skills loaded`);
     this.notifyChangeListeners();
   }
 
@@ -265,26 +239,26 @@ export class SkillManager {
    */
   async startWatching(): Promise<void> {
     if (this.watchStarted) {
-      debugLogger.debug('Skill watching already started, skipping');
+      debugLogger.debug("Skill watching already started, skipping");
       return;
     }
 
-    debugLogger.info('Starting skill directory watchers...');
+    debugLogger.info("Starting skill directory watchers...");
     this.watchStarted = true;
     await this.ensureUserSkillsDir();
     await this.refreshCache();
     this.updateWatchersFromCache();
-    debugLogger.info('Skill directory watchers started');
+    debugLogger.info("Skill directory watchers started");
   }
 
   /**
    * Stops watching skill directories for changes.
    */
   stopWatching(): void {
-    debugLogger.info('Stopping skill directory watchers...');
+    debugLogger.info("Stopping skill directory watchers...");
     for (const watcher of this.watchers.values()) {
       void watcher.close().catch((error) => {
-        debugLogger.warn('Failed to close skills watcher:', error);
+        debugLogger.warn("Failed to close skills watcher:", error);
       });
     }
     this.watchers.clear();
@@ -293,7 +267,7 @@ export class SkillManager {
       clearTimeout(this.refreshTimer);
       this.refreshTimer = null;
     }
-    debugLogger.info('Skill directory watchers stopped');
+    debugLogger.info("Skill directory watchers stopped");
   }
 
   /**
@@ -311,20 +285,14 @@ export class SkillManager {
   /**
    * Internal implementation of skill file parsing.
    */
-  private async parseSkillFileInternal(
-    filePath: string,
-    level: SkillLevel,
-  ): Promise<SkillConfig> {
+  private async parseSkillFileInternal(filePath: string, level: SkillLevel): Promise<SkillConfig> {
     let content: string;
 
     try {
-      content = await fs.readFile(filePath, 'utf8');
+      content = await fs.readFile(filePath, "utf8");
     } catch (error) {
-      const errorMessage =
-        error instanceof Error ? error.message : 'Unknown error';
-      debugLogger.error(
-        `Failed to read skill file ${filePath}: ${errorMessage}`,
-      );
+      const errorMessage = error instanceof Error ? error.message : "Unknown error";
+      debugLogger.error(`Failed to read skill file ${filePath}: ${errorMessage}`);
       const skillError = new SkillError(
         `Failed to read skill file: ${errorMessage}`,
         SkillErrorCode.FILE_ERROR,
@@ -345,11 +313,7 @@ export class SkillManager {
    * @returns SkillConfig
    * @throws SkillError if parsing fails
    */
-  parseSkillContent(
-    content: string,
-    filePath: string,
-    level: SkillLevel,
-  ): SkillConfig {
+  parseSkillContent(content: string, filePath: string, level: SkillLevel): SkillConfig {
     try {
       const normalizedContent = normalizeContent(content);
 
@@ -358,7 +322,7 @@ export class SkillManager {
       const match = normalizedContent.match(frontmatterRegex);
 
       if (!match) {
-        throw new Error('Invalid format: missing YAML frontmatter');
+        throw new Error("Invalid format: missing YAML frontmatter");
       }
 
       const [, frontmatterYaml, body] = match;
@@ -367,14 +331,14 @@ export class SkillManager {
       const frontmatter = parseYaml(frontmatterYaml) as Record<string, unknown>;
 
       // Extract required fields
-      const nameRaw = frontmatter['name'];
-      const descriptionRaw = frontmatter['description'];
+      const nameRaw = frontmatter["name"];
+      const descriptionRaw = frontmatter["description"];
 
-      if (nameRaw == null || nameRaw === '') {
+      if (nameRaw == null || nameRaw === "") {
         throw new Error('Missing "name" in frontmatter');
       }
 
-      if (descriptionRaw == null || descriptionRaw === '') {
+      if (descriptionRaw == null || descriptionRaw === "") {
         throw new Error('Missing "description" in frontmatter');
       }
 
@@ -383,9 +347,7 @@ export class SkillManager {
       const description = String(descriptionRaw);
 
       // Extract optional fields
-      const allowedToolsRaw = frontmatter['allowedTools'] as
-        | unknown[]
-        | undefined;
+      const allowedToolsRaw = frontmatter["allowedTools"] as unknown[] | undefined;
       let allowedTools: string[] | undefined;
 
       if (allowedToolsRaw !== undefined) {
@@ -408,16 +370,14 @@ export class SkillManager {
       // Validate the parsed configuration
       const validation = this.validateConfig(config);
       if (!validation.isValid) {
-        throw new Error(`Validation failed: ${validation.errors.join(', ')}`);
+        throw new Error(`Validation failed: ${validation.errors.join(", ")}`);
       }
 
-      debugLogger.debug(
-        `Successfully parsed skill: ${name} (${level}) from ${filePath}`,
-      );
+      debugLogger.debug(`Successfully parsed skill: ${name} (${level}) from ${filePath}`);
       return config;
     } catch (error) {
       const skillError = new SkillError(
-        `Failed to parse skill file: ${error instanceof Error ? error.message : 'Unknown error'}`,
+        `Failed to parse skill file: ${error instanceof Error ? error.message : "Unknown error"}`,
         SkillErrorCode.PARSE_ERROR,
       );
       this.parseErrors.set(filePath, skillError);
@@ -433,19 +393,17 @@ export class SkillManager {
    */
   getSkillsBaseDirs(level: SkillLevel): string[] {
     switch (level) {
-      case 'project':
+      case "project":
         return SKILL_PROVIDER_CONFIG_DIRS.map((v) =>
           path.join(this.config.getProjectRoot(), v, SKILLS_CONFIG_DIR),
         );
-      case 'user':
-        return SKILL_PROVIDER_CONFIG_DIRS.map((v) =>
-          path.join(os.homedir(), v, SKILLS_CONFIG_DIR),
-        );
-      case 'bundled':
+      case "user":
+        return SKILL_PROVIDER_CONFIG_DIRS.map((v) => path.join(os.homedir(), v, SKILLS_CONFIG_DIR));
+      case "bundled":
         return [this.bundledSkillsDir];
-      case 'extension':
+      case "extension":
         throw new Error(
-          'Extension skills do not have a base directory; they are loaded from active extensions.',
+          "Extension skills do not have a base directory; they are loaded from active extensions.",
         );
       default:
         throw new Error(`Unknown skill level: ${level as string}`);
@@ -465,14 +423,12 @@ export class SkillManager {
 
     // If project level is requested but project root is same as home directory,
     // return empty array to avoid conflicts between project and global skills
-    if (level === 'project' && isHomeDirectory) {
-      debugLogger.debug(
-        'Skipping project-level skills: project root is home directory',
-      );
+    if (level === "project" && isHomeDirectory) {
+      debugLogger.debug("Skipping project-level skills: project root is home directory");
       return [];
     }
 
-    if (level === 'extension') {
+    if (level === "extension") {
       const extensions = this.config.getActiveExtensions();
       const skills: SkillConfig[] = [];
       for (const extension of extensions) {
@@ -486,7 +442,7 @@ export class SkillManager {
       return skills;
     }
 
-    if (level === 'bundled') {
+    if (level === "bundled") {
       const bundledDir = this.bundledSkillsDir;
       if (!fsSync.existsSync(bundledDir)) {
         debugLogger.warn(
@@ -495,7 +451,7 @@ export class SkillManager {
         return [];
       }
       debugLogger.debug(`Loading bundled skills from: ${bundledDir}`);
-      const skills = await this.loadSkillsFromDir(bundledDir, 'bundled');
+      const skills = await this.loadSkillsFromDir(bundledDir, "bundled");
       debugLogger.debug(`Loaded ${skills.length} bundled skills`);
       return skills;
     }
@@ -524,10 +480,7 @@ export class SkillManager {
     return skills;
   }
 
-  async loadSkillsFromDir(
-    baseDir: string,
-    level: SkillLevel,
-  ): Promise<SkillConfig[]> {
+  async loadSkillsFromDir(baseDir: string, level: SkillLevel): Promise<SkillConfig[]> {
     debugLogger.debug(`Loading skills from directory: ${baseDir}`);
     try {
       const entries = await fs.readdir(baseDir, { withFileTypes: true });
@@ -551,14 +504,12 @@ export class SkillManager {
           try {
             const targetStat = await fs.stat(skillDir);
             if (!targetStat.isDirectory()) {
-              debugLogger.warn(
-                `Skipping symlink ${entry.name} that does not point to a directory`,
-              );
+              debugLogger.warn(`Skipping symlink ${entry.name} that does not point to a directory`);
               continue;
             }
           } catch (error) {
             debugLogger.warn(
-              `Skipping invalid symlink ${entry.name}: ${error instanceof Error ? error.message : 'Unknown error'}`,
+              `Skipping invalid symlink ${entry.name}: ${error instanceof Error ? error.message : "Unknown error"}`,
             );
             continue;
           }
@@ -570,22 +521,15 @@ export class SkillManager {
           // Check if SKILL.md exists
           await fs.access(skillManifest);
 
-          const config = await this.parseSkillFileInternal(
-            skillManifest,
-            level,
-          );
+          const config = await this.parseSkillFileInternal(skillManifest, level);
           skills.push(config);
         } catch (error) {
           // Skip directories without valid SKILL.md
           if (error instanceof SkillError) {
             // Parse error was already recorded
-            debugLogger.error(
-              `Failed to parse skill at ${skillDir}: ${error.message}`,
-            );
+            debugLogger.error(`Failed to parse skill at ${skillDir}: ${error.message}`);
           } else {
-            debugLogger.debug(
-              `No valid SKILL.md found in ${skillDir}, skipping`,
-            );
+            debugLogger.debug(`No valid SKILL.md found in ${skillDir}, skipping`);
           }
           continue;
         }
@@ -594,11 +538,8 @@ export class SkillManager {
       return skills;
     } catch (error) {
       // Directory doesn't exist or can't be read
-      const errorMessage =
-        error instanceof Error ? error.message : 'Unknown error';
-      debugLogger.debug(
-        `Cannot read skills directory ${baseDir}: ${errorMessage}`,
-      );
+      const errorMessage = error instanceof Error ? error.message : "Unknown error";
+      debugLogger.debug(`Cannot read skills directory ${baseDir}: ${errorMessage}`);
       return [];
     }
   }
@@ -641,7 +582,7 @@ export class SkillManager {
   // skills are managed by the extension system, so neither needs watching.
   private updateWatchersFromCache(): void {
     const watchTargets = new Set<string>(
-      (['project', 'user'] as const)
+      (["project", "user"] as const)
         .map((level) => this.getSkillsBaseDirs(level))
         .reduce((acc, baseDirs) => acc.concat(baseDirs), [])
         .filter((baseDir) => fsSync.existsSync(baseDir)),
@@ -653,10 +594,7 @@ export class SkillManager {
           .get(existingPath)
           ?.close()
           .catch((error) => {
-            debugLogger.warn(
-              `Failed to close skills watcher for ${existingPath}:`,
-              error,
-            );
+            debugLogger.warn(`Failed to close skills watcher for ${existingPath}:`, error);
           });
         this.watchers.delete(existingPath);
       }
@@ -671,18 +609,15 @@ export class SkillManager {
         const watcher = watchFs(watchPath, {
           ignoreInitial: true,
         })
-          .on('all', () => {
+          .on("all", () => {
             this.scheduleRefresh();
           })
-          .on('error', (error) => {
+          .on("error", (error) => {
             debugLogger.warn(`Skills watcher error for ${watchPath}:`, error);
           });
         this.watchers.set(watchPath, watcher);
       } catch (error) {
-        debugLogger.warn(
-          `Failed to watch skills directory at ${watchPath}:`,
-          error,
-        );
+        debugLogger.warn(`Failed to watch skills directory at ${watchPath}:`, error);
       }
     }
   }
@@ -703,10 +638,7 @@ export class SkillManager {
     try {
       await fs.mkdir(baseDir, { recursive: true });
     } catch (error) {
-      debugLogger.warn(
-        `Failed to create user skills directory at ${baseDir}:`,
-        error,
-      );
+      debugLogger.warn(`Failed to create user skills directory at ${baseDir}:`, error);
     }
   }
 }

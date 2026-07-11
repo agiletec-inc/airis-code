@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import type { ModelConfigServiceConfig } from '../services/modelConfigService.js';
+import type { ModelConfigServiceConfig } from "../services/modelConfigService.js";
 
 // The default model configs. We use `base` as the parent for all of our model
 // configs, while `chat-base`, a child of `base`, is the parent of the models
@@ -19,8 +19,8 @@ export const DEFAULT_MODEL_CONFIGS: ModelConfigServiceConfig = {
         },
       },
     },
-    'chat-base': {
-      extends: 'base',
+    "chat-base": {
+      extends: "base",
       modelConfig: {
         generateContentConfig: {
           thinkingConfig: {
@@ -35,35 +35,35 @@ export const DEFAULT_MODEL_CONFIGS: ModelConfigServiceConfig = {
     // ensure these model configs can be used interactively.
     // TODO(joshualitt): Introduce internal base configs for the various models,
     // note: we will have to think carefully about names.
-    'gemini-2.5-pro': {
-      extends: 'chat-base',
+    "gemini-2.5-pro": {
+      extends: "chat-base",
       modelConfig: {
-        model: 'gemini-2.5-pro',
+        model: "gemini-2.5-pro",
       },
     },
-    'gemini-2.5-flash': {
-      extends: 'chat-base',
+    "gemini-2.5-flash": {
+      extends: "chat-base",
       modelConfig: {
-        model: 'gemini-2.5-flash',
+        model: "gemini-2.5-flash",
       },
     },
-    'gemini-2.5-flash-lite': {
-      extends: 'chat-base',
+    "gemini-2.5-flash-lite": {
+      extends: "chat-base",
       modelConfig: {
-        model: 'gemini-2.5-flash-lite',
+        model: "gemini-2.5-flash-lite",
       },
     },
     // Bases for the internal model configs.
-    'gemini-2.5-flash-base': {
-      extends: 'base',
+    "gemini-2.5-flash-base": {
+      extends: "base",
       modelConfig: {
-        model: 'gemini-2.5-flash',
+        model: "gemini-2.5-flash",
       },
     },
     classifier: {
-      extends: 'base',
+      extends: "base",
       modelConfig: {
-        model: 'gemini-2.5-flash-lite',
+        model: "gemini-2.5-flash-lite",
         generateContentConfig: {
           maxOutputTokens: 1024,
           thinkingConfig: {
@@ -72,10 +72,10 @@ export const DEFAULT_MODEL_CONFIGS: ModelConfigServiceConfig = {
         },
       },
     },
-    'prompt-completion': {
-      extends: 'base',
+    "prompt-completion": {
+      extends: "base",
       modelConfig: {
-        model: 'gemini-2.5-flash-lite',
+        model: "gemini-2.5-flash-lite",
         generateContentConfig: {
           temperature: 0.3,
           maxOutputTokens: 16000,
@@ -85,10 +85,10 @@ export const DEFAULT_MODEL_CONFIGS: ModelConfigServiceConfig = {
         },
       },
     },
-    'edit-corrector': {
-      extends: 'base',
+    "edit-corrector": {
+      extends: "base",
       modelConfig: {
-        model: 'gemini-2.5-flash-lite',
+        model: "gemini-2.5-flash-lite",
         generateContentConfig: {
           thinkingConfig: {
             thinkingBudget: 0,
@@ -96,34 +96,34 @@ export const DEFAULT_MODEL_CONFIGS: ModelConfigServiceConfig = {
         },
       },
     },
-    'summarizer-default': {
-      extends: 'base',
+    "summarizer-default": {
+      extends: "base",
       modelConfig: {
-        model: 'gemini-2.5-flash-lite',
+        model: "gemini-2.5-flash-lite",
         generateContentConfig: {
           maxOutputTokens: 2000,
         },
       },
     },
-    'summarizer-shell': {
-      extends: 'base',
+    "summarizer-shell": {
+      extends: "base",
       modelConfig: {
-        model: 'gemini-2.5-flash-lite',
+        model: "gemini-2.5-flash-lite",
         generateContentConfig: {
           maxOutputTokens: 2000,
         },
       },
     },
-    'web-search': {
-      extends: 'gemini-2.5-flash-base',
+    "web-search": {
+      extends: "gemini-2.5-flash-base",
       modelConfig: {
         generateContentConfig: {
           tools: [{ googleSearch: {} }],
         },
       },
     },
-    'web-fetch': {
-      extends: 'gemini-2.5-flash-base',
+    "web-fetch": {
+      extends: "gemini-2.5-flash-base",
       modelConfig: {
         generateContentConfig: {
           tools: [{ urlContext: {} }],
@@ -131,26 +131,26 @@ export const DEFAULT_MODEL_CONFIGS: ModelConfigServiceConfig = {
       },
     },
     // TODO(joshualitt): During cleanup, make modelConfig optional.
-    'web-fetch-fallback': {
-      extends: 'gemini-2.5-flash-base',
+    "web-fetch-fallback": {
+      extends: "gemini-2.5-flash-base",
       modelConfig: {},
     },
-    'loop-detection': {
-      extends: 'gemini-2.5-flash-base',
+    "loop-detection": {
+      extends: "gemini-2.5-flash-base",
       modelConfig: {},
     },
-    'loop-detection-double-check': {
-      extends: 'base',
+    "loop-detection-double-check": {
+      extends: "base",
       modelConfig: {
-        model: 'gemini-2.5-pro',
+        model: "gemini-2.5-pro",
       },
     },
-    'llm-edit-fixer': {
-      extends: 'gemini-2.5-flash-base',
+    "llm-edit-fixer": {
+      extends: "gemini-2.5-flash-base",
       modelConfig: {},
     },
-    'next-speaker-checker': {
-      extends: 'gemini-2.5-flash-base',
+    "next-speaker-checker": {
+      extends: "gemini-2.5-flash-base",
       modelConfig: {},
     },
   },

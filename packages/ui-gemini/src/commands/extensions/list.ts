@@ -4,14 +4,14 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import type { CommandModule } from 'yargs';
-import { getErrorMessage } from '../../utils/errors.js';
-import { debugLogger } from '@airiscode/gemini-cli-core';
-import { ExtensionManager } from '../../config/extension-manager.js';
-import { requestConsentNonInteractive } from '../../config/extensions/consent.js';
-import { loadSettings } from '../../config/settings.js';
-import { promptForSetting } from '../../config/extensions/extensionSettings.js';
-import { exitCli } from '../utils.js';
+import { debugLogger } from "@airiscode/gemini-cli-core";
+import type { CommandModule } from "yargs";
+import { ExtensionManager } from "../../config/extension-manager.js";
+import { requestConsentNonInteractive } from "../../config/extensions/consent.js";
+import { promptForSetting } from "../../config/extensions/extensionSettings.js";
+import { loadSettings } from "../../config/settings.js";
+import { getErrorMessage } from "../../utils/errors.js";
+import { exitCli } from "../utils.js";
 
 export async function handleList() {
   try {
@@ -24,15 +24,13 @@ export async function handleList() {
     });
     const extensions = await extensionManager.loadExtensions();
     if (extensions.length === 0) {
-      debugLogger.log('No extensions installed.');
+      debugLogger.log("No extensions installed.");
       return;
     }
     debugLogger.log(
       extensions
-        .map((extension, _): string =>
-          extensionManager.toOutputString(extension),
-        )
-        .join('\n\n'),
+        .map((extension, _): string => extensionManager.toOutputString(extension))
+        .join("\n\n"),
     );
   } catch (error) {
     debugLogger.error(getErrorMessage(error));
@@ -41,8 +39,8 @@ export async function handleList() {
 }
 
 export const listCommand: CommandModule = {
-  command: 'list',
-  describe: 'Lists installed extensions.',
+  command: "list",
+  describe: "Lists installed extensions.",
   builder: (yargs) => yargs,
   handler: async () => {
     await handleList();

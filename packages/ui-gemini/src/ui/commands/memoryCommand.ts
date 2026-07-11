@@ -4,33 +4,30 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import {
-  getErrorMessage,
-  refreshServerHierarchicalMemory,
-} from '@airiscode/gemini-cli-core';
-import { MessageType } from '../types.js';
-import type { SlashCommand, SlashCommandActionReturn } from './types.js';
-import { CommandKind } from './types.js';
+import { getErrorMessage, refreshServerHierarchicalMemory } from "@airiscode/gemini-cli-core";
+import { MessageType } from "../types.js";
+import type { SlashCommand, SlashCommandActionReturn } from "./types.js";
+import { CommandKind } from "./types.js";
 
 export const memoryCommand: SlashCommand = {
-  name: 'memory',
-  description: 'Commands for interacting with memory',
+  name: "memory",
+  description: "Commands for interacting with memory",
   kind: CommandKind.BUILT_IN,
   autoExecute: false,
   subCommands: [
     {
-      name: 'show',
-      description: 'Show the current memory contents',
+      name: "show",
+      description: "Show the current memory contents",
       kind: CommandKind.BUILT_IN,
       autoExecute: true,
       action: async (context) => {
-        const memoryContent = context.services.config?.getUserMemory() || '';
+        const memoryContent = context.services.config?.getUserMemory() || "";
         const fileCount = context.services.config?.getGeminiMdFileCount() || 0;
 
         const messageContent =
           memoryContent.length > 0
             ? `Current memory content from ${fileCount} file(s):\n\n---\n${memoryContent}\n---`
-            : 'Memory is currently empty.';
+            : "Memory is currently empty.";
 
         context.ui.addItem(
           {
@@ -42,16 +39,16 @@ export const memoryCommand: SlashCommand = {
       },
     },
     {
-      name: 'add',
-      description: 'Add content to the memory',
+      name: "add",
+      description: "Add content to the memory",
       kind: CommandKind.BUILT_IN,
       autoExecute: false,
       action: (context, args): SlashCommandActionReturn | void => {
-        if (!args || args.trim() === '') {
+        if (!args || args.trim() === "") {
           return {
-            type: 'message',
-            messageType: 'error',
-            content: 'Usage: /memory add <text to remember>',
+            type: "message",
+            messageType: "error",
+            content: "Usage: /memory add <text to remember>",
           };
         }
 
@@ -64,22 +61,22 @@ export const memoryCommand: SlashCommand = {
         );
 
         return {
-          type: 'tool',
-          toolName: 'save_memory',
+          type: "tool",
+          toolName: "save_memory",
           toolArgs: { fact: args.trim() },
         };
       },
     },
     {
-      name: 'refresh',
-      description: 'Refresh the memory from the source',
+      name: "refresh",
+      description: "Refresh the memory from the source",
       kind: CommandKind.BUILT_IN,
       autoExecute: true,
       action: async (context) => {
         context.ui.addItem(
           {
             type: MessageType.INFO,
-            text: 'Refreshing memory from source files...',
+            text: "Refreshing memory from source files...",
           },
           Date.now(),
         );
@@ -87,15 +84,14 @@ export const memoryCommand: SlashCommand = {
         try {
           const config = await context.services.config;
           if (config) {
-            const { memoryContent, fileCount } =
-              await refreshServerHierarchicalMemory(config);
+            const { memoryContent, fileCount } = await refreshServerHierarchicalMemory(config);
 
             await config.updateSystemInstructionIfInitialized();
 
             const successMessage =
               memoryContent.length > 0
                 ? `Memory refreshed successfully. Loaded ${memoryContent.length} characters from ${fileCount} file(s).`
-                : 'Memory refreshed successfully. No memory content found.';
+                : "Memory refreshed successfully. No memory content found.";
 
             context.ui.addItem(
               {
@@ -118,8 +114,8 @@ export const memoryCommand: SlashCommand = {
       },
     },
     {
-      name: 'list',
-      description: 'Lists the paths of the GEMINI.md files in use',
+      name: "list",
+      description: "Lists the paths of the GEMINI.md files in use",
       kind: CommandKind.BUILT_IN,
       autoExecute: true,
       action: async (context) => {
@@ -128,8 +124,8 @@ export const memoryCommand: SlashCommand = {
 
         const messageContent =
           fileCount > 0
-            ? `There are ${fileCount} GEMINI.md file(s) in use:\n\n${filePaths.join('\n')}`
-            : 'No GEMINI.md files in use.';
+            ? `There are ${fileCount} GEMINI.md file(s) in use:\n\n${filePaths.join("\n")}`
+            : "No GEMINI.md files in use.";
 
         context.ui.addItem(
           {

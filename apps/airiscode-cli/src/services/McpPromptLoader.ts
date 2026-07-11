@@ -4,19 +4,16 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import type { Config } from '@airiscode/runtime';
-import {
-  getErrorMessage,
-  getMCPServerPrompts,
-} from '@airiscode/runtime';
+import type { Config } from "@airiscode/runtime";
+import { getErrorMessage, getMCPServerPrompts } from "@airiscode/runtime";
+import type { PromptArgument } from "@modelcontextprotocol/sdk/types.js";
 import type {
   CommandContext,
   SlashCommand,
   SlashCommandActionReturn,
-} from '../ui/commands/types.js';
-import { CommandKind } from '../ui/commands/types.js';
-import type { ICommandLoader } from './types.js';
-import type { PromptArgument } from '@modelcontextprotocol/sdk/types.js';
+} from "../ui/commands/types.js";
+import { CommandKind } from "../ui/commands/types.js";
+import type { ICommandLoader } from "./types.js";
 
 /**
  * Discovers and loads executable slash commands from prompts exposed by
@@ -48,14 +45,14 @@ export class McpPromptLoader implements ICommandLoader {
           kind: CommandKind.MCP_PROMPT,
           subCommands: [
             {
-              name: 'help',
-              description: 'Show help for this prompt',
+              name: "help",
+              description: "Show help for this prompt",
               kind: CommandKind.MCP_PROMPT,
               action: async (): Promise<SlashCommandActionReturn> => {
                 if (!prompt.arguments || prompt.arguments.length === 0) {
                   return {
-                    type: 'message',
-                    messageType: 'info',
+                    type: "message",
+                    messageType: "info",
                     content: `Prompt "${prompt.name}" has no arguments.`,
                   };
                 }
@@ -70,13 +67,11 @@ export class McpPromptLoader implements ICommandLoader {
                   if (arg.description) {
                     helpMessage += `    ${arg.description}\n`;
                   }
-                  helpMessage += `    (required: ${
-                    arg.required ? 'yes' : 'no'
-                  })\n\n`;
+                  helpMessage += `    (required: ${arg.required ? "yes" : "no"})\n\n`;
                 }
                 return {
-                  type: 'message',
-                  messageType: 'info',
+                  type: "message",
+                  messageType: "info",
                   content: helpMessage,
                 };
               },
@@ -88,17 +83,17 @@ export class McpPromptLoader implements ICommandLoader {
           ): Promise<SlashCommandActionReturn> => {
             if (!this.config) {
               return {
-                type: 'message',
-                messageType: 'error',
-                content: 'Config not loaded.',
+                type: "message",
+                messageType: "error",
+                content: "Config not loaded.",
               };
             }
 
             const promptInputs = this.parseArgs(args, prompt.arguments);
             if (promptInputs instanceof Error) {
               return {
-                type: 'message',
-                messageType: 'error',
+                type: "message",
+                messageType: "error",
                 content: promptInputs.message,
               };
             }
@@ -108,61 +103,54 @@ export class McpPromptLoader implements ICommandLoader {
               const mcpServerConfig = mcpServers[serverName];
               if (!mcpServerConfig) {
                 return {
-                  type: 'message',
-                  messageType: 'error',
+                  type: "message",
+                  messageType: "error",
                   content: `MCP server config not found for '${serverName}'.`,
                 };
               }
               const result = await prompt.invoke(promptInputs);
 
-              if (result['error']) {
+              if (result["error"]) {
                 return {
-                  type: 'message',
-                  messageType: 'error',
-                  content: `Error invoking prompt: ${result['error']}`,
+                  type: "message",
+                  messageType: "error",
+                  content: `Error invoking prompt: ${result["error"]}`,
                 };
               }
 
               const firstMessage = result.messages?.[0];
               const content = firstMessage?.content;
 
-              if (content?.type !== 'text') {
+              if (content?.type !== "text") {
                 return {
-                  type: 'message',
-                  messageType: 'error',
-                  content:
-                    'Received an empty or invalid prompt response from the server.',
+                  type: "message",
+                  messageType: "error",
+                  content: "Received an empty or invalid prompt response from the server.",
                 };
               }
 
               return {
-                type: 'submit_prompt',
+                type: "submit_prompt",
                 content: JSON.stringify(content.text),
               };
             } catch (error) {
               return {
-                type: 'message',
-                messageType: 'error',
+                type: "message",
+                messageType: "error",
                 content: `Error: ${getErrorMessage(error)}`,
               };
             }
           },
-          completion: async (
-            commandContext: CommandContext,
-            partialArg: string,
-          ) => {
+          completion: async (commandContext: CommandContext, partialArg: string) => {
             const invocation = commandContext.invocation;
             if (!prompt || !prompt.arguments || !invocation) {
               return [];
             }
-            const indexOfFirstSpace = invocation.raw.indexOf(' ') + 1;
+            const indexOfFirstSpace = invocation.raw.indexOf(" ") + 1;
             let promptInputs =
               indexOfFirstSpace === 0
                 ? {}
-                : this.parseArgs(
-                    invocation.raw.substring(indexOfFirstSpace),
-                    prompt.arguments,
-                  );
+                : this.parseArgs(invocation.raw.substring(indexOfFirstSpace), prompt.arguments);
             if (promptInputs instanceof Error) {
               promptInputs = {};
             }
@@ -243,7 +231,7 @@ export class McpPromptLoader implements ICommandLoader {
     while ((match = namedArgRegex.exec(userArgs)) !== null) {
       const key = match[1];
       // Extract the quoted or unquoted argument and remove escape chars.
-      const value = (match[2] ?? match[3]).replace(/\\(.)/g, '$1');
+      const value = (match[2] ?? match[3]).replace(/\\(.)/g, "$1");
       argValues[key] = value;
       // Capture text between matches as potential positional args
       if (match.index > lastIndex) {
@@ -257,13 +245,13 @@ export class McpPromptLoader implements ICommandLoader {
       positionalParts.push(userArgs.substring(lastIndex));
     }
 
-    const positionalArgsString = positionalParts.join('').trim();
+    const positionalArgsString = positionalParts.join("").trim();
     // extracts either quoted strings or non-quoted sequences of non-space characters.
     const positionalArgRegex = /(?:"((?:\\.|[^"\\])*)"|([^ ]+))/g;
     const positionalArgs: string[] = [];
     while ((match = positionalArgRegex.exec(positionalArgsString)) !== null) {
       // Extract the quoted or unquoted argument and remove escape chars.
-      positionalArgs.push((match[1] ?? match[2]).replace(/\\(.)/g, '$1'));
+      positionalArgs.push((match[1] ?? match[2]).replace(/\\(.)/g, "$1"));
     }
 
     if (!promptArgs) {
@@ -275,14 +263,12 @@ export class McpPromptLoader implements ICommandLoader {
       }
     }
 
-    const unfilledArgs = promptArgs.filter(
-      (arg) => arg.required && !promptInputs[arg.name],
-    );
+    const unfilledArgs = promptArgs.filter((arg) => arg.required && !promptInputs[arg.name]);
 
     if (unfilledArgs.length === 1) {
       // If we have only one unfilled arg, we don't require quotes we just
       // join all the given arguments together as if they were quoted.
-      promptInputs[unfilledArgs[0].name] = positionalArgs.join(' ');
+      promptInputs[unfilledArgs[0].name] = positionalArgs.join(" ");
     } else {
       const missingArgs: string[] = [];
       for (let i = 0; i < unfilledArgs.length; i++) {
@@ -293,9 +279,7 @@ export class McpPromptLoader implements ICommandLoader {
         }
       }
       if (missingArgs.length > 0) {
-        const missingArgNames = missingArgs
-          .map((name) => `--${name}`)
-          .join(', ');
+        const missingArgNames = missingArgs.map((name) => `--${name}`).join(", ");
         return new Error(`Missing required argument(s): ${missingArgNames}`);
       }
     }

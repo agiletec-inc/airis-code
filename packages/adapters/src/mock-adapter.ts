@@ -2,15 +2,15 @@
  * Mock adapter for testing
  */
 
-import { AdapterProcess } from './adapter.js';
+import { AdapterProcess } from "./adapter.js";
+import { AdapterEventKind } from "./events.js";
 import type {
-  SpawnOptions,
+  AdapterMetadata,
   ExecuteRequest,
   ExecuteResponse,
   ShellExecutionResult,
-  AdapterMetadata,
-} from './types.js';
-import { AdapterEventKind } from './events.js';
+  SpawnOptions,
+} from "./types.js";
 
 /**
  * Mock execution response
@@ -56,27 +56,27 @@ export class MockAdapter extends AdapterProcess {
 
   getMetadata(): AdapterMetadata {
     return {
-      name: 'mock-adapter',
-      version: '1.0.0-mock',
-      supportedActions: ['implement', 'refactor', 'test', 'review'],
+      name: "mock-adapter",
+      version: "1.0.0-mock",
+      supportedActions: ["implement", "refactor", "test", "review"],
       requiresCLI: undefined,
     };
   }
 
   async spawn(): Promise<void> {
     if (this.failSpawn) {
-      this.setState({ status: 'error', error: 'Mock spawn failure' });
-      throw new Error('Mock spawn failure');
+      this.setState({ status: "error", error: "Mock spawn failure" });
+      throw new Error("Mock spawn failure");
     }
 
-    this.setState({ status: 'spawning', startedAt: new Date() });
+    this.setState({ status: "spawning", startedAt: new Date() });
 
     if (this.delay > 0) {
       await new Promise((resolve) => setTimeout(resolve, this.delay));
     }
 
     this.setState({
-      status: 'ready',
+      status: "ready",
       processId: this.mockProcessId,
     });
 
@@ -100,11 +100,11 @@ export class MockAdapter extends AdapterProcess {
     this.validateExecuteRequest(request);
 
     if (this.failExecute) {
-      this.setState({ status: 'error', error: 'Mock execution failure' });
-      throw new Error('Mock execution failure');
+      this.setState({ status: "error", error: "Mock execution failure" });
+      throw new Error("Mock execution failure");
     }
 
-    this.setState({ status: 'busy' });
+    this.setState({ status: "busy" });
 
     this.emit({
       kind: AdapterEventKind.EXECUTE_START,
@@ -120,7 +120,7 @@ export class MockAdapter extends AdapterProcess {
 
     // Get mock response for this action
     const mockResponse = this.responses.get(request.action) || {
-      outputJson: JSON.stringify({ success: true, message: 'Mock execution complete' }),
+      outputJson: JSON.stringify({ success: true, message: "Mock execution complete" }),
       proposedShell: [],
     };
 
@@ -134,7 +134,7 @@ export class MockAdapter extends AdapterProcess {
           sessionId: this.options.sessionId,
           adapterName: this.options.adapterName,
           command: cmd,
-          reason: validation.reason || 'Unknown reason',
+          reason: validation.reason || "Unknown reason",
         });
       } else {
         this.emit({
@@ -148,7 +148,7 @@ export class MockAdapter extends AdapterProcess {
       return validation.allowed;
     });
 
-    this.setState({ status: 'ready' });
+    this.setState({ status: "ready" });
 
     this.emit({
       kind: AdapterEventKind.EXECUTE_END,
@@ -181,7 +181,7 @@ export class MockAdapter extends AdapterProcess {
         sessionId: this.options.sessionId,
         adapterName: this.options.adapterName,
         command,
-        reason: validation.reason || 'Unknown reason',
+        reason: validation.reason || "Unknown reason",
       });
 
       return {
@@ -208,13 +208,13 @@ export class MockAdapter extends AdapterProcess {
       allowed: true,
       exitCode: 0,
       stdout: `Mock execution of: ${command}`,
-      stderr: '',
+      stderr: "",
     };
   }
 
   async terminate(): Promise<void> {
     this.setState({
-      status: 'terminated',
+      status: "terminated",
       terminatedAt: new Date(),
     });
 

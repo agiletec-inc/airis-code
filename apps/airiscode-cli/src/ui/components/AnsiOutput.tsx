@@ -4,13 +4,9 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import type React from 'react';
-import { Text } from 'ink';
-import type {
-  AnsiLine,
-  AnsiOutput,
-  AnsiToken,
-} from '@airiscode/runtime';
+import type { AnsiLine, AnsiOutput, AnsiToken } from "@airiscode/runtime";
+import { Text } from "ink";
+import type React from "react";
 
 const DEFAULT_HEIGHT = 24;
 
@@ -19,10 +15,7 @@ interface AnsiOutputProps {
   availableTerminalHeight?: number;
 }
 
-export const AnsiOutputText: React.FC<AnsiOutputProps> = ({
-  data,
-  availableTerminalHeight,
-}) => {
+export const AnsiOutputText: React.FC<AnsiOutputProps> = ({ data, availableTerminalHeight }) => {
   const lastLines = data.slice(
     -(availableTerminalHeight && availableTerminalHeight > 0
       ? availableTerminalHeight

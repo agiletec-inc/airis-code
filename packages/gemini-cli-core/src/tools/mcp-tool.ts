@@ -4,40 +4,35 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { safeJsonStringify } from '../utils/safeJsonStringify.js';
+import type { CallableTool, FunctionCall, Part } from "@google/genai";
+import type { Config } from "../config/config.js";
+import type { MessageBus } from "../confirmation-bus/message-bus.js";
+import { safeJsonStringify } from "../utils/safeJsonStringify.js";
+import { ToolErrorType } from "./tool-error.js";
 import type {
   ToolCallConfirmationDetails,
   ToolInvocation,
   ToolMcpConfirmationDetails,
   ToolResult,
-} from './tools.js';
-import {
-  BaseDeclarativeTool,
-  BaseToolInvocation,
-  Kind,
-  ToolConfirmationOutcome,
-} from './tools.js';
-import type { CallableTool, FunctionCall, Part } from '@google/genai';
-import { ToolErrorType } from './tool-error.js';
-import type { Config } from '../config/config.js';
-import type { MessageBus } from '../confirmation-bus/message-bus.js';
+} from "./tools.js";
+import { BaseDeclarativeTool, BaseToolInvocation, Kind, ToolConfirmationOutcome } from "./tools.js";
 
 type ToolParams = Record<string, unknown>;
 
 // Discriminated union for MCP Content Blocks to ensure type safety.
 type McpTextBlock = {
-  type: 'text';
+  type: "text";
   text: string;
 };
 
 type McpMediaBlock = {
-  type: 'image' | 'audio';
+  type: "image" | "audio";
   mimeType: string;
   data: string;
 };
 
 type McpResourceBlock = {
-  type: 'resource';
+  type: "resource";
   resource: {
     text?: string;
     blob?: string;
@@ -46,22 +41,15 @@ type McpResourceBlock = {
 };
 
 type McpResourceLinkBlock = {
-  type: 'resource_link';
+  type: "resource_link";
   uri: string;
   title?: string;
   name?: string;
 };
 
-type McpContentBlock =
-  | McpTextBlock
-  | McpMediaBlock
-  | McpResourceBlock
-  | McpResourceLinkBlock;
+type McpContentBlock = McpTextBlock | McpMediaBlock | McpResourceBlock | McpResourceLinkBlock;
 
-class DiscoveredMCPToolInvocation extends BaseToolInvocation<
-  ToolParams,
-  ToolResult
-> {
+class DiscoveredMCPToolInvocation extends BaseToolInvocation<ToolParams, ToolResult> {
   private static readonly allowlist: Set<string> = new Set();
 
   constructor(
@@ -78,13 +66,7 @@ class DiscoveredMCPToolInvocation extends BaseToolInvocation<
     // This enables server wildcards (e.g., "google-workspace__*")
     // while still allowing specific tool rules
 
-    super(
-      params,
-      messageBus,
-      `${serverName}__${serverToolName}`,
-      displayName,
-      serverName,
-    );
+    super(params, messageBus, `${serverName}__${serverToolName}`, displayName, serverName);
   }
 
   protected override async getConfirmationDetails(
@@ -105,8 +87,8 @@ class DiscoveredMCPToolInvocation extends BaseToolInvocation<
     }
 
     const confirmationDetails: ToolMcpConfirmationDetails = {
-      type: 'mcp',
-      title: 'Confirm MCP Tool Execution',
+      type: "mcp",
+      title: "Confirm MCP Tool Execution",
       serverName: this.serverName,
       toolName: this.serverToolName, // Display original tool name in confirmation
       toolDisplayName: this.displayName, // Display global registry name exposed to model and user
@@ -135,7 +117,7 @@ class DiscoveredMCPToolInvocation extends BaseToolInvocation<
     if (response) {
       // Check for top-level isError (MCP Spec compliant)
       const isErrorTop = (response as { isError?: boolean | string }).isError;
-      if (isErrorTop === true || isErrorTop === 'true') {
+      if (isErrorTop === true || isErrorTop === "true") {
         return true;
       }
 
@@ -143,7 +125,7 @@ class DiscoveredMCPToolInvocation extends BaseToolInvocation<
       const error = (response as { error?: McpError })?.error;
       const isError = error?.isError;
 
-      if (error && (isError === true || isError === 'true')) {
+      if (error && (isError === true || isError === "true")) {
         return true;
       }
     }
@@ -161,21 +143,21 @@ class DiscoveredMCPToolInvocation extends BaseToolInvocation<
     // Race MCP tool call with abort signal to respect cancellation
     const rawResponseParts = await new Promise<Part[]>((resolve, reject) => {
       if (signal.aborted) {
-        const error = new Error('Tool call aborted');
-        error.name = 'AbortError';
+        const error = new Error("Tool call aborted");
+        error.name = "AbortError";
         reject(error);
         return;
       }
       const onAbort = () => {
         cleanup();
-        const error = new Error('Tool call aborted');
-        error.name = 'AbortError';
+        const error = new Error("Tool call aborted");
+        error.name = "AbortError";
         reject(error);
       };
       const cleanup = () => {
-        signal.removeEventListener('abort', onAbort);
+        signal.removeEventListener("abort", onAbort);
       };
-      signal.addEventListener('abort', onAbort, { once: true });
+      signal.addEventListener("abort", onAbort, { once: true });
 
       this.mcpTool
         .callTool(functionCalls)
@@ -219,10 +201,7 @@ class DiscoveredMCPToolInvocation extends BaseToolInvocation<
   }
 }
 
-export class DiscoveredMCPTool extends BaseDeclarativeTool<
-  ToolParams,
-  ToolResult
-> {
+export class DiscoveredMCPTool extends BaseDeclarativeTool<ToolParams, ToolResult> {
   constructor(
     private readonly mcpTool: CallableTool,
     readonly serverName: string,
@@ -293,10 +272,7 @@ function transformTextBlock(block: McpTextBlock): Part {
   return { text: block.text };
 }
 
-function transformImageAudioBlock(
-  block: McpMediaBlock,
-  toolName: string,
-): Part[] {
+function transformImageAudioBlock(block: McpMediaBlock, toolName: string): Part[] {
   return [
     {
       text: `[Tool '${toolName}' provided the following ${
@@ -312,16 +288,13 @@ function transformImageAudioBlock(
   ];
 }
 
-function transformResourceBlock(
-  block: McpResourceBlock,
-  toolName: string,
-): Part | Part[] | null {
+function transformResourceBlock(block: McpResourceBlock, toolName: string): Part | Part[] | null {
   const resource = block.resource;
   if (resource?.text) {
     return { text: resource.text };
   }
   if (resource?.blob) {
-    const mimeType = resource.mimeType || 'application/octet-stream';
+    const mimeType = resource.mimeType || "application/octet-stream";
     return [
       {
         text: `[Tool '${toolName}' provided the following embedded resource with mime-type: ${mimeType}]`,
@@ -351,30 +324,28 @@ function transformResourceLinkBlock(block: McpResourceLinkBlock): Part {
  */
 function transformMcpContentToParts(sdkResponse: Part[]): Part[] {
   const funcResponse = sdkResponse?.[0]?.functionResponse;
-  const mcpContent = funcResponse?.response?.['content'] as McpContentBlock[];
-  const toolName = funcResponse?.name || 'unknown tool';
+  const mcpContent = funcResponse?.response?.["content"] as McpContentBlock[];
+  const toolName = funcResponse?.name || "unknown tool";
 
   if (!Array.isArray(mcpContent)) {
-    return [{ text: '[Error: Could not parse tool response]' }];
+    return [{ text: "[Error: Could not parse tool response]" }];
   }
 
-  const transformed = mcpContent.flatMap(
-    (block: McpContentBlock): Part | Part[] | null => {
-      switch (block.type) {
-        case 'text':
-          return transformTextBlock(block);
-        case 'image':
-        case 'audio':
-          return transformImageAudioBlock(block, toolName);
-        case 'resource':
-          return transformResourceBlock(block, toolName);
-        case 'resource_link':
-          return transformResourceLinkBlock(block);
-        default:
-          return null;
-      }
-    },
-  );
+  const transformed = mcpContent.flatMap((block: McpContentBlock): Part | Part[] | null => {
+    switch (block.type) {
+      case "text":
+        return transformTextBlock(block);
+      case "image":
+      case "audio":
+        return transformImageAudioBlock(block, toolName);
+      case "resource":
+        return transformResourceBlock(block, toolName);
+      case "resource_link":
+        return transformResourceLinkBlock(block);
+      default:
+        return null;
+    }
+  });
 
   return transformed.filter((part): part is Part => part !== null);
 }
@@ -388,49 +359,44 @@ function transformMcpContentToParts(sdkResponse: Part[]): Part[] {
  * @returns A formatted string representing the tool's output.
  */
 function getStringifiedResultForDisplay(rawResponse: Part[]): string {
-  const mcpContent = rawResponse?.[0]?.functionResponse?.response?.[
-    'content'
-  ] as McpContentBlock[];
+  const mcpContent = rawResponse?.[0]?.functionResponse?.response?.["content"] as McpContentBlock[];
 
   if (!Array.isArray(mcpContent)) {
-    return '```json\n' + JSON.stringify(rawResponse, null, 2) + '\n```';
+    return "```json\n" + JSON.stringify(rawResponse, null, 2) + "\n```";
   }
 
   const displayParts = mcpContent.map((block: McpContentBlock): string => {
     switch (block.type) {
-      case 'text':
+      case "text":
         return block.text;
-      case 'image':
+      case "image":
         return `[Image: ${block.mimeType}]`;
-      case 'audio':
+      case "audio":
         return `[Audio: ${block.mimeType}]`;
-      case 'resource_link':
+      case "resource_link":
         return `[Link to ${block.title || block.name}: ${block.uri}]`;
-      case 'resource':
+      case "resource":
         if (block.resource?.text) {
           return block.resource.text;
         }
-        return `[Embedded Resource: ${
-          block.resource?.mimeType || 'unknown type'
-        }]`;
+        return `[Embedded Resource: ${block.resource?.mimeType || "unknown type"}]`;
       default:
         return `[Unknown content type: ${(block as { type: string }).type}]`;
     }
   });
 
-  return displayParts.join('\n');
+  return displayParts.join("\n");
 }
 
 /** Visible for testing */
 export function generateValidName(name: string) {
   // Replace invalid characters (based on 400 error message from Gemini API) with underscores
-  let validToolname = name.replace(/[^a-zA-Z0-9_.-]/g, '_');
+  let validToolname = name.replace(/[^a-zA-Z0-9_.-]/g, "_");
 
   // If longer than 63 characters, replace middle with '___'
   // (Gemini API says max length 64, but actual limit seems to be 63)
   if (validToolname.length > 63) {
-    validToolname =
-      validToolname.slice(0, 28) + '___' + validToolname.slice(-32);
+    validToolname = validToolname.slice(0, 28) + "___" + validToolname.slice(-32);
   }
   return validToolname;
 }

@@ -4,31 +4,31 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { useState } from 'react';
-import { Box, Text, useIsScreenReaderEnabled } from 'ink';
-import { LoadingIndicator } from './LoadingIndicator.js';
-import { ContextSummaryDisplay } from './ContextSummaryDisplay.js';
-import { AutoAcceptIndicator } from './AutoAcceptIndicator.js';
-import { ShellModeIndicator } from './ShellModeIndicator.js';
-import { DetailedMessagesDisplay } from './DetailedMessagesDisplay.js';
-import { RawMarkdownIndicator } from './RawMarkdownIndicator.js';
-import { InputPrompt } from './InputPrompt.js';
-import { Footer } from './Footer.js';
-import { ShowMoreLines } from './ShowMoreLines.js';
-import { QueuedMessageDisplay } from './QueuedMessageDisplay.js';
-import { OverflowProvider } from '../contexts/OverflowContext.js';
-import { theme } from '../semantic-colors.js';
-import { isNarrowWidth } from '../utils/isNarrowWidth.js';
-import { useUIState } from '../contexts/UIStateContext.js';
-import { useUIActions } from '../contexts/UIActionsContext.js';
-import { useVimMode } from '../contexts/VimModeContext.js';
-import { useConfig } from '../contexts/ConfigContext.js';
-import { useSettings } from '../contexts/SettingsContext.js';
-import { useAlternateBuffer } from '../hooks/useAlternateBuffer.js';
-import { ApprovalMode } from '@airiscode/gemini-cli-core';
-import { StreamingState } from '../types.js';
-import { ConfigInitDisplay } from '../components/ConfigInitDisplay.js';
-import { TodoTray } from './messages/Todo.js';
+import { ApprovalMode } from "@airiscode/gemini-cli-core";
+import { Box, Text, useIsScreenReaderEnabled } from "ink";
+import { useState } from "react";
+import { ConfigInitDisplay } from "../components/ConfigInitDisplay.js";
+import { useConfig } from "../contexts/ConfigContext.js";
+import { OverflowProvider } from "../contexts/OverflowContext.js";
+import { useSettings } from "../contexts/SettingsContext.js";
+import { useUIActions } from "../contexts/UIActionsContext.js";
+import { useUIState } from "../contexts/UIStateContext.js";
+import { useVimMode } from "../contexts/VimModeContext.js";
+import { useAlternateBuffer } from "../hooks/useAlternateBuffer.js";
+import { theme } from "../semantic-colors.js";
+import { StreamingState } from "../types.js";
+import { isNarrowWidth } from "../utils/isNarrowWidth.js";
+import { AutoAcceptIndicator } from "./AutoAcceptIndicator.js";
+import { ContextSummaryDisplay } from "./ContextSummaryDisplay.js";
+import { DetailedMessagesDisplay } from "./DetailedMessagesDisplay.js";
+import { Footer } from "./Footer.js";
+import { InputPrompt } from "./InputPrompt.js";
+import { LoadingIndicator } from "./LoadingIndicator.js";
+import { TodoTray } from "./messages/Todo.js";
+import { QueuedMessageDisplay } from "./QueuedMessageDisplay.js";
+import { RawMarkdownIndicator } from "./RawMarkdownIndicator.js";
+import { ShellModeIndicator } from "./ShellModeIndicator.js";
+import { ShowMoreLines } from "./ShowMoreLines.js";
 
 export const Composer = () => {
   const config = useConfig();
@@ -44,17 +44,11 @@ export const Composer = () => {
 
   const isAlternateBuffer = useAlternateBuffer();
   const { contextFileNames, showAutoAcceptIndicator } = uiState;
-  const suggestionsPosition = isAlternateBuffer ? 'above' : 'below';
-  const hideContextSummary =
-    suggestionsVisible && suggestionsPosition === 'above';
+  const suggestionsPosition = isAlternateBuffer ? "above" : "below";
+  const hideContextSummary = suggestionsVisible && suggestionsPosition === "above";
 
   return (
-    <Box
-      flexDirection="column"
-      width={uiState.mainAreaWidth}
-      flexGrow={0}
-      flexShrink={0}
-    >
+    <Box flexDirection="column" width={uiState.mainAreaWidth} flexGrow={0} flexShrink={0}>
       {!uiState.embeddedShellFocused && (
         <LoadingIndicator
           thought={
@@ -72,9 +66,7 @@ export const Composer = () => {
         />
       )}
 
-      {(!uiState.slashCommands || !uiState.isConfigInitialized) && (
-        <ConfigInitDisplay />
-      )}
+      {(!uiState.slashCommands || !uiState.isConfigInitialized) && <ConfigInitDisplay />}
 
       <QueuedMessageDisplay messageQueue={uiState.messageQueue} />
 
@@ -82,29 +74,19 @@ export const Composer = () => {
 
       <Box
         marginTop={1}
-        justifyContent={
-          settings.merged.ui?.hideContextSummary
-            ? 'flex-start'
-            : 'space-between'
-        }
+        justifyContent={settings.merged.ui?.hideContextSummary ? "flex-start" : "space-between"}
         width="100%"
-        flexDirection={isNarrow ? 'column' : 'row'}
-        alignItems={isNarrow ? 'flex-start' : 'center'}
+        flexDirection={isNarrow ? "column" : "row"}
+        alignItems={isNarrow ? "flex-start" : "center"}
       >
         <Box marginRight={1}>
-          {process.env['GEMINI_SYSTEM_MD'] && (
-            <Text color={theme.status.error}>|⌐■_■| </Text>
-          )}
+          {process.env["GEMINI_SYSTEM_MD"] && <Text color={theme.status.error}>|⌐■_■| </Text>}
           {uiState.ctrlCPressedOnce ? (
-            <Text color={theme.status.warning}>
-              Press Ctrl+C again to exit.
-            </Text>
+            <Text color={theme.status.warning}>Press Ctrl+C again to exit.</Text>
           ) : uiState.warningMessage ? (
             <Text color={theme.status.warning}>{uiState.warningMessage}</Text>
           ) : uiState.ctrlDPressedOnce ? (
-            <Text color={theme.status.warning}>
-              Press Ctrl+D again to exit.
-            </Text>
+            <Text color={theme.status.warning}>Press Ctrl+D again to exit.</Text>
           ) : uiState.showEscapePrompt ? (
             <Text color={theme.text.secondary}>Press Esc again to clear.</Text>
           ) : uiState.queueErrorMessage ? (
@@ -117,18 +99,15 @@ export const Composer = () => {
                 geminiMdFileCount={uiState.geminiMdFileCount}
                 contextFileNames={contextFileNames}
                 mcpServers={config.getMcpClientManager()?.getMcpServers() ?? {}}
-                blockedMcpServers={
-                  config.getMcpClientManager()?.getBlockedMcpServers() ?? []
-                }
+                blockedMcpServers={config.getMcpClientManager()?.getBlockedMcpServers() ?? []}
               />
             )
           )}
         </Box>
         <Box paddingTop={isNarrow ? 1 : 0}>
-          {showAutoAcceptIndicator !== ApprovalMode.DEFAULT &&
-            !uiState.shellModeActive && (
-              <AutoAcceptIndicator approvalMode={showAutoAcceptIndicator} />
-            )}
+          {showAutoAcceptIndicator !== ApprovalMode.DEFAULT && !uiState.shellModeActive && (
+            <AutoAcceptIndicator approvalMode={showAutoAcceptIndicator} />
+          )}
           {uiState.shellModeActive && <ShellModeIndicator />}
           {!uiState.renderMarkdown && <RawMarkdownIndicator />}
         </Box>
@@ -139,9 +118,7 @@ export const Composer = () => {
           <Box flexDirection="column">
             <DetailedMessagesDisplay
               messages={uiState.filteredConsoleMessages}
-              maxHeight={
-                uiState.constrainHeight ? debugConsoleMaxHeight : undefined
-              }
+              maxHeight={uiState.constrainHeight ? debugConsoleMaxHeight : undefined}
               width={uiState.mainAreaWidth}
               hasFocus={uiState.showErrorDetails}
             />
@@ -173,7 +150,7 @@ export const Composer = () => {
           placeholder={
             vimEnabled
               ? "  Press 'i' for INSERT mode and 'Esc' for NORMAL mode."
-              : '  Type your message or @path/to/file'
+              : "  Type your message or @path/to/file"
           }
           setQueueErrorMessage={uiActions.setQueueErrorMessage}
           streamingState={uiState.streamingState}

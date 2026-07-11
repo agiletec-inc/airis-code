@@ -4,10 +4,10 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { z } from 'zod';
-import { coreEvents } from '@airiscode/gemini-cli-core';
-import { type Result, type ErrorResponse } from './schema.js';
-import type { WritableStream, ReadableStream } from 'node:stream/web';
+import type { ReadableStream, WritableStream } from "node:stream/web";
+import { coreEvents } from "@airiscode/gemini-cli-core";
+import { z } from "zod";
+import { type ErrorResponse, type Result } from "./schema.js";
 
 export class RequestError extends Error {
   data?: { details?: string };
@@ -18,34 +18,34 @@ export class RequestError extends Error {
     details?: string,
   ) {
     super(message);
-    this.name = 'RequestError';
+    this.name = "RequestError";
     if (details) {
       this.data = { details };
     }
   }
 
   static parseError(details?: string): RequestError {
-    return new RequestError(-32700, 'Parse error', details);
+    return new RequestError(-32700, "Parse error", details);
   }
 
   static invalidRequest(details?: string): RequestError {
-    return new RequestError(-32600, 'Invalid request', details);
+    return new RequestError(-32600, "Invalid request", details);
   }
 
   static methodNotFound(details?: string): RequestError {
-    return new RequestError(-32601, 'Method not found', details);
+    return new RequestError(-32601, "Method not found", details);
   }
 
   static invalidParams(details?: string): RequestError {
-    return new RequestError(-32602, 'Invalid params', details);
+    return new RequestError(-32602, "Invalid params", details);
   }
 
   static internalError(details?: string): RequestError {
-    return new RequestError(-32603, 'Internal error', details);
+    return new RequestError(-32603, "Internal error", details);
   }
 
   static authRequired(details?: string): RequestError {
-    return new RequestError(-32000, 'Authentication required', details);
+    return new RequestError(-32000, "Authentication required", details);
   }
 
   toResult<T>(): Result<T> {
@@ -62,19 +62,19 @@ export class RequestError extends Error {
 type AnyMessage = AnyRequest | AnyResponse | AnyNotification;
 
 type AnyRequest = {
-  jsonrpc: '2.0';
+  jsonrpc: "2.0";
   id: string | number;
   method: string;
   params?: unknown;
 };
 
 type AnyResponse = {
-  jsonrpc: '2.0';
+  jsonrpc: "2.0";
   id: string | number;
 } & Result<unknown>;
 
 type AnyNotification = {
-  jsonrpc: '2.0';
+  jsonrpc: "2.0";
   method: string;
   params?: unknown;
 };
@@ -84,10 +84,7 @@ type PendingResponse = {
   reject: (error: ErrorResponse) => void;
 };
 
-export type MethodHandler = (
-  method: string,
-  params: unknown,
-) => Promise<unknown>;
+export type MethodHandler = (method: string, params: unknown) => Promise<unknown>;
 
 export class Connection {
   #pendingResponses: Map<string | number, PendingResponse> = new Map();
@@ -110,12 +107,12 @@ export class Connection {
   }
 
   async #receive(output: ReadableStream<Uint8Array>) {
-    let content = '';
+    let content = "";
     const decoder = new TextDecoder();
     for await (const chunk of output) {
       content += decoder.decode(chunk, { stream: true });
-      const lines = content.split('\n');
-      content = lines.pop() || '';
+      const lines = content.split("\n");
+      content = lines.pop() || "";
 
       for (const line of lines) {
         const trimmedLine = line.trim();
@@ -130,31 +127,25 @@ export class Connection {
   }
 
   async #processMessage(message: AnyMessage) {
-    if ('method' in message && 'id' in message) {
+    if ("method" in message && "id" in message) {
       // It's a request
-      const response = await this.#tryCallHandler(
-        message.method,
-        message.params,
-      );
+      const response = await this.#tryCallHandler(message.method, message.params);
 
       await this.#sendMessage({
-        jsonrpc: '2.0',
+        jsonrpc: "2.0",
         id: message.id,
         ...response,
       });
-    } else if ('method' in message) {
+    } else if ("method" in message) {
       // It's a notification
       await this.#tryCallHandler(message.method, message.params);
-    } else if ('id' in message) {
+    } else if ("id" in message) {
       // It's a response
       this.#handleResponse(message as AnyResponse);
     }
   }
 
-  async #tryCallHandler(
-    method: string,
-    params?: unknown,
-  ): Promise<Result<unknown>> {
+  async #tryCallHandler(method: string, params?: unknown): Promise<Result<unknown>> {
     try {
       const result = await this.#handler(method, params);
       return { result: result ?? null };
@@ -164,9 +155,7 @@ export class Connection {
       }
 
       if (error instanceof z.ZodError) {
-        return RequestError.invalidParams(
-          JSON.stringify(error.format(), undefined, 2),
-        ).toResult();
+        return RequestError.invalidParams(JSON.stringify(error.format(), undefined, 2)).toResult();
       }
 
       let details;
@@ -174,10 +163,10 @@ export class Connection {
       if (error instanceof Error) {
         details = error.message;
       } else if (
-        typeof error === 'object' &&
+        typeof error === "object" &&
         error != null &&
-        'message' in error &&
-        typeof error.message === 'string'
+        "message" in error &&
+        typeof error.message === "string"
       ) {
         details = error.message;
       }
@@ -189,9 +178,9 @@ export class Connection {
   #handleResponse(response: AnyResponse) {
     const pendingResponse = this.#pendingResponses.get(response.id);
     if (pendingResponse) {
-      if ('result' in response) {
+      if ("result" in response) {
         pendingResponse.resolve(response.result);
-      } else if ('error' in response) {
+      } else if ("error" in response) {
         pendingResponse.reject(response.error);
       }
       this.#pendingResponses.delete(response.id);
@@ -203,16 +192,16 @@ export class Connection {
     const responsePromise = new Promise((resolve, reject) => {
       this.#pendingResponses.set(id, { resolve, reject });
     });
-    await this.#sendMessage({ jsonrpc: '2.0', id, method, params });
+    await this.#sendMessage({ jsonrpc: "2.0", id, method, params });
     return responsePromise as Promise<Resp>;
   }
 
   async sendNotification<N>(method: string, params?: N): Promise<void> {
-    await this.#sendMessage({ jsonrpc: '2.0', method, params });
+    await this.#sendMessage({ jsonrpc: "2.0", method, params });
   }
 
   async #sendMessage(json: AnyMessage) {
-    const content = JSON.stringify(json) + '\n';
+    const content = JSON.stringify(json) + "\n";
     this.#writeQueue = this.#writeQueue
       .then(async () => {
         const writer = this.#peerInput.getWriter();
@@ -224,7 +213,7 @@ export class Connection {
       })
       .catch((error) => {
         // Continue processing writes on error
-        coreEvents.emitFeedback('error', 'ACP write error.', error);
+        coreEvents.emitFeedback("error", "ACP write error.", error);
       });
     return this.#writeQueue;
   }

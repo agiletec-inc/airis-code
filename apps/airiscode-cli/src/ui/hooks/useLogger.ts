@@ -4,9 +4,9 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { useState, useEffect } from 'react';
-import type { Storage } from '@airiscode/runtime';
-import { Logger } from '@airiscode/runtime';
+import type { Storage } from "@airiscode/runtime";
+import { Logger } from "@airiscode/runtime";
+import { useEffect, useState } from "react";
 
 /**
  * Hook to manage the logger instance.

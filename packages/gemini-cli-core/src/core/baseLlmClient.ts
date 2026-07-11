@@ -6,24 +6,24 @@
 
 import type {
   Content,
-  Part,
   EmbedContentParameters,
-  GenerateContentResponse,
   GenerateContentParameters,
-} from '@google/genai';
-import type { Config } from '../config/config.js';
-import type { ContentGenerator } from './contentGenerator.js';
-import { getResponseText } from '../utils/partUtils.js';
-import { reportError } from '../utils/errorReporting.js';
-import { getErrorMessage } from '../utils/errors.js';
-import { logMalformedJsonResponse } from '../telemetry/loggers.js';
-import { MalformedJsonResponseEvent } from '../telemetry/types.js';
-import { retryWithBackoff } from '../utils/retry.js';
-import type { ModelConfigKey } from '../services/modelConfigService.js';
+  GenerateContentResponse,
+  Part,
+} from "@google/genai";
 import {
   applyModelSelection,
   createAvailabilityContextProvider,
-} from '../availability/policyHelpers.js';
+} from "../availability/policyHelpers.js";
+import type { Config } from "../config/config.js";
+import type { ModelConfigKey } from "../services/modelConfigService.js";
+import { logMalformedJsonResponse } from "../telemetry/loggers.js";
+import { MalformedJsonResponseEvent } from "../telemetry/types.js";
+import { reportError } from "../utils/errorReporting.js";
+import { getErrorMessage } from "../utils/errors.js";
+import { getResponseText } from "../utils/partUtils.js";
+import { retryWithBackoff } from "../utils/retry.js";
+import type { ContentGenerator } from "./contentGenerator.js";
 
 const DEFAULT_MAX_ATTEMPTS = 5;
 
@@ -88,9 +88,7 @@ export class BaseLlmClient {
     private readonly config: Config,
   ) {}
 
-  async generateJson(
-    options: GenerateJsonOptions,
-  ): Promise<Record<string, unknown>> {
+  async generateJson(options: GenerateJsonOptions): Promise<Record<string, unknown>> {
     const {
       schema,
       modelConfigKey,
@@ -126,20 +124,18 @@ export class BaseLlmClient {
           ...generateContentConfig,
           ...(systemInstruction && { systemInstruction }),
           responseJsonSchema: schema,
-          responseMimeType: 'application/json',
+          responseMimeType: "application/json",
           abortSignal,
         },
       },
       promptId,
       maxAttempts,
       shouldRetryOnContent,
-      'generateJson',
+      "generateJson",
     );
 
     // If we are here, the content is valid (not empty and parsable).
-    return JSON.parse(
-      this.cleanJsonResponse(getResponseText(result)!.trim(), model),
-    );
+    return JSON.parse(this.cleanJsonResponse(getResponseText(result)!.trim(), model));
   }
 
   async generateEmbedding(texts: string[]): Promise<number[][]> {
@@ -151,13 +147,9 @@ export class BaseLlmClient {
       contents: texts,
     };
 
-    const embedContentResponse =
-      await this.contentGenerator.embedContent(embedModelParams);
-    if (
-      !embedContentResponse.embeddings ||
-      embedContentResponse.embeddings.length === 0
-    ) {
-      throw new Error('No embeddings found in API response.');
+    const embedContentResponse = await this.contentGenerator.embedContent(embedModelParams);
+    if (!embedContentResponse.embeddings || embedContentResponse.embeddings.length === 0) {
+      throw new Error("No embeddings found in API response.");
     }
 
     if (embedContentResponse.embeddings.length !== texts.length) {
@@ -178,29 +170,18 @@ export class BaseLlmClient {
   }
 
   private cleanJsonResponse(text: string, model: string): string {
-    const prefix = '```json';
-    const suffix = '```';
+    const prefix = "```json";
+    const suffix = "```";
     if (text.startsWith(prefix) && text.endsWith(suffix)) {
-      logMalformedJsonResponse(
-        this.config,
-        new MalformedJsonResponseEvent(model),
-      );
+      logMalformedJsonResponse(this.config, new MalformedJsonResponseEvent(model));
       return text.substring(prefix.length, text.length - suffix.length).trim();
     }
     return text;
   }
 
-  async generateContent(
-    options: GenerateContentOptions,
-  ): Promise<GenerateContentResponse> {
-    const {
-      modelConfigKey,
-      contents,
-      systemInstruction,
-      abortSignal,
-      promptId,
-      maxAttempts,
-    } = options;
+  async generateContent(options: GenerateContentOptions): Promise<GenerateContentResponse> {
+    const { modelConfigKey, contents, systemInstruction, abortSignal, promptId, maxAttempts } =
+      options;
 
     const { model, generateContentConfig } =
       this.config.modelConfigService.getResolvedConfig(modelConfigKey);
@@ -223,7 +204,7 @@ export class BaseLlmClient {
       promptId,
       maxAttempts,
       shouldRetryOnContent,
-      'generateContent',
+      "generateContent",
     );
   }
 
@@ -232,7 +213,7 @@ export class BaseLlmClient {
     promptId: string,
     maxAttempts: number | undefined,
     shouldRetryOnContent: (response: GenerateContentResponse) => boolean,
-    errorContext: 'generateJson' | 'generateContent',
+    errorContext: "generateJson" | "generateContent",
   ): Promise<GenerateContentResponse> {
     const abortSignal = requestParams.config?.abortSignal;
 
@@ -246,11 +227,7 @@ export class BaseLlmClient {
       model,
       config: newConfig,
       maxAttempts: availabilityMaxAttempts,
-    } = applyModelSelection(
-      this.config,
-      requestParams.model,
-      requestParams.config,
-    );
+    } = applyModelSelection(this.config, requestParams.model, requestParams.config);
     requestParams.model = model;
     if (newConfig) {
       requestParams.config = newConfig;
@@ -268,10 +245,9 @@ export class BaseLlmClient {
           if (activeModel !== requestParams.model) {
             requestParams.model = activeModel;
             // Re-resolve config if model changed during retry
-            const { generateContentConfig } =
-              this.config.modelConfigService.getResolvedConfig({
-                model: activeModel,
-              });
+            const { generateContentConfig } = this.config.modelConfigService.getResolvedConfig({
+              model: activeModel,
+            });
             requestParams.config = {
               ...requestParams.config,
               ...generateContentConfig,
@@ -283,8 +259,7 @@ export class BaseLlmClient {
 
       return await retryWithBackoff(apiCall, {
         shouldRetryOnContent,
-        maxAttempts:
-          availabilityMaxAttempts ?? maxAttempts ?? DEFAULT_MAX_ATTEMPTS,
+        maxAttempts: availabilityMaxAttempts ?? maxAttempts ?? DEFAULT_MAX_ATTEMPTS,
         getAvailabilityContext,
       });
     } catch (error) {
@@ -293,10 +268,7 @@ export class BaseLlmClient {
       }
 
       // Check if the error is from exhausting retries, and report accordingly.
-      if (
-        error instanceof Error &&
-        error.message.includes('Retry attempts exhausted')
-      ) {
+      if (error instanceof Error && error.message.includes("Retry attempts exhausted")) {
         await reportError(
           error,
           `API returned invalid content after all retries.`,

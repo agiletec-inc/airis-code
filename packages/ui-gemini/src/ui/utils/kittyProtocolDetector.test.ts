@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 // Mock dependencies
 const mocks = vi.hoisted(() => ({
@@ -13,31 +13,31 @@ const mocks = vi.hoisted(() => ({
   disableKittyKeyboardProtocol: vi.fn(),
 }));
 
-vi.mock('node:fs', () => ({
+vi.mock("node:fs", () => ({
   writeSync: mocks.writeSync,
 }));
 
-vi.mock('@airiscode/gemini-cli-core', () => ({
+vi.mock("@airiscode/gemini-cli-core", () => ({
   enableKittyKeyboardProtocol: mocks.enableKittyKeyboardProtocol,
   disableKittyKeyboardProtocol: mocks.disableKittyKeyboardProtocol,
 }));
 
-describe('kittyProtocolDetector', () => {
+describe("kittyProtocolDetector", () => {
   let originalStdin: NodeJS.ReadStream & { fd?: number };
   let originalStdout: NodeJS.WriteStream & { fd?: number };
   let stdinListeners: Record<string, (data: Buffer) => void> = {};
 
   // Module functions
-  let detectAndEnableKittyProtocol: typeof import('./kittyProtocolDetector.js').detectAndEnableKittyProtocol;
-  let isKittyProtocolEnabled: typeof import('./kittyProtocolDetector.js').isKittyProtocolEnabled;
-  let enableSupportedProtocol: typeof import('./kittyProtocolDetector.js').enableSupportedProtocol;
+  let detectAndEnableKittyProtocol: typeof import("./kittyProtocolDetector.js").detectAndEnableKittyProtocol;
+  let isKittyProtocolEnabled: typeof import("./kittyProtocolDetector.js").isKittyProtocolEnabled;
+  let enableSupportedProtocol: typeof import("./kittyProtocolDetector.js").enableSupportedProtocol;
 
   beforeEach(async () => {
     vi.resetModules();
     vi.resetAllMocks();
     vi.useFakeTimers();
 
-    const mod = await import('./kittyProtocolDetector.js');
+    const mod = await import("./kittyProtocolDetector.js");
     detectAndEnableKittyProtocol = mod.detectAndEnableKittyProtocol;
     isKittyProtocolEnabled = mod.isKittyProtocolEnabled;
     enableSupportedProtocol = mod.enableSupportedProtocol;
@@ -48,7 +48,7 @@ describe('kittyProtocolDetector', () => {
 
     stdinListeners = {};
 
-    Object.defineProperty(process, 'stdin', {
+    Object.defineProperty(process, "stdin", {
       value: {
         isTTY: true,
         isRaw: false,
@@ -61,7 +61,7 @@ describe('kittyProtocolDetector', () => {
       configurable: true,
     });
 
-    Object.defineProperty(process, 'stdout', {
+    Object.defineProperty(process, "stdout", {
       value: {
         isTTY: true,
         fd: 1,
@@ -71,28 +71,28 @@ describe('kittyProtocolDetector', () => {
   });
 
   afterEach(() => {
-    Object.defineProperty(process, 'stdin', { value: originalStdin });
-    Object.defineProperty(process, 'stdout', { value: originalStdout });
+    Object.defineProperty(process, "stdin", { value: originalStdin });
+    Object.defineProperty(process, "stdout", { value: originalStdout });
     vi.useRealTimers();
   });
 
-  it('should resolve immediately if not TTY', async () => {
-    Object.defineProperty(process.stdin, 'isTTY', { value: false });
+  it("should resolve immediately if not TTY", async () => {
+    Object.defineProperty(process.stdin, "isTTY", { value: false });
     await detectAndEnableKittyProtocol();
     expect(mocks.writeSync).not.toHaveBeenCalled();
   });
 
-  it('should enable protocol if response indicates support', async () => {
+  it("should enable protocol if response indicates support", async () => {
     const promise = detectAndEnableKittyProtocol();
 
     // Simulate response
-    expect(stdinListeners['data']).toBeDefined();
+    expect(stdinListeners["data"]).toBeDefined();
 
     // Send progressive enhancement response
-    stdinListeners['data'](Buffer.from('\x1b[?u'));
+    stdinListeners["data"](Buffer.from("\x1b[?u"));
 
     // Send device attributes response
-    stdinListeners['data'](Buffer.from('\x1b[?c'));
+    stdinListeners["data"](Buffer.from("\x1b[?c"));
 
     await promise;
 
@@ -100,7 +100,7 @@ describe('kittyProtocolDetector', () => {
     expect(isKittyProtocolEnabled()).toBe(true);
   });
 
-  it('should not enable protocol if timeout occurs', async () => {
+  it("should not enable protocol if timeout occurs", async () => {
     const promise = detectAndEnableKittyProtocol();
 
     // Fast forward time past timeout
@@ -111,28 +111,28 @@ describe('kittyProtocolDetector', () => {
     expect(mocks.enableKittyKeyboardProtocol).not.toHaveBeenCalled();
   });
 
-  it('should wait longer if progressive enhancement received but not attributes', async () => {
+  it("should wait longer if progressive enhancement received but not attributes", async () => {
     const promise = detectAndEnableKittyProtocol();
 
     // Send progressive enhancement response
-    stdinListeners['data'](Buffer.from('\x1b[?u'));
+    stdinListeners["data"](Buffer.from("\x1b[?u"));
 
     // Should not resolve yet
     vi.advanceTimersByTime(300); // Original timeout passed
 
     // Send device attributes response late
-    stdinListeners['data'](Buffer.from('\x1b[?c'));
+    stdinListeners["data"](Buffer.from("\x1b[?c"));
 
     await promise;
 
     expect(mocks.enableKittyKeyboardProtocol).toHaveBeenCalled();
   });
 
-  it('should handle re-enabling protocol', async () => {
+  it("should handle re-enabling protocol", async () => {
     // First, simulate successful detection to set kittySupported = true
     const promise = detectAndEnableKittyProtocol();
-    stdinListeners['data'](Buffer.from('\x1b[?u'));
-    stdinListeners['data'](Buffer.from('\x1b[?c'));
+    stdinListeners["data"](Buffer.from("\x1b[?u"));
+    stdinListeners["data"](Buffer.from("\x1b[?c"));
     await promise;
 
     // Reset mocks to clear previous calls

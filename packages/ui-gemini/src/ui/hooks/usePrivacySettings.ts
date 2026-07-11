@@ -4,13 +4,13 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { useState, useEffect, useCallback } from 'react';
 import {
-  type Config,
   type CodeAssistServer,
-  UserTierId,
+  type Config,
   getCodeAssistServer,
-} from '@airiscode/gemini-cli-core';
+  UserTierId,
+} from "@airiscode/gemini-cli-core";
+import { useCallback, useEffect, useState } from "react";
 
 export interface PrivacyState {
   isLoading: boolean;
@@ -33,7 +33,7 @@ export const usePrivacySettings = (config: Config) => {
         const server = getCodeAssistServerOrFail(config);
         const tier = server.userTier;
         if (tier === undefined) {
-          throw new Error('Could not determine user tier.');
+          throw new Error("Could not determine user tier.");
         }
         if (tier !== UserTierId.FREE) {
           // We don't need to fetch opt-out info since non-free tier
@@ -91,21 +91,19 @@ export const usePrivacySettings = (config: Config) => {
 function getCodeAssistServerOrFail(config: Config): CodeAssistServer {
   const server = getCodeAssistServer(config);
   if (server === undefined) {
-    throw new Error('Oauth not being used');
+    throw new Error("Oauth not being used");
   } else if (server.projectId === undefined) {
-    throw new Error('CodeAssist server is missing a project ID');
+    throw new Error("CodeAssist server is missing a project ID");
   }
   return server;
 }
 
-async function getRemoteDataCollectionOptIn(
-  server: CodeAssistServer,
-): Promise<boolean> {
+async function getRemoteDataCollectionOptIn(server: CodeAssistServer): Promise<boolean> {
   try {
     const resp = await server.getCodeAssistGlobalUserSetting();
     return resp.freeTierDataCollectionOptin;
   } catch (error: unknown) {
-    if (error && typeof error === 'object' && 'response' in error) {
+    if (error && typeof error === "object" && "response" in error) {
       const gaxiosError = error as {
         response?: {
           status?: unknown;

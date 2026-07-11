@@ -4,10 +4,10 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { StreamingState } from '../types.js';
-import { useTimer } from './useTimer.js';
-import { usePhraseCycler } from './usePhraseCycler.js';
-import { useState, useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from "react";
+import { StreamingState } from "../types.js";
+import { usePhraseCycler } from "./usePhraseCycler.js";
+import { useTimer } from "./useTimer.js";
 
 export const useLoadingIndicator = (
   streamingState: StreamingState,

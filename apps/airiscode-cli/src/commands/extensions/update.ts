@@ -4,16 +4,13 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import type { CommandModule } from 'yargs';
-import { getErrorMessage } from '../../utils/errors.js';
-import { writeStdoutLine, writeStderrLine } from '../../utils/stdioHelpers.js';
-import { ExtensionUpdateState } from '../../ui/state/extensions.js';
-import {
-  checkForExtensionUpdate,
-  type ExtensionUpdateInfo,
-} from '@airiscode/runtime';
-import { getExtensionManager } from './utils.js';
-import { t } from '../../i18n/index.js';
+import { checkForExtensionUpdate, type ExtensionUpdateInfo } from "@airiscode/runtime";
+import type { CommandModule } from "yargs";
+import { t } from "../../i18n/index.js";
+import { ExtensionUpdateState } from "../../ui/state/extensions.js";
+import { getErrorMessage } from "../../utils/errors.js";
+import { writeStderrLine, writeStdoutLine } from "../../utils/stdioHelpers.js";
+import { getExtensionManager } from "./utils.js";
 
 interface UpdateArgs {
   name?: string;
@@ -21,14 +18,11 @@ interface UpdateArgs {
 }
 
 const updateOutput = (info: ExtensionUpdateInfo) =>
-  t(
-    'Extension "{{name}}" successfully updated: {{oldVersion}} → {{newVersion}}.',
-    {
-      name: info.name,
-      oldVersion: info.originalVersion,
-      newVersion: info.updatedVersion,
-    },
-  );
+  t('Extension "{{name}}" successfully updated: {{oldVersion}} → {{newVersion}}.', {
+    name: info.name,
+    oldVersion: info.originalVersion,
+    newVersion: info.updatedVersion,
+  });
 
 export async function handleUpdate(args: UpdateArgs) {
   const extensionManager = await getExtensionManager();
@@ -36,32 +30,22 @@ export async function handleUpdate(args: UpdateArgs) {
 
   if (args.name) {
     try {
-      const extension = extensions.find(
-        (extension) => extension.name === args.name,
-      );
+      const extension = extensions.find((extension) => extension.name === args.name);
       if (!extension) {
-        writeStdoutLine(
-          t('Extension "{{name}}" not found.', { name: args.name }),
-        );
+        writeStdoutLine(t('Extension "{{name}}" not found.', { name: args.name }));
         return;
       }
       if (!extension.installMetadata) {
         writeStdoutLine(
-          t(
-            'Unable to install extension "{{name}}" due to missing install metadata',
-            { name: args.name },
-          ),
+          t('Unable to install extension "{{name}}" due to missing install metadata', {
+            name: args.name,
+          }),
         );
         return;
       }
-      const updateState = await checkForExtensionUpdate(
-        extension,
-        extensionManager,
-      );
+      const updateState = await checkForExtensionUpdate(extension, extensionManager);
       if (updateState !== ExtensionUpdateState.UPDATE_AVAILABLE) {
-        writeStdoutLine(
-          t('Extension "{{name}}" is already up to date.', { name: args.name }),
-        );
+        writeStdoutLine(t('Extension "{{name}}" is already up to date.', { name: args.name }));
         return;
       }
       // TODO(chrstnb): we should list extensions if the requested extension is not installed.
@@ -70,24 +54,16 @@ export async function handleUpdate(args: UpdateArgs) {
         updateState,
         () => {},
       ))!;
-      if (
-        updatedExtensionInfo.originalVersion !==
-        updatedExtensionInfo.updatedVersion
-      ) {
+      if (updatedExtensionInfo.originalVersion !== updatedExtensionInfo.updatedVersion) {
         writeStdoutLine(
-          t(
-            'Extension "{{name}}" successfully updated: {{oldVersion}} → {{newVersion}}.',
-            {
-              name: args.name,
-              oldVersion: updatedExtensionInfo.originalVersion,
-              newVersion: updatedExtensionInfo.updatedVersion,
-            },
-          ),
+          t('Extension "{{name}}" successfully updated: {{oldVersion}} → {{newVersion}}.', {
+            name: args.name,
+            oldVersion: updatedExtensionInfo.originalVersion,
+            newVersion: updatedExtensionInfo.updatedVersion,
+          }),
         );
       } else {
-        writeStdoutLine(
-          t('Extension "{{name}}" is already up to date.', { name: args.name }),
-        );
+        writeStdoutLine(t('Extension "{{name}}" is already up to date.', { name: args.name }));
       }
     } catch (error) {
       writeStderrLine(getErrorMessage(error));
@@ -96,26 +72,22 @@ export async function handleUpdate(args: UpdateArgs) {
   if (args.all) {
     try {
       const extensionState = new Map();
-      await extensionManager.checkForAllExtensionUpdates(
-        (extensionName, state) => {
-          extensionState.set(extensionName, {
-            status: state,
-            processed: true, // No need to process as we will force the update.
-          });
-        },
-      );
+      await extensionManager.checkForAllExtensionUpdates((extensionName, state) => {
+        extensionState.set(extensionName, {
+          status: state,
+          processed: true, // No need to process as we will force the update.
+        });
+      });
       let updateInfos = await extensionManager.updateAllUpdatableExtensions(
         extensionState,
         () => {},
       );
-      updateInfos = updateInfos.filter(
-        (info) => info.originalVersion !== info.updatedVersion,
-      );
+      updateInfos = updateInfos.filter((info) => info.originalVersion !== info.updatedVersion);
       if (updateInfos.length === 0) {
-        writeStdoutLine(t('No extensions to update.'));
+        writeStdoutLine(t("No extensions to update."));
         return;
       }
-      writeStdoutLine(updateInfos.map((info) => updateOutput(info)).join('\n'));
+      writeStdoutLine(updateInfos.map((info) => updateOutput(info)).join("\n"));
     } catch (error) {
       writeStderrLine(getErrorMessage(error));
     }
@@ -123,33 +95,29 @@ export async function handleUpdate(args: UpdateArgs) {
 }
 
 export const updateCommand: CommandModule = {
-  command: 'update [<name>] [--all]',
-  describe: t(
-    'Updates all extensions or a named extension to the latest version.',
-  ),
+  command: "update [<name>] [--all]",
+  describe: t("Updates all extensions or a named extension to the latest version."),
   builder: (yargs) =>
     yargs
-      .positional('name', {
-        describe: t('The name of the extension to update.'),
-        type: 'string',
+      .positional("name", {
+        describe: t("The name of the extension to update."),
+        type: "string",
       })
-      .option('all', {
-        describe: t('Update all extensions.'),
-        type: 'boolean',
+      .option("all", {
+        describe: t("Update all extensions."),
+        type: "boolean",
       })
-      .conflicts('name', 'all')
+      .conflicts("name", "all")
       .check((argv) => {
         if (!argv.all && !argv.name) {
-          throw new Error(
-            t('Either an extension name or --all must be provided'),
-          );
+          throw new Error(t("Either an extension name or --all must be provided"));
         }
         return true;
       }),
   handler: async (argv) => {
     await handleUpdate({
-      name: argv['name'] as string | undefined,
-      all: argv['all'] as boolean | undefined,
+      name: argv["name"] as string | undefined,
+      all: argv["all"] as boolean | undefined,
     });
   },
 };

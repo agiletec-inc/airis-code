@@ -4,11 +4,11 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { vi } from 'vitest';
-import type { CommandContext } from '../ui/commands/types.js';
-import type { LoadedSettings } from '../config/settings.js';
-import type { GitService } from '@airiscode/gemini-cli-core';
-import type { SessionStatsState } from '../ui/contexts/SessionContext.js';
+import type { GitService } from "@airiscode/gemini-cli-core";
+import { vi } from "vitest";
+import type { LoadedSettings } from "../config/settings.js";
+import type { CommandContext } from "../ui/commands/types.js";
+import type { SessionStatsState } from "../ui/contexts/SessionContext.js";
 
 // A utility type to make all properties of an object, and its nested objects, partial.
 type DeepPartial<T> = T extends object
@@ -29,9 +29,9 @@ export const createMockCommandContext = (
 ): CommandContext => {
   const defaultMocks: CommandContext = {
     invocation: {
-      raw: '',
-      name: '',
-      args: '',
+      raw: "",
+      name: "",
+      args: "",
     },
     services: {
       config: null,
@@ -83,14 +83,14 @@ export const createMockCommandContext = (
     const output = { ...target };
 
     for (const key in source) {
-      if (Object.prototype.hasOwnProperty.call(source, key)) {
+      if (Object.hasOwn(source, key)) {
         const sourceValue = source[key];
         const targetValue = output[key];
 
         if (
           // We only want to recursively merge plain objects
-          Object.prototype.toString.call(sourceValue) === '[object Object]' &&
-          Object.prototype.toString.call(targetValue) === '[object Object]'
+          Object.prototype.toString.call(sourceValue) === "[object Object]" &&
+          Object.prototype.toString.call(targetValue) === "[object Object]"
         ) {
           output[key] = merge(targetValue, sourceValue);
         } else {

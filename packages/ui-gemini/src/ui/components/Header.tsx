@@ -4,20 +4,20 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import type React from 'react';
-import { Box } from 'ink';
-import { ThemedGradient } from './ThemedGradient.js';
+import { Box } from "ink";
+import type React from "react";
+import { useTerminalSize } from "../hooks/useTerminalSize.js";
+import { getTerminalProgram } from "../utils/terminalSetup.js";
+import { getAsciiArtWidth } from "../utils/textUtils.js";
 import {
-  shortAsciiLogo,
   longAsciiLogo,
-  tinyAsciiLogo,
-  shortAsciiLogoIde,
   longAsciiLogoIde,
+  shortAsciiLogo,
+  shortAsciiLogoIde,
+  tinyAsciiLogo,
   tinyAsciiLogoIde,
-} from './AsciiArt.js';
-import { getAsciiArtWidth } from '../utils/textUtils.js';
-import { useTerminalSize } from '../hooks/useTerminalSize.js';
-import { getTerminalProgram } from '../utils/terminalSetup.js';
+} from "./AsciiArt.js";
+import { ThemedGradient } from "./ThemedGradient.js";
 
 interface HeaderProps {
   customAsciiArt?: string; // For user-defined ASCII art
@@ -25,11 +25,7 @@ interface HeaderProps {
   nightly: boolean;
 }
 
-export const Header: React.FC<HeaderProps> = ({
-  customAsciiArt,
-  version,
-  nightly,
-}) => {
+export const Header: React.FC<HeaderProps> = ({ customAsciiArt, version, nightly }) => {
   const { columns: terminalWidth } = useTerminalSize();
   const isIde = getTerminalProgram();
   let displayTitle;
@@ -49,12 +45,7 @@ export const Header: React.FC<HeaderProps> = ({
   const artWidth = getAsciiArtWidth(displayTitle);
 
   return (
-    <Box
-      alignItems="flex-start"
-      width={artWidth}
-      flexShrink={0}
-      flexDirection="column"
-    >
+    <Box alignItems="flex-start" width={artWidth} flexShrink={0} flexDirection="column">
       <ThemedGradient>{displayTitle}</ThemedGradient>
       {nightly && (
         <Box width="100%" flexDirection="row" justifyContent="flex-end">

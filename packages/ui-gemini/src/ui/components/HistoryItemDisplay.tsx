@@ -4,34 +4,34 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import type React from 'react';
-import { useMemo } from 'react';
-import { escapeAnsiCtrlCodes } from '../utils/textUtils.js';
-import type { HistoryItem } from '../types.js';
-import { UserMessage } from './messages/UserMessage.js';
-import { UserShellMessage } from './messages/UserShellMessage.js';
-import { GeminiMessage } from './messages/GeminiMessage.js';
-import { InfoMessage } from './messages/InfoMessage.js';
-import { ErrorMessage } from './messages/ErrorMessage.js';
-import { ToolGroupMessage } from './messages/ToolGroupMessage.js';
-import { GeminiMessageContent } from './messages/GeminiMessageContent.js';
-import { CompressionMessage } from './messages/CompressionMessage.js';
-import { WarningMessage } from './messages/WarningMessage.js';
-import { Box } from 'ink';
-import { AboutBox } from './AboutBox.js';
-import { StatsDisplay } from './StatsDisplay.js';
-import { ModelStatsDisplay } from './ModelStatsDisplay.js';
-import { ToolStatsDisplay } from './ToolStatsDisplay.js';
-import { SessionSummaryDisplay } from './SessionSummaryDisplay.js';
-import { Help } from './Help.js';
-import type { SlashCommand } from '../commands/types.js';
-import { ExtensionsList } from './views/ExtensionsList.js';
-import { getMCPServerStatus } from '@airiscode/gemini-cli-core';
-import { ToolsList } from './views/ToolsList.js';
-import { McpStatus } from './views/McpStatus.js';
-import { ChatList } from './views/ChatList.js';
-import { HooksList } from './views/HooksList.js';
-import { ModelMessage } from './messages/ModelMessage.js';
+import { getMCPServerStatus } from "@airiscode/gemini-cli-core";
+import { Box } from "ink";
+import type React from "react";
+import { useMemo } from "react";
+import type { SlashCommand } from "../commands/types.js";
+import type { HistoryItem } from "../types.js";
+import { escapeAnsiCtrlCodes } from "../utils/textUtils.js";
+import { AboutBox } from "./AboutBox.js";
+import { Help } from "./Help.js";
+import { ModelStatsDisplay } from "./ModelStatsDisplay.js";
+import { CompressionMessage } from "./messages/CompressionMessage.js";
+import { ErrorMessage } from "./messages/ErrorMessage.js";
+import { GeminiMessage } from "./messages/GeminiMessage.js";
+import { GeminiMessageContent } from "./messages/GeminiMessageContent.js";
+import { InfoMessage } from "./messages/InfoMessage.js";
+import { ModelMessage } from "./messages/ModelMessage.js";
+import { ToolGroupMessage } from "./messages/ToolGroupMessage.js";
+import { UserMessage } from "./messages/UserMessage.js";
+import { UserShellMessage } from "./messages/UserShellMessage.js";
+import { WarningMessage } from "./messages/WarningMessage.js";
+import { SessionSummaryDisplay } from "./SessionSummaryDisplay.js";
+import { StatsDisplay } from "./StatsDisplay.js";
+import { ToolStatsDisplay } from "./ToolStatsDisplay.js";
+import { ChatList } from "./views/ChatList.js";
+import { ExtensionsList } from "./views/ExtensionsList.js";
+import { HooksList } from "./views/HooksList.js";
+import { McpStatus } from "./views/McpStatus.js";
+import { ToolsList } from "./views/ToolsList.js";
 
 interface HistoryItemDisplayProps {
   item: HistoryItem;
@@ -61,46 +61,36 @@ export const HistoryItemDisplay: React.FC<HistoryItemDisplayProps> = ({
   return (
     <Box flexDirection="column" key={itemForDisplay.id} width={terminalWidth}>
       {/* Render standard message types */}
-      {itemForDisplay.type === 'user' && (
+      {itemForDisplay.type === "user" && (
         <UserMessage text={itemForDisplay.text} width={terminalWidth} />
       )}
-      {itemForDisplay.type === 'user_shell' && (
-        <UserShellMessage text={itemForDisplay.text} />
-      )}
-      {itemForDisplay.type === 'gemini' && (
+      {itemForDisplay.type === "user_shell" && <UserShellMessage text={itemForDisplay.text} />}
+      {itemForDisplay.type === "gemini" && (
         <GeminiMessage
           text={itemForDisplay.text}
           isPending={isPending}
-          availableTerminalHeight={
-            availableTerminalHeightGemini ?? availableTerminalHeight
-          }
+          availableTerminalHeight={availableTerminalHeightGemini ?? availableTerminalHeight}
           terminalWidth={terminalWidth}
         />
       )}
-      {itemForDisplay.type === 'gemini_content' && (
+      {itemForDisplay.type === "gemini_content" && (
         <GeminiMessageContent
           text={itemForDisplay.text}
           isPending={isPending}
-          availableTerminalHeight={
-            availableTerminalHeightGemini ?? availableTerminalHeight
-          }
+          availableTerminalHeight={availableTerminalHeightGemini ?? availableTerminalHeight}
           terminalWidth={terminalWidth}
         />
       )}
-      {itemForDisplay.type === 'info' && (
+      {itemForDisplay.type === "info" && (
         <InfoMessage
           text={itemForDisplay.text}
           icon={itemForDisplay.icon}
           color={itemForDisplay.color}
         />
       )}
-      {itemForDisplay.type === 'warning' && (
-        <WarningMessage text={itemForDisplay.text} />
-      )}
-      {itemForDisplay.type === 'error' && (
-        <ErrorMessage text={itemForDisplay.text} />
-      )}
-      {itemForDisplay.type === 'about' && (
+      {itemForDisplay.type === "warning" && <WarningMessage text={itemForDisplay.text} />}
+      {itemForDisplay.type === "error" && <ErrorMessage text={itemForDisplay.text} />}
+      {itemForDisplay.type === "about" && (
         <AboutBox
           cliVersion={itemForDisplay.cliVersion}
           osVersion={itemForDisplay.osVersion}
@@ -112,24 +102,17 @@ export const HistoryItemDisplay: React.FC<HistoryItemDisplayProps> = ({
           userEmail={itemForDisplay.userEmail}
         />
       )}
-      {itemForDisplay.type === 'help' && commands && (
-        <Help commands={commands} />
+      {itemForDisplay.type === "help" && commands && <Help commands={commands} />}
+      {itemForDisplay.type === "stats" && (
+        <StatsDisplay duration={itemForDisplay.duration} quotas={itemForDisplay.quotas} />
       )}
-      {itemForDisplay.type === 'stats' && (
-        <StatsDisplay
-          duration={itemForDisplay.duration}
-          quotas={itemForDisplay.quotas}
-        />
-      )}
-      {itemForDisplay.type === 'model_stats' && <ModelStatsDisplay />}
-      {itemForDisplay.type === 'tool_stats' && <ToolStatsDisplay />}
-      {itemForDisplay.type === 'model' && (
-        <ModelMessage model={itemForDisplay.model} />
-      )}
-      {itemForDisplay.type === 'quit' && (
+      {itemForDisplay.type === "model_stats" && <ModelStatsDisplay />}
+      {itemForDisplay.type === "tool_stats" && <ToolStatsDisplay />}
+      {itemForDisplay.type === "model" && <ModelMessage model={itemForDisplay.model} />}
+      {itemForDisplay.type === "quit" && (
         <SessionSummaryDisplay duration={itemForDisplay.duration} />
       )}
-      {itemForDisplay.type === 'tool_group' && (
+      {itemForDisplay.type === "tool_group" && (
         <ToolGroupMessage
           toolCalls={itemForDisplay.tools}
           groupId={itemForDisplay.id}
@@ -140,28 +123,24 @@ export const HistoryItemDisplay: React.FC<HistoryItemDisplayProps> = ({
           embeddedShellFocused={embeddedShellFocused}
         />
       )}
-      {itemForDisplay.type === 'compression' && (
+      {itemForDisplay.type === "compression" && (
         <CompressionMessage compression={itemForDisplay.compression} />
       )}
-      {itemForDisplay.type === 'extensions_list' && (
+      {itemForDisplay.type === "extensions_list" && (
         <ExtensionsList extensions={itemForDisplay.extensions} />
       )}
-      {itemForDisplay.type === 'tools_list' && (
+      {itemForDisplay.type === "tools_list" && (
         <ToolsList
           terminalWidth={terminalWidth}
           tools={itemForDisplay.tools}
           showDescriptions={itemForDisplay.showDescriptions}
         />
       )}
-      {itemForDisplay.type === 'mcp_status' && (
+      {itemForDisplay.type === "mcp_status" && (
         <McpStatus {...itemForDisplay} serverStatus={getMCPServerStatus} />
       )}
-      {itemForDisplay.type === 'chat_list' && (
-        <ChatList chats={itemForDisplay.chats} />
-      )}
-      {itemForDisplay.type === 'hooks_list' && (
-        <HooksList hooks={itemForDisplay.hooks} />
-      )}
+      {itemForDisplay.type === "chat_list" && <ChatList chats={itemForDisplay.chats} />}
+      {itemForDisplay.type === "hooks_list" && <HooksList hooks={itemForDisplay.hooks} />}
     </Box>
   );
 };

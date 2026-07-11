@@ -8,11 +8,11 @@ import {
   AuthType,
   type ContentGeneratorConfig,
   type ContentGeneratorConfigSources,
-  resolveModelConfig,
   type ModelConfigSourcesInput,
   type ProviderModelConfig,
-} from '@airiscode/runtime';
-import type { Settings } from '../config/settings.js';
+  resolveModelConfig,
+} from "@airiscode/runtime";
+import type { Settings } from "../config/settings.js";
 
 export interface CliGenerationConfigInputs {
   argv: {
@@ -48,24 +48,24 @@ export interface ResolvedCliGenerationConfig {
 export function getAuthTypeFromEnv(): AuthType | undefined {
   // Explicit OpenAI configuration
   if (
-    process.env['OPENAI_API_KEY'] &&
-    process.env['OPENAI_MODEL'] &&
-    process.env['OPENAI_BASE_URL']
+    process.env["OPENAI_API_KEY"] &&
+    process.env["OPENAI_MODEL"] &&
+    process.env["OPENAI_BASE_URL"]
   ) {
     return AuthType.USE_OPENAI;
   }
 
   // Anthropic configuration
   if (
-    process.env['ANTHROPIC_API_KEY'] &&
-    process.env['ANTHROPIC_MODEL'] &&
-    process.env['ANTHROPIC_BASE_URL']
+    process.env["ANTHROPIC_API_KEY"] &&
+    process.env["ANTHROPIC_MODEL"] &&
+    process.env["ANTHROPIC_BASE_URL"]
   ) {
     return AuthType.USE_ANTHROPIC;
   }
 
   // Ollama: explicit OLLAMA_HOST or OLLAMA_MODEL, or fallback when no other auth is configured
-  if (process.env['OLLAMA_HOST'] || process.env['OLLAMA_MODEL']) {
+  if (process.env["OLLAMA_HOST"] || process.env["OLLAMA_MODEL"]) {
     return AuthType.USE_OLLAMA;
   }
 
@@ -129,12 +129,11 @@ export function resolveCliGenerationConfig(
 
   // Resolve OpenAI logging config (CLI-specific, not part of core resolver)
   const enableOpenAILogging =
-    (typeof argv.openaiLogging === 'undefined'
+    (typeof argv.openaiLogging === "undefined"
       ? settings.model?.enableOpenAILogging
       : argv.openaiLogging) ?? false;
 
-  const openAILoggingDir =
-    argv.openaiLoggingDir || settings.model?.openAILoggingDir;
+  const openAILoggingDir = argv.openaiLoggingDir || settings.model?.openAILoggingDir;
 
   // Build the full generation config
   // Note: we merge the resolved config with logging settings
@@ -145,9 +144,9 @@ export function resolveCliGenerationConfig(
   };
 
   return {
-    model: resolved.config.model || '',
-    apiKey: resolved.config.apiKey || '',
-    baseUrl: resolved.config.baseUrl || '',
+    model: resolved.config.model || "",
+    apiKey: resolved.config.apiKey || "",
+    baseUrl: resolved.config.baseUrl || "",
     generationConfig,
     sources: resolved.sources,
     warnings: resolved.warnings,

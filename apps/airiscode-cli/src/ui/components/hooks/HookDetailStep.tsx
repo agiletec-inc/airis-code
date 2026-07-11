@@ -4,23 +4,20 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { Box, Text } from 'ink';
-import { theme } from '../../semantic-colors.js';
-import { useTerminalSize } from '../../hooks/useTerminalSize.js';
-import type { HookEventDisplayInfo } from './types.js';
-import { HooksConfigSource } from '@airiscode/runtime';
-import { getTranslatedSourceDisplayMap } from './constants.js';
-import { t } from '../../../i18n/index.js';
+import { HooksConfigSource } from "@airiscode/runtime";
+import { Box, Text } from "ink";
+import { t } from "../../../i18n/index.js";
+import { useTerminalSize } from "../../hooks/useTerminalSize.js";
+import { theme } from "../../semantic-colors.js";
+import { getTranslatedSourceDisplayMap } from "./constants.js";
+import type { HookEventDisplayInfo } from "./types.js";
 
 interface HookDetailStepProps {
   hook: HookEventDisplayInfo;
   selectedIndex: number;
 }
 
-export function HookDetailStep({
-  hook,
-  selectedIndex,
-}: HookDetailStepProps): React.JSX.Element {
+export function HookDetailStep({ hook, selectedIndex }: HookDetailStepProps): React.JSX.Element {
   const hasConfigs = hook.configs.length > 0;
   const { columns: terminalWidth } = useTerminalSize();
 
@@ -63,13 +60,11 @@ export function HookDetailStep({
       {hook.exitCodes.length > 0 && (
         <Box flexDirection="column" marginBottom={1}>
           <Text bold color={theme.text.primary}>
-            {t('Exit codes:')}
+            {t("Exit codes:")}
           </Text>
           {hook.exitCodes.map((ec, index) => (
             <Box key={index}>
-              <Text color={theme.text.secondary}>
-                {`  ${ec.code}: ${ec.description}`}
-              </Text>
+              <Text color={theme.text.secondary}>{`  ${ec.code}: ${ec.description}`}</Text>
             </Box>
           ))}
         </Box>
@@ -81,13 +76,12 @@ export function HookDetailStep({
       {hasConfigs ? (
         <>
           <Text bold color={theme.text.primary}>
-            {t('Configured hooks:')}
+            {t("Configured hooks:")}
           </Text>
           {hook.configs.map((config, index) => {
             const isSelected = index === selectedIndex;
             const sourceDisplay = getConfigSourceDisplay(config);
-            const command =
-              config.config.type === 'command' ? config.config.command : '';
+            const command = config.config.type === "command" ? config.config.command : "";
             const hookType = config.config.type;
 
             return (
@@ -95,12 +89,8 @@ export function HookDetailStep({
                 {/* Left column: selector + command */}
                 <Box width={commandWidth}>
                   <Box minWidth={2}>
-                    <Text
-                      color={
-                        isSelected ? theme.text.accent : theme.text.primary
-                      }
-                    >
-                      {isSelected ? '❯' : ' '}
+                    <Text color={isSelected ? theme.text.accent : theme.text.primary}>
+                      {isSelected ? "❯" : " "}
                     </Text>
                   </Box>
                   <Text
@@ -123,25 +113,21 @@ export function HookDetailStep({
             );
           })}
           <Box marginTop={1}>
-            <Text color={theme.text.secondary}>
-              {t('Enter to select · Esc to go back')}
-            </Text>
+            <Text color={theme.text.secondary}>{t("Enter to select · Esc to go back")}</Text>
           </Box>
         </>
       ) : (
         <>
           <Box>
-            <Text color={theme.text.secondary}>
-              {t('No hooks configured for this event.')}
-            </Text>
+            <Text color={theme.text.secondary}>{t("No hooks configured for this event.")}</Text>
           </Box>
           <Box marginTop={1}>
             <Text color={theme.text.secondary}>
-              {t('To add hooks, edit settings.json directly or ask AIRIS Code.')}
+              {t("To add hooks, edit settings.json directly or ask AIRIS Code.")}
             </Text>
           </Box>
           <Box marginTop={1}>
-            <Text color={theme.text.secondary}>{t('Esc to go back')}</Text>
+            <Text color={theme.text.secondary}>{t("Esc to go back")}</Text>
           </Box>
         </>
       )}

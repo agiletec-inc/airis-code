@@ -4,26 +4,24 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-// Export types
-export type { SettingsMigration, MigrationResult } from './types.js';
-
 // Export scheduler
-export { MigrationScheduler } from './scheduler.js';
+export { MigrationScheduler } from "./scheduler.js";
+// Export types
+export type { MigrationResult, SettingsMigration } from "./types.js";
 
 // Export migrations
-export { v1ToV2Migration, V1ToV2Migration } from './versions/v1-to-v2.js';
-export { v2ToV3Migration, V2ToV3Migration } from './versions/v2-to-v3.js';
+export { V1ToV2Migration, v1ToV2Migration } from "./versions/v1-to-v2.js";
+export { V2ToV3Migration, v2ToV3Migration } from "./versions/v2-to-v3.js";
 
 // Import settings version from single source of truth
-import { SETTINGS_VERSION } from '../settings.js';
-
+import { SETTINGS_VERSION } from "../settings.js";
+import { MigrationScheduler } from "./scheduler.js";
+import type { MigrationResult } from "./types.js";
 // Ordered array of all migrations for use with MigrationScheduler
 // Each migration handles one version transition (N → N+1)
 // Order matters: migrations must be sorted by ascending version
-import { v1ToV2Migration } from './versions/v1-to-v2.js';
-import { v2ToV3Migration } from './versions/v2-to-v3.js';
-import { MigrationScheduler } from './scheduler.js';
-import type { MigrationResult } from './types.js';
+import { v1ToV2Migration } from "./versions/v1-to-v2.js";
+import { v2ToV3Migration } from "./versions/v2-to-v3.js";
 
 /**
  * Ordered array of all settings migrations.
@@ -53,10 +51,7 @@ export const ALL_MIGRATIONS = [v1ToV2Migration, v2ToV3Migration] as const;
  * }
  * ```
  */
-export function runMigrations(
-  settings: unknown,
-  scope: string,
-): MigrationResult {
+export function runMigrations(settings: unknown, scope: string): MigrationResult {
   const scheduler = new MigrationScheduler([...ALL_MIGRATIONS], scope);
   return scheduler.migrate(settings);
 }
@@ -81,18 +76,18 @@ export function runMigrations(
  * @returns true if migration is needed, false otherwise
  */
 export function needsMigration(settings: unknown): boolean {
-  if (typeof settings !== 'object' || settings === null) {
+  if (typeof settings !== "object" || settings === null) {
     return false;
   }
 
   const s = settings as Record<string, unknown>;
-  const version = s['$version'];
+  const version = s["$version"];
   const hasApplicableMigration = ALL_MIGRATIONS.some((migration) =>
     migration.shouldMigrate(settings),
   );
 
   // If $version is a valid number, use version comparison
-  if (typeof version === 'number') {
+  if (typeof version === "number") {
     if (version >= SETTINGS_VERSION) {
       return false;
     }

@@ -4,11 +4,11 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+import { debugLogger } from "@airiscode/gemini-cli-core";
 // File for 'gemini mcp remove' command
-import type { CommandModule } from 'yargs';
-import { loadSettings, SettingScope } from '../../config/settings.js';
-import { debugLogger } from '@airiscode/gemini-cli-core';
-import { exitCli } from '../utils.js';
+import type { CommandModule } from "yargs";
+import { loadSettings, SettingScope } from "../../config/settings.js";
+import { exitCli } from "../utils.js";
 
 async function removeMcpServer(
   name: string,
@@ -17,8 +17,7 @@ async function removeMcpServer(
   },
 ) {
   const { scope } = options;
-  const settingsScope =
-    scope === 'user' ? SettingScope.User : SettingScope.Workspace;
+  const settingsScope = scope === "user" ? SettingScope.User : SettingScope.Workspace;
   const settings = loadSettings();
 
   const existingSettings = settings.forScope(settingsScope).settings;
@@ -31,32 +30,32 @@ async function removeMcpServer(
 
   delete mcpServers[name];
 
-  settings.setValue(settingsScope, 'mcpServers', mcpServers);
+  settings.setValue(settingsScope, "mcpServers", mcpServers);
 
   debugLogger.log(`Server "${name}" removed from ${scope} settings.`);
 }
 
 export const removeCommand: CommandModule = {
-  command: 'remove <name>',
-  describe: 'Remove a server',
+  command: "remove <name>",
+  describe: "Remove a server",
   builder: (yargs) =>
     yargs
-      .usage('Usage: gemini mcp remove [options] <name>')
-      .positional('name', {
-        describe: 'Name of the server',
-        type: 'string',
+      .usage("Usage: gemini mcp remove [options] <name>")
+      .positional("name", {
+        describe: "Name of the server",
+        type: "string",
         demandOption: true,
       })
-      .option('scope', {
-        alias: 's',
-        describe: 'Configuration scope (user or project)',
-        type: 'string',
-        default: 'project',
-        choices: ['user', 'project'],
+      .option("scope", {
+        alias: "s",
+        describe: "Configuration scope (user or project)",
+        type: "string",
+        default: "project",
+        choices: ["user", "project"],
       }),
   handler: async (argv) => {
-    await removeMcpServer(argv['name'] as string, {
-      scope: argv['scope'] as string,
+    await removeMcpServer(argv["name"] as string, {
+      scope: argv["scope"] as string,
     });
     await exitCli();
   },

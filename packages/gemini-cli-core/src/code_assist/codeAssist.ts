@@ -4,14 +4,14 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import type { ContentGenerator } from '../core/contentGenerator.js';
-import { AuthType } from '../core/contentGenerator.js';
-import { getOauthClient } from './oauth2.js';
-import { setupUser } from './setup.js';
-import type { HttpOptions } from './server.js';
-import { CodeAssistServer } from './server.js';
-import type { Config } from '../config/config.js';
-import { LoggingContentGenerator } from '../core/loggingContentGenerator.js';
+import type { Config } from "../config/config.js";
+import type { ContentGenerator } from "../core/contentGenerator.js";
+import { AuthType } from "../core/contentGenerator.js";
+import { LoggingContentGenerator } from "../core/loggingContentGenerator.js";
+import { getOauthClient } from "./oauth2.js";
+import type { HttpOptions } from "./server.js";
+import { CodeAssistServer } from "./server.js";
+import { setupUser } from "./setup.js";
 
 export async function createCodeAssistContentGenerator(
   httpOptions: HttpOptions,
@@ -19,10 +19,7 @@ export async function createCodeAssistContentGenerator(
   config: Config,
   sessionId?: string,
 ): Promise<ContentGenerator> {
-  if (
-    authType === AuthType.LOGIN_WITH_GOOGLE ||
-    authType === AuthType.COMPUTE_ADC
-  ) {
+  if (authType === AuthType.LOGIN_WITH_GOOGLE || authType === AuthType.COMPUTE_ADC) {
     const authClient = await getOauthClient(authType, config);
     const userData = await setupUser(authClient);
     return new CodeAssistServer(
@@ -37,9 +34,7 @@ export async function createCodeAssistContentGenerator(
   throw new Error(`Unsupported authType: ${authType}`);
 }
 
-export function getCodeAssistServer(
-  config: Config,
-): CodeAssistServer | undefined {
+export function getCodeAssistServer(config: Config): CodeAssistServer | undefined {
   let server = config.getContentGenerator();
 
   // Unwrap LoggingContentGenerator if present

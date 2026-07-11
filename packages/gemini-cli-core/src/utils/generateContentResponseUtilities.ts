@@ -4,12 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import type {
-  GenerateContentResponse,
-  Part,
-  FunctionCall,
-} from '@google/genai';
-import { getResponseText } from './partUtils.js';
+import type { FunctionCall, GenerateContentResponse, Part } from "@google/genai";
+import { getResponseText } from "./partUtils.js";
 
 export function getResponseTextFromParts(parts: Part[]): string | undefined {
   if (!parts) {
@@ -17,17 +13,15 @@ export function getResponseTextFromParts(parts: Part[]): string | undefined {
   }
   const textSegments = parts
     .map((part) => part.text)
-    .filter((text): text is string => typeof text === 'string');
+    .filter((text): text is string => typeof text === "string");
 
   if (textSegments.length === 0) {
     return undefined;
   }
-  return textSegments.join('');
+  return textSegments.join("");
 }
 
-export function getFunctionCalls(
-  response: GenerateContentResponse,
-): FunctionCall[] | undefined {
+export function getFunctionCalls(response: GenerateContentResponse): FunctionCall[] | undefined {
   const parts = response.candidates?.[0]?.content?.parts;
   if (!parts) {
     return undefined;
@@ -38,9 +32,7 @@ export function getFunctionCalls(
   return functionCallParts.length > 0 ? functionCallParts : undefined;
 }
 
-export function getFunctionCallsFromParts(
-  parts: Part[],
-): FunctionCall[] | undefined {
+export function getFunctionCallsFromParts(parts: Part[]): FunctionCall[] | undefined {
   if (!parts) {
     return undefined;
   }
@@ -50,9 +42,7 @@ export function getFunctionCallsFromParts(
   return functionCallParts.length > 0 ? functionCallParts : undefined;
 }
 
-export function getFunctionCallsAsJson(
-  response: GenerateContentResponse,
-): string | undefined {
+export function getFunctionCallsAsJson(response: GenerateContentResponse): string | undefined {
   const functionCalls = getFunctionCalls(response);
   if (!functionCalls) {
     return undefined;
@@ -60,9 +50,7 @@ export function getFunctionCallsAsJson(
   return JSON.stringify(functionCalls, null, 2);
 }
 
-export function getFunctionCallsFromPartsAsJson(
-  parts: Part[],
-): string | undefined {
+export function getFunctionCallsFromPartsAsJson(parts: Part[]): string | undefined {
   const functionCalls = getFunctionCallsFromParts(parts);
   if (!functionCalls) {
     return undefined;
@@ -70,9 +58,7 @@ export function getFunctionCallsFromPartsAsJson(
   return JSON.stringify(functionCalls, null, 2);
 }
 
-export function getStructuredResponse(
-  response: GenerateContentResponse,
-): string | undefined {
+export function getStructuredResponse(response: GenerateContentResponse): string | undefined {
   const textContent = getResponseText(response);
   const functionCallsJson = getFunctionCallsAsJson(response);
 
@@ -88,9 +74,7 @@ export function getStructuredResponse(
   return undefined;
 }
 
-export function getStructuredResponseFromParts(
-  parts: Part[],
-): string | undefined {
+export function getStructuredResponseFromParts(parts: Part[]): string | undefined {
   const textContent = getResponseTextFromParts(parts);
   const functionCallsJson = getFunctionCallsFromPartsAsJson(parts);
 

@@ -4,11 +4,11 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import type React from 'react';
-import { Text, Box } from 'ink';
-import { theme } from '../../semantic-colors.js';
-import { BaseSelectionList } from './BaseSelectionList.js';
-import type { SelectionListItem } from '../../hooks/useSelectionList.js';
+import { Box, Text } from "ink";
+import type React from "react";
+import type { SelectionListItem } from "../../hooks/useSelectionList.js";
+import { theme } from "../../semantic-colors.js";
+import { BaseSelectionList } from "./BaseSelectionList.js";
 
 export interface DescriptiveRadioSelectItem<T> extends SelectionListItem<T> {
   title: string;

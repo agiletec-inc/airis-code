@@ -4,20 +4,19 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { Box, Text } from 'ink';
-import { useAppContext } from '../contexts/AppContext.js';
-import { useUIState } from '../contexts/UIStateContext.js';
-import { theme } from '../semantic-colors.js';
-import { StreamingState } from '../types.js';
-import { UpdateNotification } from './UpdateNotification.js';
+import { Box, Text } from "ink";
+import { useAppContext } from "../contexts/AppContext.js";
+import { useUIState } from "../contexts/UIStateContext.js";
+import { theme } from "../semantic-colors.js";
+import { StreamingState } from "../types.js";
+import { UpdateNotification } from "./UpdateNotification.js";
 
 export const Notifications = () => {
   const { startupWarnings } = useAppContext();
   const { initError, streamingState, updateInfo } = useUIState();
 
   const showStartupWarnings = startupWarnings.length > 0;
-  const showInitError =
-    initError && streamingState !== StreamingState.Responding;
+  const showInitError = initError && streamingState !== StreamingState.Responding;
 
   return (
     <>
@@ -38,19 +37,9 @@ export const Notifications = () => {
         </Box>
       )}
       {showInitError && (
-        <Box
-          borderStyle="round"
-          borderColor={theme.status.error}
-          paddingX={1}
-          marginBottom={1}
-        >
-          <Text color={theme.status.error}>
-            Initialization Error: {initError}
-          </Text>
-          <Text color={theme.status.error}>
-            {' '}
-            Please check API key and configuration.
-          </Text>
+        <Box borderStyle="round" borderColor={theme.status.error} paddingX={1} marginBottom={1}>
+          <Text color={theme.status.error}>Initialization Error: {initError}</Text>
+          <Text color={theme.status.error}> Please check API key and configuration.</Text>
         </Box>
       )}
     </>

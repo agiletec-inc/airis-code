@@ -4,11 +4,11 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { ExtensionManager } from '../../config/extension-manager.js';
-import { promptForSetting } from '../../config/extensions/extensionSettings.js';
-import { loadSettings } from '../../config/settings.js';
-import { requestConsentNonInteractive } from '../../config/extensions/consent.js';
-import { debugLogger } from '@airiscode/gemini-cli-core';
+import { debugLogger } from "@airiscode/gemini-cli-core";
+import { ExtensionManager } from "../../config/extension-manager.js";
+import { requestConsentNonInteractive } from "../../config/extensions/consent.js";
+import { promptForSetting } from "../../config/extensions/extensionSettings.js";
+import { loadSettings } from "../../config/settings.js";
 
 export async function getExtensionAndManager(name: string) {
   const workspaceDir = process.cwd();
@@ -19,9 +19,7 @@ export async function getExtensionAndManager(name: string) {
     settings: loadSettings(workspaceDir).merged,
   });
   await extensionManager.loadExtensions();
-  const extension = extensionManager
-    .getExtensions()
-    .find((ext) => ext.name === name);
+  const extension = extensionManager.getExtensions().find((ext) => ext.name === name);
 
   if (!extension) {
     debugLogger.error(`Extension "${name}" is not installed.`);

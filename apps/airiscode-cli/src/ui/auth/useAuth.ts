@@ -9,45 +9,41 @@ import type {
   ContentGeneratorConfig,
   ModelProvidersConfig,
   ProviderModelConfig,
-} from '@airiscode/runtime';
-import {
-  AuthEvent,
-  AuthType,
-  getErrorMessage,
-  logAuth,
-} from '@airiscode/runtime';
-import { useCallback, useEffect, useState } from 'react';
-import type { LoadedSettings } from '../../config/settings.js';
-import { getPersistScopeForModelSelection } from '../../config/modelProvidersScope.js';
+} from "@airiscode/runtime";
+import { AuthEvent, AuthType, getErrorMessage, logAuth } from "@airiscode/runtime";
+import { useCallback, useEffect, useState } from "react";
+import { getPersistScopeForModelSelection } from "../../config/modelProvidersScope.js";
+import type { LoadedSettings } from "../../config/settings.js";
 // OpenAICredentials type (previously imported from OpenAIKeyPrompt)
 export interface OpenAICredentials {
   apiKey: string;
   baseUrl?: string;
   model?: string;
 }
-import { AuthState, MessageType } from '../types.js';
-import type { HistoryItem } from '../types.js';
-import { t } from '../../i18n/index.js';
-import {
-  getCodingPlanConfig,
-  isCodingPlanConfig,
-  CodingPlanRegion,
-  CODING_PLAN_ENV_KEY,
-} from '../../constants/codingPlan.js';
-import { backupSettingsFile } from '../../utils/settingsUtils.js';
+
 import {
   ALIBABA_STANDARD_API_KEY_ENDPOINTS,
-  DASHSCOPE_STANDARD_API_KEY_ENV_KEY,
   type AlibabaStandardRegion,
-} from '../../constants/alibabaStandardApiKey.js';
+  DASHSCOPE_STANDARD_API_KEY_ENV_KEY,
+} from "../../constants/alibabaStandardApiKey.js";
+import {
+  CODING_PLAN_ENV_KEY,
+  CodingPlanRegion,
+  getCodingPlanConfig,
+  isCodingPlanConfig,
+} from "../../constants/codingPlan.js";
+import { t } from "../../i18n/index.js";
+import { backupSettingsFile } from "../../utils/settingsUtils.js";
+import type { HistoryItem } from "../types.js";
+import { AuthState, MessageType } from "../types.js";
 
 // Qwen OAuth removed - keep type alias for downstream compatibility
-export type QwenAuthState = 'idle' | 'authenticating' | 'authenticated' | 'error';
+export type QwenAuthState = "idle" | "authenticating" | "authenticated" | "error";
 
 export const useAuthCommand = (
   settings: LoadedSettings,
   config: Config,
-  addItem: (item: Omit<HistoryItem, 'id'>, timestamp: number) => void,
+  addItem: (item: Omit<HistoryItem, "id">, timestamp: number) => void,
   onAuthChange?: () => void,
 ) => {
   const unAuthenticated = config.getAuthType() === undefined;
@@ -60,12 +56,10 @@ export const useAuthCommand = (
 
   const [isAuthenticating, setIsAuthenticating] = useState(false);
   const [isAuthDialogOpen, setIsAuthDialogOpen] = useState(unAuthenticated);
-  const [pendingAuthType, setPendingAuthType] = useState<AuthType | undefined>(
-    undefined,
-  );
+  const [pendingAuthType, setPendingAuthType] = useState<AuthType | undefined>(undefined);
 
   // Qwen OAuth removed - stub state value
-  const qwenAuthState: QwenAuthState = 'idle';
+  const qwenAuthState: QwenAuthState = "idle";
 
   const onAuthError = useCallback(
     (error: string | null) => {
@@ -81,19 +75,14 @@ export const useAuthCommand = (
   const handleAuthFailure = useCallback(
     (error: unknown) => {
       setIsAuthenticating(false);
-      const errorMessage = t('Failed to authenticate. Message: {{message}}', {
+      const errorMessage = t("Failed to authenticate. Message: {{message}}", {
         message: getErrorMessage(error),
       });
       onAuthError(errorMessage);
 
       // Log authentication failure
       if (pendingAuthType) {
-        const authEvent = new AuthEvent(
-          pendingAuthType,
-          'manual',
-          'error',
-          errorMessage,
-        );
+        const authEvent = new AuthEvent(pendingAuthType, "manual", "error", errorMessage);
         logAuth(config, authEvent);
       }
     },
@@ -106,39 +95,23 @@ export const useAuthCommand = (
         const authTypeScope = getPersistScopeForModelSelection(settings);
 
         // Persist authType
-        settings.setValue(
-          authTypeScope,
-          'security.auth.selectedType',
-          authType,
-        );
+        settings.setValue(authTypeScope, "security.auth.selectedType", authType);
 
         // Persist model from ContentGenerator config (handles fallback cases)
         // This ensures that when syncAfterAuthRefresh falls back to default model,
         // it gets persisted to settings.json
         const contentGeneratorConfig = config.getContentGeneratorConfig();
         if (contentGeneratorConfig?.model) {
-          settings.setValue(
-            authTypeScope,
-            'model.name',
-            contentGeneratorConfig.model,
-          );
+          settings.setValue(authTypeScope, "model.name", contentGeneratorConfig.model);
         }
 
         // Persist credentials when provided
         if (credentials) {
           if (credentials?.apiKey != null) {
-            settings.setValue(
-              authTypeScope,
-              'security.auth.apiKey',
-              credentials.apiKey,
-            );
+            settings.setValue(authTypeScope, "security.auth.apiKey", credentials.apiKey);
           }
           if (credentials?.baseUrl != null) {
-            settings.setValue(
-              authTypeScope,
-              'security.auth.baseUrl',
-              credentials.baseUrl,
-            );
+            settings.setValue(authTypeScope, "security.auth.baseUrl", credentials.baseUrl);
           }
         }
       } catch (error) {
@@ -159,7 +132,7 @@ export const useAuthCommand = (
       addItem(
         {
           type: MessageType.INFO,
-          text: t('Authenticated successfully with {{authType}} credentials.', {
+          text: t("Authenticated successfully with {{authType}} credentials.", {
             authType,
           }),
         },
@@ -167,7 +140,7 @@ export const useAuthCommand = (
       );
 
       // Log authentication success
-      const authEvent = new AuthEvent(authType, 'manual', 'success');
+      const authEvent = new AuthEvent(authType, "manual", "success");
       logAuth(config, authEvent);
     },
     [settings, handleAuthFailure, config, addItem, onAuthChange],
@@ -191,9 +164,7 @@ export const useAuthCommand = (
         return false;
       }
 
-      const modelProviders = settings.merged.modelProviders as
-        | ModelProvidersConfig
-        | undefined;
+      const modelProviders = settings.merged.modelProviders as ModelProvidersConfig | undefined;
       if (!modelProviders) {
         return false;
       }
@@ -201,9 +172,7 @@ export const useAuthCommand = (
       if (!Array.isArray(providerModels)) {
         return false;
       }
-      return providerModels.some(
-        (providerModel) => providerModel.id === modelId,
-      );
+      return providerModels.some((providerModel) => providerModel.id === modelId);
     },
     [settings],
   );
@@ -240,8 +209,9 @@ export const useAuthCommand = (
           // Pass settings.model.generationConfig to updateCredentials so it can be merged
           // after clearing provider-sourced config. This ensures settings.json generationConfig
           // fields (e.g., samplingParams, timeout) are preserved.
-          const settingsGenerationConfig = settings.merged.model
-            ?.generationConfig as Partial<ContentGeneratorConfig> | undefined;
+          const settingsGenerationConfig = settings.merged.model?.generationConfig as
+            | Partial<ContentGeneratorConfig>
+            | undefined;
           config.updateCredentials(
             {
               apiKey: credentials.apiKey,
@@ -273,7 +243,7 @@ export const useAuthCommand = (
   const cancelAuthentication = useCallback(() => {
     // Log authentication cancellation
     if (isAuthenticating && pendingAuthType) {
-      const authEvent = new AuthEvent(pendingAuthType, 'manual', 'cancelled');
+      const authEvent = new AuthEvent(pendingAuthType, "manual", "cancelled");
       logAuth(config, authEvent);
     }
 
@@ -289,10 +259,7 @@ export const useAuthCommand = (
    * @param region - The region to use (default: CHINA)
    */
   const handleCodingPlanSubmit = useCallback(
-    async (
-      apiKey: string,
-      region: CodingPlanRegion = CodingPlanRegion.CHINA,
-    ) => {
+    async (apiKey: string, region: CodingPlanRegion = CodingPlanRegion.CHINA) => {
       try {
         setIsAuthenticating(true);
         setAuthError(null);
@@ -314,18 +281,16 @@ export const useAuthCommand = (
         process.env[CODING_PLAN_ENV_KEY] = apiKey;
 
         // Generate model configs from template
-        const newConfigs: ProviderModelConfig[] = template.map(
-          (templateConfig) => ({
-            ...templateConfig,
-            envKey: CODING_PLAN_ENV_KEY,
-          }),
-        );
+        const newConfigs: ProviderModelConfig[] = template.map((templateConfig) => ({
+          ...templateConfig,
+          envKey: CODING_PLAN_ENV_KEY,
+        }));
 
         // Get existing configs
         const existingConfigs =
-          (
-            settings.merged.modelProviders as ModelProvidersConfig | undefined
-          )?.[AuthType.USE_OPENAI] || [];
+          (settings.merged.modelProviders as ModelProvidersConfig | undefined)?.[
+            AuthType.USE_OPENAI
+          ] || [];
 
         // Filter out all existing Coding Plan configs (mutually exclusive)
         const nonCodingPlanConfigs = existingConfigs.filter(
@@ -336,36 +301,26 @@ export const useAuthCommand = (
         const updatedConfigs = [...newConfigs, ...nonCodingPlanConfigs];
 
         // Persist to modelProviders
-        settings.setValue(
-          persistScope,
-          `modelProviders.${AuthType.USE_OPENAI}`,
-          updatedConfigs,
-        );
+        settings.setValue(persistScope, `modelProviders.${AuthType.USE_OPENAI}`, updatedConfigs);
 
         // Also persist authType
-        settings.setValue(
-          persistScope,
-          'security.auth.selectedType',
-          AuthType.USE_OPENAI,
-        );
+        settings.setValue(persistScope, "security.auth.selectedType", AuthType.USE_OPENAI);
 
         // Persist coding plan region
-        settings.setValue(persistScope, 'codingPlan.region', region);
+        settings.setValue(persistScope, "codingPlan.region", region);
 
         // Persist coding plan version (single field for backward compatibility)
-        settings.setValue(persistScope, 'codingPlan.version', version);
+        settings.setValue(persistScope, "codingPlan.version", version);
 
         // If there are configs, use the first one as the model
         if (updatedConfigs.length > 0 && updatedConfigs[0]?.id) {
-          settings.setValue(persistScope, 'model.name', updatedConfigs[0].id);
+          settings.setValue(persistScope, "model.name", updatedConfigs[0].id);
         }
 
         // Hot-reload model providers configuration before refreshAuth
         // This ensures ModelsConfig has the latest configuration from settings.json
         const updatedModelProviders: ModelProvidersConfig = {
-          ...(settings.merged.modelProviders as
-            | ModelProvidersConfig
-            | undefined),
+          ...(settings.merged.modelProviders as ModelProvidersConfig | undefined),
           [AuthType.USE_OPENAI]: updatedConfigs,
         };
         config.reloadModelProvidersConfig(updatedModelProviders);
@@ -387,8 +342,8 @@ export const useAuthCommand = (
           {
             type: MessageType.INFO,
             text: t(
-              'Authenticated successfully with {{region}}. API key and model configs saved to settings.json.',
-              { region: t('Alibaba Cloud Coding Plan') },
+              "Authenticated successfully with {{region}}. API key and model configs saved to settings.json.",
+              { region: t("Alibaba Cloud Coding Plan") },
             ),
           },
           Date.now(),
@@ -398,19 +353,13 @@ export const useAuthCommand = (
         addItem(
           {
             type: MessageType.INFO,
-            text: t(
-              'Tip: Use /model to switch between available Coding Plan models.',
-            ),
+            text: t("Tip: Use /model to switch between available Coding Plan models."),
           },
           Date.now(),
         );
 
         // Log success
-        const authEvent = new AuthEvent(
-          AuthType.USE_OPENAI,
-          'coding-plan',
-          'success',
-        );
+        const authEvent = new AuthEvent(AuthType.USE_OPENAI, "coding-plan", "success");
         logAuth(config, authEvent);
       } catch (error) {
         handleAuthFailure(error);
@@ -424,27 +373,21 @@ export const useAuthCommand = (
    * Persists key to env.DASHSCOPE_API_KEY and creates a modelProviders.openai entry.
    */
   const handleAlibabaStandardSubmit = useCallback(
-    async (
-      apiKey: string,
-      region: AlibabaStandardRegion,
-      modelIdsInput: string,
-    ) => {
+    async (apiKey: string, region: AlibabaStandardRegion, modelIdsInput: string) => {
       try {
         setIsAuthenticating(true);
         setAuthError(null);
 
         const trimmedApiKey = apiKey.trim();
         const modelIds = modelIdsInput
-          .split(',')
+          .split(",")
           .map((id) => id.trim())
-          .filter(
-            (id, index, array) => id.length > 0 && array.indexOf(id) === index,
-          );
+          .filter((id, index, array) => id.length > 0 && array.indexOf(id) === index);
         if (!trimmedApiKey) {
-          throw new Error(t('API key cannot be empty.'));
+          throw new Error(t("API key cannot be empty."));
         }
         if (modelIds.length === 0) {
-          throw new Error(t('Model IDs cannot be empty.'));
+          throw new Error(t("Model IDs cannot be empty."));
         }
 
         const baseUrl = ALIBABA_STANDARD_API_KEY_ENDPOINTS[region];
@@ -453,11 +396,7 @@ export const useAuthCommand = (
         const settingsFile = settings.forScope(persistScope);
         backupSettingsFile(settingsFile.path);
 
-        settings.setValue(
-          persistScope,
-          `env.${DASHSCOPE_STANDARD_API_KEY_ENV_KEY}`,
-          trimmedApiKey,
-        );
+        settings.setValue(persistScope, `env.${DASHSCOPE_STANDARD_API_KEY_ENV_KEY}`, trimmedApiKey);
         process.env[DASHSCOPE_STANDARD_API_KEY_ENV_KEY] = trimmedApiKey;
 
         const newConfigs: ProviderModelConfig[] = modelIds.map((modelId) => ({
@@ -468,39 +407,27 @@ export const useAuthCommand = (
         }));
 
         const existingConfigs =
-          (
-            settings.merged.modelProviders as ModelProvidersConfig | undefined
-          )?.[AuthType.USE_OPENAI] || [];
+          (settings.merged.modelProviders as ModelProvidersConfig | undefined)?.[
+            AuthType.USE_OPENAI
+          ] || [];
 
         const nonAlibabaStandardConfigs = existingConfigs.filter(
           (existing) =>
             !(
               existing.envKey === DASHSCOPE_STANDARD_API_KEY_ENV_KEY &&
-              typeof existing.baseUrl === 'string' &&
-              Object.values(ALIBABA_STANDARD_API_KEY_ENDPOINTS).includes(
-                existing.baseUrl,
-              )
+              typeof existing.baseUrl === "string" &&
+              Object.values(ALIBABA_STANDARD_API_KEY_ENDPOINTS).includes(existing.baseUrl)
             ),
         );
 
         const updatedConfigs = [...newConfigs, ...nonAlibabaStandardConfigs];
 
-        settings.setValue(
-          persistScope,
-          `modelProviders.${AuthType.USE_OPENAI}`,
-          updatedConfigs,
-        );
-        settings.setValue(
-          persistScope,
-          'security.auth.selectedType',
-          AuthType.USE_OPENAI,
-        );
-        settings.setValue(persistScope, 'model.name', modelIds[0]);
+        settings.setValue(persistScope, `modelProviders.${AuthType.USE_OPENAI}`, updatedConfigs);
+        settings.setValue(persistScope, "security.auth.selectedType", AuthType.USE_OPENAI);
+        settings.setValue(persistScope, "model.name", modelIds[0]);
 
         const updatedModelProviders: ModelProvidersConfig = {
-          ...(settings.merged.modelProviders as
-            | ModelProvidersConfig
-            | undefined),
+          ...(settings.merged.modelProviders as ModelProvidersConfig | undefined),
           [AuthType.USE_OPENAI]: updatedConfigs,
         };
         config.reloadModelProvidersConfig(updatedModelProviders);
@@ -517,7 +444,7 @@ export const useAuthCommand = (
           {
             type: MessageType.INFO,
             text: t(
-              'Alibaba Cloud ModelStudio Standard API Key successfully entered. Settings updated with env.DASHSCOPE_API_KEY and {{modelCount}} model(s).',
+              "Alibaba Cloud ModelStudio Standard API Key successfully entered. Settings updated with env.DASHSCOPE_API_KEY and {{modelCount}} model(s).",
               { modelCount: String(modelIds.length) },
             ),
           },
@@ -528,17 +455,13 @@ export const useAuthCommand = (
           {
             type: MessageType.INFO,
             text: t(
-              'You can use /model to see new ModelStudio Standard models and switch between them.',
+              "You can use /model to see new ModelStudio Standard models and switch between them.",
             ),
           },
           Date.now(),
         );
 
-        const authEvent = new AuthEvent(
-          AuthType.USE_OPENAI,
-          'manual',
-          'success',
-        );
+        const authEvent = new AuthEvent(AuthType.USE_OPENAI, "manual", "success");
         logAuth(config, authEvent);
       } catch (error) {
         handleAuthFailure(error);
@@ -558,27 +481,20 @@ export const useAuthCommand = (
     * or broken authentication cycles.
     */
   useEffect(() => {
-    const defaultAuthType = process.env['QWEN_DEFAULT_AUTH_TYPE'];
+    const defaultAuthType = process.env["QWEN_DEFAULT_AUTH_TYPE"];
     if (
       defaultAuthType &&
-      ![
-        AuthType.USE_OPENAI,
-        AuthType.USE_ANTHROPIC,
-        AuthType.USE_OLLAMA,
-      ].includes(defaultAuthType as AuthType)
+      ![AuthType.USE_OPENAI, AuthType.USE_ANTHROPIC, AuthType.USE_OLLAMA].includes(
+        defaultAuthType as AuthType,
+      )
     ) {
       onAuthError(
-        t(
-          'Invalid QWEN_DEFAULT_AUTH_TYPE value: "{{value}}". Valid values are: {{validValues}}',
-          {
-            value: defaultAuthType,
-            validValues: [
-              AuthType.USE_OPENAI,
-              AuthType.USE_ANTHROPIC,
-              AuthType.USE_OLLAMA,
-            ].join(', '),
-          },
-        ),
+        t('Invalid QWEN_DEFAULT_AUTH_TYPE value: "{{value}}". Valid values are: {{validValues}}', {
+          value: defaultAuthType,
+          validValues: [AuthType.USE_OPENAI, AuthType.USE_ANTHROPIC, AuthType.USE_OLLAMA].join(
+            ", ",
+          ),
+        }),
       );
     }
   }, [onAuthError]);

@@ -4,30 +4,30 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { createContext, useContext } from 'react';
 import type {
-  HistoryItem,
-  ThoughtSummary,
-  ConsoleMessageItem,
-  ShellConfirmationRequest,
-  ConfirmationRequest,
-  LoopDetectionConfirmationRequest,
-  HistoryItemWithoutId,
-  StreamingState,
-} from '../types.js';
-import type { CommandContext, SlashCommand } from '../commands/types.js';
-import type { TextBuffer } from '../components/shared/text-buffer.js';
-import type {
-  IdeContext,
   ApprovalMode,
-  UserTierId,
-  IdeInfo,
   FallbackIntent,
-} from '@airiscode/gemini-cli-core';
-import type { DOMElement } from 'ink';
-import type { SessionStatsState } from '../contexts/SessionContext.js';
-import type { ExtensionUpdateState } from '../state/extensions.js';
-import type { UpdateObject } from '../utils/updateCheck.js';
+  IdeContext,
+  IdeInfo,
+  UserTierId,
+} from "@airiscode/gemini-cli-core";
+import type { DOMElement } from "ink";
+import { createContext, useContext } from "react";
+import type { CommandContext, SlashCommand } from "../commands/types.js";
+import type { TextBuffer } from "../components/shared/text-buffer.js";
+import type { SessionStatsState } from "../contexts/SessionContext.js";
+import type { ExtensionUpdateState } from "../state/extensions.js";
+import type {
+  ConfirmationRequest,
+  ConsoleMessageItem,
+  HistoryItem,
+  HistoryItemWithoutId,
+  LoopDetectionConfirmationRequest,
+  ShellConfirmationRequest,
+  StreamingState,
+  ThoughtSummary,
+} from "../types.js";
+import type { UpdateObject } from "../utils/updateCheck.js";
 
 export interface ProQuotaDialogRequest {
   failedModel: string;
@@ -38,8 +38,8 @@ export interface ProQuotaDialogRequest {
   resolve: (intent: FallbackIntent) => void;
 }
 
-import { type UseHistoryManagerReturn } from '../hooks/useHistoryManager.js';
-import { type RestartReason } from '../hooks/useIdeTrustListener.js';
+import { type UseHistoryManagerReturn } from "../hooks/useHistoryManager.js";
+import { type RestartReason } from "../hooks/useIdeTrustListener.js";
 
 export interface UIState {
   history: HistoryItem[];
@@ -143,7 +143,7 @@ export const UIStateContext = createContext<UIState | null>(null);
 export const useUIState = () => {
   const context = useContext(UIStateContext);
   if (!context) {
-    throw new Error('useUIState must be used within a UIStateProvider');
+    throw new Error("useUIState must be used within a UIStateProvider");
   }
   return context;
 };

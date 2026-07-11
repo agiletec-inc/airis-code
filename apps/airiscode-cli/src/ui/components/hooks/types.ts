@@ -4,11 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import type {
-  HookConfig,
-  HooksConfigSource,
-  HookEventName,
-} from '@airiscode/runtime';
+import type { HookConfig, HookEventName, HooksConfigSource } from "@airiscode/runtime";
 
 /**
  * Exit code description for hooks
@@ -44,10 +40,10 @@ export interface HookConfigDisplayInfo {
  * Hook management dialog step names
  */
 export const HOOKS_MANAGEMENT_STEPS = {
-  HOOKS_DISABLED: 'hooks_disabled',
-  HOOKS_LIST: 'hooks_list',
-  HOOK_DETAIL: 'hook_detail',
-  HOOK_CONFIG_DETAIL: 'hook_config_detail',
+  HOOKS_DISABLED: "hooks_disabled",
+  HOOKS_LIST: "hooks_list",
+  HOOK_DETAIL: "hook_detail",
+  HOOK_CONFIG_DETAIL: "hook_config_detail",
 } as const;
 
 export type HooksManagementStep =

@@ -4,8 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import type { PartListUnion, Part } from '@google/genai';
-import type { ContentGenerator } from '../core/contentGenerator.js';
+import type { Part, PartListUnion } from "@google/genai";
+import type { ContentGenerator } from "../core/contentGenerator.js";
 
 // Token estimation constants
 // ASCII characters (0-127) are roughly 4 chars per token
@@ -22,7 +22,7 @@ const NON_ASCII_TOKENS_PER_CHAR = 1.3;
 export function estimateTokenCountSync(parts: Part[]): number {
   let totalTokens = 0;
   for (const part of parts) {
-    if (typeof part.text === 'string') {
+    if (typeof part.text === "string") {
       for (const char of part.text) {
         if (char.codePointAt(0)! <= 127) {
           totalTokens += ASCII_TOKENS_PER_CHAR;
@@ -51,14 +51,14 @@ export async function calculateRequestTokenCount(
   model: string,
 ): Promise<number> {
   const parts: Part[] = Array.isArray(request)
-    ? request.map((p) => (typeof p === 'string' ? { text: p } : p))
-    : typeof request === 'string'
+    ? request.map((p) => (typeof p === "string" ? { text: p } : p))
+    : typeof request === "string"
       ? [{ text: request }]
       : [request];
 
   // Use countTokens API only for heavy media parts that are hard to estimate.
   const hasMedia = parts.some((p) => {
-    const isMedia = 'inlineData' in p || 'fileData' in p;
+    const isMedia = "inlineData" in p || "fileData" in p;
     return isMedia;
   });
 
@@ -66,7 +66,7 @@ export async function calculateRequestTokenCount(
     try {
       const response = await contentGenerator.countTokens({
         model,
-        contents: [{ role: 'user', parts }],
+        contents: [{ role: "user", parts }],
       });
       return response.totalTokens ?? 0;
     } catch {

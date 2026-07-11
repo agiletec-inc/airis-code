@@ -4,18 +4,15 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { useEffect, useRef } from 'react';
-import { StreamingState } from '../types.js';
+import type { Config } from "@airiscode/runtime";
+import { fireNotificationHook, NotificationType } from "@airiscode/runtime";
+import { useEffect, useRef } from "react";
+import type { LoadedSettings } from "../../config/settings.js";
 import {
-  notifyTerminalAttention,
   AttentionNotificationReason,
-} from '../../utils/attentionNotification.js';
-import type { LoadedSettings } from '../../config/settings.js';
-import type { Config } from '@airiscode/runtime';
-import {
-  fireNotificationHook,
-  NotificationType,
-} from '@airiscode/runtime';
+  notifyTerminalAttention,
+} from "../../utils/attentionNotification.js";
+import { StreamingState } from "../types.js";
 
 export const LONG_TASK_NOTIFICATION_THRESHOLD_SECONDS = 20;
 
@@ -65,9 +62,7 @@ export const useAttentionNotifications = ({
     }
 
     if (streamingState === StreamingState.Idle) {
-      const wasLongTask =
-        respondingElapsedRef.current >=
-        LONG_TASK_NOTIFICATION_THRESHOLD_SECONDS;
+      const wasLongTask = respondingElapsedRef.current >= LONG_TASK_NOTIFICATION_THRESHOLD_SECONDS;
       if (wasLongTask && !isFocused) {
         notifyTerminalAttention(AttentionNotificationReason.LongTaskComplete, {
           enabled: terminalBellEnabled,
@@ -83,9 +78,9 @@ export const useAttentionNotifications = ({
         if (hooksEnabled && messageBus) {
           fireNotificationHook(
             messageBus,
-            'AIRIS Code is waiting for your input',
+            "AIRIS Code is waiting for your input",
             NotificationType.IdlePrompt,
-            'Waiting for input',
+            "Waiting for input",
           ).catch(() => {
             // Silently ignore errors - fireNotificationHook has internal error handling
             // and notification hooks should not block the idle flow

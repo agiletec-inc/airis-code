@@ -4,54 +4,48 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import type { WritableStream, ReadableStream } from 'node:stream/web';
-
+import { randomUUID } from "node:crypto";
+import * as fs from "node:fs/promises";
+import * as path from "node:path";
+import { Readable, Writable } from "node:stream";
+import type { ReadableStream, WritableStream } from "node:stream/web";
 import type {
   Config,
-  GeminiChat,
-  ToolResult,
-  ToolCallConfirmationDetails,
   FilterFilesOptions,
-} from '@airiscode/gemini-cli-core';
+  GeminiChat,
+  ToolCallConfirmationDetails,
+  ToolResult,
+} from "@airiscode/gemini-cli-core";
 import {
   AuthType,
-  logToolCall,
-  convertToFunctionResponse,
-  ToolConfirmationOutcome,
   clearCachedCredentialFile,
-  isNodeError,
-  getErrorMessage,
-  isWithinRoot,
-  getErrorStatus,
-  MCPServerConfig,
-  DiscoveredMCPTool,
-  StreamEventType,
-  ToolCallEvent,
-  debugLogger,
-  ReadManyFilesTool,
-  getEffectiveModel,
+  convertToFunctionResponse,
   createWorkingStdio,
+  DiscoveredMCPTool,
+  debugLogger,
+  getEffectiveModel,
+  getErrorMessage,
+  getErrorStatus,
+  isNodeError,
+  isWithinRoot,
+  logToolCall,
+  MCPServerConfig,
+  ReadManyFilesTool,
+  StreamEventType,
   startupProfiler,
-} from '@airiscode/gemini-cli-core';
-import * as acp from './acp.js';
-import { AcpFileSystemService } from './fileSystemService.js';
-import { Readable, Writable } from 'node:stream';
-import type { Content, Part, FunctionCall } from '@google/genai';
-import type { LoadedSettings } from '../config/settings.js';
-import { SettingScope } from '../config/settings.js';
-import * as fs from 'node:fs/promises';
-import * as path from 'node:path';
-import { z } from 'zod';
+  ToolCallEvent,
+  ToolConfirmationOutcome,
+} from "@airiscode/gemini-cli-core";
+import type { Content, FunctionCall, Part } from "@google/genai";
+import { z } from "zod";
+import type { CliArgs } from "../config/config.js";
+import { loadCliConfig } from "../config/config.js";
+import type { LoadedSettings } from "../config/settings.js";
+import { SettingScope } from "../config/settings.js";
+import * as acp from "./acp.js";
+import { AcpFileSystemService } from "./fileSystemService.js";
 
-import { randomUUID } from 'node:crypto';
-import type { CliArgs } from '../config/config.js';
-import { loadCliConfig } from '../config/config.js';
-
-export async function runZedIntegration(
-  config: Config,
-  settings: LoadedSettings,
-  argv: CliArgs,
-) {
+export async function runZedIntegration(config: Config, settings: LoadedSettings, argv: CliArgs) {
   const { stdout: workingStdout } = createWorkingStdio();
   const stdout = Writable.toWeb(workingStdout) as WritableStream;
   const stdin = Readable.toWeb(process.stdin) as ReadableStream<Uint8Array>;
@@ -74,25 +68,22 @@ export class GeminiAgent {
     private client: acp.Client,
   ) {}
 
-  async initialize(
-    args: acp.InitializeRequest,
-  ): Promise<acp.InitializeResponse> {
+  async initialize(args: acp.InitializeRequest): Promise<acp.InitializeResponse> {
     this.clientCapabilities = args.clientCapabilities;
     const authMethods = [
       {
         id: AuthType.LOGIN_WITH_GOOGLE,
-        name: 'Log in with Google',
+        name: "Log in with Google",
         description: null,
       },
       {
         id: AuthType.USE_GEMINI,
-        name: 'Use Gemini API key',
-        description:
-          'Requires setting the `GEMINI_API_KEY` environment variable',
+        name: "Use Gemini API key",
+        description: "Requires setting the `GEMINI_API_KEY` environment variable",
       },
       {
         id: AuthType.USE_VERTEX_AI,
-        name: 'Vertex AI',
+        name: "Vertex AI",
         description: null,
       },
     ];
@@ -124,26 +115,17 @@ export class GeminiAgent {
     // This will reuse existing credentials if they're valid,
     // or perform new authentication if needed
     await this.config.refreshAuth(method);
-    this.settings.setValue(
-      SettingScope.User,
-      'security.auth.selectedType',
-      method,
-    );
+    this.settings.setValue(SettingScope.User, "security.auth.selectedType", method);
   }
 
-  async newSession({
-    cwd,
-    mcpServers,
-  }: acp.NewSessionRequest): Promise<acp.NewSessionResponse> {
+  async newSession({ cwd, mcpServers }: acp.NewSessionRequest): Promise<acp.NewSessionResponse> {
     const sessionId = randomUUID();
     const config = await this.newSessionConfig(sessionId, cwd, mcpServers);
 
     let isAuthenticated = false;
     if (this.settings.merged.security?.auth?.selectedType) {
       try {
-        await config.refreshAuth(
-          this.settings.merged.security.auth.selectedType,
-        );
+        await config.refreshAuth(this.settings.merged.security.auth.selectedType);
         isAuthenticated = true;
       } catch (e) {
         debugLogger.error(`Authentication failed: ${e}`);
@@ -227,7 +209,7 @@ export class Session {
 
   async cancelPendingPrompt(): Promise<void> {
     if (!this.pendingPrompt) {
-      throw new Error('Not currently generating');
+      throw new Error("Not currently generating");
     }
 
     this.pendingPrompt.abort();
@@ -244,12 +226,12 @@ export class Session {
 
     const parts = await this.#resolvePrompt(params.prompt, pendingSend.signal);
 
-    let nextMessage: Content | null = { role: 'user', parts };
+    let nextMessage: Content | null = { role: "user", parts };
 
     while (nextMessage !== null) {
       if (pendingSend.signal.aborted) {
         chat.addHistory(nextMessage);
-        return { stopReason: 'cancelled' };
+        return { stopReason: "cancelled" };
       }
 
       const functionCalls: FunctionCall[] = [];
@@ -270,7 +252,7 @@ export class Session {
 
         for await (const resp of responseStream) {
           if (pendingSend.signal.aborted) {
-            return { stopReason: 'cancelled' };
+            return { stopReason: "cancelled" };
           }
 
           if (
@@ -285,15 +267,13 @@ export class Session {
               }
 
               const content: acp.ContentBlock = {
-                type: 'text',
+                type: "text",
                 text: part.text,
               };
 
               // eslint-disable-next-line @typescript-eslint/no-floating-promises
               this.sendUpdate({
-                sessionUpdate: part.thought
-                  ? 'agent_thought_chunk'
-                  : 'agent_message_chunk',
+                sessionUpdate: part.thought ? "agent_thought_chunk" : "agent_message_chunk",
                 content,
               });
             }
@@ -305,21 +285,15 @@ export class Session {
         }
 
         if (pendingSend.signal.aborted) {
-          return { stopReason: 'cancelled' };
+          return { stopReason: "cancelled" };
         }
       } catch (error) {
         if (getErrorStatus(error) === 429) {
-          throw new acp.RequestError(
-            429,
-            'Rate limit exceeded. Try again later.',
-          );
+          throw new acp.RequestError(429, "Rate limit exceeded. Try again later.");
         }
 
-        if (
-          pendingSend.signal.aborted ||
-          (error instanceof Error && error.name === 'AbortError')
-        ) {
-          return { stopReason: 'cancelled' };
+        if (pendingSend.signal.aborted || (error instanceof Error && error.name === "AbortError")) {
+          return { stopReason: "cancelled" };
         }
 
         throw error;
@@ -333,11 +307,11 @@ export class Session {
           toolResponseParts.push(...response);
         }
 
-        nextMessage = { role: 'user', parts: toolResponseParts };
+        nextMessage = { role: "user", parts: toolResponseParts };
       }
     }
 
-    return { stopReason: 'end_turn' };
+    return { stopReason: "end_turn" };
   }
 
   private async sendUpdate(update: acp.SessionUpdate): Promise<void> {
@@ -365,14 +339,12 @@ export class Session {
         this.config,
         new ToolCallEvent(
           undefined,
-          fc.name ?? '',
+          fc.name ?? "",
           args,
           durationMs,
           false,
           promptId,
-          typeof tool !== 'undefined' && tool instanceof DiscoveredMCPTool
-            ? 'mcp'
-            : 'native',
+          typeof tool !== "undefined" && tool instanceof DiscoveredMCPTool ? "mcp" : "native",
           error.message,
         ),
       );
@@ -381,7 +353,7 @@ export class Session {
         {
           functionResponse: {
             id: callId,
-            name: fc.name ?? '',
+            name: fc.name ?? "",
             response: { error: error.message },
           },
         },
@@ -389,30 +361,27 @@ export class Session {
     };
 
     if (!fc.name) {
-      return errorResponse(new Error('Missing function name'));
+      return errorResponse(new Error("Missing function name"));
     }
 
     const toolRegistry = this.config.getToolRegistry();
     const tool = toolRegistry.getTool(fc.name as string);
 
     if (!tool) {
-      return errorResponse(
-        new Error(`Tool "${fc.name}" not found in registry.`),
-      );
+      return errorResponse(new Error(`Tool "${fc.name}" not found in registry.`));
     }
 
     try {
       const invocation = tool.build(args);
 
-      const confirmationDetails =
-        await invocation.shouldConfirmExecute(abortSignal);
+      const confirmationDetails = await invocation.shouldConfirmExecute(abortSignal);
 
       if (confirmationDetails) {
         const content: acp.ToolCallContent[] = [];
 
-        if (confirmationDetails.type === 'edit') {
+        if (confirmationDetails.type === "edit") {
           content.push({
-            type: 'diff',
+            type: "diff",
             path: confirmationDetails.fileName,
             oldText: confirmationDetails.originalContent,
             newText: confirmationDetails.newContent,
@@ -424,7 +393,7 @@ export class Session {
           options: toPermissionOptions(confirmationDetails),
           toolCall: {
             toolCallId: callId,
-            status: 'pending',
+            status: "pending",
             title: invocation.getDescription(),
             content,
             locations: invocation.toolLocations(),
@@ -434,19 +403,15 @@ export class Session {
 
         const output = await this.client.requestPermission(params);
         const outcome =
-          output.outcome.outcome === 'cancelled'
+          output.outcome.outcome === "cancelled"
             ? ToolConfirmationOutcome.Cancel
-            : z
-                .nativeEnum(ToolConfirmationOutcome)
-                .parse(output.outcome.optionId);
+            : z.nativeEnum(ToolConfirmationOutcome).parse(output.outcome.optionId);
 
         await confirmationDetails.onConfirm(outcome);
 
         switch (outcome) {
           case ToolConfirmationOutcome.Cancel:
-            return errorResponse(
-              new Error(`Tool "${fc.name}" was canceled by the user.`),
-            );
+            return errorResponse(new Error(`Tool "${fc.name}" was canceled by the user.`));
           case ToolConfirmationOutcome.ProceedOnce:
           case ToolConfirmationOutcome.ProceedAlways:
           case ToolConfirmationOutcome.ProceedAlwaysServer:
@@ -460,9 +425,9 @@ export class Session {
         }
       } else {
         await this.sendUpdate({
-          sessionUpdate: 'tool_call',
+          sessionUpdate: "tool_call",
           toolCallId: callId,
-          status: 'in_progress',
+          status: "in_progress",
           title: invocation.getDescription(),
           content: [],
           locations: invocation.toolLocations(),
@@ -474,9 +439,9 @@ export class Session {
       const content = toToolCallContent(toolResult);
 
       await this.sendUpdate({
-        sessionUpdate: 'tool_call_update',
+        sessionUpdate: "tool_call_update",
         toolCallId: callId,
-        status: 'completed',
+        status: "completed",
         content: content ? [content] : [],
       });
 
@@ -485,14 +450,12 @@ export class Session {
         this.config,
         new ToolCallEvent(
           undefined,
-          fc.name ?? '',
+          fc.name ?? "",
           args,
           durationMs,
           true,
           promptId,
-          typeof tool !== 'undefined' && tool instanceof DiscoveredMCPTool
-            ? 'mcp'
-            : 'native',
+          typeof tool !== "undefined" && tool instanceof DiscoveredMCPTool ? "mcp" : "native",
         ),
       );
 
@@ -501,39 +464,34 @@ export class Session {
       const error = e instanceof Error ? e : new Error(String(e));
 
       await this.sendUpdate({
-        sessionUpdate: 'tool_call_update',
+        sessionUpdate: "tool_call_update",
         toolCallId: callId,
-        status: 'failed',
-        content: [
-          { type: 'content', content: { type: 'text', text: error.message } },
-        ],
+        status: "failed",
+        content: [{ type: "content", content: { type: "text", text: error.message } }],
       });
 
       return errorResponse(error);
     }
   }
 
-  async #resolvePrompt(
-    message: acp.ContentBlock[],
-    abortSignal: AbortSignal,
-  ): Promise<Part[]> {
-    const FILE_URI_SCHEME = 'file://';
+  async #resolvePrompt(message: acp.ContentBlock[], abortSignal: AbortSignal): Promise<Part[]> {
+    const FILE_URI_SCHEME = "file://";
 
     const embeddedContext: acp.EmbeddedResourceResource[] = [];
 
     const parts = message.map((part) => {
       switch (part.type) {
-        case 'text':
+        case "text":
           return { text: part.text };
-        case 'image':
-        case 'audio':
+        case "image":
+        case "audio":
           return {
             inlineData: {
               mimeType: part.mimeType,
               data: part.data,
             },
           };
-        case 'resource_link': {
+        case "resource_link": {
           if (part.uri.startsWith(FILE_URI_SCHEME)) {
             return {
               fileData: {
@@ -546,7 +504,7 @@ export class Session {
             return { text: `@${part.uri}` };
           }
         }
-        case 'resource': {
+        case "resource": {
           embeddedContext.push(part.resource);
           return { text: `@${part.resource.uri}` };
         }
@@ -557,7 +515,7 @@ export class Session {
       }
     });
 
-    const atPathCommandParts = parts.filter((part) => 'fileData' in part);
+    const atPathCommandParts = parts.filter((part) => "fileData" in part);
 
     if (atPathCommandParts.length === 0 && embeddedContext.length === 0) {
       return parts;
@@ -567,8 +525,7 @@ export class Session {
 
     // Get centralized file discovery service
     const fileDiscovery = this.config.getFileService();
-    const fileFilteringOptions: FilterFilesOptions =
-      this.config.getFileFilteringOptions();
+    const fileFilteringOptions: FilterFilesOptions = this.config.getFileFilteringOptions();
 
     const pathSpecsToRead: string[] = [];
     const contentLabelsForDisplay: string[] = [];
@@ -576,10 +533,10 @@ export class Session {
 
     const toolRegistry = this.config.getToolRegistry();
     const readManyFilesTool = new ReadManyFilesTool(this.config);
-    const globTool = toolRegistry.getTool('glob');
+    const globTool = toolRegistry.getTool("glob");
 
     if (!readManyFilesTool) {
-      throw new Error('Error: read_many_files tool not found.');
+      throw new Error("Error: read_many_files tool not found.");
     }
 
     for (const atPathPart of atPathCommandParts) {
@@ -597,27 +554,19 @@ export class Session {
         if (isWithinRoot(absolutePath, this.config.getTargetDir())) {
           const stats = await fs.stat(absolutePath);
           if (stats.isDirectory()) {
-            currentPathSpec = pathName.endsWith('/')
-              ? `${pathName}**`
-              : `${pathName}/**`;
-            this.debug(
-              `Path ${pathName} resolved to directory, using glob: ${currentPathSpec}`,
-            );
+            currentPathSpec = pathName.endsWith("/") ? `${pathName}**` : `${pathName}/**`;
+            this.debug(`Path ${pathName} resolved to directory, using glob: ${currentPathSpec}`);
           } else {
             this.debug(`Path ${pathName} resolved to file: ${currentPathSpec}`);
           }
           resolvedSuccessfully = true;
         } else {
-          this.debug(
-            `Path ${pathName} is outside the project directory. Skipping.`,
-          );
+          this.debug(`Path ${pathName} is outside the project directory. Skipping.`);
         }
       } catch (error) {
-        if (isNodeError(error) && error.code === 'ENOENT') {
+        if (isNodeError(error) && error.code === "ENOENT") {
           if (this.config.getEnableRecursiveFileSearch() && globTool) {
-            this.debug(
-              `Path ${pathName} not found directly, attempting glob search.`,
-            );
+            this.debug(`Path ${pathName} not found directly, attempting glob search.`);
             try {
               const globResult = await globTool.buildAndExecute(
                 {
@@ -628,17 +577,14 @@ export class Session {
               );
               if (
                 globResult.llmContent &&
-                typeof globResult.llmContent === 'string' &&
-                !globResult.llmContent.startsWith('No files found') &&
-                !globResult.llmContent.startsWith('Error:')
+                typeof globResult.llmContent === "string" &&
+                !globResult.llmContent.startsWith("No files found") &&
+                !globResult.llmContent.startsWith("Error:")
               ) {
-                const lines = globResult.llmContent.split('\n');
+                const lines = globResult.llmContent.split("\n");
                 if (lines.length > 1 && lines[1]) {
                   const firstMatchAbsolute = lines[1].trim();
-                  currentPathSpec = path.relative(
-                    this.config.getTargetDir(),
-                    firstMatchAbsolute,
-                  );
+                  currentPathSpec = path.relative(this.config.getTargetDir(), firstMatchAbsolute);
                   this.debug(
                     `Glob search for ${pathName} found ${firstMatchAbsolute}, using relative path: ${currentPathSpec}`,
                   );
@@ -659,14 +605,10 @@ export class Session {
               );
             }
           } else {
-            this.debug(
-              `Glob tool not found. Path ${pathName} will be skipped.`,
-            );
+            this.debug(`Glob tool not found. Path ${pathName} will be skipped.`);
           }
         } else {
-          debugLogger.error(
-            `Error stating path ${pathName}. Path ${pathName} will be skipped.`,
-          );
+          debugLogger.error(`Error stating path ${pathName}. Path ${pathName} will be skipped.`);
         }
       }
       if (resolvedSuccessfully) {
@@ -677,29 +619,27 @@ export class Session {
     }
 
     // Construct the initial part of the query for the LLM
-    let initialQueryText = '';
+    let initialQueryText = "";
     for (let i = 0; i < parts.length; i++) {
       const chunk = parts[i];
-      if ('text' in chunk) {
+      if ("text" in chunk) {
         initialQueryText += chunk.text;
       } else {
         // type === 'atPath'
-        const resolvedSpec =
-          chunk.fileData && atPathToResolvedSpecMap.get(chunk.fileData.fileUri);
+        const resolvedSpec = chunk.fileData && atPathToResolvedSpecMap.get(chunk.fileData.fileUri);
         if (
           i > 0 &&
           initialQueryText.length > 0 &&
-          !initialQueryText.endsWith(' ') &&
+          !initialQueryText.endsWith(" ") &&
           resolvedSpec
         ) {
           // Add space if previous part was text and didn't end with space, or if previous was @path
           const prevPart = parts[i - 1];
           if (
-            'text' in prevPart ||
-            ('fileData' in prevPart &&
-              atPathToResolvedSpecMap.has(prevPart.fileData!.fileUri))
+            "text" in prevPart ||
+            ("fileData" in prevPart && atPathToResolvedSpecMap.has(prevPart.fileData!.fileUri))
           ) {
-            initialQueryText += ' ';
+            initialQueryText += " ";
           }
         }
         if (resolvedSpec) {
@@ -710,10 +650,10 @@ export class Session {
           if (
             i > 0 &&
             initialQueryText.length > 0 &&
-            !initialQueryText.endsWith(' ') &&
-            !chunk.fileData?.fileUri.startsWith(' ')
+            !initialQueryText.endsWith(" ") &&
+            !chunk.fileData?.fileUri.startsWith(" ")
           ) {
-            initialQueryText += ' ';
+            initialQueryText += " ";
           }
           if (chunk.fileData?.fileUri) {
             initialQueryText += `@${chunk.fileData.fileUri}`;
@@ -724,16 +664,14 @@ export class Session {
     initialQueryText = initialQueryText.trim();
     // Inform user about ignored paths
     if (ignoredPaths.length > 0) {
-      this.debug(
-        `Ignored ${ignoredPaths.length} files: ${ignoredPaths.join(', ')}`,
-      );
+      this.debug(`Ignored ${ignoredPaths.length} files: ${ignoredPaths.join(", ")}`);
     }
 
     const processedQueryParts: Part[] = [{ text: initialQueryText }];
 
     if (pathSpecsToRead.length === 0 && embeddedContext.length === 0) {
       // Fallback for lone "@" or completely invalid @-commands resulting in empty initialQueryText
-      debugLogger.warn('No valid file paths found in @ commands to read.');
+      debugLogger.warn("No valid file paths found in @ commands to read.");
       return [{ text: initialQueryText }];
     }
 
@@ -748,9 +686,9 @@ export class Session {
         const invocation = readManyFilesTool.build(toolArgs);
 
         await this.sendUpdate({
-          sessionUpdate: 'tool_call',
+          sessionUpdate: "tool_call",
           toolCallId: callId,
-          status: 'in_progress',
+          status: "in_progress",
           title: invocation.getDescription(),
           content: [],
           locations: invocation.toolLocations(),
@@ -759,25 +697,25 @@ export class Session {
 
         const result = await invocation.execute(abortSignal);
         const content = toToolCallContent(result) || {
-          type: 'content',
+          type: "content",
           content: {
-            type: 'text',
-            text: `Successfully read: ${contentLabelsForDisplay.join(', ')}`,
+            type: "text",
+            text: `Successfully read: ${contentLabelsForDisplay.join(", ")}`,
           },
         };
         await this.sendUpdate({
-          sessionUpdate: 'tool_call_update',
+          sessionUpdate: "tool_call_update",
           toolCallId: callId,
-          status: 'completed',
+          status: "completed",
           content: content ? [content] : [],
         });
         if (Array.isArray(result.llmContent)) {
           const fileContentRegex = /^--- (.*?) ---\n\n([\s\S]*?)\n\n$/;
           processedQueryParts.push({
-            text: '\n--- Content from referenced files ---',
+            text: "\n--- Content from referenced files ---",
           });
           for (const part of result.llmContent) {
-            if (typeof part === 'string') {
+            if (typeof part === "string") {
               const match = fileContentRegex.exec(part);
               if (match) {
                 const filePathSpecInContent = match[1]; // This is a resolved pathSpec
@@ -795,21 +733,19 @@ export class Session {
             }
           }
         } else {
-          debugLogger.warn(
-            'read_many_files tool returned no content or empty content.',
-          );
+          debugLogger.warn("read_many_files tool returned no content or empty content.");
         }
       } catch (error: unknown) {
         await this.sendUpdate({
-          sessionUpdate: 'tool_call_update',
+          sessionUpdate: "tool_call_update",
           toolCallId: callId,
-          status: 'failed',
+          status: "failed",
           content: [
             {
-              type: 'content',
+              type: "content",
               content: {
-                type: 'text',
-                text: `Error reading files (${contentLabelsForDisplay.join(', ')}): ${getErrorMessage(error)}`,
+                type: "text",
+                text: `Error reading files (${contentLabelsForDisplay.join(", ")}): ${getErrorMessage(error)}`,
               },
             },
           ],
@@ -821,21 +757,21 @@ export class Session {
 
     if (embeddedContext.length > 0) {
       processedQueryParts.push({
-        text: '\n--- Content from referenced context ---',
+        text: "\n--- Content from referenced context ---",
       });
 
       for (const contextPart of embeddedContext) {
         processedQueryParts.push({
           text: `\nContent from @${contextPart.uri}:\n`,
         });
-        if ('text' in contextPart) {
+        if ("text" in contextPart) {
           processedQueryParts.push({
             text: contextPart.text,
           });
         } else {
           processedQueryParts.push({
             inlineData: {
-              mimeType: contextPart.mimeType ?? 'application/octet-stream',
+              mimeType: contextPart.mimeType ?? "application/octet-stream",
               data: contextPart.blob,
             },
           });
@@ -859,15 +795,15 @@ function toToolCallContent(toolResult: ToolResult): acp.ToolCallContent | null {
   }
 
   if (toolResult.returnDisplay) {
-    if (typeof toolResult.returnDisplay === 'string') {
+    if (typeof toolResult.returnDisplay === "string") {
       return {
-        type: 'content',
-        content: { type: 'text', text: toolResult.returnDisplay },
+        type: "content",
+        content: { type: "text", text: toolResult.returnDisplay },
       };
     } else {
-      if ('fileName' in toolResult.returnDisplay) {
+      if ("fileName" in toolResult.returnDisplay) {
         return {
-          type: 'diff',
+          type: "diff",
           path: toolResult.returnDisplay.fileName,
           oldText: toolResult.returnDisplay.originalContent,
           newText: toolResult.returnDisplay.newContent,
@@ -883,58 +819,56 @@ function toToolCallContent(toolResult: ToolResult): acp.ToolCallContent | null {
 const basicPermissionOptions = [
   {
     optionId: ToolConfirmationOutcome.ProceedOnce,
-    name: 'Allow',
-    kind: 'allow_once',
+    name: "Allow",
+    kind: "allow_once",
   },
   {
     optionId: ToolConfirmationOutcome.Cancel,
-    name: 'Reject',
-    kind: 'reject_once',
+    name: "Reject",
+    kind: "reject_once",
   },
 ] as const;
 
-function toPermissionOptions(
-  confirmation: ToolCallConfirmationDetails,
-): acp.PermissionOption[] {
+function toPermissionOptions(confirmation: ToolCallConfirmationDetails): acp.PermissionOption[] {
   switch (confirmation.type) {
-    case 'edit':
+    case "edit":
       return [
         {
           optionId: ToolConfirmationOutcome.ProceedAlways,
-          name: 'Allow All Edits',
-          kind: 'allow_always',
+          name: "Allow All Edits",
+          kind: "allow_always",
         },
         ...basicPermissionOptions,
       ];
-    case 'exec':
+    case "exec":
       return [
         {
           optionId: ToolConfirmationOutcome.ProceedAlways,
           name: `Always Allow ${confirmation.rootCommand}`,
-          kind: 'allow_always',
+          kind: "allow_always",
         },
         ...basicPermissionOptions,
       ];
-    case 'mcp':
+    case "mcp":
       return [
         {
           optionId: ToolConfirmationOutcome.ProceedAlwaysServer,
           name: `Always Allow ${confirmation.serverName}`,
-          kind: 'allow_always',
+          kind: "allow_always",
         },
         {
           optionId: ToolConfirmationOutcome.ProceedAlwaysTool,
           name: `Always Allow ${confirmation.toolName}`,
-          kind: 'allow_always',
+          kind: "allow_always",
         },
         ...basicPermissionOptions,
       ];
-    case 'info':
+    case "info":
       return [
         {
           optionId: ToolConfirmationOutcome.ProceedAlways,
           name: `Always Allow`,
-          kind: 'allow_always',
+          kind: "allow_always",
         },
         ...basicPermissionOptions,
       ];

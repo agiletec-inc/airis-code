@@ -12,7 +12,7 @@
     "build": "echo 'Skipping ui-gemini build temporarily (depends on gemini-cli-core)'",
     "build:real": "tsc -b",
     "start": "node dist/index.js",
-    "lint": "eslint . --ext .ts,.tsx",
+    "lint": "biome check .",
     "test": "vitest run",
     "typecheck": "tsc --noEmit"
   },

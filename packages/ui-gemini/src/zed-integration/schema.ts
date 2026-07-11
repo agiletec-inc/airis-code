@@ -4,22 +4,22 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { z } from 'zod';
+import { z } from "zod";
 
 export const AGENT_METHODS = {
-  authenticate: 'authenticate',
-  initialize: 'initialize',
-  session_cancel: 'session/cancel',
-  session_load: 'session/load',
-  session_new: 'session/new',
-  session_prompt: 'session/prompt',
+  authenticate: "authenticate",
+  initialize: "initialize",
+  session_cancel: "session/cancel",
+  session_load: "session/load",
+  session_new: "session/new",
+  session_prompt: "session/prompt",
 };
 
 export const CLIENT_METHODS = {
-  fs_read_text_file: 'fs/read_text_file',
-  fs_write_text_file: 'fs/write_text_file',
-  session_request_permission: 'session/request_permission',
-  session_update: 'session/update',
+  fs_read_text_file: "fs/read_text_file",
+  fs_write_text_file: "fs/write_text_file",
+  session_request_permission: "session/request_permission",
+  session_update: "session/update",
 };
 
 export const PROTOCOL_VERSION = 1;
@@ -50,9 +50,7 @@ export type WriteTextFileResponse = z.infer<typeof writeTextFileResponseSchema>;
 
 export type ReadTextFileResponse = z.infer<typeof readTextFileResponseSchema>;
 
-export type RequestPermissionOutcome = z.infer<
-  typeof requestPermissionOutcomeSchema
->;
+export type RequestPermissionOutcome = z.infer<typeof requestPermissionOutcomeSchema>;
 
 export type CancelNotification = z.infer<typeof cancelNotificationSchema>;
 
@@ -76,9 +74,7 @@ export type PermissionOption = z.infer<typeof permissionOptionSchema>;
 
 export type Annotations = z.infer<typeof annotationsSchema>;
 
-export type RequestPermissionResponse = z.infer<
-  typeof requestPermissionResponseSchema
->;
+export type RequestPermissionResponse = z.infer<typeof requestPermissionResponseSchema>;
 
 export type FileSystemCapability = z.infer<typeof fileSystemCapabilitySchema>;
 
@@ -96,9 +92,7 @@ export type ClientResponse = z.infer<typeof clientResponseSchema>;
 
 export type ClientNotification = z.infer<typeof clientNotificationSchema>;
 
-export type EmbeddedResourceResource = z.infer<
-  typeof embeddedResourceResourceSchema
->;
+export type EmbeddedResourceResource = z.infer<typeof embeddedResourceResourceSchema>;
 
 export type NewSessionRequest = z.infer<typeof newSessionRequestSchema>;
 
@@ -120,9 +114,7 @@ export type SessionUpdate = z.infer<typeof sessionUpdateSchema>;
 
 export type AgentResponse = z.infer<typeof agentResponseSchema>;
 
-export type RequestPermissionRequest = z.infer<
-  typeof requestPermissionRequestSchema
->;
+export type RequestPermissionRequest = z.infer<typeof requestPermissionRequestSchema>;
 
 export type InitializeRequest = z.infer<typeof initializeRequestSchema>;
 
@@ -162,13 +154,13 @@ export const readTextFileRequestSchema = z.object({
 });
 
 export const permissionOptionKindSchema = z.union([
-  z.literal('allow_once'),
-  z.literal('allow_always'),
-  z.literal('reject_once'),
-  z.literal('reject_always'),
+  z.literal("allow_once"),
+  z.literal("allow_always"),
+  z.literal("reject_once"),
+  z.literal("reject_always"),
 ]);
 
-export const roleSchema = z.union([z.literal('assistant'), z.literal('user')]);
+export const roleSchema = z.union([z.literal("assistant"), z.literal("user")]);
 
 export const textResourceContentsSchema = z.object({
   mimeType: z.string().optional().nullable(),
@@ -183,22 +175,22 @@ export const blobResourceContentsSchema = z.object({
 });
 
 export const toolKindSchema = z.union([
-  z.literal('read'),
-  z.literal('edit'),
-  z.literal('delete'),
-  z.literal('move'),
-  z.literal('search'),
-  z.literal('execute'),
-  z.literal('think'),
-  z.literal('fetch'),
-  z.literal('other'),
+  z.literal("read"),
+  z.literal("edit"),
+  z.literal("delete"),
+  z.literal("move"),
+  z.literal("search"),
+  z.literal("execute"),
+  z.literal("think"),
+  z.literal("fetch"),
+  z.literal("other"),
 ]);
 
 export const toolCallStatusSchema = z.union([
-  z.literal('pending'),
-  z.literal('in_progress'),
-  z.literal('completed'),
-  z.literal('failed'),
+  z.literal("pending"),
+  z.literal("in_progress"),
+  z.literal("completed"),
+  z.literal("failed"),
 ]);
 
 export const writeTextFileResponseSchema = z.null();
@@ -209,11 +201,11 @@ export const readTextFileResponseSchema = z.object({
 
 export const requestPermissionOutcomeSchema = z.union([
   z.object({
-    outcome: z.literal('cancelled'),
+    outcome: z.literal("cancelled"),
   }),
   z.object({
     optionId: z.string(),
-    outcome: z.literal('selected'),
+    outcome: z.literal("selected"),
   }),
 ]);
 
@@ -234,10 +226,10 @@ export const newSessionResponseSchema = z.object({
 export const loadSessionResponseSchema = z.null();
 
 export const stopReasonSchema = z.union([
-  z.literal('end_turn'),
-  z.literal('max_tokens'),
-  z.literal('refusal'),
-  z.literal('cancelled'),
+  z.literal("end_turn"),
+  z.literal("max_tokens"),
+  z.literal("refusal"),
+  z.literal("cancelled"),
 ]);
 
 export const promptResponseSchema = z.object({
@@ -251,12 +243,8 @@ export const toolCallLocationSchema = z.object({
 
 export const planEntrySchema = z.object({
   content: z.string(),
-  priority: z.union([z.literal('high'), z.literal('medium'), z.literal('low')]),
-  status: z.union([
-    z.literal('pending'),
-    z.literal('in_progress'),
-    z.literal('completed'),
-  ]),
+  priority: z.union([z.literal("high"), z.literal("medium"), z.literal("low")]),
+  status: z.union([z.literal("pending"), z.literal("in_progress"), z.literal("completed")]),
 });
 
 export const permissionOptionSchema = z.object({
@@ -337,19 +325,19 @@ export const contentBlockSchema = z.union([
   z.object({
     annotations: annotationsSchema.optional().nullable(),
     text: z.string(),
-    type: z.literal('text'),
+    type: z.literal("text"),
   }),
   z.object({
     annotations: annotationsSchema.optional().nullable(),
     data: z.string(),
     mimeType: z.string(),
-    type: z.literal('image'),
+    type: z.literal("image"),
   }),
   z.object({
     annotations: annotationsSchema.optional().nullable(),
     data: z.string(),
     mimeType: z.string(),
-    type: z.literal('audio'),
+    type: z.literal("audio"),
   }),
   z.object({
     annotations: annotationsSchema.optional().nullable(),
@@ -358,26 +346,26 @@ export const contentBlockSchema = z.union([
     name: z.string(),
     size: z.number().optional().nullable(),
     title: z.string().optional().nullable(),
-    type: z.literal('resource_link'),
+    type: z.literal("resource_link"),
     uri: z.string(),
   }),
   z.object({
     annotations: annotationsSchema.optional().nullable(),
     resource: embeddedResourceResourceSchema,
-    type: z.literal('resource'),
+    type: z.literal("resource"),
   }),
 ]);
 
 export const toolCallContentSchema = z.union([
   z.object({
     content: contentBlockSchema,
-    type: z.literal('content'),
+    type: z.literal("content"),
   }),
   z.object({
     newText: z.string(),
     oldText: z.string().nullable(),
     path: z.string(),
-    type: z.literal('diff'),
+    type: z.literal("diff"),
   }),
 ]);
 
@@ -403,22 +391,22 @@ export const promptRequestSchema = z.object({
 export const sessionUpdateSchema = z.union([
   z.object({
     content: contentBlockSchema,
-    sessionUpdate: z.literal('user_message_chunk'),
+    sessionUpdate: z.literal("user_message_chunk"),
   }),
   z.object({
     content: contentBlockSchema,
-    sessionUpdate: z.literal('agent_message_chunk'),
+    sessionUpdate: z.literal("agent_message_chunk"),
   }),
   z.object({
     content: contentBlockSchema,
-    sessionUpdate: z.literal('agent_thought_chunk'),
+    sessionUpdate: z.literal("agent_thought_chunk"),
   }),
   z.object({
     content: z.array(toolCallContentSchema).optional(),
     kind: toolKindSchema,
     locations: z.array(toolCallLocationSchema).optional(),
     rawInput: z.unknown().optional(),
-    sessionUpdate: z.literal('tool_call'),
+    sessionUpdate: z.literal("tool_call"),
     status: toolCallStatusSchema,
     title: z.string(),
     toolCallId: z.string(),
@@ -428,14 +416,14 @@ export const sessionUpdateSchema = z.union([
     kind: toolKindSchema.optional().nullable(),
     locations: z.array(toolCallLocationSchema).optional().nullable(),
     rawInput: z.unknown().optional(),
-    sessionUpdate: z.literal('tool_call_update'),
+    sessionUpdate: z.literal("tool_call_update"),
     status: toolCallStatusSchema.optional().nullable(),
     title: z.string().optional().nullable(),
     toolCallId: z.string(),
   }),
   z.object({
     entries: z.array(planEntrySchema),
-    sessionUpdate: z.literal('plan'),
+    sessionUpdate: z.literal("plan"),
   }),
 ]);
 

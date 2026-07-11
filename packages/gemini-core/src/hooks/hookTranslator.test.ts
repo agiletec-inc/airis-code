@@ -4,42 +4,42 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { describe, it, expect, beforeEach } from 'vitest';
-import {
-  HookTranslatorGenAIv1,
-  defaultHookTranslator,
-  type LLMRequest,
-  type LLMResponse,
-  type HookToolConfig,
-} from './hookTranslator.js';
 import type {
+  ContentListUnion,
   GenerateContentParameters,
   GenerateContentResponse,
   ToolConfig,
-  ContentListUnion,
-} from '@google/genai';
+} from "@google/genai";
+import { beforeEach, describe, expect, it } from "vitest";
+import {
+  defaultHookTranslator,
+  type HookToolConfig,
+  HookTranslatorGenAIv1,
+  type LLMRequest,
+  type LLMResponse,
+} from "./hookTranslator.js";
 
-describe('HookTranslator', () => {
+describe("HookTranslator", () => {
   let translator: HookTranslatorGenAIv1;
 
   beforeEach(() => {
     translator = new HookTranslatorGenAIv1();
   });
 
-  describe('defaultHookTranslator', () => {
-    it('should be an instance of HookTranslatorGenAIv1', () => {
+  describe("defaultHookTranslator", () => {
+    it("should be an instance of HookTranslatorGenAIv1", () => {
       expect(defaultHookTranslator).toBeInstanceOf(HookTranslatorGenAIv1);
     });
   });
 
-  describe('LLM Request Translation', () => {
-    it('should convert SDK request to hook format', () => {
+  describe("LLM Request Translation", () => {
+    it("should convert SDK request to hook format", () => {
       const sdkRequest: GenerateContentParameters = {
-        model: 'gemini-1.5-flash',
+        model: "gemini-1.5-flash",
         contents: [
           {
-            role: 'user',
-            parts: [{ text: 'Hello world' }],
+            role: "user",
+            parts: [{ text: "Hello world" }],
           },
         ],
         config: {
@@ -51,11 +51,11 @@ describe('HookTranslator', () => {
       const hookRequest = translator.toHookLLMRequest(sdkRequest);
 
       expect(hookRequest).toEqual({
-        model: 'gemini-1.5-flash',
+        model: "gemini-1.5-flash",
         messages: [
           {
-            role: 'user',
-            content: 'Hello world',
+            role: "user",
+            content: "Hello world",
           },
         ],
         config: {
@@ -67,25 +67,25 @@ describe('HookTranslator', () => {
       });
     });
 
-    it('should handle string contents', () => {
+    it("should handle string contents", () => {
       const sdkRequest: GenerateContentParameters = {
-        model: 'gemini-1.5-flash',
-        contents: ['Simple string message'],
+        model: "gemini-1.5-flash",
+        contents: ["Simple string message"],
       } as unknown as GenerateContentParameters;
 
       const hookRequest = translator.toHookLLMRequest(sdkRequest);
 
       expect(hookRequest.messages).toEqual([
         {
-          role: 'user',
-          content: 'Simple string message',
+          role: "user",
+          content: "Simple string message",
         },
       ]);
     });
 
-    it('should handle conversion errors gracefully', () => {
+    it("should handle conversion errors gracefully", () => {
       const sdkRequest: GenerateContentParameters = {
-        model: 'gemini-1.5-flash',
+        model: "gemini-1.5-flash",
         contents: [null as unknown as ContentListUnion], // Invalid content
       } as unknown as GenerateContentParameters;
 
@@ -93,16 +93,16 @@ describe('HookTranslator', () => {
 
       // When contents are invalid, the translator skips them and returns empty messages
       expect(hookRequest.messages).toEqual([]);
-      expect(hookRequest.model).toBe('gemini-1.5-flash');
+      expect(hookRequest.model).toBe("gemini-1.5-flash");
     });
 
-    it('should convert hook request back to SDK format', () => {
+    it("should convert hook request back to SDK format", () => {
       const hookRequest: LLMRequest = {
-        model: 'gemini-1.5-flash',
+        model: "gemini-1.5-flash",
         messages: [
           {
-            role: 'user',
-            content: 'Hello world',
+            role: "user",
+            content: "Hello world",
           },
         ],
         config: {
@@ -113,27 +113,27 @@ describe('HookTranslator', () => {
 
       const sdkRequest = translator.fromHookLLMRequest(hookRequest);
 
-      expect(sdkRequest.model).toBe('gemini-1.5-flash');
+      expect(sdkRequest.model).toBe("gemini-1.5-flash");
       expect(sdkRequest.contents).toEqual([
         {
-          role: 'user',
-          parts: [{ text: 'Hello world' }],
+          role: "user",
+          parts: [{ text: "Hello world" }],
         },
       ]);
     });
   });
 
-  describe('LLM Response Translation', () => {
-    it('should convert SDK response to hook format', () => {
+  describe("LLM Response Translation", () => {
+    it("should convert SDK response to hook format", () => {
       const sdkResponse: GenerateContentResponse = {
-        text: 'Hello response',
+        text: "Hello response",
         candidates: [
           {
             content: {
-              role: 'model',
-              parts: [{ text: 'Hello response' }],
+              role: "model",
+              parts: [{ text: "Hello response" }],
             },
-            finishReason: 'STOP',
+            finishReason: "STOP",
             index: 0,
           },
         ],
@@ -147,14 +147,14 @@ describe('HookTranslator', () => {
       const hookResponse = translator.toHookLLMResponse(sdkResponse);
 
       expect(hookResponse).toEqual({
-        text: 'Hello response',
+        text: "Hello response",
         candidates: [
           {
             content: {
-              role: 'model',
-              parts: ['Hello response'],
+              role: "model",
+              parts: ["Hello response"],
             },
-            finishReason: 'STOP',
+            finishReason: "STOP",
             index: 0,
             safetyRatings: undefined,
           },
@@ -167,62 +167,60 @@ describe('HookTranslator', () => {
       });
     });
 
-    it('should convert hook response back to SDK format', () => {
+    it("should convert hook response back to SDK format", () => {
       const hookResponse: LLMResponse = {
-        text: 'Hello response',
+        text: "Hello response",
         candidates: [
           {
             content: {
-              role: 'model',
-              parts: ['Hello response'],
+              role: "model",
+              parts: ["Hello response"],
             },
-            finishReason: 'STOP',
+            finishReason: "STOP",
           },
         ],
       };
 
       const sdkResponse = translator.fromHookLLMResponse(hookResponse);
 
-      expect(sdkResponse.text).toBe('Hello response');
+      expect(sdkResponse.text).toBe("Hello response");
       expect(sdkResponse.candidates).toHaveLength(1);
-      expect(sdkResponse.candidates?.[0]?.content?.parts?.[0]?.text).toBe(
-        'Hello response',
-      );
+      expect(sdkResponse.candidates?.[0]?.content?.parts?.[0]?.text).toBe("Hello response");
     });
   });
 
-  describe('Tool Config Translation', () => {
-    it('should convert SDK tool config to hook format', () => {
+  describe("Tool Config Translation", () => {
+    it("should convert SDK tool config to hook format", () => {
       const sdkToolConfig = {
         functionCallingConfig: {
-          mode: 'ANY',
-          allowedFunctionNames: ['tool1', 'tool2'],
+          mode: "ANY",
+          allowedFunctionNames: ["tool1", "tool2"],
         },
       } as unknown as ToolConfig;
 
       const hookToolConfig = translator.toHookToolConfig(sdkToolConfig);
 
       expect(hookToolConfig).toEqual({
-        mode: 'ANY',
-        allowedFunctionNames: ['tool1', 'tool2'],
+        mode: "ANY",
+        allowedFunctionNames: ["tool1", "tool2"],
       });
     });
 
-    it('should convert hook tool config back to SDK format', () => {
+    it("should convert hook tool config back to SDK format", () => {
       const hookToolConfig: HookToolConfig = {
-        mode: 'AUTO',
-        allowedFunctionNames: ['tool1', 'tool2'],
+        mode: "AUTO",
+        allowedFunctionNames: ["tool1", "tool2"],
       };
 
       const sdkToolConfig = translator.fromHookToolConfig(hookToolConfig);
 
       expect(sdkToolConfig.functionCallingConfig).toEqual({
-        mode: 'AUTO',
-        allowedFunctionNames: ['tool1', 'tool2'],
+        mode: "AUTO",
+        allowedFunctionNames: ["tool1", "tool2"],
       });
     });
 
-    it('should handle undefined tool config', () => {
+    it("should handle undefined tool config", () => {
       const sdkToolConfig = {} as ToolConfig;
 
       const hookToolConfig = translator.toHookToolConfig(sdkToolConfig);

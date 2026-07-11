@@ -4,64 +4,51 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { getErrorMessage } from '../../utils/errors.js';
-import { MessageType } from '../types.js';
-import {
-  type CommandContext,
-  type SlashCommand,
-  CommandKind,
-} from './types.js';
-import { t } from '../../i18n/index.js';
-import {
-  ExtensionManager,
-  parseInstallSource,
-  createDebugLogger,
-} from '@airiscode/runtime';
-import open from 'open';
+import { createDebugLogger, ExtensionManager, parseInstallSource } from "@airiscode/runtime";
+import open from "open";
+import { t } from "../../i18n/index.js";
+import { getErrorMessage } from "../../utils/errors.js";
+import { MessageType } from "../types.js";
+import { type CommandContext, CommandKind, type SlashCommand } from "./types.js";
 
-const debugLogger = createDebugLogger('EXTENSIONS_COMMAND');
+const debugLogger = createDebugLogger("EXTENSIONS_COMMAND");
 const EXTENSION_EXPLORE_URL = {
-  Gemini: 'https://geminicli.com/extensions/',
-  ClaudeCode: 'https://claudemarketplaces.com/',
+  Gemini: "https://geminicli.com/extensions/",
+  ClaudeCode: "https://claudemarketplaces.com/",
 } as const;
 
 type ExtensionExploreSource = keyof typeof EXTENSION_EXPLORE_URL;
 
 async function exploreAction(context: CommandContext, args: string) {
   const source = args.trim();
-  const extensionsUrl = source
-    ? EXTENSION_EXPLORE_URL[source as ExtensionExploreSource]
-    : '';
+  const extensionsUrl = source ? EXTENSION_EXPLORE_URL[source as ExtensionExploreSource] : "";
   if (!extensionsUrl) {
     context.ui.addItem(
       {
         type: MessageType.ERROR,
-        text: t('Unknown extensions source: {{source}}.', { source }),
+        text: t("Unknown extensions source: {{source}}.", { source }),
       },
       Date.now(),
     );
     return;
   }
   // Only check for NODE_ENV for explicit test mode, not for unit test framework
-  if (process.env['NODE_ENV'] === 'test') {
+  if (process.env["NODE_ENV"] === "test") {
     context.ui.addItem(
       {
         type: MessageType.INFO,
         text: t(
-          'Would open extensions page in your browser: {{url}} (skipped in test environment)',
+          "Would open extensions page in your browser: {{url}} (skipped in test environment)",
           { url: extensionsUrl },
         ),
       },
       Date.now(),
     );
-  } else if (
-    process.env['SANDBOX'] &&
-    process.env['SANDBOX'] !== 'sandbox-exec'
-  ) {
+  } else if (process.env["SANDBOX"] && process.env["SANDBOX"] !== "sandbox-exec") {
     context.ui.addItem(
       {
         type: MessageType.INFO,
-        text: t('View available extensions at {{url}}', { url: extensionsUrl }),
+        text: t("View available extensions at {{url}}", { url: extensionsUrl }),
       },
       Date.now(),
     );
@@ -69,7 +56,7 @@ async function exploreAction(context: CommandContext, args: string) {
     context.ui.addItem(
       {
         type: MessageType.INFO,
-        text: t('Opening extensions page in your browser: {{url}}', {
+        text: t("Opening extensions page in your browser: {{url}}", {
           url: extensionsUrl,
         }),
       },
@@ -81,10 +68,9 @@ async function exploreAction(context: CommandContext, args: string) {
       context.ui.addItem(
         {
           type: MessageType.ERROR,
-          text: t(
-            'Failed to open browser. Check out the extensions gallery at {{url}}',
-            { url: extensionsUrl },
-          ),
+          text: t("Failed to open browser. Check out the extensions gallery at {{url}}", {
+            url: extensionsUrl,
+          }),
         },
         Date.now(),
       );
@@ -94,17 +80,15 @@ async function exploreAction(context: CommandContext, args: string) {
 
 async function listAction(_context: CommandContext, _args: string) {
   return {
-    type: 'dialog' as const,
-    dialog: 'extensions_manage' as const,
+    type: "dialog" as const,
+    dialog: "extensions_manage" as const,
   };
 }
 
 async function installAction(context: CommandContext, args: string) {
   const extensionManager = context.services.config?.getExtensionManager();
   if (!(extensionManager instanceof ExtensionManager)) {
-    debugLogger.error(
-      `Cannot ${context.invocation?.name} extensions in this environment`,
-    );
+    debugLogger.error(`Cannot ${context.invocation?.name} extensions in this environment`);
     return;
   }
 
@@ -113,7 +97,7 @@ async function installAction(context: CommandContext, args: string) {
     context.ui.addItem(
       {
         type: MessageType.ERROR,
-        text: t('Usage: /extensions install <source>'),
+        text: t("Usage: /extensions install <source>"),
       },
       Date.now(),
     );
@@ -156,53 +140,33 @@ async function installAction(context: CommandContext, args: string) {
   }
 }
 
-export async function completeExtensions(
-  context: CommandContext,
-  partialArg: string,
-) {
+export async function completeExtensions(context: CommandContext, partialArg: string) {
   let extensions = context.services.config?.getExtensions() ?? [];
 
-  if (context.invocation?.name === 'enable') {
+  if (context.invocation?.name === "enable") {
     extensions = extensions.filter((ext) => !ext.isActive);
   }
-  if (
-    context.invocation?.name === 'disable' ||
-    context.invocation?.name === 'restart'
-  ) {
+  if (context.invocation?.name === "disable" || context.invocation?.name === "restart") {
     extensions = extensions.filter((ext) => ext.isActive);
   }
   const extensionNames = extensions.map((ext) => ext.name);
-  const suggestions = extensionNames.filter((name) =>
-    name.startsWith(partialArg),
-  );
+  const suggestions = extensionNames.filter((name) => name.startsWith(partialArg));
 
-  if (
-    context.invocation?.name !== 'uninstall' &&
-    context.invocation?.name !== 'detail'
-  ) {
-    if ('--all'.startsWith(partialArg) || 'all'.startsWith(partialArg)) {
-      suggestions.unshift('--all');
+  if (context.invocation?.name !== "uninstall" && context.invocation?.name !== "detail") {
+    if ("--all".startsWith(partialArg) || "all".startsWith(partialArg)) {
+      suggestions.unshift("--all");
     }
   }
 
   return suggestions;
 }
 
-export async function completeExtensionsAndScopes(
-  context: CommandContext,
-  partialArg: string,
-) {
+export async function completeExtensionsAndScopes(context: CommandContext, partialArg: string) {
   const completions = await completeExtensions(context, partialArg);
-  return completions.flatMap((s) => [
-    `${s} --scope user`,
-    `${s} --scope workspace`,
-  ]);
+  return completions.flatMap((s) => [`${s} --scope user`, `${s} --scope workspace`]);
 }
 
-export async function completeExtensionsExplore(
-  context: CommandContext,
-  partialArg: string,
-) {
+export async function completeExtensionsExplore(context: CommandContext, partialArg: string) {
   const suggestions = Object.keys(EXTENSION_EXPLORE_URL).filter((name) =>
     name.startsWith(partialArg),
   );
@@ -211,9 +175,9 @@ export async function completeExtensionsExplore(
 }
 
 const exploreExtensionsCommand: SlashCommand = {
-  name: 'explore',
+  name: "explore",
   get description() {
-    return t('Open extensions page in your browser');
+    return t("Open extensions page in your browser");
   },
   kind: CommandKind.BUILT_IN,
   action: exploreAction,
@@ -221,34 +185,30 @@ const exploreExtensionsCommand: SlashCommand = {
 };
 
 const manageExtensionsCommand: SlashCommand = {
-  name: 'manage',
+  name: "manage",
   get description() {
-    return t('Manage installed extensions');
+    return t("Manage installed extensions");
   },
   kind: CommandKind.BUILT_IN,
   action: listAction,
 };
 
 const installCommand: SlashCommand = {
-  name: 'install',
+  name: "install",
   get description() {
-    return t('Install an extension from a git repo or local path');
+    return t("Install an extension from a git repo or local path");
   },
   kind: CommandKind.BUILT_IN,
   action: installAction,
 };
 
 export const extensionsCommand: SlashCommand = {
-  name: 'extensions',
+  name: "extensions",
   get description() {
-    return t('Manage extensions');
+    return t("Manage extensions");
   },
   kind: CommandKind.BUILT_IN,
-  subCommands: [
-    manageExtensionsCommand,
-    installCommand,
-    exploreExtensionsCommand,
-  ],
+  subCommands: [manageExtensionsCommand, installCommand, exploreExtensionsCommand],
   action: async (context, args) =>
     // Default to list if no subcommand is provided
     manageExtensionsCommand.action!(context, args),

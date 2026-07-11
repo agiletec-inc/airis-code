@@ -4,11 +4,11 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import type { Config } from '../config/config.js';
-import type { AgentDefinition } from './types.js';
-import { CodebaseInvestigatorAgent } from './codebase-investigator.js';
-import { type z } from 'zod';
-import { debugLogger } from '../utils/debugLogger.js';
+import { type z } from "zod";
+import type { Config } from "../config/config.js";
+import { debugLogger } from "../utils/debugLogger.js";
+import { CodebaseInvestigatorAgent } from "./codebase-investigator.js";
+import type { AgentDefinition } from "./types.js";
 
 /**
  * Manages the discovery, loading, validation, and registration of
@@ -27,9 +27,7 @@ export class AgentRegistry {
     this.loadBuiltInAgents();
 
     if (this.config.getDebugMode()) {
-      debugLogger.log(
-        `[AgentRegistry] Initialized with ${this.agents.size} agents.`,
-      );
+      debugLogger.log(`[AgentRegistry] Initialized with ${this.agents.size} agents.`);
     }
   }
 
@@ -42,9 +40,7 @@ export class AgentRegistry {
         ...CodebaseInvestigatorAgent,
         modelConfig: {
           ...CodebaseInvestigatorAgent.modelConfig,
-          model:
-            investigatorSettings.model ??
-            CodebaseInvestigatorAgent.modelConfig.model,
+          model: investigatorSettings.model ?? CodebaseInvestigatorAgent.modelConfig.model,
           thinkingBudget:
             investigatorSettings.thinkingBudget ??
             CodebaseInvestigatorAgent.modelConfig.thinkingBudget,
@@ -55,8 +51,7 @@ export class AgentRegistry {
             investigatorSettings.maxTimeMinutes ??
             CodebaseInvestigatorAgent.runConfig.max_time_minutes,
           max_turns:
-            investigatorSettings.maxNumTurns ??
-            CodebaseInvestigatorAgent.runConfig.max_turns,
+            investigatorSettings.maxNumTurns ?? CodebaseInvestigatorAgent.runConfig.max_turns,
         },
       };
       this.registerAgent(agentDef);

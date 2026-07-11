@@ -4,28 +4,28 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import type React from 'react';
-import { useMemo, useRef } from 'react';
-import { Box } from 'ink';
-import type { IndividualToolCallDisplay } from '../../types.js';
-import { ToolCallStatus } from '../../types.js';
-import { ToolMessage } from './ToolMessage.js';
-import { ToolConfirmationMessage } from './ToolConfirmationMessage.js';
-import { CompactToolGroupDisplay } from './CompactToolGroupDisplay.js';
-import { theme } from '../../semantic-colors.js';
-import { SHELL_COMMAND_NAME, SHELL_NAME } from '../../constants.js';
-import { useConfig } from '../../contexts/ConfigContext.js';
-import { useVerboseMode } from '../../contexts/VerboseModeContext.js';
-import type { AgentResultDisplay } from '@airiscode/runtime';
+import type { AgentResultDisplay } from "@airiscode/runtime";
+import { Box } from "ink";
+import type React from "react";
+import { useMemo, useRef } from "react";
+import { SHELL_COMMAND_NAME, SHELL_NAME } from "../../constants.js";
+import { useConfig } from "../../contexts/ConfigContext.js";
+import { useVerboseMode } from "../../contexts/VerboseModeContext.js";
+import { theme } from "../../semantic-colors.js";
+import type { IndividualToolCallDisplay } from "../../types.js";
+import { ToolCallStatus } from "../../types.js";
+import { CompactToolGroupDisplay } from "./CompactToolGroupDisplay.js";
+import { ToolConfirmationMessage } from "./ToolConfirmationMessage.js";
+import { ToolMessage } from "./ToolMessage.js";
 
 function isAgentWithPendingConfirmation(
-  rd: IndividualToolCallDisplay['resultDisplay'],
+  rd: IndividualToolCallDisplay["resultDisplay"],
 ): rd is AgentResultDisplay {
   return (
-    typeof rd === 'object' &&
+    typeof rd === "object" &&
     rd !== null &&
-    'type' in rd &&
-    (rd as AgentResultDisplay).type === 'task_execution' &&
+    "type" in rd &&
+    (rd as AgentResultDisplay).type === "task_execution" &&
     (rd as AgentResultDisplay).pendingConfirmation !== undefined
   );
 }
@@ -55,16 +55,11 @@ export const ToolGroupMessage: React.FC<ToolGroupMessageProps> = ({
   const config = useConfig();
   const { verboseMode } = useVerboseMode();
 
-  const hasConfirmingTool = toolCalls.some(
-    (t) => t.status === ToolCallStatus.Confirming,
-  );
+  const hasConfirmingTool = toolCalls.some((t) => t.status === ToolCallStatus.Confirming);
   const hasErrorTool = toolCalls.some((t) => t.status === ToolCallStatus.Error);
   const isEmbeddedShellFocused =
     embeddedShellFocused &&
-    toolCalls.some(
-      (t) =>
-        t.ptyId === activeShellPtyId && t.status === ToolCallStatus.Executing,
-    );
+    toolCalls.some((t) => t.ptyId === activeShellPtyId && t.status === ToolCallStatus.Executing);
 
   // useMemo must be called unconditionally (Rules of Hooks) — before any early return
   // only prompt for tool approval on the first 'confirming' tool in the list
@@ -76,10 +71,7 @@ export const ToolGroupMessage: React.FC<ToolGroupMessageProps> = ({
   // Determine which subagent tools currently have a pending confirmation.
   // Must be called unconditionally (Rules of Hooks) — before any early return.
   const subagentsAwaitingApproval = useMemo(
-    () =>
-      toolCalls.filter((tc) =>
-        isAgentWithPendingConfirmation(tc.resultDisplay),
-      ),
+    () => toolCalls.filter((tc) => isAgentWithPendingConfirmation(tc.resultDisplay)),
     [toolCalls],
   );
 
@@ -110,18 +102,11 @@ export const ToolGroupMessage: React.FC<ToolGroupMessageProps> = ({
     !isUserInitiated;
 
   if (showCompact) {
-    return (
-      <CompactToolGroupDisplay
-        toolCalls={toolCalls}
-        contentWidth={contentWidth}
-      />
-    );
+    return <CompactToolGroupDisplay toolCalls={toolCalls} contentWidth={contentWidth} />;
   }
 
   // Full expanded view
-  const hasPending = !toolCalls.every(
-    (t) => t.status === ToolCallStatus.Success,
-  );
+  const hasPending = !toolCalls.every((t) => t.status === ToolCallStatus.Success);
   const isShellCommand = toolCalls.some(
     (t) => t.name === SHELL_COMMAND_NAME || t.name === SHELL_NAME,
   );
@@ -138,7 +123,7 @@ export const ToolGroupMessage: React.FC<ToolGroupMessageProps> = ({
 
   let countToolCallsWithResults = 0;
   for (const tool of toolCalls) {
-    if (tool.resultDisplay !== undefined && tool.resultDisplay !== '') {
+    if (tool.resultDisplay !== undefined && tool.resultDisplay !== "") {
       countToolCallsWithResults++;
     }
   }
@@ -164,9 +149,7 @@ export const ToolGroupMessage: React.FC<ToolGroupMessageProps> = ({
         cause tearing.
       */
       width={contentWidth}
-      borderDimColor={
-        hasPending && (!isShellCommand || !isEmbeddedShellFocused)
-      }
+      borderDimColor={hasPending && (!isShellCommand || !isEmbeddedShellFocused)}
       borderColor={borderColor}
       gap={1}
     >
@@ -176,9 +159,7 @@ export const ToolGroupMessage: React.FC<ToolGroupMessageProps> = ({
         // when (1) there is no direct tool-level confirmation active, and
         // (2) this tool currently holds the focus lock.
         const isSubagentFocused =
-          isFocused &&
-          !toolAwaitingApproval &&
-          focusedSubagentCallId === tool.callId;
+          isFocused && !toolAwaitingApproval && focusedSubagentCallId === tool.callId;
         // Show the waiting indicator only when this subagent genuinely has a
         // pending confirmation AND another subagent holds the focus lock.
         const isWaitingForOtherApproval =
@@ -192,13 +173,7 @@ export const ToolGroupMessage: React.FC<ToolGroupMessageProps> = ({
                 {...tool}
                 availableTerminalHeight={availableTerminalHeightPerToolMessage}
                 contentWidth={innerWidth}
-                emphasis={
-                  isConfirming
-                    ? 'high'
-                    : toolAwaitingApproval
-                      ? 'low'
-                      : 'medium'
-                }
+                emphasis={isConfirming ? "high" : toolAwaitingApproval ? "low" : "medium"}
                 activeShellPtyId={activeShellPtyId}
                 embeddedShellFocused={embeddedShellFocused}
                 config={config}
@@ -218,9 +193,7 @@ export const ToolGroupMessage: React.FC<ToolGroupMessageProps> = ({
                   confirmationDetails={tool.confirmationDetails}
                   config={config}
                   isFocused={isFocused}
-                  availableTerminalHeight={
-                    availableTerminalHeightPerToolMessage
-                  }
+                  availableTerminalHeight={availableTerminalHeightPerToolMessage}
                   contentWidth={innerWidth}
                 />
               )}

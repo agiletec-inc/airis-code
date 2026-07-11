@@ -4,25 +4,14 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import {
-  useRef,
-  forwardRef,
-  useImperativeHandle,
-  useCallback,
-  useMemo,
-  useEffect,
-} from 'react';
-import type React from 'react';
-import {
-  VirtualizedList,
-  type VirtualizedListRef,
-  SCROLL_TO_ITEM_END,
-} from './VirtualizedList.js';
-import { useScrollable } from '../../contexts/ScrollProvider.js';
-import { Box, type DOMElement } from 'ink';
-import { useAnimatedScrollbar } from '../../hooks/useAnimatedScrollbar.js';
-import { useKeypress, type Key } from '../../hooks/useKeypress.js';
-import { keyMatchers, Command } from '../../keyMatchers.js';
+import { Box, type DOMElement } from "ink";
+import type React from "react";
+import { forwardRef, useCallback, useEffect, useImperativeHandle, useMemo, useRef } from "react";
+import { useScrollable } from "../../contexts/ScrollProvider.js";
+import { useAnimatedScrollbar } from "../../hooks/useAnimatedScrollbar.js";
+import { type Key, useKeypress } from "../../hooks/useKeypress.js";
+import { Command, keyMatchers } from "../../keyMatchers.js";
+import { SCROLL_TO_ITEM_END, VirtualizedList, type VirtualizedListRef } from "./VirtualizedList.js";
 
 const ANIMATION_FRAME_DURATION_MS = 33;
 
@@ -41,10 +30,7 @@ interface ScrollableListProps<T> extends VirtualizedListProps<T> {
 
 export type ScrollableListRef<T> = VirtualizedListRef<T>;
 
-function ScrollableList<T>(
-  props: ScrollableListProps<T>,
-  ref: React.Ref<ScrollableListRef<T>>,
-) {
+function ScrollableList<T>(props: ScrollableListProps<T>, ref: React.Ref<ScrollableListRef<T>>) {
   const { hasFocus } = props;
   const virtualizedListRef = useRef<VirtualizedListRef<T>>(null);
   const containerRef = useRef<DOMElement>(null);
@@ -55,10 +41,8 @@ function ScrollableList<T>(
       scrollBy: (delta) => virtualizedListRef.current?.scrollBy(delta),
       scrollTo: (offset) => virtualizedListRef.current?.scrollTo(offset),
       scrollToEnd: () => virtualizedListRef.current?.scrollToEnd(),
-      scrollToIndex: (params) =>
-        virtualizedListRef.current?.scrollToIndex(params),
-      scrollToItem: (params) =>
-        virtualizedListRef.current?.scrollToItem(params),
+      scrollToIndex: (params) => virtualizedListRef.current?.scrollToIndex(params),
+      scrollToItem: (params) => virtualizedListRef.current?.scrollToItem(params),
       getScrollIndex: () => virtualizedListRef.current?.getScrollIndex() ?? 0,
       getScrollState: () =>
         virtualizedListRef.current?.getScrollState() ?? {
@@ -84,8 +68,10 @@ function ScrollableList<T>(
     virtualizedListRef.current?.scrollBy(delta);
   }, []);
 
-  const { scrollbarColor, flashScrollbar, scrollByWithAnimation } =
-    useAnimatedScrollbar(hasFocus, scrollBy);
+  const { scrollbarColor, flashScrollbar, scrollByWithAnimation } = useAnimatedScrollbar(
+    hasFocus,
+    scrollBy,
+  );
 
   const smoothScrollState = useRef<{
     active: boolean;
@@ -115,11 +101,7 @@ function ScrollableList<T>(
         scrollHeight: 0,
         innerHeight: 0,
       };
-      const {
-        scrollTop: startScrollTop,
-        scrollHeight,
-        innerHeight,
-      } = scrollState;
+      const { scrollTop: startScrollTop, scrollHeight, innerHeight } = scrollState;
 
       const maxScrollTop = Math.max(0, scrollHeight - innerHeight);
 
@@ -128,10 +110,7 @@ function ScrollableList<T>(
         effectiveTarget = maxScrollTop;
       }
 
-      const clampedTarget = Math.max(
-        0,
-        Math.min(maxScrollTop, effectiveTarget),
-      );
+      const clampedTarget = Math.max(0, Math.min(maxScrollTop, effectiveTarget));
 
       if (duration === 0) {
         if (targetScrollTop === SCROLL_TO_ITEM_END) {
@@ -160,8 +139,7 @@ function ScrollableList<T>(
 
           const current =
             smoothScrollState.current.from +
-            (smoothScrollState.current.to - smoothScrollState.current.from) *
-              ease;
+            (smoothScrollState.current.to - smoothScrollState.current.from) * ease;
 
           if (progress >= 1) {
             if (targetScrollTop === SCROLL_TO_ITEM_END) {
@@ -188,10 +166,7 @@ function ScrollableList<T>(
       } else if (keyMatchers[Command.SCROLL_DOWN](key)) {
         stopSmoothScroll();
         scrollByWithAnimation(1);
-      } else if (
-        keyMatchers[Command.PAGE_UP](key) ||
-        keyMatchers[Command.PAGE_DOWN](key)
-      ) {
+      } else if (keyMatchers[Command.PAGE_UP](key) || keyMatchers[Command.PAGE_DOWN](key)) {
         const direction = keyMatchers[Command.PAGE_UP](key) ? -1 : 1;
         const scrollState = getScrollState();
         const current = smoothScrollState.current.active
@@ -219,29 +194,14 @@ function ScrollableList<T>(
       hasFocus: hasFocusCallback,
       flashScrollbar,
     }),
-    [
-      getScrollState,
-      hasFocusCallback,
-      flashScrollbar,
-      scrollByWithAnimation,
-      smoothScrollTo,
-    ],
+    [getScrollState, hasFocusCallback, flashScrollbar, scrollByWithAnimation, smoothScrollTo],
   );
 
   useScrollable(scrollableEntry, hasFocus);
 
   return (
-    <Box
-      ref={containerRef}
-      flexGrow={1}
-      flexDirection="column"
-      overflow="hidden"
-    >
-      <VirtualizedList
-        ref={virtualizedListRef}
-        {...props}
-        scrollbarThumbColor={scrollbarColor}
-      />
+    <Box ref={containerRef} flexGrow={1} flexDirection="column" overflow="hidden">
+      <VirtualizedList ref={virtualizedListRef} {...props} scrollbarThumbColor={scrollbarColor} />
     </Box>
   );
 }

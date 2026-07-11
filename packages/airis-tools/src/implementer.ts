@@ -1,41 +1,39 @@
-import { McpToolSpec } from '@airiscode/mcp-client';
+import { McpToolSpec } from "@airiscode/mcp-client";
 
 export const implementerToolSpec: McpToolSpec = {
-  name: 'implementer',
-  description: 'Implements code changes based on a given instruction.',
+  name: "implementer",
+  description: "Implements code changes based on a given instruction.",
   inputSchema: {
-    type: 'object',
+    type: "object",
     properties: {
       instruction: {
-        type: 'string',
-        description: 'A detailed description of the changes to implement.',
+        type: "string",
+        description: "A detailed description of the changes to implement.",
       },
       filePath: {
-        type: 'string',
-        description: 'The path to the file to modify.',
+        type: "string",
+        description: "The path to the file to modify.",
       },
     },
-    required: ['instruction', 'filePath'],
+    required: ["instruction", "filePath"],
   },
   outputSchema: {
-    type: 'object',
+    type: "object",
     properties: {
       success: {
-        type: 'boolean',
-        description: 'Whether the implementation was successful.',
+        type: "boolean",
+        description: "Whether the implementation was successful.",
       },
       message: {
-        type: 'string',
-        description: 'A message describing the result.',
+        type: "string",
+        description: "A message describing the result.",
       },
     },
-    required: ['success'],
+    required: ["success"],
   },
 };
 
-export async function implementerTool(
-  inputs: any,
-): Promise<{ success: boolean; message: string }> {
+export async function implementerTool(inputs: any): Promise<{ success: boolean; message: string }> {
   console.log(`Implementer tool called with instruction: ${inputs.instruction}`);
   // Placeholder implementation
   return {

@@ -5,36 +5,37 @@
  */
 
 import type {
-  Config,
-  ToolResultDisplay,
   AgentResultDisplay,
+  Config,
+  McpToolProgressData,
   OutputUpdateHandler,
+  Part,
+  PartListUnion,
+  SessionMetrics,
   ToolCallRequestInfo,
   ToolCallResponseInfo,
-  SessionMetrics,
-  McpToolProgressData,
-} from '@airiscode/runtime';
+  ToolResultDisplay,
+} from "@airiscode/runtime";
 import {
-  OutputFormat,
-  ToolErrorType,
   createDebugLogger,
   getMCPServerStatus,
-} from '@airiscode/runtime';
-import type { Part, PartListUnion } from '@airiscode/runtime';
-import type {
-  CLIUserMessage,
-  Usage,
-  PermissionMode,
-  CLISystemMessage,
-} from '../nonInteractive/types.js';
+  OutputFormat,
+  ToolErrorType,
+} from "@airiscode/runtime";
 import type {
   JsonOutputAdapterInterface,
   MessageEmitter,
-} from '../nonInteractive/io/BaseJsonOutputAdapter.js';
-import { computeSessionStats } from '../ui/utils/computeStats.js';
-import { getAvailableCommands } from '../nonInteractiveCliCommands.js';
+} from "../nonInteractive/io/BaseJsonOutputAdapter.js";
+import type {
+  CLISystemMessage,
+  CLIUserMessage,
+  PermissionMode,
+  Usage,
+} from "../nonInteractive/types.js";
+import { getAvailableCommands } from "../nonInteractiveCliCommands.js";
+import { computeSessionStats } from "../ui/utils/computeStats.js";
 
-const debugLogger = createDebugLogger('NON_INTERACTIVE');
+const debugLogger = createDebugLogger("NON_INTERACTIVE");
 
 /**
  * Normalizes various part list formats into a consistent Part[] array.
@@ -47,14 +48,12 @@ export function normalizePartList(parts: PartListUnion | null): Part[] {
     return [];
   }
 
-  if (typeof parts === 'string') {
+  if (typeof parts === "string") {
     return [{ text: parts }];
   }
 
   if (Array.isArray(parts)) {
-    return parts.map((part) =>
-      typeof part === 'string' ? { text: part } : (part as Part),
-    );
+    return parts.map((part) => (typeof part === "string" ? { text: part } : (part as Part)));
   }
 
   return [parts as Part];
@@ -74,17 +73,17 @@ export function extractPartsFromUserMessage(
   }
 
   const content = message.message?.content;
-  if (typeof content === 'string') {
+  if (typeof content === "string") {
     return content;
   }
 
   if (Array.isArray(content)) {
     const parts: Part[] = [];
     for (const block of content) {
-      if (!block || typeof block !== 'object' || !('type' in block)) {
+      if (!block || typeof block !== "object" || !("type" in block)) {
         continue;
       }
-      if (block.type === 'text' && 'text' in block && block.text) {
+      if (block.type === "text" && "text" in block && block.text) {
         parts.push({ text: block.text });
       } else {
         parts.push({ text: JSON.stringify(block) });
@@ -102,13 +101,11 @@ export function extractPartsFromUserMessage(
  * @param geminiClient - The Gemini client instance
  * @returns Usage information or undefined if not available
  */
-export function extractUsageFromGeminiClient(
-  geminiClient: unknown,
-): Usage | undefined {
+export function extractUsageFromGeminiClient(geminiClient: unknown): Usage | undefined {
   if (
     !geminiClient ||
-    typeof geminiClient !== 'object' ||
-    typeof (geminiClient as { getChat?: unknown }).getChat !== 'function'
+    typeof geminiClient !== "object" ||
+    typeof (geminiClient as { getChat?: unknown }).getChat !== "function"
   ) {
     return undefined;
   }
@@ -117,9 +114,8 @@ export function extractUsageFromGeminiClient(
     const chat = (geminiClient as { getChat: () => unknown }).getChat();
     if (
       !chat ||
-      typeof chat !== 'object' ||
-      typeof (chat as { getDebugResponses?: unknown }).getDebugResponses !==
-        'function'
+      typeof chat !== "object" ||
+      typeof (chat as { getDebugResponses?: unknown }).getDebugResponses !== "function"
     ) {
       return undefined;
     }
@@ -130,28 +126,23 @@ export function extractUsageFromGeminiClient(
       }
     ).getDebugResponses();
     for (let i = responses.length - 1; i >= 0; i--) {
-      const metadata = responses[i]?.['usageMetadata'] as
-        | Record<string, unknown>
-        | undefined;
+      const metadata = responses[i]?.["usageMetadata"] as Record<string, unknown> | undefined;
       if (metadata) {
-        const promptTokens = metadata['promptTokenCount'];
-        const completionTokens = metadata['candidatesTokenCount'];
-        const totalTokens = metadata['totalTokenCount'];
-        const cachedTokens = metadata['cachedContentTokenCount'];
+        const promptTokens = metadata["promptTokenCount"];
+        const completionTokens = metadata["candidatesTokenCount"];
+        const totalTokens = metadata["totalTokenCount"];
+        const cachedTokens = metadata["cachedContentTokenCount"];
 
         return {
-          input_tokens: typeof promptTokens === 'number' ? promptTokens : 0,
-          output_tokens:
-            typeof completionTokens === 'number' ? completionTokens : 0,
-          total_tokens:
-            typeof totalTokens === 'number' ? totalTokens : undefined,
-          cache_read_input_tokens:
-            typeof cachedTokens === 'number' ? cachedTokens : undefined,
+          input_tokens: typeof promptTokens === "number" ? promptTokens : 0,
+          output_tokens: typeof completionTokens === "number" ? completionTokens : 0,
+          total_tokens: typeof totalTokens === "number" ? totalTokens : undefined,
+          cache_read_input_tokens: typeof cachedTokens === "number" ? cachedTokens : undefined,
         };
       }
     }
   } catch (error) {
-    debugLogger.debug('Failed to extract usage metadata:', error);
+    debugLogger.debug("Failed to extract usage metadata:", error);
   }
 
   return undefined;
@@ -173,10 +164,7 @@ export function computeUsageFromMetrics(metrics: SessionMetrics): Usage {
     (acc, model) => acc + model.tokens.candidates,
     0,
   );
-  const totalTokens = Object.values(models).reduce(
-    (acc, model) => acc + model.tokens.total,
-    0,
-  );
+  const totalTokens = Object.values(models).reduce((acc, model) => acc + model.tokens.total, 0);
 
   const usage: Usage = {
     input_tokens: stats.totalPromptTokens,
@@ -215,10 +203,7 @@ async function loadSlashCommandNames(
     // Extract command names and sort
     return commands.map((cmd) => cmd.name).sort();
   } catch (error) {
-    debugLogger.error(
-      '[buildSystemMessage] Failed to load slash commands:',
-      error,
-    );
+    debugLogger.error("[buildSystemMessage] Failed to load slash commands:", error);
     return [];
   } finally {
     controller.abort();
@@ -262,10 +247,7 @@ export async function buildSystemMessage(
     : [];
 
   // Load slash commands with filtering based on allowed built-in commands
-  const slashCommands = await loadSlashCommandNames(
-    config,
-    allowedBuiltinCommandNames,
-  );
+  const slashCommands = await loadSlashCommandNames(config, allowedBuiltinCommandNames);
 
   // Load subagent names from config
   let agentNames: string[] = [];
@@ -274,12 +256,12 @@ export async function buildSystemMessage(
     const subagents = await subagentManager.listSubagents();
     agentNames = subagents.map((subagent) => subagent.name);
   } catch (error) {
-    debugLogger.error('[buildSystemMessage] Failed to load subagents:', error);
+    debugLogger.error("[buildSystemMessage] Failed to load subagents:", error);
   }
 
   const systemMessage: CLISystemMessage = {
-    type: 'system',
-    subtype: 'init',
+    type: "system",
+    subtype: "init",
     uuid: sessionId,
     session_id: sessionId,
     cwd: config.getTargetDir(),
@@ -288,21 +270,19 @@ export async function buildSystemMessage(
     model: config.getModel(),
     permission_mode: permissionMode,
     slash_commands: slashCommands,
-    qwen_code_version: config.getCliVersion() || 'unknown',
+    qwen_code_version: config.getCliVersion() || "unknown",
     agents: agentNames,
   };
 
   return systemMessage;
 }
 
-function isMcpToolProgressData(
-  output: ToolResultDisplay,
-): output is McpToolProgressData {
+function isMcpToolProgressData(output: ToolResultDisplay): output is McpToolProgressData {
   return (
-    typeof output === 'object' &&
+    typeof output === "object" &&
     output !== null &&
-    'type' in output &&
-    (output as McpToolProgressData).type === 'mcp_tool_progress'
+    "type" in output &&
+    (output as McpToolProgressData).type === "mcp_tool_progress"
   );
 }
 
@@ -322,10 +302,7 @@ export function createToolProgressHandler(
 ): {
   handler: OutputUpdateHandler;
 } {
-  const handler: OutputUpdateHandler = (
-    _callId: string,
-    output: ToolResultDisplay,
-  ) => {
+  const handler: OutputUpdateHandler = (_callId: string, output: ToolResultDisplay) => {
     if (isMcpToolProgressData(output)) {
       adapter.emitToolProgress(request, output);
     }
@@ -366,13 +343,13 @@ export function createAgentToolProgressHandler(
    * @returns ToolCallRequestInfo object
    */
   const buildRequest = (
-    toolCall: NonNullable<AgentResultDisplay['toolCalls']>[number],
+    toolCall: NonNullable<AgentResultDisplay["toolCalls"]>[number],
   ): ToolCallRequestInfo => ({
     callId: toolCall.callId,
     name: toolCall.name,
     args: toolCall.args || {},
     isClientInitiated: true,
-    prompt_id: '',
+    prompt_id: "",
     response_id: undefined,
   });
 
@@ -383,15 +360,14 @@ export function createAgentToolProgressHandler(
    * @returns ToolCallResponseInfo object
    */
   const buildResponse = (
-    toolCall: NonNullable<AgentResultDisplay['toolCalls']>[number],
+    toolCall: NonNullable<AgentResultDisplay["toolCalls"]>[number],
   ): ToolCallResponseInfo => ({
     callId: toolCall.callId,
     error:
-      toolCall.status === 'failed'
-        ? new Error(toolCall.error || 'Tool execution failed')
+      toolCall.status === "failed"
+        ? new Error(toolCall.error || "Tool execution failed")
         : undefined,
-    errorType:
-      toolCall.status === 'failed' ? ToolErrorType.EXECUTION_FAILED : undefined,
+    errorType: toolCall.status === "failed" ? ToolErrorType.EXECUTION_FAILED : undefined,
     resultDisplay: toolCall.resultDisplay,
     responseParts: toolCall.responseParts || [],
   });
@@ -403,13 +379,10 @@ export function createAgentToolProgressHandler(
    * @returns True if the tool call has result content to emit
    */
   const hasResultContent = (
-    toolCall: NonNullable<AgentResultDisplay['toolCalls']>[number],
+    toolCall: NonNullable<AgentResultDisplay["toolCalls"]>[number],
   ): boolean => {
     // Check resultDisplay string
-    if (
-      typeof toolCall.resultDisplay === 'string' &&
-      toolCall.resultDisplay.trim().length > 0
-    ) {
+    if (typeof toolCall.resultDisplay === "string" && toolCall.resultDisplay.trim().length > 0) {
       return true;
     }
 
@@ -419,7 +392,7 @@ export function createAgentToolProgressHandler(
     }
 
     // Failed status should always emit result
-    return toolCall.status === 'failed';
+    return toolCall.status === "failed";
   };
 
   /**
@@ -429,25 +402,21 @@ export function createAgentToolProgressHandler(
    * @param fallbackStatus - Optional fallback status if toolCall.status should be overridden
    */
   const emitToolUseIfNeeded = (
-    toolCall: NonNullable<AgentResultDisplay['toolCalls']>[number],
-    fallbackStatus?: 'executing' | 'awaiting_approval',
+    toolCall: NonNullable<AgentResultDisplay["toolCalls"]>[number],
+    fallbackStatus?: "executing" | "awaiting_approval",
   ): void => {
     if (emittedToolUseIds.has(toolCall.callId)) {
       return;
     }
 
-    const toolCallToEmit: NonNullable<AgentResultDisplay['toolCalls']>[number] =
-      fallbackStatus
-        ? {
-            ...toolCall,
-            status: fallbackStatus,
-          }
-        : toolCall;
+    const toolCallToEmit: NonNullable<AgentResultDisplay["toolCalls"]>[number] = fallbackStatus
+      ? {
+          ...toolCall,
+          status: fallbackStatus,
+        }
+      : toolCall;
 
-    if (
-      toolCallToEmit.status === 'executing' ||
-      toolCallToEmit.status === 'awaiting_approval'
-    ) {
+    if (toolCallToEmit.status === "executing" || toolCallToEmit.status === "awaiting_approval") {
       if (adapter.processSubagentToolCall) {
         adapter.processSubagentToolCall(toolCallToEmit, agentToolCallId);
         emittedToolUseIds.add(toolCall.callId);
@@ -461,7 +430,7 @@ export function createAgentToolProgressHandler(
    * @param toolCall - The tool call information
    */
   const emitToolResultIfNeeded = (
-    toolCall: NonNullable<AgentResultDisplay['toolCalls']>[number],
+    toolCall: NonNullable<AgentResultDisplay["toolCalls"]>[number],
   ): void => {
     if (emittedToolResultIds.has(toolCall.callId)) {
       return;
@@ -478,10 +447,7 @@ export function createAgentToolProgressHandler(
     const response = buildResponse(toolCall);
     // For subagent tool results, we need to pass parentToolUseId
     // The adapter implementations accept an optional parentToolUseId parameter
-    if (
-      'emitToolResult' in adapter &&
-      typeof adapter.emitToolResult === 'function'
-    ) {
+    if ("emitToolResult" in adapter && typeof adapter.emitToolResult === "function") {
       adapter.emitToolResult(request, response, agentToolCallId);
     } else {
       adapter.emitToolResult(request, response);
@@ -495,18 +461,14 @@ export function createAgentToolProgressHandler(
    * @param previousCall - The previous state of the tool call (if any)
    */
   const processToolCall = (
-    toolCall: NonNullable<AgentResultDisplay['toolCalls']>[number],
-    previousCall?: NonNullable<AgentResultDisplay['toolCalls']>[number],
+    toolCall: NonNullable<AgentResultDisplay["toolCalls"]>[number],
+    previousCall?: NonNullable<AgentResultDisplay["toolCalls"]>[number],
   ): void => {
-    const isCompleted =
-      toolCall.status === 'success' || toolCall.status === 'failed';
-    const isExecuting =
-      toolCall.status === 'executing' ||
-      toolCall.status === 'awaiting_approval';
+    const isCompleted = toolCall.status === "success" || toolCall.status === "failed";
+    const isExecuting = toolCall.status === "executing" || toolCall.status === "awaiting_approval";
     const wasExecuting =
       previousCall &&
-      (previousCall.status === 'executing' ||
-        previousCall.status === 'awaiting_approval');
+      (previousCall.status === "executing" || previousCall.status === "awaiting_approval");
 
     // Emit tool_use if needed
     if (isExecuting) {
@@ -515,10 +477,10 @@ export function createAgentToolProgressHandler(
     } else if (isCompleted && !emittedToolUseIds.has(toolCall.callId)) {
       // Edge case: tool call appeared with result already (shouldn't happen normally,
       // but handle it gracefully by emitting tool_use with 'executing' status first)
-      emitToolUseIfNeeded(toolCall, 'executing');
+      emitToolUseIfNeeded(toolCall, "executing");
     } else if (wasExecuting && isCompleted) {
       // Status changed from executing to completed - ensure tool_use was emitted
-      emitToolUseIfNeeded(toolCall, 'executing');
+      emitToolUseIfNeeded(toolCall, "executing");
     }
 
     // Emit tool_result if tool call is completed
@@ -527,25 +489,19 @@ export function createAgentToolProgressHandler(
     }
   };
 
-  const outputUpdateHandler = (
-    callId: string,
-    outputChunk: ToolResultDisplay,
-  ) => {
+  const outputUpdateHandler = (callId: string, outputChunk: ToolResultDisplay) => {
     // Only process AgentResultDisplay (Task tool updates)
     if (
-      typeof outputChunk === 'object' &&
+      typeof outputChunk === "object" &&
       outputChunk !== null &&
-      'type' in outputChunk &&
-      outputChunk.type === 'task_execution'
+      "type" in outputChunk &&
+      outputChunk.type === "task_execution"
     ) {
       const taskDisplay = outputChunk as AgentResultDisplay;
       const previous = previousTaskStates.get(callId);
 
       // Only process if adapter supports subagent APIs
-      if (
-        !adapter.processSubagentToolCall ||
-        !adapter.emitSubagentErrorResult
-      ) {
+      if (!adapter.processSubagentToolCall || !adapter.emitSubagentErrorResult) {
         previousTaskStates.set(callId, taskDisplay);
         return;
       }
@@ -559,31 +515,24 @@ export function createAgentToolProgressHandler(
         } else {
           // Compare with previous state to find new/changed tool calls
           for (const toolCall of taskDisplay.toolCalls) {
-            const previousCall = previous.toolCalls.find(
-              (tc) => tc.callId === toolCall.callId,
-            );
+            const previousCall = previous.toolCalls.find((tc) => tc.callId === toolCall.callId);
             processToolCall(toolCall, previousCall);
           }
         }
       }
 
       // Handle task-level errors (status: 'failed', 'cancelled')
-      if (
-        taskDisplay.status === 'failed' ||
-        taskDisplay.status === 'cancelled'
-      ) {
+      if (taskDisplay.status === "failed" || taskDisplay.status === "cancelled") {
         const previousStatus = previous?.status;
         // Only emit error result if status changed to failed/cancelled
         if (
-          previousStatus !== 'failed' &&
-          previousStatus !== 'cancelled' &&
+          previousStatus !== "failed" &&
+          previousStatus !== "cancelled" &&
           previousStatus !== undefined
         ) {
           const errorMessage =
             taskDisplay.terminateReason ||
-            (taskDisplay.status === 'cancelled'
-              ? 'Task was cancelled'
-              : 'Task execution failed');
+            (taskDisplay.status === "cancelled" ? "Task was cancelled" : "Task execution failed");
           // Use subagent adapter's emitSubagentErrorResult method
           adapter.emitSubagentErrorResult(errorMessage, 0, agentToolCallId);
         }
@@ -599,10 +548,7 @@ export function createAgentToolProgressHandler(
           config.getOutputFormat() === OutputFormat.STREAM_JSON)
       ) {
         // Emit the user message with the correct parent_tool_use_id
-        adapter.emitUserMessage(
-          [{ text: taskDisplay.taskPrompt }],
-          agentToolCallId,
-        );
+        adapter.emitUserMessage([{ text: taskDisplay.taskPrompt }], agentToolCallId);
       }
 
       // Update previous state
@@ -627,13 +573,13 @@ export function createAgentToolProgressHandler(
 export function functionResponsePartsToString(parts: Part[]): string {
   return parts
     .map((part) => {
-      if ('functionResponse' in part) {
-        const content = part.functionResponse?.response?.['output'] ?? '';
+      if ("functionResponse" in part) {
+        const content = part.functionResponse?.response?.["output"] ?? "";
         return content;
       }
       return JSON.stringify(part);
     })
-    .join('');
+    .join("");
 }
 
 /**
@@ -645,13 +591,8 @@ export function functionResponsePartsToString(parts: Part[]): string {
  * @param response - Tool call response information
  * @returns String content for the tool_result block, or undefined if no content available
  */
-export function toolResultContent(
-  response: ToolCallResponseInfo,
-): string | undefined {
-  if (
-    typeof response.resultDisplay === 'string' &&
-    response.resultDisplay.trim().length > 0
-  ) {
+export function toolResultContent(response: ToolCallResponseInfo): string | undefined {
+  if (typeof response.resultDisplay === "string" && response.resultDisplay.trim().length > 0) {
     return response.resultDisplay;
   }
   if (response.responseParts && response.responseParts.length > 0) {

@@ -2,19 +2,19 @@
  * Test runner types
  */
 
-import type { Result } from '@airiscode/types';
+import type { Result } from "@airiscode/types";
 
 /**
  * Test framework types
  */
 export enum TestFramework {
-  VITEST = 'vitest',
-  JEST = 'jest',
-  MOCHA = 'mocha',
-  AVA = 'ava',
-  PYTEST = 'pytest',
-  GO_TEST = 'go_test',
-  CARGO_TEST = 'cargo_test',
+  VITEST = "vitest",
+  JEST = "jest",
+  MOCHA = "mocha",
+  AVA = "ava",
+  PYTEST = "pytest",
+  GO_TEST = "go_test",
+  CARGO_TEST = "cargo_test",
 }
 
 /**
@@ -45,10 +45,10 @@ export interface TestRunOptions {
  * Test result status
  */
 export enum TestStatus {
-  PASSED = 'passed',
-  FAILED = 'failed',
-  SKIPPED = 'skipped',
-  TODO = 'todo',
+  PASSED = "passed",
+  FAILED = "failed",
+  SKIPPED = "skipped",
+  TODO = "todo",
 }
 
 /**
@@ -152,10 +152,10 @@ export class TestRunnerError extends Error {
   constructor(
     message: string,
     public framework?: TestFramework,
-    public cause?: Error
+    public cause?: Error,
   ) {
     super(message);
-    this.name = 'TestRunnerError';
+    this.name = "TestRunnerError";
   }
 }
 

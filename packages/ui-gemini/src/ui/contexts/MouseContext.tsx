@@ -4,25 +4,19 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { useStdin } from 'ink';
-import type React from 'react';
-import {
-  createContext,
-  useCallback,
-  useContext,
-  useEffect,
-  useRef,
-} from 'react';
-import { ESC } from '../utils/input.js';
-import { debugLogger } from '@airiscode/gemini-cli-core';
-import { appEvents, AppEvent } from '../../utils/events.js';
+import { debugLogger } from "@airiscode/gemini-cli-core";
+import { useStdin } from "ink";
+import type React from "react";
+import { createContext, useCallback, useContext, useEffect, useRef } from "react";
+import { AppEvent, appEvents } from "../../utils/events.js";
+import { ESC } from "../utils/input.js";
 import {
   isIncompleteMouseSequence,
-  parseMouseEvent,
   type MouseEvent,
   type MouseEventName,
   type MouseHandler,
-} from '../utils/mouse.js';
+  parseMouseEvent,
+} from "../utils/mouse.js";
 
 export type { MouseEvent, MouseEventName, MouseHandler };
 
@@ -38,7 +32,7 @@ const MouseContext = createContext<MouseContextValue | undefined>(undefined);
 export function useMouseContext() {
   const context = useContext(MouseContext);
   if (!context) {
-    throw new Error('useMouseContext must be used within a MouseProvider');
+    throw new Error("useMouseContext must be used within a MouseProvider");
   }
   return context;
 }
@@ -87,7 +81,7 @@ export function MouseProvider({
       return;
     }
 
-    let mouseBuffer = '';
+    let mouseBuffer = "";
 
     const broadcast = (event: MouseEvent) => {
       let handled = false;
@@ -98,10 +92,10 @@ export function MouseProvider({
       }
       if (
         !handled &&
-        event.name === 'move' &&
+        event.name === "move" &&
         event.col >= 0 &&
         event.row >= 0 &&
-        event.button === 'left'
+        event.button === "left"
       ) {
         // Terminal apps only receive mouse move events when the mouse is down
         // so this always indicates a mouse drag that the user was expecting
@@ -112,7 +106,7 @@ export function MouseProvider({
     };
 
     const handleData = (data: Buffer | string) => {
-      mouseBuffer += typeof data === 'string' ? data : data.toString('utf-8');
+      mouseBuffer += typeof data === "string" ? data : data.toString("utf-8");
 
       // Safety cap to prevent infinite buffer growth on garbage
       if (mouseBuffer.length > MAX_MOUSE_BUFFER_SIZE) {
@@ -124,10 +118,7 @@ export function MouseProvider({
 
         if (parsed) {
           if (debugKeystrokeLogging) {
-            debugLogger.log(
-              '[DEBUG] Mouse event parsed:',
-              JSON.stringify(parsed.event),
-            );
+            debugLogger.log("[DEBUG] Mouse event parsed:", JSON.stringify(parsed.event));
           }
           broadcast(parsed.event);
           mouseBuffer = mouseBuffer.slice(parsed.length);
@@ -145,22 +136,20 @@ export function MouseProvider({
           mouseBuffer = mouseBuffer.slice(nextEsc);
           // Loop continues to try parsing at new location
         } else {
-          mouseBuffer = '';
+          mouseBuffer = "";
           break;
         }
       }
     };
 
-    stdin.on('data', handleData);
+    stdin.on("data", handleData);
 
     return () => {
-      stdin.removeListener('data', handleData);
+      stdin.removeListener("data", handleData);
     };
   }, [stdin, mouseEventsEnabled, subscribers, debugKeystrokeLogging]);
 
   return (
-    <MouseContext.Provider value={{ subscribe, unsubscribe }}>
-      {children}
-    </MouseContext.Provider>
+    <MouseContext.Provider value={{ subscribe, unsubscribe }}>{children}</MouseContext.Provider>
   );
 }

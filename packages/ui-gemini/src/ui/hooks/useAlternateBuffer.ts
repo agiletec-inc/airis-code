@@ -4,8 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { useSettings } from '../contexts/SettingsContext.js';
-import type { LoadedSettings } from '../../config/settings.js';
+import type { LoadedSettings } from "../../config/settings.js";
+import { useSettings } from "../contexts/SettingsContext.js";
 
 export const isAlternateBufferEnabled = (settings: LoadedSettings): boolean =>
   settings.merged.ui?.useAlternateBuffer === true;

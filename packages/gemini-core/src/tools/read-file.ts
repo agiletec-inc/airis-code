@@ -4,23 +4,19 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import type { MessageBus } from '../confirmation-bus/message-bus.js';
-import path from 'node:path';
-import { makeRelative, shortenPath } from '../utils/paths.js';
-import type { ToolInvocation, ToolLocation, ToolResult } from './tools.js';
-import { BaseDeclarativeTool, BaseToolInvocation, Kind } from './tools.js';
-
-import type { PartUnion } from '@google/genai';
-import {
-  processSingleFileContent,
-  getSpecificMimeType,
-} from '../utils/fileUtils.js';
-import type { Config } from '../config/config.js';
-import { FileOperation } from '../telemetry/metrics.js';
-import { getProgrammingLanguage } from '../telemetry/telemetry-utils.js';
-import { logFileOperation } from '../telemetry/loggers.js';
-import { FileOperationEvent } from '../telemetry/types.js';
-import { READ_FILE_TOOL_NAME } from './tool-names.js';
+import path from "node:path";
+import type { PartUnion } from "@google/genai";
+import type { Config } from "../config/config.js";
+import type { MessageBus } from "../confirmation-bus/message-bus.js";
+import { logFileOperation } from "../telemetry/loggers.js";
+import { FileOperation } from "../telemetry/metrics.js";
+import { getProgrammingLanguage } from "../telemetry/telemetry-utils.js";
+import { FileOperationEvent } from "../telemetry/types.js";
+import { getSpecificMimeType, processSingleFileContent } from "../utils/fileUtils.js";
+import { makeRelative, shortenPath } from "../utils/paths.js";
+import { READ_FILE_TOOL_NAME } from "./tool-names.js";
+import type { ToolInvocation, ToolLocation, ToolResult } from "./tools.js";
+import { BaseDeclarativeTool, BaseToolInvocation, Kind } from "./tools.js";
 
 /**
  * Parameters for the ReadFile tool
@@ -42,10 +38,7 @@ export interface ReadFileToolParams {
   limit?: number;
 }
 
-class ReadFileToolInvocation extends BaseToolInvocation<
-  ReadFileToolParams,
-  ToolResult
-> {
+class ReadFileToolInvocation extends BaseToolInvocation<ReadFileToolParams, ToolResult> {
   private readonly resolvedPath: string;
   constructor(
     private config: Config,
@@ -55,17 +48,11 @@ class ReadFileToolInvocation extends BaseToolInvocation<
     _toolDisplayName?: string,
   ) {
     super(params, messageBus, _toolName, _toolDisplayName);
-    this.resolvedPath = path.resolve(
-      this.config.getTargetDir(),
-      this.params.file_path,
-    );
+    this.resolvedPath = path.resolve(this.config.getTargetDir(), this.params.file_path);
   }
 
   getDescription(): string {
-    const relativePath = makeRelative(
-      this.resolvedPath,
-      this.config.getTargetDir(),
-    );
+    const relativePath = makeRelative(this.resolvedPath, this.config.getTargetDir());
     return shortenPath(relativePath);
   }
 
@@ -85,7 +72,7 @@ class ReadFileToolInvocation extends BaseToolInvocation<
     if (result.error) {
       return {
         llmContent: result.llmContent,
-        returnDisplay: result.returnDisplay || 'Error reading file',
+        returnDisplay: result.returnDisplay || "Error reading file",
         error: {
           message: result.error,
           type: result.errorType,
@@ -97,9 +84,7 @@ class ReadFileToolInvocation extends BaseToolInvocation<
     if (result.isTruncated) {
       const [start, end] = result.linesShown!;
       const total = result.originalLineCount!;
-      const nextOffset = this.params.offset
-        ? this.params.offset + end - start + 1
-        : end;
+      const nextOffset = this.params.offset ? this.params.offset + end - start + 1 : end;
       llmContent = `
 IMPORTANT: The file content has been truncated.
 Status: Showing lines ${start}-${end} of ${total} total lines.
@@ -108,13 +93,11 @@ Action: To read more of the file, you can use the 'offset' and 'limit' parameter
 --- FILE CONTENT (truncated) ---
 ${result.llmContent}`;
     } else {
-      llmContent = result.llmContent || '';
+      llmContent = result.llmContent || "";
     }
 
     const lines =
-      typeof result.llmContent === 'string'
-        ? result.llmContent.split('\n').length
-        : undefined;
+      typeof result.llmContent === "string" ? result.llmContent.split("\n").length : undefined;
     const mimetype = getSpecificMimeType(this.resolvedPath);
     const programming_language = getProgrammingLanguage({
       file_path: this.resolvedPath,
@@ -133,7 +116,7 @@ ${result.llmContent}`;
 
     return {
       llmContent,
-      returnDisplay: result.returnDisplay || '',
+      returnDisplay: result.returnDisplay || "",
     };
   }
 }
@@ -141,10 +124,7 @@ ${result.llmContent}`;
 /**
  * Implementation of the ReadFile tool logic
  */
-export class ReadFileTool extends BaseDeclarativeTool<
-  ReadFileToolParams,
-  ToolResult
-> {
+export class ReadFileTool extends BaseDeclarativeTool<ReadFileToolParams, ToolResult> {
   static readonly Name = READ_FILE_TOOL_NAME;
 
   constructor(
@@ -153,28 +133,28 @@ export class ReadFileTool extends BaseDeclarativeTool<
   ) {
     super(
       ReadFileTool.Name,
-      'ReadFile',
+      "ReadFile",
       `Reads and returns the content of a specified file. If the file is large, the content will be truncated. The tool's response will clearly indicate if truncation has occurred and will provide details on how to read more of the file using the 'offset' and 'limit' parameters. Handles text, images (PNG, JPG, GIF, WEBP, SVG, BMP), and PDF files. For text files, it can read specific line ranges.`,
       Kind.Read,
       {
         properties: {
           file_path: {
-            description: 'The path to the file to read.',
-            type: 'string',
+            description: "The path to the file to read.",
+            type: "string",
           },
           offset: {
             description:
               "Optional: For text files, the 0-based line number to start reading from. Requires 'limit' to be set. Use for paginating through large files.",
-            type: 'number',
+            type: "number",
           },
           limit: {
             description:
               "Optional: For text files, maximum number of lines to read. Use with 'offset' to paginate through large files. If omitted, reads the entire file (if feasible, up to a default limit).",
-            type: 'number',
+            type: "number",
           },
         },
-        required: ['file_path'],
-        type: 'object',
+        required: ["file_path"],
+        type: "object",
       },
       true,
       false,
@@ -182,36 +162,28 @@ export class ReadFileTool extends BaseDeclarativeTool<
     );
   }
 
-  protected override validateToolParamValues(
-    params: ReadFileToolParams,
-  ): string | null {
-    if (params.file_path.trim() === '') {
+  protected override validateToolParamValues(params: ReadFileToolParams): string | null {
+    if (params.file_path.trim() === "") {
       return "The 'file_path' parameter must be non-empty.";
     }
 
     const workspaceContext = this.config.getWorkspaceContext();
     const projectTempDir = this.config.storage.getProjectTempDir();
-    const resolvedPath = path.resolve(
-      this.config.getTargetDir(),
-      params.file_path,
-    );
+    const resolvedPath = path.resolve(this.config.getTargetDir(), params.file_path);
     const resolvedProjectTempDir = path.resolve(projectTempDir);
     const isWithinTempDir =
       resolvedPath.startsWith(resolvedProjectTempDir + path.sep) ||
       resolvedPath === resolvedProjectTempDir;
 
-    if (
-      !workspaceContext.isPathWithinWorkspace(resolvedPath) &&
-      !isWithinTempDir
-    ) {
+    if (!workspaceContext.isPathWithinWorkspace(resolvedPath) && !isWithinTempDir) {
       const directories = workspaceContext.getDirectories();
-      return `File path must be within one of the workspace directories: ${directories.join(', ')} or within the project temp directory: ${projectTempDir}`;
+      return `File path must be within one of the workspace directories: ${directories.join(", ")} or within the project temp directory: ${projectTempDir}`;
     }
     if (params.offset !== undefined && params.offset < 0) {
-      return 'Offset must be a non-negative number';
+      return "Offset must be a non-negative number";
     }
     if (params.limit !== undefined && params.limit <= 0) {
-      return 'Limit must be a positive number';
+      return "Limit must be a positive number";
     }
 
     const fileService = this.config.getFileService();
@@ -229,12 +201,6 @@ export class ReadFileTool extends BaseDeclarativeTool<
     _toolName?: string,
     _toolDisplayName?: string,
   ): ToolInvocation<ReadFileToolParams, ToolResult> {
-    return new ReadFileToolInvocation(
-      this.config,
-      params,
-      messageBus,
-      _toolName,
-      _toolDisplayName,
-    );
+    return new ReadFileToolInvocation(this.config, params, messageBus, _toolName, _toolDisplayName);
   }
 }

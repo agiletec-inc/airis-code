@@ -4,16 +4,12 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import type { CommandModule } from 'yargs';
-import { loadSettings } from '../../config/settings.js';
-import { writeStdoutLine, writeStderrLine } from '../../utils/stdioHelpers.js';
-import {
-  Config,
-  FileDiscoveryService,
-  ExtensionManager,
-} from '@airiscode/runtime';
-import { isWorkspaceTrusted } from '../../config/trustedFolders.js';
-import type { MCPServerConfig } from '@airiscode/runtime';
+import type { MCPServerConfig } from "@airiscode/runtime";
+import { Config, ExtensionManager, FileDiscoveryService } from "@airiscode/runtime";
+import type { CommandModule } from "yargs";
+import { loadSettings } from "../../config/settings.js";
+import { isWorkspaceTrusted } from "../../config/trustedFolders.js";
+import { writeStderrLine, writeStdoutLine } from "../../utils/stdioHelpers.js";
 
 async function getMcpServersFromConfig(
   extensionManager?: ExtensionManager,
@@ -33,17 +29,15 @@ async function getMcpServersFromConfig(
   const mcpServers = { ...(settings.merged.mcpServers || {}) };
   for (const extension of extensions) {
     if (extension.isActive) {
-      Object.entries(extension.config.mcpServers || {}).forEach(
-        ([key, server]) => {
-          if (mcpServers[key]) {
-            return;
-          }
-          mcpServers[key] = {
-            ...server,
-            extensionName: extension.config.name,
-          };
-        },
-      );
+      Object.entries(extension.config.mcpServers || {}).forEach(([key, server]) => {
+        if (mcpServers[key]) {
+          return;
+        }
+        mcpServers[key] = {
+          ...server,
+          extensionName: extension.config.name,
+        };
+      });
     }
   }
   return mcpServers;
@@ -55,7 +49,7 @@ async function createMinimalConfig(): Promise<Config> {
   const fileService = new FileDiscoveryService(cwd);
 
   const config = new Config({
-    sessionId: 'mcp-reconnect',
+    sessionId: "mcp-reconnect",
     targetDir: cwd,
     cwd,
     debugMode: false,
@@ -73,10 +67,7 @@ interface ReconnectError extends Error {
   exitCode: number;
 }
 
-function createReconnectError(
-  message: string,
-  exitCode: number = 1,
-): ReconnectError {
+function createReconnectError(message: string, exitCode: number = 1): ReconnectError {
   const error = new Error(message) as ReconnectError;
   error.exitCode = exitCode;
   return error;
@@ -86,9 +77,7 @@ async function reconnectMcpServer(serverName: string): Promise<void> {
   const mcpServers = await getMcpServersFromConfig();
 
   if (!mcpServers[serverName]) {
-    throw createReconnectError(
-      `Error: Server "${serverName}" not found in configuration.`,
-    );
+    throw createReconnectError(`Error: Server "${serverName}" not found in configuration.`);
   }
 
   writeStdoutLine(`Reconnecting to server "${serverName}"...`);
@@ -101,9 +90,7 @@ async function reconnectMcpServer(serverName: string): Promise<void> {
     await config.shutdown();
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error);
-    throw createReconnectError(
-      `Failed to reconnect to server "${serverName}": ${message}`,
-    );
+    throw createReconnectError(`Failed to reconnect to server "${serverName}": ${message}`);
   }
 }
 
@@ -119,11 +106,11 @@ async function reconnectAllMcpServers(): Promise<void> {
   const serverNames = Object.keys(mcpServers);
 
   if (serverNames.length === 0) {
-    writeStdoutLine('No MCP servers configured.');
+    writeStdoutLine("No MCP servers configured.");
     return;
   }
 
-  writeStdoutLine('Reconnecting to all MCP servers...\n');
+  writeStdoutLine("Reconnecting to all MCP servers...\n");
 
   let config: Config | undefined;
   try {
@@ -147,35 +134,33 @@ async function reconnectAllMcpServers(): Promise<void> {
 }
 
 export const reconnectCommand: CommandModule = {
-  command: 'reconnect [server-name]',
-  describe: 'Reconnect MCP server(s)',
+  command: "reconnect [server-name]",
+  describe: "Reconnect MCP server(s)",
   builder: (yargs) =>
     yargs
-      .usage('Usage: qwen mcp reconnect [options] [server-name]')
-      .positional('server-name', {
-        describe: 'Name of the server to reconnect',
-        type: 'string',
+      .usage("Usage: qwen mcp reconnect [options] [server-name]")
+      .positional("server-name", {
+        describe: "Name of the server to reconnect",
+        type: "string",
       })
-      .option('all', {
-        alias: 'a',
-        describe: 'Reconnect all configured servers',
-        type: 'boolean',
+      .option("all", {
+        alias: "a",
+        describe: "Reconnect all configured servers",
+        type: "boolean",
         default: false,
       })
-      .conflicts('server-name', 'all')
+      .conflicts("server-name", "all")
       .check((argv) => {
-        const serverName = argv['server-name'];
-        const all = argv['all'];
+        const serverName = argv["server-name"];
+        const all = argv["all"];
         if (!serverName && !all) {
-          throw new Error(
-            'Please specify a server name or use --all to reconnect all servers.',
-          );
+          throw new Error("Please specify a server name or use --all to reconnect all servers.");
         }
         return true;
       }),
   handler: async (argv) => {
-    const serverName = argv['server-name'] as string | undefined;
-    const all = argv['all'] as boolean;
+    const serverName = argv["server-name"] as string | undefined;
+    const all = argv["all"] as boolean;
 
     try {
       if (all) {

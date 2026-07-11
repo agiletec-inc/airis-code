@@ -4,21 +4,15 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { render } from '../../../test-utils/render.js';
-import { ToolResultDisplay } from './ToolResultDisplay.js';
-import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { Box, Text } from 'ink';
-import type { AnsiOutput } from '@airiscode/gemini-cli-core';
+import type { AnsiOutput } from "@airiscode/gemini-cli-core";
+import { Box, Text } from "ink";
+import { beforeEach, describe, expect, it, vi } from "vitest";
+import { render } from "../../../test-utils/render.js";
+import { ToolResultDisplay } from "./ToolResultDisplay.js";
 
 // Mock child components to simplify testing
-vi.mock('./DiffRenderer.js', () => ({
-  DiffRenderer: ({
-    diffContent,
-    filename,
-  }: {
-    diffContent: string;
-    filename: string;
-  }) => (
+vi.mock("./DiffRenderer.js", () => ({
+  DiffRenderer: ({ diffContent, filename }: { diffContent: string; filename: string }) => (
     <Box>
       <Text>
         DiffRenderer: {filename} - {diffContent}
@@ -27,7 +21,7 @@ vi.mock('./DiffRenderer.js', () => ({
   ),
 }));
 
-vi.mock('../../utils/MarkdownDisplay.js', () => ({
+vi.mock("../../utils/MarkdownDisplay.js", () => ({
   MarkdownDisplay: ({ text }: { text: string }) => (
     <Box>
       <Text>MarkdownDisplay: {text}</Text>
@@ -35,7 +29,7 @@ vi.mock('../../utils/MarkdownDisplay.js', () => ({
   ),
 }));
 
-vi.mock('../AnsiOutput.js', () => ({
+vi.mock("../AnsiOutput.js", () => ({
   AnsiOutputText: ({ data }: { data: unknown }) => (
     <Box>
       <Text>AnsiOutputText: {JSON.stringify(data)}</Text>
@@ -43,7 +37,7 @@ vi.mock('../AnsiOutput.js', () => ({
   ),
 }));
 
-vi.mock('../shared/MaxSizedBox.js', () => ({
+vi.mock("../shared/MaxSizedBox.js", () => ({
   MaxSizedBox: ({ children }: { children: React.ReactNode }) => (
     <Box>
       <Text>MaxSizedBox:</Text>
@@ -54,24 +48,24 @@ vi.mock('../shared/MaxSizedBox.js', () => ({
 
 // Mock UIStateContext
 const mockUseUIState = vi.fn();
-vi.mock('../../contexts/UIStateContext.js', () => ({
+vi.mock("../../contexts/UIStateContext.js", () => ({
   useUIState: () => mockUseUIState(),
 }));
 
 // Mock useAlternateBuffer
 const mockUseAlternateBuffer = vi.fn();
-vi.mock('../../hooks/useAlternateBuffer.js', () => ({
+vi.mock("../../hooks/useAlternateBuffer.js", () => ({
   useAlternateBuffer: () => mockUseAlternateBuffer(),
 }));
 
-describe('ToolResultDisplay', () => {
+describe("ToolResultDisplay", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     mockUseUIState.mockReturnValue({ renderMarkdown: true });
     mockUseAlternateBuffer.mockReturnValue(false);
   });
 
-  it('renders string result as markdown by default', () => {
+  it("renders string result as markdown by default", () => {
     const { lastFrame } = render(
       <ToolResultDisplay resultDisplay="Some result" terminalWidth={80} />,
     );
@@ -80,7 +74,7 @@ describe('ToolResultDisplay', () => {
     expect(output).toMatchSnapshot();
   });
 
-  it('renders string result as plain text when renderOutputAsMarkdown is false', () => {
+  it("renders string result as plain text when renderOutputAsMarkdown is false", () => {
     const { lastFrame } = render(
       <ToolResultDisplay
         resultDisplay="Some result"
@@ -94,8 +88,8 @@ describe('ToolResultDisplay', () => {
     expect(output).toMatchSnapshot();
   });
 
-  it('truncates very long string results', { timeout: 20000 }, () => {
-    const longString = 'a'.repeat(1000005);
+  it("truncates very long string results", { timeout: 20000 }, () => {
+    const longString = "a".repeat(1000005);
     const { lastFrame } = render(
       <ToolResultDisplay
         resultDisplay={longString}
@@ -108,10 +102,10 @@ describe('ToolResultDisplay', () => {
     expect(output).toMatchSnapshot();
   });
 
-  it('renders file diff result', () => {
+  it("renders file diff result", () => {
     const diffResult = {
-      fileDiff: 'diff content',
-      fileName: 'test.ts',
+      fileDiff: "diff content",
+      fileName: "test.ts",
     };
     const { lastFrame } = render(
       <ToolResultDisplay
@@ -125,9 +119,9 @@ describe('ToolResultDisplay', () => {
     expect(output).toMatchSnapshot();
   });
 
-  it('renders ANSI output result', () => {
+  it("renders ANSI output result", () => {
     const ansiResult = {
-      text: 'ansi content',
+      text: "ansi content",
     };
     const { lastFrame } = render(
       <ToolResultDisplay
@@ -141,7 +135,7 @@ describe('ToolResultDisplay', () => {
     expect(output).toMatchSnapshot();
   });
 
-  it('renders nothing for todos result', () => {
+  it("renders nothing for todos result", () => {
     const todoResult = {
       todos: [],
     };
@@ -157,7 +151,7 @@ describe('ToolResultDisplay', () => {
     expect(output).toMatchSnapshot();
   });
 
-  it('falls back to plain text if availableHeight is set and not in alternate buffer', () => {
+  it("falls back to plain text if availableHeight is set and not in alternate buffer", () => {
     mockUseAlternateBuffer.mockReturnValue(false);
     // availableHeight calculation: 20 - 1 - 5 = 14 > 3
     const { lastFrame } = render(
@@ -174,7 +168,7 @@ describe('ToolResultDisplay', () => {
     expect(output).toMatchSnapshot();
   });
 
-  it('keeps markdown if in alternate buffer even with availableHeight', () => {
+  it("keeps markdown if in alternate buffer even with availableHeight", () => {
     mockUseAlternateBuffer.mockReturnValue(true);
     const { lastFrame } = render(
       <ToolResultDisplay

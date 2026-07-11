@@ -4,29 +4,25 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import React from 'react';
-import { Box, Text, type DOMElement } from 'ink';
-import { ToolCallStatus } from '../../types.js';
-import { ShellInputPrompt } from '../ShellInputPrompt.js';
-import { StickyHeader } from '../StickyHeader.js';
+import type { Config } from "@airiscode/gemini-cli-core";
+import { SHELL_TOOL_NAME } from "@airiscode/gemini-cli-core";
+import { Box, type DOMElement, Text } from "ink";
+import React from "react";
+import { SHELL_COMMAND_NAME, SHELL_FOCUS_HINT_DELAY_MS, SHELL_NAME } from "../../constants.js";
+import { useUIActions } from "../../contexts/UIActionsContext.js";
+import { useMouseClick } from "../../hooks/useMouseClick.js";
+import { theme } from "../../semantic-colors.js";
+import { ToolCallStatus } from "../../types.js";
+import { ShellInputPrompt } from "../ShellInputPrompt.js";
+import { StickyHeader } from "../StickyHeader.js";
+import type { ToolMessageProps } from "./ToolMessage.js";
+import { ToolResultDisplay } from "./ToolResultDisplay.js";
 import {
-  SHELL_COMMAND_NAME,
-  SHELL_NAME,
-  SHELL_FOCUS_HINT_DELAY_MS,
-} from '../../constants.js';
-import { theme } from '../../semantic-colors.js';
-import { SHELL_TOOL_NAME } from '@airiscode/gemini-cli-core';
-import { useUIActions } from '../../contexts/UIActionsContext.js';
-import { useMouseClick } from '../../hooks/useMouseClick.js';
-import { ToolResultDisplay } from './ToolResultDisplay.js';
-import {
-  ToolStatusIndicator,
-  ToolInfo,
-  TrailingIndicator,
   STATUS_INDICATOR_WIDTH,
-} from './ToolShared.js';
-import type { ToolMessageProps } from './ToolMessage.js';
-import type { Config } from '@airiscode/gemini-cli-core';
+  ToolInfo,
+  ToolStatusIndicator,
+  TrailingIndicator,
+} from "./ToolShared.js";
 
 export interface ShellToolMessageProps extends ToolMessageProps {
   activeShellPtyId?: number | null;
@@ -41,7 +37,7 @@ export const ShellToolMessage: React.FC<ShellToolMessageProps> = ({
   status,
   availableTerminalHeight,
   terminalWidth,
-  emphasis = 'medium',
+  emphasis = "medium",
   renderOutputAsMarkdown = true,
   activeShellPtyId,
   embeddedShellFocused,
@@ -52,9 +48,7 @@ export const ShellToolMessage: React.FC<ShellToolMessageProps> = ({
   borderDimColor,
 }) => {
   const isThisShellFocused =
-    (name === SHELL_COMMAND_NAME ||
-      name === SHELL_NAME ||
-      name === SHELL_TOOL_NAME) &&
+    (name === SHELL_COMMAND_NAME || name === SHELL_NAME || name === SHELL_TOOL_NAME) &&
     status === ToolCallStatus.Executing &&
     ptyId === activeShellPtyId &&
     embeddedShellFocused;
@@ -63,9 +57,7 @@ export const ShellToolMessage: React.FC<ShellToolMessageProps> = ({
   const containerRef = React.useRef<DOMElement>(null);
   // The shell is focusable if it's the shell command, it's executing, and the interactive shell is enabled.
   const isThisShellFocusable =
-    (name === SHELL_COMMAND_NAME ||
-      name === SHELL_NAME ||
-      name === SHELL_TOOL_NAME) &&
+    (name === SHELL_COMMAND_NAME || name === SHELL_NAME || name === SHELL_TOOL_NAME) &&
     status === ToolCallStatus.Executing &&
     config?.getEnableInteractiveShell();
 
@@ -119,8 +111,7 @@ export const ShellToolMessage: React.FC<ShellToolMessageProps> = ({
     }
   }, [isThisShellFocused]);
 
-  const shouldShowFocusHint =
-    isThisShellFocusable && (showFocusHint || userHasFocused);
+  const shouldShowFocusHint = isThisShellFocusable && (showFocusHint || userHasFocused);
 
   return (
     <Box ref={containerRef} flexDirection="column" width={terminalWidth}>
@@ -131,20 +122,15 @@ export const ShellToolMessage: React.FC<ShellToolMessageProps> = ({
         borderDimColor={borderDimColor}
       >
         <ToolStatusIndicator status={status} name={name} />
-        <ToolInfo
-          name={name}
-          status={status}
-          description={description}
-          emphasis={emphasis}
-        />
+        <ToolInfo name={name} status={status} description={description} emphasis={emphasis} />
         {shouldShowFocusHint && (
           <Box marginLeft={1} flexShrink={0}>
             <Text color={theme.text.accent}>
-              {isThisShellFocused ? '(Focused)' : '(ctrl+f to focus)'}
+              {isThisShellFocused ? "(Focused)" : "(ctrl+f to focus)"}
             </Text>
           </Box>
         )}
-        {emphasis === 'high' && <TrailingIndicator />}
+        {emphasis === "high" && <TrailingIndicator />}
       </StickyHeader>
       <Box
         width={terminalWidth}

@@ -4,10 +4,10 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { execSync } from 'node:child_process';
-import os from 'node:os';
-import { detect as chardetDetect } from 'chardet';
-import { debugLogger } from './debugLogger.js';
+import { execSync } from "node:child_process";
+import os from "node:os";
+import { detect as chardetDetect } from "chardet";
+import { debugLogger } from "./debugLogger.js";
 
 // Cache for system encoding to avoid repeated detection
 // Use undefined to indicate "not yet checked" vs null meaning "checked but failed"
@@ -39,7 +39,7 @@ export function getCachedEncodingForBuffer(buffer: Buffer): string {
   }
 
   // Otherwise, detect from this specific buffer (don't cache this result)
-  return detectEncodingFromBuffer(buffer) || 'utf-8';
+  return detectEncodingFromBuffer(buffer) || "utf-8";
 }
 
 /**
@@ -52,9 +52,9 @@ export function getCachedEncodingForBuffer(buffer: Buffer): string {
  */
 export function getSystemEncoding(): string | null {
   // Windows
-  if (os.platform() === 'win32') {
+  if (os.platform() === "win32") {
     try {
-      const output = execSync('chcp', { encoding: 'utf8' });
+      const output = execSync("chcp", { encoding: "utf8" });
       const match = output.match(/:\s*(\d+)/);
       if (match) {
         const codePage = parseInt(match[1], 10);
@@ -63,9 +63,7 @@ export function getSystemEncoding(): string | null {
         }
       }
       // Only warn if we can't parse the output format, not if windowsCodePageToEncoding fails
-      throw new Error(
-        `Unable to parse Windows code page from 'chcp' output "${output.trim()}". `,
-      );
+      throw new Error(`Unable to parse Windows code page from 'chcp' output "${output.trim()}". `);
     } catch (error) {
       debugLogger.warn(
         `Failed to get Windows code page using 'chcp' command: ${error instanceof Error ? error.message : String(error)}. ` +
@@ -80,16 +78,14 @@ export function getSystemEncoding(): string | null {
   // system encoding. However, these environment variables might not always
   // be set or accurate. Handle cases where none of these variables are set.
   const env = process.env;
-  let locale = env['LC_ALL'] || env['LC_CTYPE'] || env['LANG'] || '';
+  let locale = env["LC_ALL"] || env["LC_CTYPE"] || env["LANG"] || "";
 
   // Fallback to querying the system directly when environment variables are missing
   if (!locale) {
     try {
-      locale = execSync('locale charmap', { encoding: 'utf8' })
-        .toString()
-        .trim();
+      locale = execSync("locale charmap", { encoding: "utf8" }).toString().trim();
     } catch (_e) {
-      debugLogger.warn('Failed to get locale charmap.');
+      debugLogger.warn("Failed to get locale charmap.");
       return null;
     }
   }
@@ -100,7 +96,7 @@ export function getSystemEncoding(): string | null {
   }
 
   // Handle cases where locale charmap returns just the encoding name (e.g., "UTF-8")
-  if (locale && !locale.includes('.')) {
+  if (locale && !locale.includes(".")) {
     return locale.toLowerCase();
   }
 
@@ -115,27 +111,27 @@ export function getSystemEncoding(): string | null {
 export function windowsCodePageToEncoding(cp: number): string | null {
   // Most common mappings; extend as needed
   const map: { [key: number]: string } = {
-    437: 'cp437',
-    850: 'cp850',
-    852: 'cp852',
-    866: 'cp866',
-    874: 'windows-874',
-    932: 'shift_jis',
-    936: 'gb2312',
-    949: 'euc-kr',
-    950: 'big5',
-    1200: 'utf-16le',
-    1201: 'utf-16be',
-    1250: 'windows-1250',
-    1251: 'windows-1251',
-    1252: 'windows-1252',
-    1253: 'windows-1253',
-    1254: 'windows-1254',
-    1255: 'windows-1255',
-    1256: 'windows-1256',
-    1257: 'windows-1257',
-    1258: 'windows-1258',
-    65001: 'utf-8',
+    437: "cp437",
+    850: "cp850",
+    852: "cp852",
+    866: "cp866",
+    874: "windows-874",
+    932: "shift_jis",
+    936: "gb2312",
+    949: "euc-kr",
+    950: "big5",
+    1200: "utf-16le",
+    1201: "utf-16be",
+    1250: "windows-1250",
+    1251: "windows-1251",
+    1252: "windows-1252",
+    1253: "windows-1253",
+    1254: "windows-1254",
+    1255: "windows-1255",
+    1256: "windows-1256",
+    1257: "windows-1257",
+    1258: "windows-1258",
+    65001: "utf-8",
   };
 
   if (map[cp]) {
@@ -156,11 +152,11 @@ export function windowsCodePageToEncoding(cp: number): string | null {
 export function detectEncodingFromBuffer(buffer: Buffer): string | null {
   try {
     const detected = chardetDetect(buffer);
-    if (detected && typeof detected === 'string') {
+    if (detected && typeof detected === "string") {
       return detected.toLowerCase();
     }
   } catch (error) {
-    debugLogger.warn('Failed to detect encoding with chardet:', error);
+    debugLogger.warn("Failed to detect encoding with chardet:", error);
   }
 
   return null;

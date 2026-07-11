@@ -4,18 +4,13 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import type {
-  CountTokensParameters,
-  Content,
-  Part,
-  PartUnion,
-} from '../../types/llm.js';
-import type { TokenCalculationResult } from './types.js';
-import { TextTokenizer } from './textTokenizer.js';
-import { ImageTokenizer } from './imageTokenizer.js';
-import { createDebugLogger } from '../debugLogger.js';
+import type { Content, CountTokensParameters, Part, PartUnion } from "../../types/llm.js";
+import { createDebugLogger } from "../debugLogger.js";
+import { ImageTokenizer } from "./imageTokenizer.js";
+import { TextTokenizer } from "./textTokenizer.js";
+import type { TokenCalculationResult } from "./types.js";
 
-const debugLogger = createDebugLogger('TOKENIZER');
+const debugLogger = createDebugLogger("TOKENIZER");
 
 /**
  * Simple request token estimator that handles text and image content serially
@@ -32,9 +27,7 @@ export class RequestTokenizer {
   /**
    * Calculate tokens for a request using serial processing
    */
-  async calculateTokens(
-    request: CountTokensParameters,
-  ): Promise<TokenCalculationResult> {
+  async calculateTokens(request: CountTokensParameters): Promise<TokenCalculationResult> {
     const startTime = performance.now();
 
     try {
@@ -80,7 +73,7 @@ export class RequestTokenizer {
         processingTime,
       };
     } catch (error) {
-      debugLogger.error('Error calculating tokens:', error);
+      debugLogger.error("Error calculating tokens:", error);
 
       // Fallback calculation
       const fallbackTokens = this.calculateFallbackTokens(request);
@@ -106,11 +99,11 @@ export class RequestTokenizer {
 
     try {
       // Avoid per-part rounding inflation by estimating once on the combined text.
-      return await this.textTokenizer.calculateTokens(textContents.join(''));
+      return await this.textTokenizer.calculateTokens(textContents.join(""));
     } catch (error) {
-      debugLogger.warn('Error calculating text tokens:', error);
+      debugLogger.warn("Error calculating text tokens:", error);
       // Fallback: character-based estimation
-      const totalChars = textContents.join('').length;
+      const totalChars = textContents.join("").length;
       return Math.ceil(totalChars / 4);
     }
   }
@@ -124,11 +117,10 @@ export class RequestTokenizer {
     if (imageContents.length === 0) return 0;
 
     try {
-      const tokenCounts =
-        await this.imageTokenizer.calculateTokensBatch(imageContents);
+      const tokenCounts = await this.imageTokenizer.calculateTokensBatch(imageContents);
       return tokenCounts.reduce((sum, count) => sum + count, 0);
     } catch (error) {
-      debugLogger.warn('Error calculating image tokens:', error);
+      debugLogger.warn("Error calculating image tokens:", error);
       // Fallback: minimum tokens per image
       return imageContents.length * 6; // 4 image tokens + 2 special tokens as minimum
     }
@@ -154,7 +146,7 @@ export class RequestTokenizer {
         // Rough estimate: 1 token per 100 bytes of audio data
         totalTokens += Math.max(Math.ceil(dataSize / 100), 10); // Minimum 10 tokens per audio
       } catch (error) {
-        debugLogger.warn('Error calculating audio tokens:', error);
+        debugLogger.warn("Error calculating audio tokens:", error);
         totalTokens += 10; // Fallback minimum
       }
     }
@@ -170,11 +162,11 @@ export class RequestTokenizer {
 
     try {
       // Treat other content as text, and avoid per-item rounding inflation.
-      return await this.textTokenizer.calculateTokens(otherContents.join(''));
+      return await this.textTokenizer.calculateTokens(otherContents.join(""));
     } catch (error) {
-      debugLogger.warn('Error calculating other content tokens:', error);
+      debugLogger.warn("Error calculating other content tokens:", error);
       // Fallback: character-based estimation
-      const totalChars = otherContents.join('').length;
+      const totalChars = otherContents.join("").length;
       return Math.ceil(totalChars / 4);
     }
   }
@@ -187,7 +179,7 @@ export class RequestTokenizer {
       const content = JSON.stringify(request.contents);
       return Math.ceil(content.length / 4); // Rough estimate: 1 token ≈ 4 characters
     } catch (error) {
-      debugLogger.warn('Error in fallback token calculation:', error);
+      debugLogger.warn("Error in fallback token calculation:", error);
       return 100; // Conservative fallback
     }
   }
@@ -210,31 +202,17 @@ export class RequestTokenizer {
       return { textContents, imageContents, audioContents, otherContents };
     }
 
-    const contents = Array.isArray(request.contents)
-      ? request.contents
-      : [request.contents];
+    const contents = Array.isArray(request.contents) ? request.contents : [request.contents];
 
     for (const content of contents) {
       // ContentUnion may itself be a PartUnion[]; in that case iterate parts.
       if (Array.isArray(content)) {
         for (const part of content) {
-          this.processPart(
-            part,
-            textContents,
-            imageContents,
-            audioContents,
-            otherContents,
-          );
+          this.processPart(part, textContents, imageContents, audioContents, otherContents);
         }
         continue;
       }
-      this.processContent(
-        content,
-        textContents,
-        imageContents,
-        audioContents,
-        otherContents,
-      );
+      this.processContent(content, textContents, imageContents, audioContents, otherContents);
     }
 
     return { textContents, imageContents, audioContents, otherContents };
@@ -250,24 +228,18 @@ export class RequestTokenizer {
     audioContents: Array<{ data: string; mimeType: string }>,
     otherContents: string[],
   ): void {
-    if (typeof content === 'string') {
+    if (typeof content === "string") {
       if (content.trim()) {
         textContents.push(content);
       }
       return;
     }
 
-    if ('parts' in content) {
+    if ("parts" in content) {
       const parts = (content as Content).parts;
       if (Array.isArray(parts)) {
         for (const part of parts) {
-          this.processPart(
-            part,
-            textContents,
-            imageContents,
-            audioContents,
-            otherContents,
-          );
+          this.processPart(part, textContents, imageContents, audioContents, otherContents);
         }
       }
       return;
@@ -294,41 +266,41 @@ export class RequestTokenizer {
     audioContents: Array<{ data: string; mimeType: string }>,
     otherContents: string[],
   ): void {
-    if (typeof part === 'string') {
+    if (typeof part === "string") {
       if (part.trim()) {
         textContents.push(part);
       }
       return;
     }
 
-    if ('text' in part && part.text) {
+    if ("text" in part && part.text) {
       textContents.push(part.text);
       return;
     }
 
-    if ('inlineData' in part && part.inlineData) {
+    if ("inlineData" in part && part.inlineData) {
       const { data, mimeType } = part.inlineData;
-      if (mimeType && mimeType.startsWith('image/')) {
-        imageContents.push({ data: data || '', mimeType });
+      if (mimeType && mimeType.startsWith("image/")) {
+        imageContents.push({ data: data || "", mimeType });
         return;
       }
-      if (mimeType && mimeType.startsWith('audio/')) {
-        audioContents.push({ data: data || '', mimeType });
+      if (mimeType && mimeType.startsWith("audio/")) {
+        audioContents.push({ data: data || "", mimeType });
         return;
       }
     }
 
-    if ('fileData' in part && part.fileData) {
+    if ("fileData" in part && part.fileData) {
       otherContents.push(JSON.stringify(part.fileData));
       return;
     }
 
-    if ('functionCall' in part && part.functionCall) {
+    if ("functionCall" in part && part.functionCall) {
       otherContents.push(JSON.stringify(part.functionCall));
       return;
     }
 
-    if ('functionResponse' in part && part.functionResponse) {
+    if ("functionResponse" in part && part.functionResponse) {
       otherContents.push(JSON.stringify(part.functionResponse));
       return;
     }
@@ -336,11 +308,11 @@ export class RequestTokenizer {
     // Unknown part type - try to serialize
     try {
       const serialized = JSON.stringify(part);
-      if (serialized && serialized !== '{}') {
+      if (serialized && serialized !== "{}") {
         otherContents.push(serialized);
       }
     } catch (error) {
-      debugLogger.warn('Failed to serialize unknown part type:', error);
+      debugLogger.warn("Failed to serialize unknown part type:", error);
     }
   }
 }

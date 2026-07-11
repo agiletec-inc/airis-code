@@ -5,135 +5,135 @@
  */
 
 export enum TelemetryTarget {
-  GCP = 'gcp',
-  LOCAL = 'local',
+  GCP = "gcp",
+  LOCAL = "local",
 }
 
 const DEFAULT_TELEMETRY_TARGET = TelemetryTarget.LOCAL;
-const DEFAULT_OTLP_ENDPOINT = 'http://localhost:4317';
+const DEFAULT_OTLP_ENDPOINT = "http://localhost:4317";
 
-export { DEFAULT_TELEMETRY_TARGET, DEFAULT_OTLP_ENDPOINT };
+export { SpanStatusCode, ValueType } from "@opentelemetry/api";
+export { SemanticAttributes } from "@opentelemetry/semantic-conventions";
 export {
-  initializeTelemetry,
-  shutdownTelemetry,
-  isTelemetrySdkInitialized,
-} from './sdk.js';
+  ActivityDetector,
+  getActivityDetector,
+  isUserActive,
+  recordUserActivity,
+} from "./activity-detector.js";
 export {
-  resolveTelemetrySettings,
+  ActivityMonitor,
+  getActivityMonitor,
+  initializeActivityMonitor,
+  startGlobalActivityMonitoring,
+  stopGlobalActivityMonitoring,
+} from "./activity-monitor.js";
+export { ActivityType } from "./activity-types.js";
+export {
   parseBooleanEnvFlag,
   parseTelemetryTargetValue,
-} from './config.js';
+  resolveTelemetrySettings,
+} from "./config.js";
 export {
-  GcpTraceExporter,
-  GcpMetricExporter,
   GcpLogExporter,
-} from './gcp-exporters.js';
+  GcpMetricExporter,
+  GcpTraceExporter,
+} from "./gcp-exporters.js";
+export { HighWaterMarkTracker } from "./high-water-mark-tracker.js";
 export {
-  logCliConfiguration,
-  logUserPrompt,
-  logToolCall,
-  logApiRequest,
   logApiError,
+  logApiRequest,
   logApiResponse,
-  logFlashFallback,
-  logSlashCommand,
-  logConversationFinishedEvent,
   logChatCompression,
-  logToolOutputTruncated,
+  logCliConfiguration,
+  logConversationFinishedEvent,
   logExtensionEnable,
   logExtensionInstallEvent,
   logExtensionUninstall,
   logExtensionUpdateEvent,
+  logFlashFallback,
+  logSlashCommand,
+  logToolCall,
+  logToolOutputTruncated,
+  logUserPrompt,
   logWebFetchFallbackAttempt,
-} from './loggers.js';
-export type { SlashCommandEvent, ChatCompressionEvent } from './types.js';
+} from "./loggers.js";
+export type { MemorySnapshot, ProcessMetrics } from "./memory-monitor.js";
 export {
-  SlashCommandStatus,
-  EndSessionEvent,
-  UserPromptEvent,
-  ApiRequestEvent,
-  ApiErrorEvent,
-  ApiResponseEvent,
-  FlashFallbackEvent,
-  StartSessionEvent,
-  ToolCallEvent,
-  ConversationFinishedEvent,
-  ToolOutputTruncatedEvent,
-  WebFetchFallbackAttemptEvent,
-  ToolCallDecision,
-} from './types.js';
-export { makeSlashCommandEvent, makeChatCompressionEvent } from './types.js';
-export type { TelemetryEvent } from './types.js';
-export { SpanStatusCode, ValueType } from '@opentelemetry/api';
-export { SemanticAttributes } from '@opentelemetry/semantic-conventions';
-export * from './uiTelemetry.js';
-export {
-  MemoryMonitor,
-  initializeMemoryMonitor,
   getMemoryMonitor,
+  initializeMemoryMonitor,
+  MemoryMonitor,
   recordCurrentMemoryUsage,
   startGlobalMemoryMonitoring,
   stopGlobalMemoryMonitoring,
-} from './memory-monitor.js';
-export type { MemorySnapshot, ProcessMetrics } from './memory-monitor.js';
-export { HighWaterMarkTracker } from './high-water-mark-tracker.js';
-export { RateLimiter } from './rate-limiter.js';
-export { ActivityType } from './activity-types.js';
+} from "./memory-monitor.js";
 export {
-  ActivityDetector,
-  getActivityDetector,
-  recordUserActivity,
-  isUserActive,
-} from './activity-detector.js';
-export {
-  ActivityMonitor,
-  initializeActivityMonitor,
-  getActivityMonitor,
-  startGlobalActivityMonitoring,
-  stopGlobalActivityMonitoring,
-} from './activity-monitor.js';
-export {
-  // Core metrics functions
-  recordToolCallMetrics,
-  recordTokenUsageMetrics,
-  recordApiResponseMetrics,
-  recordApiErrorMetrics,
-  recordFileOperationMetric,
-  recordInvalidChunk,
-  recordContentRetry,
-  recordContentRetryFailure,
-  recordModelRoutingMetrics,
-  // Custom metrics for token usage and API responses
-  recordCustomTokenUsageMetrics,
-  recordCustomApiResponseMetrics,
-  recordExitFail,
-  // OpenTelemetry GenAI semantic convention for token usage and operation duration
-  recordGenAiClientTokenUsage,
-  recordGenAiClientOperationDuration,
-  getConventionAttributes,
-  // Performance monitoring functions
-  recordStartupPerformance,
-  recordMemoryUsage,
-  recordCpuUsage,
-  recordToolQueueDepth,
-  recordToolExecutionBreakdown,
-  recordTokenEfficiency,
-  recordApiRequestBreakdown,
-  recordPerformanceScore,
-  recordPerformanceRegression,
-  recordBaselineComparison,
-  isPerformanceMonitoringActive,
-  recordFlickerFrame,
-  recordSlowRender,
-  // Performance monitoring types
-  PerformanceMetricType,
-  MemoryMetricType,
-  ToolExecutionPhase,
   ApiRequestPhase,
   FileOperation,
   // OpenTelemetry Semantic Convention types
   GenAiOperationName,
   GenAiProviderName,
   GenAiTokenType,
-} from './metrics.js';
-export { runInDevTraceSpan, type SpanMetadata } from './trace.js';
+  getConventionAttributes,
+  isPerformanceMonitoringActive,
+  MemoryMetricType,
+  // Performance monitoring types
+  PerformanceMetricType,
+  recordApiErrorMetrics,
+  recordApiRequestBreakdown,
+  recordApiResponseMetrics,
+  recordBaselineComparison,
+  recordContentRetry,
+  recordContentRetryFailure,
+  recordCpuUsage,
+  recordCustomApiResponseMetrics,
+  // Custom metrics for token usage and API responses
+  recordCustomTokenUsageMetrics,
+  recordExitFail,
+  recordFileOperationMetric,
+  recordFlickerFrame,
+  recordGenAiClientOperationDuration,
+  // OpenTelemetry GenAI semantic convention for token usage and operation duration
+  recordGenAiClientTokenUsage,
+  recordInvalidChunk,
+  recordMemoryUsage,
+  recordModelRoutingMetrics,
+  recordPerformanceRegression,
+  recordPerformanceScore,
+  recordSlowRender,
+  // Performance monitoring functions
+  recordStartupPerformance,
+  recordTokenEfficiency,
+  recordTokenUsageMetrics,
+  // Core metrics functions
+  recordToolCallMetrics,
+  recordToolExecutionBreakdown,
+  recordToolQueueDepth,
+  ToolExecutionPhase,
+} from "./metrics.js";
+export { RateLimiter } from "./rate-limiter.js";
+export {
+  initializeTelemetry,
+  isTelemetrySdkInitialized,
+  shutdownTelemetry,
+} from "./sdk.js";
+export { runInDevTraceSpan, type SpanMetadata } from "./trace.js";
+export type { ChatCompressionEvent, SlashCommandEvent, TelemetryEvent } from "./types.js";
+export {
+  ApiErrorEvent,
+  ApiRequestEvent,
+  ApiResponseEvent,
+  ConversationFinishedEvent,
+  EndSessionEvent,
+  FlashFallbackEvent,
+  makeChatCompressionEvent,
+  makeSlashCommandEvent,
+  SlashCommandStatus,
+  StartSessionEvent,
+  ToolCallDecision,
+  ToolCallEvent,
+  ToolOutputTruncatedEvent,
+  UserPromptEvent,
+  WebFetchFallbackAttemptEvent,
+} from "./types.js";
+export * from "./uiTelemetry.js";
+export { DEFAULT_OTLP_ENDPOINT, DEFAULT_TELEMETRY_TARGET };

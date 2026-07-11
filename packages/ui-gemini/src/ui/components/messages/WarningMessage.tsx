@@ -4,17 +4,17 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import type React from 'react';
-import { Box, Text } from 'ink';
-import { theme } from '../../semantic-colors.js';
-import { RenderInline } from '../../utils/InlineMarkdownRenderer.js';
+import { Box, Text } from "ink";
+import type React from "react";
+import { theme } from "../../semantic-colors.js";
+import { RenderInline } from "../../utils/InlineMarkdownRenderer.js";
 
 interface WarningMessageProps {
   text: string;
 }
 
 export const WarningMessage: React.FC<WarningMessageProps> = ({ text }) => {
-  const prefix = '⚠ ';
+  const prefix = "⚠ ";
   const prefixWidth = 3;
 
   return (

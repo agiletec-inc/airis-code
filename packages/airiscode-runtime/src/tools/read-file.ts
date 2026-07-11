@@ -4,26 +4,21 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import os from 'node:os';
-import path from 'node:path';
-import { makeRelative, shortenPath } from '../utils/paths.js';
-import type { ToolInvocation, ToolLocation, ToolResult } from './tools.js';
-import { BaseDeclarativeTool, BaseToolInvocation, Kind } from './tools.js';
-import { ToolNames, ToolDisplayNames } from './tool-names.js';
-
-import type { PartUnion } from '../types/llm.js';
-import type { PermissionDecision } from '../permissions/types.js';
-import {
-  processSingleFileContent,
-  getSpecificMimeType,
-} from '../utils/fileUtils.js';
-import type { Config } from '../config/config.js';
-import { FileOperation } from '../telemetry/metrics.js';
-import { getProgrammingLanguage } from '../telemetry/telemetry-utils.js';
-import { logFileOperation } from '../telemetry/loggers.js';
-import { FileOperationEvent } from '../telemetry/types.js';
-import { isSubpaths, isSubpath } from '../utils/paths.js';
-import { Storage } from '../config/storage.js';
+import os from "node:os";
+import path from "node:path";
+import type { Config } from "../config/config.js";
+import { Storage } from "../config/storage.js";
+import type { PermissionDecision } from "../permissions/types.js";
+import { logFileOperation } from "../telemetry/loggers.js";
+import { FileOperation } from "../telemetry/metrics.js";
+import { getProgrammingLanguage } from "../telemetry/telemetry-utils.js";
+import { FileOperationEvent } from "../telemetry/types.js";
+import type { PartUnion } from "../types/llm.js";
+import { getSpecificMimeType, processSingleFileContent } from "../utils/fileUtils.js";
+import { isSubpath, isSubpaths, makeRelative, shortenPath } from "../utils/paths.js";
+import { ToolDisplayNames, ToolNames } from "./tool-names.js";
+import type { ToolInvocation, ToolLocation, ToolResult } from "./tools.js";
+import { BaseDeclarativeTool, BaseToolInvocation, Kind } from "./tools.js";
 
 /**
  * Parameters for the ReadFile tool
@@ -45,10 +40,7 @@ export interface ReadFileToolParams {
   limit?: number;
 }
 
-class ReadFileToolInvocation extends BaseToolInvocation<
-  ReadFileToolParams,
-  ToolResult
-> {
+class ReadFileToolInvocation extends BaseToolInvocation<ReadFileToolParams, ToolResult> {
   constructor(
     private config: Config,
     params: ReadFileToolParams,
@@ -57,10 +49,7 @@ class ReadFileToolInvocation extends BaseToolInvocation<
   }
 
   getDescription(): string {
-    const relativePath = makeRelative(
-      this.params.file_path,
-      this.config.getTargetDir(),
-    );
+    const relativePath = makeRelative(this.params.file_path, this.config.getTargetDir());
     const shortPath = shortenPath(relativePath);
 
     const { offset, limit } = this.params;
@@ -100,9 +89,9 @@ class ReadFileToolInvocation extends BaseToolInvocation<
       isSubpaths(userSkillsDirs, filePath) ||
       isSubpath(userExtensionsDir, filePath)
     ) {
-      return 'allow';
+      return "allow";
     }
-    return 'ask';
+    return "ask";
   }
 
   async execute(): Promise<ToolResult> {
@@ -116,7 +105,7 @@ class ReadFileToolInvocation extends BaseToolInvocation<
     if (result.error) {
       return {
         llmContent: result.llmContent,
-        returnDisplay: result.returnDisplay || 'Error reading file',
+        returnDisplay: result.returnDisplay || "Error reading file",
         error: {
           message: result.error,
           type: result.errorType,
@@ -130,13 +119,11 @@ class ReadFileToolInvocation extends BaseToolInvocation<
       const total = result.originalLineCount!;
       llmContent = `Showing lines ${start}-${end} of ${total} total lines.\n\n---\n\n${result.llmContent}`;
     } else {
-      llmContent = result.llmContent || '';
+      llmContent = result.llmContent || "";
     }
 
     const lines =
-      typeof result.llmContent === 'string'
-        ? result.llmContent.split('\n').length
-        : undefined;
+      typeof result.llmContent === "string" ? result.llmContent.split("\n").length : undefined;
     const mimetype = getSpecificMimeType(this.params.file_path);
     const programming_language = getProgrammingLanguage({
       file_path: this.params.file_path,
@@ -155,7 +142,7 @@ class ReadFileToolInvocation extends BaseToolInvocation<
 
     return {
       llmContent,
-      returnDisplay: result.returnDisplay || '',
+      returnDisplay: result.returnDisplay || "",
     };
   }
 }
@@ -163,10 +150,7 @@ class ReadFileToolInvocation extends BaseToolInvocation<
 /**
  * Implementation of the ReadFile tool logic
  */
-export class ReadFileTool extends BaseDeclarativeTool<
-  ReadFileToolParams,
-  ToolResult
-> {
+export class ReadFileTool extends BaseDeclarativeTool<ReadFileToolParams, ToolResult> {
   static readonly Name: string = ToolNames.READ_FILE;
 
   constructor(private config: Config) {
@@ -180,30 +164,28 @@ export class ReadFileTool extends BaseDeclarativeTool<
           file_path: {
             description:
               "The absolute path to the file to read (e.g., '/home/user/project/file.txt'). Relative paths are not supported. You must provide an absolute path.",
-            type: 'string',
+            type: "string",
           },
           offset: {
             description:
               "Optional: For text files, the 0-based line number to start reading from. Requires 'limit' to be set. Use for paginating through large files.",
-            type: 'number',
+            type: "number",
           },
           limit: {
             description:
               "Optional: For text files, maximum number of lines to read. Use with 'offset' to paginate through large files. If omitted, reads the entire file (if feasible, up to a default limit).",
-            type: 'number',
+            type: "number",
           },
         },
-        required: ['file_path'],
-        type: 'object',
+        required: ["file_path"],
+        type: "object",
       },
     );
   }
 
-  protected override validateToolParamValues(
-    params: ReadFileToolParams,
-  ): string | null {
+  protected override validateToolParamValues(params: ReadFileToolParams): string | null {
     const filePath = params.file_path;
-    if (params.file_path.trim() === '') {
+    if (params.file_path.trim() === "") {
       return "The 'file_path' parameter must be non-empty.";
     }
 
@@ -212,10 +194,10 @@ export class ReadFileTool extends BaseDeclarativeTool<
     }
 
     if (params.offset !== undefined && params.offset < 0) {
-      return 'Offset must be a non-negative number';
+      return "Offset must be a non-negative number";
     }
     if (params.limit !== undefined && params.limit <= 0) {
-      return 'Limit must be a positive number';
+      return "Limit must be a positive number";
     }
 
     const fileService = this.config.getFileService();

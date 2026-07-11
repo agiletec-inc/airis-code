@@ -4,28 +4,25 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { useCallback, useMemo, useEffect } from 'react';
-import type { Suggestion } from '../components/SuggestionsDisplay.js';
-import type { CommandContext, SlashCommand } from '../commands/types.js';
-import type { TextBuffer } from '../components/shared/text-buffer.js';
-import { logicalPosToOffset } from '../components/shared/text-buffer.js';
-import { isSlashCommand } from '../utils/commandUtils.js';
-import { toCodePoints } from '../utils/textUtils.js';
-import { useAtCompletion } from './useAtCompletion.js';
-import { useSlashCompletion } from './useSlashCompletion.js';
-import type { PromptCompletion } from './usePromptCompletion.js';
-import {
-  usePromptCompletion,
-  PROMPT_COMPLETION_MIN_LENGTH,
-} from './usePromptCompletion.js';
-import type { Config } from '@airiscode/gemini-cli-core';
-import { useCompletion } from './useCompletion.js';
+import type { Config } from "@airiscode/gemini-cli-core";
+import { useCallback, useEffect, useMemo } from "react";
+import type { CommandContext, SlashCommand } from "../commands/types.js";
+import type { Suggestion } from "../components/SuggestionsDisplay.js";
+import type { TextBuffer } from "../components/shared/text-buffer.js";
+import { logicalPosToOffset } from "../components/shared/text-buffer.js";
+import { isSlashCommand } from "../utils/commandUtils.js";
+import { toCodePoints } from "../utils/textUtils.js";
+import { useAtCompletion } from "./useAtCompletion.js";
+import { useCompletion } from "./useCompletion.js";
+import type { PromptCompletion } from "./usePromptCompletion.js";
+import { PROMPT_COMPLETION_MIN_LENGTH, usePromptCompletion } from "./usePromptCompletion.js";
+import { useSlashCompletion } from "./useSlashCompletion.js";
 
 export enum CompletionMode {
-  IDLE = 'IDLE',
-  AT = 'AT',
-  SLASH = 'SLASH',
-  PROMPT = 'PROMPT',
+  IDLE = "IDLE",
+  AT = "AT",
+  SLASH = "SLASH",
+  PROMPT = "PROMPT",
 }
 
 export interface UseCommandCompletionReturn {
@@ -42,15 +39,11 @@ export interface UseCommandCompletionReturn {
   navigateDown: () => void;
   handleAutocomplete: (indexToUse: number) => void;
   promptCompletion: PromptCompletion;
-  getCommandFromSuggestion: (
-    suggestion: Suggestion,
-  ) => SlashCommand | undefined;
+  getCommandFromSuggestion: (suggestion: Suggestion) => SlashCommand | undefined;
   slashCompletionRange: {
     completionStart: number;
     completionEnd: number;
-    getCommandFromSuggestion: (
-      suggestion: Suggestion,
-    ) => SlashCommand | undefined;
+    getCommandFromSuggestion: (suggestion: Suggestion) => SlashCommand | undefined;
     isArgumentCompletion: boolean;
     leafCommand: SlashCommand | null;
   };
@@ -89,86 +82,84 @@ export function useCommandCompletion(
   const cursorRow = buffer.cursor[0];
   const cursorCol = buffer.cursor[1];
 
-  const { completionMode, query, completionStart, completionEnd } =
-    useMemo(() => {
-      const currentLine = buffer.lines[cursorRow] || '';
-      if (cursorRow === 0 && isSlashCommand(currentLine.trim())) {
-        return {
-          completionMode: CompletionMode.SLASH,
-          query: currentLine,
-          completionStart: 0,
-          completionEnd: currentLine.length,
-        };
-      }
+  const { completionMode, query, completionStart, completionEnd } = useMemo(() => {
+    const currentLine = buffer.lines[cursorRow] || "";
+    if (cursorRow === 0 && isSlashCommand(currentLine.trim())) {
+      return {
+        completionMode: CompletionMode.SLASH,
+        query: currentLine,
+        completionStart: 0,
+        completionEnd: currentLine.length,
+      };
+    }
 
-      const codePoints = toCodePoints(currentLine);
-      for (let i = cursorCol - 1; i >= 0; i--) {
-        const char = codePoints[i];
+    const codePoints = toCodePoints(currentLine);
+    for (let i = cursorCol - 1; i >= 0; i--) {
+      const char = codePoints[i];
 
-        if (char === ' ') {
-          let backslashCount = 0;
-          for (let j = i - 1; j >= 0 && codePoints[j] === '\\'; j--) {
-            backslashCount++;
-          }
-          if (backslashCount % 2 === 0) {
-            break;
-          }
-        } else if (char === '@') {
-          let end = codePoints.length;
-          for (let i = cursorCol; i < codePoints.length; i++) {
-            if (codePoints[i] === ' ') {
-              let backslashCount = 0;
-              for (let j = i - 1; j >= 0 && codePoints[j] === '\\'; j--) {
-                backslashCount++;
-              }
+      if (char === " ") {
+        let backslashCount = 0;
+        for (let j = i - 1; j >= 0 && codePoints[j] === "\\"; j--) {
+          backslashCount++;
+        }
+        if (backslashCount % 2 === 0) {
+          break;
+        }
+      } else if (char === "@") {
+        let end = codePoints.length;
+        for (let i = cursorCol; i < codePoints.length; i++) {
+          if (codePoints[i] === " ") {
+            let backslashCount = 0;
+            for (let j = i - 1; j >= 0 && codePoints[j] === "\\"; j--) {
+              backslashCount++;
+            }
 
-              if (backslashCount % 2 === 0) {
-                end = i;
-                break;
-              }
+            if (backslashCount % 2 === 0) {
+              end = i;
+              break;
             }
           }
-          const pathStart = i + 1;
-          const partialPath = currentLine.substring(pathStart, end);
-          return {
-            completionMode: CompletionMode.AT,
-            query: partialPath,
-            completionStart: pathStart,
-            completionEnd: end,
-          };
         }
-      }
-
-      // Check for prompt completion - only if enabled
-      const trimmedText = buffer.text.trim();
-      const isPromptCompletionEnabled =
-        config?.getEnablePromptCompletion() ?? false;
-
-      if (
-        isPromptCompletionEnabled &&
-        trimmedText.length >= PROMPT_COMPLETION_MIN_LENGTH &&
-        !isSlashCommand(trimmedText) &&
-        !trimmedText.includes('@')
-      ) {
+        const pathStart = i + 1;
+        const partialPath = currentLine.substring(pathStart, end);
         return {
-          completionMode: CompletionMode.PROMPT,
-          query: trimmedText,
-          completionStart: 0,
-          completionEnd: trimmedText.length,
+          completionMode: CompletionMode.AT,
+          query: partialPath,
+          completionStart: pathStart,
+          completionEnd: end,
         };
       }
+    }
 
+    // Check for prompt completion - only if enabled
+    const trimmedText = buffer.text.trim();
+    const isPromptCompletionEnabled = config?.getEnablePromptCompletion() ?? false;
+
+    if (
+      isPromptCompletionEnabled &&
+      trimmedText.length >= PROMPT_COMPLETION_MIN_LENGTH &&
+      !isSlashCommand(trimmedText) &&
+      !trimmedText.includes("@")
+    ) {
       return {
-        completionMode: CompletionMode.IDLE,
-        query: null,
-        completionStart: -1,
-        completionEnd: -1,
+        completionMode: CompletionMode.PROMPT,
+        query: trimmedText,
+        completionStart: 0,
+        completionEnd: trimmedText.length,
       };
-    }, [cursorRow, cursorCol, buffer.lines, buffer.text, config]);
+    }
+
+    return {
+      completionMode: CompletionMode.IDLE,
+      query: null,
+      completionStart: -1,
+      completionEnd: -1,
+    };
+  }, [cursorRow, cursorCol, buffer.lines, buffer.text, config]);
 
   useAtCompletion({
     enabled: completionMode === CompletionMode.AT,
-    pattern: query || '',
+    pattern: query || "",
     config,
     cwd,
     setSuggestions,
@@ -221,7 +212,7 @@ export function useCommandCompletion(
    */
   const getCompletedText = useCallback(
     (suggestion: Suggestion): string | null => {
-      const currentLine = buffer.lines[cursorRow] || '';
+      const currentLine = buffer.lines[cursorRow] || "";
 
       let start = completionStart;
       let end = completionEnd;
@@ -238,26 +229,15 @@ export function useCommandCompletion(
       let suggestionText = suggestion.value;
       if (completionMode === CompletionMode.SLASH) {
         // Add leading space if completing a subcommand (cursor is after parent command with no space)
-        if (start === end && start > 1 && currentLine[start - 1] !== ' ') {
-          suggestionText = ' ' + suggestionText;
+        if (start === end && start > 1 && currentLine[start - 1] !== " ") {
+          suggestionText = " " + suggestionText;
         }
       }
 
       // Build the completed text with proper spacing
-      return (
-        currentLine.substring(0, start) +
-        suggestionText +
-        currentLine.substring(end)
-      );
+      return currentLine.substring(0, start) + suggestionText + currentLine.substring(end);
     },
-    [
-      cursorRow,
-      buffer.lines,
-      completionMode,
-      completionStart,
-      completionEnd,
-      slashCompletionRange,
-    ],
+    [cursorRow, buffer.lines, completionMode, completionStart, completionEnd, slashCompletionRange],
   );
 
   const handleAutocomplete = useCallback(
@@ -282,23 +262,19 @@ export function useCommandCompletion(
       // Add space padding for Tab completion (auto-execute gets padding from getCompletedText)
       let suggestionText = suggestion.value;
       if (completionMode === CompletionMode.SLASH) {
-        if (
-          start === end &&
-          start > 1 &&
-          (buffer.lines[cursorRow] || '')[start - 1] !== ' '
-        ) {
-          suggestionText = ' ' + suggestionText;
+        if (start === end && start > 1 && (buffer.lines[cursorRow] || "")[start - 1] !== " ") {
+          suggestionText = " " + suggestionText;
         }
       }
 
-      const lineCodePoints = toCodePoints(buffer.lines[cursorRow] || '');
+      const lineCodePoints = toCodePoints(buffer.lines[cursorRow] || "");
       const charAfterCompletion = lineCodePoints[end];
       if (
-        charAfterCompletion !== ' ' &&
-        !suggestionText.endsWith('/') &&
-        !suggestionText.endsWith('\\')
+        charAfterCompletion !== " " &&
+        !suggestionText.endsWith("/") &&
+        !suggestionText.endsWith("\\")
       ) {
-        suggestionText += ' ';
+        suggestionText += " ";
       }
 
       buffer.replaceRangeByOffset(

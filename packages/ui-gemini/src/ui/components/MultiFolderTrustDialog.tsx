@@ -4,17 +4,17 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { Box, Text } from 'ink';
-import type React from 'react';
-import { useState } from 'react';
-import { theme } from '../semantic-colors.js';
-import type { RadioSelectItem } from './shared/RadioButtonSelect.js';
-import { RadioButtonSelect } from './shared/RadioButtonSelect.js';
-import { useKeypress } from '../hooks/useKeypress.js';
-import { loadTrustedFolders, TrustLevel } from '../../config/trustedFolders.js';
-import { expandHomeDir } from '../utils/directoryUtils.js';
-import { MessageType, type HistoryItem } from '../types.js';
-import type { Config } from '@airiscode/gemini-cli-core';
+import type { Config } from "@airiscode/gemini-cli-core";
+import { Box, Text } from "ink";
+import type React from "react";
+import { useState } from "react";
+import { loadTrustedFolders, TrustLevel } from "../../config/trustedFolders.js";
+import { useKeypress } from "../hooks/useKeypress.js";
+import { theme } from "../semantic-colors.js";
+import { type HistoryItem, MessageType } from "../types.js";
+import { expandHomeDir } from "../utils/directoryUtils.js";
+import type { RadioSelectItem } from "./shared/RadioButtonSelect.js";
+import { RadioButtonSelect } from "./shared/RadioButtonSelect.js";
 
 export enum MultiFolderTrustChoice {
   YES,
@@ -29,15 +29,12 @@ export interface MultiFolderTrustDialogProps {
   errors: string[];
   finishAddingDirectories: (
     config: Config,
-    addItem: (
-      itemData: Omit<HistoryItem, 'id'>,
-      baseTimestamp: number,
-    ) => number,
+    addItem: (itemData: Omit<HistoryItem, "id">, baseTimestamp: number) => number,
     added: string[],
     errors: string[],
   ) => Promise<void>;
   config: Config;
-  addItem: (itemData: Omit<HistoryItem, 'id'>, baseTimestamp: number) => number;
+  addItem: (itemData: Omit<HistoryItem, "id">, baseTimestamp: number) => number;
 }
 
 export const MultiFolderTrustDialog: React.FC<MultiFolderTrustDialogProps> = ({
@@ -55,9 +52,7 @@ export const MultiFolderTrustDialog: React.FC<MultiFolderTrustDialogProps> = ({
     setSubmitted(true);
     const errors = [...initialErrors];
     errors.push(
-      `Operation cancelled. The following directories were not added:\n- ${folders.join(
-        '\n- ',
-      )}`,
+      `Operation cancelled. The following directories were not added:\n- ${folders.join("\n- ")}`,
     );
     await finishAddingDirectories(config, addItem, trustedDirs, errors);
     onComplete();
@@ -65,7 +60,7 @@ export const MultiFolderTrustDialog: React.FC<MultiFolderTrustDialogProps> = ({
 
   useKeypress(
     (key) => {
-      if (key.name === 'escape') {
+      if (key.name === "escape") {
         // eslint-disable-next-line @typescript-eslint/no-floating-promises
         handleCancel();
       }
@@ -75,19 +70,19 @@ export const MultiFolderTrustDialog: React.FC<MultiFolderTrustDialogProps> = ({
 
   const options: Array<RadioSelectItem<MultiFolderTrustChoice>> = [
     {
-      label: 'Yes',
+      label: "Yes",
       value: MultiFolderTrustChoice.YES,
-      key: 'yes',
+      key: "yes",
     },
     {
-      label: 'Yes, and remember the directories as trusted',
+      label: "Yes, and remember the directories as trusted",
       value: MultiFolderTrustChoice.YES_AND_REMEMBER,
-      key: 'yes-and-remember',
+      key: "yes-and-remember",
     },
     {
-      label: 'No',
+      label: "No",
       value: MultiFolderTrustChoice.NO,
-      key: 'no',
+      key: "no",
     },
   ];
 
@@ -98,7 +93,7 @@ export const MultiFolderTrustDialog: React.FC<MultiFolderTrustDialogProps> = ({
       addItem(
         {
           type: MessageType.ERROR,
-          text: 'Configuration is not available.',
+          text: "Configuration is not available.",
         },
         Date.now(),
       );
@@ -114,7 +109,7 @@ export const MultiFolderTrustDialog: React.FC<MultiFolderTrustDialogProps> = ({
     if (choice === MultiFolderTrustChoice.NO) {
       errors.push(
         `The following directories were not added because they were not trusted:\n- ${folders.join(
-          '\n- ',
+          "\n- ",
         )}`,
       );
     } else {
@@ -151,21 +146,15 @@ export const MultiFolderTrustDialog: React.FC<MultiFolderTrustDialogProps> = ({
           <Text bold color={theme.text.primary}>
             Do you trust the following folders being added to this workspace?
           </Text>
-          <Text color={theme.text.secondary}>
-            {folders.map((f) => `- ${f}`).join('\n')}
-          </Text>
+          <Text color={theme.text.secondary}>{folders.map((f) => `- ${f}`).join("\n")}</Text>
           <Text color={theme.text.primary}>
-            Trusting a folder allows Gemini to read and perform auto-edits when
-            in auto-approval mode. This is a security feature to prevent
-            accidental execution in untrusted directories.
+            Trusting a folder allows Gemini to read and perform auto-edits when in auto-approval
+            mode. This is a security feature to prevent accidental execution in untrusted
+            directories.
           </Text>
         </Box>
 
-        <RadioButtonSelect
-          items={options}
-          onSelect={handleSelect}
-          isFocused={!submitted}
-        />
+        <RadioButtonSelect items={options} onSelect={handleSelect} isFocused={!submitted} />
       </Box>
       {submitted && (
         <Box marginLeft={1} marginTop={1}>

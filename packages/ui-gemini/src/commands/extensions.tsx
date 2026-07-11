@@ -4,23 +4,23 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import type { CommandModule } from 'yargs';
-import { installCommand } from './extensions/install.js';
-import { uninstallCommand } from './extensions/uninstall.js';
-import { listCommand } from './extensions/list.js';
-import { updateCommand } from './extensions/update.js';
-import { disableCommand } from './extensions/disable.js';
-import { enableCommand } from './extensions/enable.js';
-import { linkCommand } from './extensions/link.js';
-import { newCommand } from './extensions/new.js';
-import { validateCommand } from './extensions/validate.js';
-import { settingsCommand } from './extensions/settings.js';
-import { initializeOutputListenersAndFlush } from '../gemini.js';
+import type { CommandModule } from "yargs";
+import { initializeOutputListenersAndFlush } from "../gemini.js";
+import { disableCommand } from "./extensions/disable.js";
+import { enableCommand } from "./extensions/enable.js";
+import { installCommand } from "./extensions/install.js";
+import { linkCommand } from "./extensions/link.js";
+import { listCommand } from "./extensions/list.js";
+import { newCommand } from "./extensions/new.js";
+import { settingsCommand } from "./extensions/settings.js";
+import { uninstallCommand } from "./extensions/uninstall.js";
+import { updateCommand } from "./extensions/update.js";
+import { validateCommand } from "./extensions/validate.js";
 
 export const extensionsCommand: CommandModule = {
-  command: 'extensions <command>',
-  aliases: ['extension'],
-  describe: 'Manage Gemini CLI extensions.',
+  command: "extensions <command>",
+  aliases: ["extension"],
+  describe: "Manage Gemini CLI extensions.",
   builder: (yargs) =>
     yargs
       .middleware(() => initializeOutputListenersAndFlush())
@@ -34,7 +34,7 @@ export const extensionsCommand: CommandModule = {
       .command(newCommand)
       .command(validateCommand)
       .command(settingsCommand)
-      .demandCommand(1, 'You need at least one command before continuing.')
+      .demandCommand(1, "You need at least one command before continuing.")
       .version(false),
   handler: () => {
     // This handler is not called when a subcommand is provided.

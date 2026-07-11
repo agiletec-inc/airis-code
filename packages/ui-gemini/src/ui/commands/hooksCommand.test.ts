@@ -4,15 +4,15 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { vi, describe, it, expect, beforeEach, afterEach } from 'vitest';
-import { hooksCommand } from './hooksCommand.js';
-import { createMockCommandContext } from '../../test-utils/mockCommandContext.js';
-import { MessageType } from '../types.js';
-import type { HookRegistryEntry } from '@airiscode/gemini-cli-core';
-import { HookType, HookEventName, ConfigSource } from '@airiscode/gemini-cli-core';
-import type { CommandContext } from './types.js';
+import type { HookRegistryEntry } from "@airiscode/gemini-cli-core";
+import { ConfigSource, HookEventName, HookType } from "@airiscode/gemini-cli-core";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { createMockCommandContext } from "../../test-utils/mockCommandContext.js";
+import { MessageType } from "../types.js";
+import { hooksCommand } from "./hooksCommand.js";
+import type { CommandContext } from "./types.js";
 
-describe('hooksCommand', () => {
+describe("hooksCommand", () => {
   let mockContext: CommandContext;
   let mockHookSystem: {
     getAllHooks: ReturnType<typeof vi.fn>;
@@ -71,32 +71,32 @@ describe('hooksCommand', () => {
     vi.restoreAllMocks();
   });
 
-  describe('root command', () => {
-    it('should have the correct name and description', () => {
-      expect(hooksCommand.name).toBe('hooks');
-      expect(hooksCommand.description).toBe('Manage hooks');
+  describe("root command", () => {
+    it("should have the correct name and description", () => {
+      expect(hooksCommand.name).toBe("hooks");
+      expect(hooksCommand.description).toBe("Manage hooks");
     });
 
-    it('should have all expected subcommands', () => {
+    it("should have all expected subcommands", () => {
       expect(hooksCommand.subCommands).toBeDefined();
       expect(hooksCommand.subCommands).toHaveLength(3);
 
       const subCommandNames = hooksCommand.subCommands!.map((cmd) => cmd.name);
-      expect(subCommandNames).toContain('panel');
-      expect(subCommandNames).toContain('enable');
-      expect(subCommandNames).toContain('disable');
+      expect(subCommandNames).toContain("panel");
+      expect(subCommandNames).toContain("enable");
+      expect(subCommandNames).toContain("disable");
     });
 
-    it('should delegate to panel action when invoked without subcommand', async () => {
+    it("should delegate to panel action when invoked without subcommand", async () => {
       if (!hooksCommand.action) {
-        throw new Error('hooks command must have an action');
+        throw new Error("hooks command must have an action");
       }
 
       mockHookSystem.getAllHooks.mockReturnValue([
-        createMockHook('test-hook', HookEventName.BeforeTool, true),
+        createMockHook("test-hook", HookEventName.BeforeTool, true),
       ]);
 
-      await hooksCommand.action(mockContext, '');
+      await hooksCommand.action(mockContext, "");
 
       expect(mockContext.ui.addItem).toHaveBeenCalledWith(
         expect.objectContaining({
@@ -107,86 +107,76 @@ describe('hooksCommand', () => {
     });
   });
 
-  describe('panel subcommand', () => {
-    it('should return error when config is not loaded', async () => {
+  describe("panel subcommand", () => {
+    it("should return error when config is not loaded", async () => {
       const contextWithoutConfig = createMockCommandContext({
         services: {
           config: null,
         },
       });
 
-      const panelCmd = hooksCommand.subCommands!.find(
-        (cmd) => cmd.name === 'panel',
-      );
+      const panelCmd = hooksCommand.subCommands!.find((cmd) => cmd.name === "panel");
       if (!panelCmd?.action) {
-        throw new Error('panel command must have an action');
+        throw new Error("panel command must have an action");
       }
 
-      const result = await panelCmd.action(contextWithoutConfig, '');
+      const result = await panelCmd.action(contextWithoutConfig, "");
 
       expect(result).toEqual({
-        type: 'message',
-        messageType: 'error',
-        content: 'Config not loaded.',
+        type: "message",
+        messageType: "error",
+        content: "Config not loaded.",
       });
     });
 
-    it('should return info message when hook system is not enabled', async () => {
+    it("should return info message when hook system is not enabled", async () => {
       mockConfig.getHookSystem.mockReturnValue(null);
 
-      const panelCmd = hooksCommand.subCommands!.find(
-        (cmd) => cmd.name === 'panel',
-      );
+      const panelCmd = hooksCommand.subCommands!.find((cmd) => cmd.name === "panel");
       if (!panelCmd?.action) {
-        throw new Error('panel command must have an action');
+        throw new Error("panel command must have an action");
       }
 
-      const result = await panelCmd.action(mockContext, '');
+      const result = await panelCmd.action(mockContext, "");
 
       expect(result).toEqual({
-        type: 'message',
-        messageType: 'info',
-        content:
-          'Hook system is not enabled. Enable it in settings with tools.enableHooks',
+        type: "message",
+        messageType: "info",
+        content: "Hook system is not enabled. Enable it in settings with tools.enableHooks",
       });
     });
 
-    it('should return info message when no hooks are configured', async () => {
+    it("should return info message when no hooks are configured", async () => {
       mockHookSystem.getAllHooks.mockReturnValue([]);
 
-      const panelCmd = hooksCommand.subCommands!.find(
-        (cmd) => cmd.name === 'panel',
-      );
+      const panelCmd = hooksCommand.subCommands!.find((cmd) => cmd.name === "panel");
       if (!panelCmd?.action) {
-        throw new Error('panel command must have an action');
+        throw new Error("panel command must have an action");
       }
 
-      const result = await panelCmd.action(mockContext, '');
+      const result = await panelCmd.action(mockContext, "");
 
       expect(result).toEqual({
-        type: 'message',
-        messageType: 'info',
-        content:
-          'No hooks configured. Add hooks to your settings to get started.',
+        type: "message",
+        messageType: "info",
+        content: "No hooks configured. Add hooks to your settings to get started.",
       });
     });
 
-    it('should display hooks list when hooks are configured', async () => {
+    it("should display hooks list when hooks are configured", async () => {
       const mockHooks: HookRegistryEntry[] = [
-        createMockHook('echo-test', HookEventName.BeforeTool, true),
-        createMockHook('notify', HookEventName.AfterAgent, false),
+        createMockHook("echo-test", HookEventName.BeforeTool, true),
+        createMockHook("notify", HookEventName.AfterAgent, false),
       ];
 
       mockHookSystem.getAllHooks.mockReturnValue(mockHooks);
 
-      const panelCmd = hooksCommand.subCommands!.find(
-        (cmd) => cmd.name === 'panel',
-      );
+      const panelCmd = hooksCommand.subCommands!.find((cmd) => cmd.name === "panel");
       if (!panelCmd?.action) {
-        throw new Error('panel command must have an action');
+        throw new Error("panel command must have an action");
       }
 
-      await panelCmd.action(mockContext, '');
+      await panelCmd.action(mockContext, "");
 
       expect(mockContext.ui.addItem).toHaveBeenCalledWith(
         expect.objectContaining({
@@ -198,350 +188,312 @@ describe('hooksCommand', () => {
     });
   });
 
-  describe('enable subcommand', () => {
-    it('should return error when config is not loaded', async () => {
+  describe("enable subcommand", () => {
+    it("should return error when config is not loaded", async () => {
       const contextWithoutConfig = createMockCommandContext({
         services: {
           config: null,
         },
       });
 
-      const enableCmd = hooksCommand.subCommands!.find(
-        (cmd) => cmd.name === 'enable',
-      );
+      const enableCmd = hooksCommand.subCommands!.find((cmd) => cmd.name === "enable");
       if (!enableCmd?.action) {
-        throw new Error('enable command must have an action');
+        throw new Error("enable command must have an action");
       }
 
-      const result = await enableCmd.action(contextWithoutConfig, 'test-hook');
+      const result = await enableCmd.action(contextWithoutConfig, "test-hook");
 
       expect(result).toEqual({
-        type: 'message',
-        messageType: 'error',
-        content: 'Config not loaded.',
+        type: "message",
+        messageType: "error",
+        content: "Config not loaded.",
       });
     });
 
-    it('should return error when hook system is not enabled', async () => {
+    it("should return error when hook system is not enabled", async () => {
       mockConfig.getHookSystem.mockReturnValue(null);
 
-      const enableCmd = hooksCommand.subCommands!.find(
-        (cmd) => cmd.name === 'enable',
-      );
+      const enableCmd = hooksCommand.subCommands!.find((cmd) => cmd.name === "enable");
       if (!enableCmd?.action) {
-        throw new Error('enable command must have an action');
+        throw new Error("enable command must have an action");
       }
 
-      const result = await enableCmd.action(mockContext, 'test-hook');
+      const result = await enableCmd.action(mockContext, "test-hook");
 
       expect(result).toEqual({
-        type: 'message',
-        messageType: 'error',
-        content: 'Hook system is not enabled.',
+        type: "message",
+        messageType: "error",
+        content: "Hook system is not enabled.",
       });
     });
 
-    it('should return error when hook name is not provided', async () => {
-      const enableCmd = hooksCommand.subCommands!.find(
-        (cmd) => cmd.name === 'enable',
-      );
+    it("should return error when hook name is not provided", async () => {
+      const enableCmd = hooksCommand.subCommands!.find((cmd) => cmd.name === "enable");
       if (!enableCmd?.action) {
-        throw new Error('enable command must have an action');
+        throw new Error("enable command must have an action");
       }
 
-      const result = await enableCmd.action(mockContext, '');
+      const result = await enableCmd.action(mockContext, "");
 
       expect(result).toEqual({
-        type: 'message',
-        messageType: 'error',
-        content: 'Usage: /hooks enable <hook-name>',
+        type: "message",
+        messageType: "error",
+        content: "Usage: /hooks enable <hook-name>",
       });
     });
 
-    it('should enable a hook and update settings', async () => {
+    it("should enable a hook and update settings", async () => {
       // Update the context's settings with disabled hooks
       mockContext.services.settings.merged.hooks = {
-        disabled: ['test-hook', 'other-hook'],
+        disabled: ["test-hook", "other-hook"],
       };
 
-      const enableCmd = hooksCommand.subCommands!.find(
-        (cmd) => cmd.name === 'enable',
-      );
+      const enableCmd = hooksCommand.subCommands!.find((cmd) => cmd.name === "enable");
       if (!enableCmd?.action) {
-        throw new Error('enable command must have an action');
+        throw new Error("enable command must have an action");
       }
 
-      const result = await enableCmd.action(mockContext, 'test-hook');
+      const result = await enableCmd.action(mockContext, "test-hook");
 
       expect(mockContext.services.settings.setValue).toHaveBeenCalledWith(
         expect.any(String),
-        'hooks.disabled',
-        ['other-hook'],
+        "hooks.disabled",
+        ["other-hook"],
       );
-      expect(mockHookSystem.setHookEnabled).toHaveBeenCalledWith(
-        'test-hook',
-        true,
-      );
+      expect(mockHookSystem.setHookEnabled).toHaveBeenCalledWith("test-hook", true);
       expect(result).toEqual({
-        type: 'message',
-        messageType: 'info',
+        type: "message",
+        messageType: "info",
         content: 'Hook "test-hook" enabled successfully.',
       });
     });
 
-    it('should handle error when enabling hook fails', async () => {
+    it("should handle error when enabling hook fails", async () => {
       mockSettings.setValue.mockImplementationOnce(() => {
-        throw new Error('Failed to save settings');
+        throw new Error("Failed to save settings");
       });
 
-      const enableCmd = hooksCommand.subCommands!.find(
-        (cmd) => cmd.name === 'enable',
-      );
+      const enableCmd = hooksCommand.subCommands!.find((cmd) => cmd.name === "enable");
       if (!enableCmd?.action) {
-        throw new Error('enable command must have an action');
+        throw new Error("enable command must have an action");
       }
 
-      const result = await enableCmd.action(mockContext, 'test-hook');
+      const result = await enableCmd.action(mockContext, "test-hook");
 
       expect(result).toEqual({
-        type: 'message',
-        messageType: 'error',
-        content: 'Failed to enable hook: Failed to save settings',
+        type: "message",
+        messageType: "error",
+        content: "Failed to enable hook: Failed to save settings",
       });
     });
   });
 
-  describe('disable subcommand', () => {
-    it('should return error when config is not loaded', async () => {
+  describe("disable subcommand", () => {
+    it("should return error when config is not loaded", async () => {
       const contextWithoutConfig = createMockCommandContext({
         services: {
           config: null,
         },
       });
 
-      const disableCmd = hooksCommand.subCommands!.find(
-        (cmd) => cmd.name === 'disable',
-      );
+      const disableCmd = hooksCommand.subCommands!.find((cmd) => cmd.name === "disable");
       if (!disableCmd?.action) {
-        throw new Error('disable command must have an action');
+        throw new Error("disable command must have an action");
       }
 
-      const result = await disableCmd.action(contextWithoutConfig, 'test-hook');
+      const result = await disableCmd.action(contextWithoutConfig, "test-hook");
 
       expect(result).toEqual({
-        type: 'message',
-        messageType: 'error',
-        content: 'Config not loaded.',
+        type: "message",
+        messageType: "error",
+        content: "Config not loaded.",
       });
     });
 
-    it('should return error when hook system is not enabled', async () => {
+    it("should return error when hook system is not enabled", async () => {
       mockConfig.getHookSystem.mockReturnValue(null);
 
-      const disableCmd = hooksCommand.subCommands!.find(
-        (cmd) => cmd.name === 'disable',
-      );
+      const disableCmd = hooksCommand.subCommands!.find((cmd) => cmd.name === "disable");
       if (!disableCmd?.action) {
-        throw new Error('disable command must have an action');
+        throw new Error("disable command must have an action");
       }
 
-      const result = await disableCmd.action(mockContext, 'test-hook');
+      const result = await disableCmd.action(mockContext, "test-hook");
 
       expect(result).toEqual({
-        type: 'message',
-        messageType: 'error',
-        content: 'Hook system is not enabled.',
+        type: "message",
+        messageType: "error",
+        content: "Hook system is not enabled.",
       });
     });
 
-    it('should return error when hook name is not provided', async () => {
-      const disableCmd = hooksCommand.subCommands!.find(
-        (cmd) => cmd.name === 'disable',
-      );
+    it("should return error when hook name is not provided", async () => {
+      const disableCmd = hooksCommand.subCommands!.find((cmd) => cmd.name === "disable");
       if (!disableCmd?.action) {
-        throw new Error('disable command must have an action');
+        throw new Error("disable command must have an action");
       }
 
-      const result = await disableCmd.action(mockContext, '');
+      const result = await disableCmd.action(mockContext, "");
 
       expect(result).toEqual({
-        type: 'message',
-        messageType: 'error',
-        content: 'Usage: /hooks disable <hook-name>',
+        type: "message",
+        messageType: "error",
+        content: "Usage: /hooks disable <hook-name>",
       });
     });
 
-    it('should disable a hook and update settings', async () => {
+    it("should disable a hook and update settings", async () => {
       mockContext.services.settings.merged.hooks = {
         disabled: [],
       };
 
-      const disableCmd = hooksCommand.subCommands!.find(
-        (cmd) => cmd.name === 'disable',
-      );
+      const disableCmd = hooksCommand.subCommands!.find((cmd) => cmd.name === "disable");
       if (!disableCmd?.action) {
-        throw new Error('disable command must have an action');
+        throw new Error("disable command must have an action");
       }
 
-      const result = await disableCmd.action(mockContext, 'test-hook');
+      const result = await disableCmd.action(mockContext, "test-hook");
 
       expect(mockContext.services.settings.setValue).toHaveBeenCalledWith(
         expect.any(String),
-        'hooks.disabled',
-        ['test-hook'],
+        "hooks.disabled",
+        ["test-hook"],
       );
-      expect(mockHookSystem.setHookEnabled).toHaveBeenCalledWith(
-        'test-hook',
-        false,
-      );
+      expect(mockHookSystem.setHookEnabled).toHaveBeenCalledWith("test-hook", false);
       expect(result).toEqual({
-        type: 'message',
-        messageType: 'info',
+        type: "message",
+        messageType: "info",
         content: 'Hook "test-hook" disabled successfully.',
       });
     });
 
-    it('should return info when hook is already disabled', async () => {
+    it("should return info when hook is already disabled", async () => {
       // Update the context's settings with the hook already disabled
       mockContext.services.settings.merged.hooks = {
-        disabled: ['test-hook'],
+        disabled: ["test-hook"],
       };
 
-      const disableCmd = hooksCommand.subCommands!.find(
-        (cmd) => cmd.name === 'disable',
-      );
+      const disableCmd = hooksCommand.subCommands!.find((cmd) => cmd.name === "disable");
       if (!disableCmd?.action) {
-        throw new Error('disable command must have an action');
+        throw new Error("disable command must have an action");
       }
 
-      const result = await disableCmd.action(mockContext, 'test-hook');
+      const result = await disableCmd.action(mockContext, "test-hook");
 
       expect(mockContext.services.settings.setValue).not.toHaveBeenCalled();
       expect(mockHookSystem.setHookEnabled).not.toHaveBeenCalled();
       expect(result).toEqual({
-        type: 'message',
-        messageType: 'info',
+        type: "message",
+        messageType: "info",
         content: 'Hook "test-hook" is already disabled.',
       });
     });
 
-    it('should handle error when disabling hook fails', async () => {
+    it("should handle error when disabling hook fails", async () => {
       mockContext.services.settings.merged.hooks = {
         disabled: [],
       };
       mockSettings.setValue.mockImplementationOnce(() => {
-        throw new Error('Failed to save settings');
+        throw new Error("Failed to save settings");
       });
 
-      const disableCmd = hooksCommand.subCommands!.find(
-        (cmd) => cmd.name === 'disable',
-      );
+      const disableCmd = hooksCommand.subCommands!.find((cmd) => cmd.name === "disable");
       if (!disableCmd?.action) {
-        throw new Error('disable command must have an action');
+        throw new Error("disable command must have an action");
       }
 
-      const result = await disableCmd.action(mockContext, 'test-hook');
+      const result = await disableCmd.action(mockContext, "test-hook");
 
       expect(result).toEqual({
-        type: 'message',
-        messageType: 'error',
-        content: 'Failed to disable hook: Failed to save settings',
+        type: "message",
+        messageType: "error",
+        content: "Failed to disable hook: Failed to save settings",
       });
     });
   });
 
-  describe('completion', () => {
-    it('should return empty array when config is not available', () => {
+  describe("completion", () => {
+    it("should return empty array when config is not available", () => {
       const contextWithoutConfig = createMockCommandContext({
         services: {
           config: null,
         },
       });
 
-      const enableCmd = hooksCommand.subCommands!.find(
-        (cmd) => cmd.name === 'enable',
-      );
+      const enableCmd = hooksCommand.subCommands!.find((cmd) => cmd.name === "enable");
       if (!enableCmd?.completion) {
-        throw new Error('enable command must have completion');
+        throw new Error("enable command must have completion");
       }
 
-      const result = enableCmd.completion(contextWithoutConfig, 'test');
+      const result = enableCmd.completion(contextWithoutConfig, "test");
       expect(result).toEqual([]);
     });
 
-    it('should return empty array when hook system is not enabled', () => {
+    it("should return empty array when hook system is not enabled", () => {
       mockConfig.getHookSystem.mockReturnValue(null);
 
-      const enableCmd = hooksCommand.subCommands!.find(
-        (cmd) => cmd.name === 'enable',
-      );
+      const enableCmd = hooksCommand.subCommands!.find((cmd) => cmd.name === "enable");
       if (!enableCmd?.completion) {
-        throw new Error('enable command must have completion');
+        throw new Error("enable command must have completion");
       }
 
-      const result = enableCmd.completion(mockContext, 'test');
+      const result = enableCmd.completion(mockContext, "test");
       expect(result).toEqual([]);
     });
 
-    it('should return matching hook names', () => {
+    it("should return matching hook names", () => {
       const mockHooks: HookRegistryEntry[] = [
-        createMockHook('test-hook-1', HookEventName.BeforeTool, true),
-        createMockHook('test-hook-2', HookEventName.AfterTool, true),
-        createMockHook('other-hook', HookEventName.AfterAgent, false),
+        createMockHook("test-hook-1", HookEventName.BeforeTool, true),
+        createMockHook("test-hook-2", HookEventName.AfterTool, true),
+        createMockHook("other-hook", HookEventName.AfterAgent, false),
       ];
 
       mockHookSystem.getAllHooks.mockReturnValue(mockHooks);
 
-      const enableCmd = hooksCommand.subCommands!.find(
-        (cmd) => cmd.name === 'enable',
-      );
+      const enableCmd = hooksCommand.subCommands!.find((cmd) => cmd.name === "enable");
       if (!enableCmd?.completion) {
-        throw new Error('enable command must have completion');
+        throw new Error("enable command must have completion");
       }
 
-      const result = enableCmd.completion(mockContext, 'test');
-      expect(result).toEqual(['test-hook-1', 'test-hook-2']);
+      const result = enableCmd.completion(mockContext, "test");
+      expect(result).toEqual(["test-hook-1", "test-hook-2"]);
     });
 
-    it('should return all hook names when partial is empty', () => {
+    it("should return all hook names when partial is empty", () => {
       const mockHooks: HookRegistryEntry[] = [
-        createMockHook('hook-1', HookEventName.BeforeTool, true),
-        createMockHook('hook-2', HookEventName.AfterTool, true),
+        createMockHook("hook-1", HookEventName.BeforeTool, true),
+        createMockHook("hook-2", HookEventName.AfterTool, true),
       ];
 
       mockHookSystem.getAllHooks.mockReturnValue(mockHooks);
 
-      const enableCmd = hooksCommand.subCommands!.find(
-        (cmd) => cmd.name === 'enable',
-      );
+      const enableCmd = hooksCommand.subCommands!.find((cmd) => cmd.name === "enable");
       if (!enableCmd?.completion) {
-        throw new Error('enable command must have completion');
+        throw new Error("enable command must have completion");
       }
 
-      const result = enableCmd.completion(mockContext, '');
-      expect(result).toEqual(['hook-1', 'hook-2']);
+      const result = enableCmd.completion(mockContext, "");
+      expect(result).toEqual(["hook-1", "hook-2"]);
     });
 
-    it('should handle hooks without command name gracefully', () => {
+    it("should handle hooks without command name gracefully", () => {
       const mockHooks: HookRegistryEntry[] = [
-        createMockHook('test-hook', HookEventName.BeforeTool, true),
+        createMockHook("test-hook", HookEventName.BeforeTool, true),
         {
-          ...createMockHook('', HookEventName.AfterTool, true),
-          config: { command: '', type: HookType.Command, timeout: 30 },
+          ...createMockHook("", HookEventName.AfterTool, true),
+          config: { command: "", type: HookType.Command, timeout: 30 },
         },
       ];
 
       mockHookSystem.getAllHooks.mockReturnValue(mockHooks);
 
-      const enableCmd = hooksCommand.subCommands!.find(
-        (cmd) => cmd.name === 'enable',
-      );
+      const enableCmd = hooksCommand.subCommands!.find((cmd) => cmd.name === "enable");
       if (!enableCmd?.completion) {
-        throw new Error('enable command must have completion');
+        throw new Error("enable command must have completion");
       }
 
-      const result = enableCmd.completion(mockContext, 'test');
-      expect(result).toEqual(['test-hook']);
+      const result = enableCmd.completion(mockContext, "test");
+      expect(result).toEqual(["test-hook"]);
     });
   });
 });

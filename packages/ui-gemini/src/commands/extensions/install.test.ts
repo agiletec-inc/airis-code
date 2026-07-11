@@ -4,30 +4,29 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { describe, it, expect, vi, type MockInstance, type Mock } from 'vitest';
-import { handleInstall, installCommand } from './install.js';
-import yargs from 'yargs';
-import { debugLogger, type GeminiCLIExtension } from '@airiscode/gemini-cli-core';
-import type { ExtensionManager } from '../../config/extension-manager.js';
-import type { requestConsentNonInteractive } from '../../config/extensions/consent.js';
-import type * as fs from 'node:fs/promises';
-import type { Stats } from 'node:fs';
+import type { Stats } from "node:fs";
+import type * as fs from "node:fs/promises";
+import { debugLogger, type GeminiCLIExtension } from "@airiscode/gemini-cli-core";
+import { describe, expect, it, type Mock, type MockInstance, vi } from "vitest";
+import yargs from "yargs";
+import type { ExtensionManager } from "../../config/extension-manager.js";
+import type { requestConsentNonInteractive } from "../../config/extensions/consent.js";
+import { handleInstall, installCommand } from "./install.js";
 
 const mockInstallOrUpdateExtension: Mock<
   typeof ExtensionManager.prototype.installOrUpdateExtension
 > = vi.hoisted(() => vi.fn());
-const mockRequestConsentNonInteractive: Mock<
-  typeof requestConsentNonInteractive
-> = vi.hoisted(() => vi.fn());
+const mockRequestConsentNonInteractive: Mock<typeof requestConsentNonInteractive> = vi.hoisted(() =>
+  vi.fn(),
+);
 const mockStat: Mock<typeof fs.stat> = vi.hoisted(() => vi.fn());
 
-vi.mock('../../config/extensions/consent.js', () => ({
+vi.mock("../../config/extensions/consent.js", () => ({
   requestConsentNonInteractive: mockRequestConsentNonInteractive,
 }));
 
-vi.mock('../../config/extension-manager.ts', async (importOriginal) => {
-  const actual =
-    await importOriginal<typeof import('../../config/extension-manager.js')>();
+vi.mock("../../config/extension-manager.ts", async (importOriginal) => {
+  const actual = await importOriginal<typeof import("../../config/extension-manager.js")>();
   return {
     ...actual,
     ExtensionManager: vi.fn().mockImplementation(() => ({
@@ -37,41 +36,39 @@ vi.mock('../../config/extension-manager.ts', async (importOriginal) => {
   };
 });
 
-vi.mock('../../utils/errors.js', () => ({
+vi.mock("../../utils/errors.js", () => ({
   getErrorMessage: vi.fn((error: Error) => error.message),
 }));
 
-vi.mock('node:fs/promises', () => ({
+vi.mock("node:fs/promises", () => ({
   stat: mockStat,
   default: {
     stat: mockStat,
   },
 }));
 
-vi.mock('../utils.js', () => ({
+vi.mock("../utils.js", () => ({
   exitCli: vi.fn(),
 }));
 
-describe('extensions install command', () => {
-  it('should fail if no source is provided', () => {
+describe("extensions install command", () => {
+  it("should fail if no source is provided", () => {
     const validationParser = yargs([]).command(installCommand).fail(false);
-    expect(() => validationParser.parse('install')).toThrow(
-      'Not enough non-option arguments: got 0, need at least 1',
+    expect(() => validationParser.parse("install")).toThrow(
+      "Not enough non-option arguments: got 0, need at least 1",
     );
   });
 });
 
-describe('handleInstall', () => {
+describe("handleInstall", () => {
   let debugLogSpy: MockInstance;
   let debugErrorSpy: MockInstance;
   let processSpy: MockInstance;
 
   beforeEach(() => {
-    debugLogSpy = vi.spyOn(debugLogger, 'log');
-    debugErrorSpy = vi.spyOn(debugLogger, 'error');
-    processSpy = vi
-      .spyOn(process, 'exit')
-      .mockImplementation(() => undefined as never);
+    debugLogSpy = vi.spyOn(debugLogger, "log");
+    debugErrorSpy = vi.spyOn(debugLogger, "error");
+    processSpy = vi.spyOn(process, "exit").mockImplementation(() => undefined as never);
   });
 
   afterEach(() => {
@@ -81,13 +78,13 @@ describe('handleInstall', () => {
     vi.clearAllMocks();
   });
 
-  it('should install an extension from a http source', async () => {
+  it("should install an extension from a http source", async () => {
     mockInstallOrUpdateExtension.mockResolvedValue({
-      name: 'http-extension',
+      name: "http-extension",
     } as unknown as GeminiCLIExtension);
 
     await handleInstall({
-      source: 'http://google.com',
+      source: "http://google.com",
     });
 
     expect(debugLogSpy).toHaveBeenCalledWith(
@@ -95,13 +92,13 @@ describe('handleInstall', () => {
     );
   });
 
-  it('should install an extension from a https source', async () => {
+  it("should install an extension from a https source", async () => {
     mockInstallOrUpdateExtension.mockResolvedValue({
-      name: 'https-extension',
+      name: "https-extension",
     } as unknown as GeminiCLIExtension);
 
     await handleInstall({
-      source: 'https://google.com',
+      source: "https://google.com",
     });
 
     expect(debugLogSpy).toHaveBeenCalledWith(
@@ -109,13 +106,13 @@ describe('handleInstall', () => {
     );
   });
 
-  it('should install an extension from a git source', async () => {
+  it("should install an extension from a git source", async () => {
     mockInstallOrUpdateExtension.mockResolvedValue({
-      name: 'git-extension',
+      name: "git-extension",
     } as unknown as GeminiCLIExtension);
 
     await handleInstall({
-      source: 'git@some-url',
+      source: "git@some-url",
     });
 
     expect(debugLogSpy).toHaveBeenCalledWith(
@@ -123,23 +120,23 @@ describe('handleInstall', () => {
     );
   });
 
-  it('throws an error from an unknown source', async () => {
-    mockStat.mockRejectedValue(new Error('ENOENT: no such file or directory'));
+  it("throws an error from an unknown source", async () => {
+    mockStat.mockRejectedValue(new Error("ENOENT: no such file or directory"));
     await handleInstall({
-      source: 'test://google.com',
+      source: "test://google.com",
     });
 
-    expect(debugErrorSpy).toHaveBeenCalledWith('Install source not found.');
+    expect(debugErrorSpy).toHaveBeenCalledWith("Install source not found.");
     expect(processSpy).toHaveBeenCalledWith(1);
   });
 
-  it('should install an extension from a sso source', async () => {
+  it("should install an extension from a sso source", async () => {
     mockInstallOrUpdateExtension.mockResolvedValue({
-      name: 'sso-extension',
+      name: "sso-extension",
     } as unknown as GeminiCLIExtension);
 
     await handleInstall({
-      source: 'sso://google.com',
+      source: "sso://google.com",
     });
 
     expect(debugLogSpy).toHaveBeenCalledWith(
@@ -147,13 +144,13 @@ describe('handleInstall', () => {
     );
   });
 
-  it('should install an extension from a local path', async () => {
+  it("should install an extension from a local path", async () => {
     mockInstallOrUpdateExtension.mockResolvedValue({
-      name: 'local-extension',
+      name: "local-extension",
     } as unknown as GeminiCLIExtension);
     mockStat.mockResolvedValue({} as Stats);
     await handleInstall({
-      source: '/some/path',
+      source: "/some/path",
     });
 
     expect(debugLogSpy).toHaveBeenCalledWith(
@@ -161,14 +158,12 @@ describe('handleInstall', () => {
     );
   });
 
-  it('should throw an error if install extension fails', async () => {
-    mockInstallOrUpdateExtension.mockRejectedValue(
-      new Error('Install extension failed'),
-    );
+  it("should throw an error if install extension fails", async () => {
+    mockInstallOrUpdateExtension.mockRejectedValue(new Error("Install extension failed"));
 
-    await handleInstall({ source: 'git@some-url' });
+    await handleInstall({ source: "git@some-url" });
 
-    expect(debugErrorSpy).toHaveBeenCalledWith('Install extension failed');
+    expect(debugErrorSpy).toHaveBeenCalledWith("Install extension failed");
     expect(processSpy).toHaveBeenCalledWith(1);
   });
 });

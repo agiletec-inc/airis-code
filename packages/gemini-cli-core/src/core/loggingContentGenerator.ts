@@ -13,26 +13,18 @@ import type {
   EmbedContentResponse,
   GenerateContentConfig,
   GenerateContentParameters,
-  GenerateContentResponseUsageMetadata,
   GenerateContentResponse,
-} from '@google/genai';
-import type { ServerDetails } from '../telemetry/types.js';
-import {
-  ApiRequestEvent,
-  ApiResponseEvent,
-  ApiErrorEvent,
-} from '../telemetry/types.js';
-import type { Config } from '../config/config.js';
-import {
-  logApiError,
-  logApiRequest,
-  logApiResponse,
-} from '../telemetry/loggers.js';
-import type { ContentGenerator } from './contentGenerator.js';
-import { CodeAssistServer } from '../code_assist/server.js';
-import { toContents } from '../code_assist/converter.js';
-import { isStructuredError } from '../utils/quotaErrorDetection.js';
-import { runInDevTraceSpan, type SpanMetadata } from '../telemetry/trace.js';
+  GenerateContentResponseUsageMetadata,
+} from "@google/genai";
+import { toContents } from "../code_assist/converter.js";
+import { CodeAssistServer } from "../code_assist/server.js";
+import type { Config } from "../config/config.js";
+import { logApiError, logApiRequest, logApiResponse } from "../telemetry/loggers.js";
+import { runInDevTraceSpan, type SpanMetadata } from "../telemetry/trace.js";
+import type { ServerDetails } from "../telemetry/types.js";
+import { ApiErrorEvent, ApiRequestEvent, ApiResponseEvent } from "../telemetry/types.js";
+import { isStructuredError } from "../utils/quotaErrorDetection.js";
+import type { ContentGenerator } from "./contentGenerator.js";
 
 interface StructuredError {
   status: number;
@@ -76,17 +68,13 @@ export class LoggingContentGenerator implements ContentGenerator {
 
   private _getEndpointUrl(
     req: GenerateContentParameters,
-    method: 'generateContent' | 'generateContentStream',
+    method: "generateContent" | "generateContentStream",
   ): ServerDetails {
     // Case 1: Authenticated with a Google account (`gcloud auth login`).
     // Requests are routed through the internal CodeAssistServer.
     if (this.wrapped instanceof CodeAssistServer) {
       const url = new URL(this.wrapped.getMethodUrl(method));
-      const port = url.port
-        ? parseInt(url.port, 10)
-        : url.protocol === 'https:'
-          ? 443
-          : 80;
+      const port = url.port ? parseInt(url.port, 10) : url.protocol === "https:" ? 443 : 80;
       return { address: url.hostname, port };
     }
 
@@ -94,11 +82,11 @@ export class LoggingContentGenerator implements ContentGenerator {
 
     // Case 2: Using an API key for Vertex AI.
     if (genConfig?.vertexai) {
-      const location = process.env['GOOGLE_CLOUD_LOCATION'];
+      const location = process.env["GOOGLE_CLOUD_LOCATION"];
       if (location) {
         return { address: `${location}-aiplatform.googleapis.com`, port: 443 };
       } else {
-        return { address: 'unknown', port: 0 };
+        return { address: "unknown", port: 0 };
       }
     }
 
@@ -151,7 +139,7 @@ export class LoggingContentGenerator implements ContentGenerator {
     serverDetails?: ServerDetails,
   ): void {
     const errorMessage = error instanceof Error ? error.message : String(error);
-    const errorType = error instanceof Error ? error.name : 'unknown';
+    const errorType = error instanceof Error ? error.name : "unknown";
 
     logApiError(
       this.config,
@@ -167,9 +155,7 @@ export class LoggingContentGenerator implements ContentGenerator {
         },
         this.config.getContentGeneratorConfig()?.authType,
         errorType,
-        isStructuredError(error)
-          ? (error as StructuredError).status
-          : undefined,
+        isStructuredError(error) ? (error as StructuredError).status : undefined,
       ),
     );
   }
@@ -180,26 +166,17 @@ export class LoggingContentGenerator implements ContentGenerator {
   ): Promise<GenerateContentResponse> {
     return runInDevTraceSpan(
       {
-        name: 'generateContent',
+        name: "generateContent",
       },
       async ({ metadata: spanMetadata }) => {
         spanMetadata.input = { request: req, userPromptId, model: req.model };
 
         const startTime = Date.now();
         const contents: Content[] = toContents(req.contents);
-        const serverDetails = this._getEndpointUrl(req, 'generateContent');
-        this.logApiRequest(
-          contents,
-          req.model,
-          userPromptId,
-          req.config,
-          serverDetails,
-        );
+        const serverDetails = this._getEndpointUrl(req, "generateContent");
+        this.logApiRequest(contents, req.model, userPromptId, req.config, serverDetails);
         try {
-          const response = await this.wrapped.generateContent(
-            req,
-            userPromptId,
-          );
+          const response = await this.wrapped.generateContent(req, userPromptId);
           spanMetadata.output = {
             response,
             usageMetadata: response.usageMetadata,
@@ -241,16 +218,13 @@ export class LoggingContentGenerator implements ContentGenerator {
   ): Promise<AsyncGenerator<GenerateContentResponse>> {
     return runInDevTraceSpan(
       {
-        name: 'generateContentStream',
+        name: "generateContentStream",
         noAutoEnd: true,
       },
       async ({ metadata: spanMetadata, endSpan }) => {
         spanMetadata.input = { request: req, userPromptId, model: req.model };
         const startTime = Date.now();
-        const serverDetails = this._getEndpointUrl(
-          req,
-          'generateContentStream',
-        );
+        const serverDetails = this._getEndpointUrl(req, "generateContentStream");
         this.logApiRequest(
           toContents(req.contents),
           req.model,
@@ -299,7 +273,7 @@ export class LoggingContentGenerator implements ContentGenerator {
     const responses: GenerateContentResponse[] = [];
 
     let lastUsageMetadata: GenerateContentResponseUsageMetadata | undefined;
-    const serverDetails = this._getEndpointUrl(req, 'generateContentStream');
+    const serverDetails = this._getEndpointUrl(req, "generateContentStream");
     const requestContents: Content[] = toContents(req.contents);
     try {
       for await (const response of stream) {
@@ -352,12 +326,10 @@ export class LoggingContentGenerator implements ContentGenerator {
     return this.wrapped.countTokens(req);
   }
 
-  async embedContent(
-    req: EmbedContentParameters,
-  ): Promise<EmbedContentResponse> {
+  async embedContent(req: EmbedContentParameters): Promise<EmbedContentResponse> {
     return runInDevTraceSpan(
       {
-        name: 'embedContent',
+        name: "embedContent",
       },
       async ({ metadata: spanMetadata }) => {
         spanMetadata.input = { request: req };

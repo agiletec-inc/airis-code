@@ -4,11 +4,11 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { Storage, debugLogger } from '@airiscode/gemini-cli-core';
-import * as fs from 'node:fs';
-import * as path from 'node:path';
+import * as fs from "node:fs";
+import * as path from "node:path";
+import { debugLogger, Storage } from "@airiscode/gemini-cli-core";
 
-const STATE_FILENAME = 'state.json';
+const STATE_FILENAME = "state.json";
 
 interface PersistentStateData {
   defaultBannerShownCount?: Record<string, number>;
@@ -33,13 +33,13 @@ export class PersistentState {
     try {
       const filePath = this.getPath();
       if (fs.existsSync(filePath)) {
-        const content = fs.readFileSync(filePath, 'utf-8');
+        const content = fs.readFileSync(filePath, "utf-8");
         this.cache = JSON.parse(content);
       } else {
         this.cache = {};
       }
     } catch (error) {
-      debugLogger.warn('Failed to load persistent state:', error);
+      debugLogger.warn("Failed to load persistent state:", error);
       // If error reading (e.g. corrupt JSON), start fresh
       this.cache = {};
     }
@@ -56,20 +56,15 @@ export class PersistentState {
       }
       fs.writeFileSync(filePath, JSON.stringify(this.cache, null, 2));
     } catch (error) {
-      debugLogger.warn('Failed to save persistent state:', error);
+      debugLogger.warn("Failed to save persistent state:", error);
     }
   }
 
-  get<K extends keyof PersistentStateData>(
-    key: K,
-  ): PersistentStateData[K] | undefined {
+  get<K extends keyof PersistentStateData>(key: K): PersistentStateData[K] | undefined {
     return this.load()[key];
   }
 
-  set<K extends keyof PersistentStateData>(
-    key: K,
-    value: PersistentStateData[K],
-  ): void {
+  set<K extends keyof PersistentStateData>(key: K, value: PersistentStateData[K]): void {
     this.load(); // ensure loaded
     this.cache![key] = value;
     this.save();

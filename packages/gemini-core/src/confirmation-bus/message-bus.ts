@@ -4,11 +4,11 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { EventEmitter } from 'node:events';
-import type { PolicyEngine } from '../policy/policy-engine.js';
-import { PolicyDecision } from '../policy/types.js';
-import { MessageBusType, type Message } from './types.js';
-import { safeJsonStringify } from '../utils/safeJsonStringify.js';
+import { EventEmitter } from "node:events";
+import type { PolicyEngine } from "../policy/policy-engine.js";
+import { PolicyDecision } from "../policy/types.js";
+import { safeJsonStringify } from "../utils/safeJsonStringify.js";
+import { type Message, MessageBusType } from "./types.js";
 
 export class MessageBus extends EventEmitter {
   constructor(
@@ -26,7 +26,7 @@ export class MessageBus extends EventEmitter {
 
     if (
       message.type === MessageBusType.TOOL_CONFIRMATION_REQUEST &&
-      !('correlationId' in message)
+      !("correlationId" in message)
     ) {
       return false;
     }
@@ -44,16 +44,11 @@ export class MessageBus extends EventEmitter {
     }
     try {
       if (!this.isValidMessage(message)) {
-        throw new Error(
-          `Invalid message structure: ${safeJsonStringify(message)}`,
-        );
+        throw new Error(`Invalid message structure: ${safeJsonStringify(message)}`);
       }
 
       if (message.type === MessageBusType.TOOL_CONFIRMATION_REQUEST) {
-        const decision = this.policyEngine.check(
-          message.toolCall,
-          message.serverName,
-        );
+        const decision = this.policyEngine.check(message.toolCall, message.serverName);
 
         switch (decision) {
           case PolicyDecision.ALLOW:
@@ -88,21 +83,15 @@ export class MessageBus extends EventEmitter {
         this.emitMessage(message);
       }
     } catch (error) {
-      this.emit('error', error);
+      this.emit("error", error);
     }
   }
 
-  subscribe<T extends Message>(
-    type: T['type'],
-    listener: (message: T) => void,
-  ): void {
+  subscribe<T extends Message>(type: T["type"], listener: (message: T) => void): void {
     this.on(type, listener);
   }
 
-  unsubscribe<T extends Message>(
-    type: T['type'],
-    listener: (message: T) => void,
-  ): void {
+  unsubscribe<T extends Message>(type: T["type"], listener: (message: T) => void): void {
     this.off(type, listener);
   }
 }

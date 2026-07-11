@@ -6,13 +6,13 @@
 
 import type {
   ContentGenerator,
-  GenerateContentResponse,
-  GenerateContentParameters,
-  CountTokensResponse,
   CountTokensParameters,
-  EmbedContentResponse,
+  CountTokensResponse,
   EmbedContentParameters,
-} from "@airiscode/runtime-gemini";
+  EmbedContentResponse,
+  GenerateContentParameters,
+  GenerateContentResponse,
+} from "@airiscode/core-gemini";
 
 export interface OpenAIOptions {
   apiKey: string;
@@ -25,13 +25,13 @@ export class OpenAIContentGenerator implements ContentGenerator {
 
   async generateContent(
     req: GenerateContentParameters,
-    userPromptId?: string
+    userPromptId?: string,
   ): Promise<GenerateContentResponse> {
     const url = `${this.opts.baseUrl ?? "https://api.openai.com/v1"}/chat/completions`;
 
     const messages = req.messages || [
       ...(req.systemInstruction ? [{ role: "system", content: req.systemInstruction }] : []),
-      { role: "user", content: req.prompt || "" }
+      { role: "user", content: req.prompt || "" },
     ];
 
     const r = await fetch(url, {
@@ -59,20 +59,20 @@ export class OpenAIContentGenerator implements ContentGenerator {
 
   async generateContentStream(
     req: GenerateContentParameters,
-    userPromptId?: string
+    userPromptId?: string,
   ): Promise<AsyncGenerator<GenerateContentResponse>> {
     return this._generateContentStream(req, userPromptId);
   }
 
   private async *_generateContentStream(
     req: GenerateContentParameters,
-    userPromptId?: string
+    userPromptId?: string,
   ): AsyncGenerator<GenerateContentResponse> {
     const url = `${this.opts.baseUrl ?? "https://api.openai.com/v1"}/chat/completions`;
 
     const messages = req.messages || [
       ...(req.systemInstruction ? [{ role: "system", content: req.systemInstruction }] : []),
-      { role: "user", content: req.prompt || "" }
+      { role: "user", content: req.prompt || "" },
     ];
 
     const r = await fetch(url, {
@@ -122,7 +122,7 @@ export class OpenAIContentGenerator implements ContentGenerator {
           if (content) {
             yield { content, raw: json };
           }
-        } catch (e) {
+        } catch {
           // Skip invalid JSON
         }
       }

@@ -4,12 +4,12 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import latestVersion from 'latest-version';
-import semver from 'semver';
-import { getPackageJson, debugLogger } from '@airiscode/gemini-cli-core';
-import type { LoadedSettings } from '../../config/settings.js';
-import { fileURLToPath } from 'node:url';
-import path from 'node:path';
+import path from "node:path";
+import { fileURLToPath } from "node:url";
+import { debugLogger, getPackageJson } from "@airiscode/gemini-cli-core";
+import latestVersion from "latest-version";
+import semver from "semver";
+import type { LoadedSettings } from "../../config/settings.js";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -33,10 +33,7 @@ export interface UpdateObject {
  * From a nightly and stable version, determines which is the "best" one to offer.
  * The rule is to always prefer nightly if the base versions are the same.
  */
-function getBestAvailableUpdate(
-  nightly?: string,
-  stable?: string,
-): string | null {
+function getBestAvailableUpdate(nightly?: string, stable?: string): string | null {
   if (!nightly) return stable || null;
   if (!stable) return nightly || null;
 
@@ -47,15 +44,13 @@ function getBestAvailableUpdate(
   return semver.gt(stable, nightly) ? stable : nightly;
 }
 
-export async function checkForUpdates(
-  settings: LoadedSettings,
-): Promise<UpdateObject | null> {
+export async function checkForUpdates(settings: LoadedSettings): Promise<UpdateObject | null> {
   try {
     if (settings.merged.general?.disableUpdateNag) {
       return null;
     }
     // Skip update check when running from source (development mode)
-    if (process.env['DEV'] === 'true') {
+    if (process.env["DEV"] === "true") {
       return null;
     }
     const packageJson = await getPackageJson(__dirname);
@@ -64,11 +59,11 @@ export async function checkForUpdates(
     }
 
     const { name, version: currentVersion } = packageJson;
-    const isNightly = currentVersion.includes('nightly');
+    const isNightly = currentVersion.includes("nightly");
 
     if (isNightly) {
       const [nightlyUpdate, latestUpdate] = await Promise.all([
-        latestVersion(name, { version: 'nightly' }),
+        latestVersion(name, { version: "nightly" }),
         latestVersion(name),
       ]);
 
@@ -107,7 +102,7 @@ export async function checkForUpdates(
 
     return null;
   } catch (e) {
-    debugLogger.warn('Failed to check for updates: ' + e);
+    debugLogger.warn("Failed to check for updates: " + e);
     return null;
   }
 }

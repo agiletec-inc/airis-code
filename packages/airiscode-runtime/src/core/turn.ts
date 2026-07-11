@@ -4,65 +4,50 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+import type { ToolErrorType } from "../tools/tool-error.js";
+import type { ToolCallConfirmationDetails, ToolResult, ToolResultDisplay } from "../tools/tools.js";
 import {
   FinishReason,
-  type Part,
-  type PartListUnion,
-  type GenerateContentResponse,
   type FunctionCall,
   type FunctionDeclaration,
+  type GenerateContentResponse,
   type GenerateContentResponseUsageMetadata,
-} from '../types/llm.js';
-import type {
-  ToolCallConfirmationDetails,
-  ToolResult,
-  ToolResultDisplay,
-} from '../tools/tools.js';
-import type { ToolErrorType } from '../tools/tool-error.js';
-import { getResponseText } from '../utils/partUtils.js';
-import { reportError } from '../utils/errorReporting.js';
-import {
-  getErrorMessage,
-  UnauthorizedError,
-  toFriendlyError,
-} from '../utils/errors.js';
-import type { GeminiChat } from './geminiChat.js';
-import type { RetryInfo } from '../utils/rateLimit.js';
-import {
-  getThoughtText,
-  parseThought,
-  type ThoughtSummary,
-} from '../utils/thoughtUtils.js';
+  type Part,
+  type PartListUnion,
+} from "../types/llm.js";
+import { reportError } from "../utils/errorReporting.js";
+import { getErrorMessage, toFriendlyError, UnauthorizedError } from "../utils/errors.js";
+import { getResponseText } from "../utils/partUtils.js";
+import type { RetryInfo } from "../utils/rateLimit.js";
+import { getThoughtText, parseThought, type ThoughtSummary } from "../utils/thoughtUtils.js";
+import type { GeminiChat } from "./geminiChat.js";
 
 // Define a structure for tools passed to the server
 export interface ServerTool {
   name: string;
   schema: FunctionDeclaration;
   // The execute method signature might differ slightly or be wrapped
-  execute(
-    params: Record<string, unknown>,
-    signal?: AbortSignal,
-  ): Promise<ToolResult>;
+  execute(params: Record<string, unknown>, signal?: AbortSignal): Promise<ToolResult>;
 }
 
 export enum GeminiEventType {
-  Content = 'content',
-  ToolCallRequest = 'tool_call_request',
-  ToolCallResponse = 'tool_call_response',
-  ToolCallConfirmation = 'tool_call_confirmation',
-  UserCancelled = 'user_cancelled',
-  Error = 'error',
-  ChatCompressed = 'chat_compressed',
-  Thought = 'thought',
-  MaxSessionTurns = 'max_session_turns',
-  SessionTokenLimitExceeded = 'session_token_limit_exceeded',
-  Finished = 'finished',
-  LoopDetected = 'loop_detected',
-  Citation = 'citation',
-  Retry = 'retry',
-  HookSystemMessage = 'hook_system_message',
-  UserPromptSubmitBlocked = 'user_prompt_submit_blocked',
-  StopHookLoop = 'stop_hook_loop',
+  Content = "content",
+  ToolCallRequest = "tool_call_request",
+  ToolCallResponse = "tool_call_response",
+  ToolCallConfirmation = "tool_call_confirmation",
+  UserCancelled = "user_cancelled",
+  Error = "error",
+  ChatCompressed = "chat_compressed",
+  Thought = "thought",
+  MaxSessionTurns = "max_session_turns",
+  SessionTokenLimitExceeded = "session_token_limit_exceeded",
+  Finished = "finished",
+  LoopDetected = "loop_detected",
+  Citation = "citation",
+  Retry = "retry",
+  HookSystemMessage = "hook_system_message",
+  UserPromptSubmitBlocked = "user_prompt_submit_blocked",
+  StopHookLoop = "stop_hook_loop",
 }
 
 export type ServerGeminiRetryEvent = {
@@ -282,7 +267,7 @@ export class Turn {
 
         // Handle the new RETRY event: clear accumulated state from the
         // previous attempt to avoid duplicate tool calls and stale metadata.
-        if (streamEvent.type === 'retry') {
+        if (streamEvent.type === "retry") {
           this.pendingToolCalls.length = 0;
           this.pendingCitations.clear();
           this.debugResponses = [];
@@ -347,7 +332,7 @@ export class Turn {
           if (this.pendingCitations.size > 0) {
             yield {
               type: GeminiEventType.Citation,
-              value: `Citations:\n${[...this.pendingCitations].sort().join('\n')}`,
+              value: `Citations:\n${[...this.pendingCitations].sort().join("\n")}`,
             };
             this.pendingCitations.clear();
           }
@@ -377,15 +362,15 @@ export class Turn {
       const contextForReport = [...this.chat.getHistory(/*curated*/ true), req];
       await reportError(
         error,
-        'Error when talking to API',
+        "Error when talking to API",
         contextForReport,
-        'Turn.run-sendMessageStream',
+        "Turn.run-sendMessageStream",
       );
       const status =
-        typeof error === 'object' &&
+        typeof error === "object" &&
         error !== null &&
-        'status' in error &&
-        typeof (error as { status: unknown }).status === 'number'
+        "status" in error &&
+        typeof (error as { status: unknown }).status === "number"
           ? (error as { status: number }).status
           : undefined;
       const structuredError: StructuredError = {
@@ -398,13 +383,10 @@ export class Turn {
     }
   }
 
-  private handlePendingFunctionCall(
-    fnCall: FunctionCall,
-  ): ServerGeminiStreamEvent | null {
+  private handlePendingFunctionCall(fnCall: FunctionCall): ServerGeminiStreamEvent | null {
     const callId =
-      fnCall.id ??
-      `${fnCall.name}-${Date.now()}-${Math.random().toString(16).slice(2)}`;
-    const name = fnCall.name || 'undefined_tool_name';
+      fnCall.id ?? `${fnCall.name}-${Date.now()}-${Math.random().toString(16).slice(2)}`;
+    const name = fnCall.name || "undefined_tool_name";
     const args = (fnCall.args || {}) as Record<string, unknown>;
 
     const toolCallRequest: ToolCallRequestInfo = {
@@ -428,8 +410,10 @@ export class Turn {
 }
 
 function getCitations(resp: GenerateContentResponse): string[] {
-  const citations = (resp.candidates?.[0]?.citationMetadata?.citations ??
-    []) as Array<{ uri?: string; title?: string }>;
+  const citations = (resp.candidates?.[0]?.citationMetadata?.citations ?? []) as Array<{
+    uri?: string;
+    title?: string;
+  }>;
   return citations
     .filter((citation) => citation.uri !== undefined)
     .map((citation) => {

@@ -8,7 +8,7 @@
   "scripts": {
     "build": "echo 'Skipping gemini-cli-core build temporarily (OpenTelemetry version conflicts)'",
     "build:real": "tsc -b",
-    "lint": "eslint . --ext .ts,.tsx",
+    "lint": "biome check .",
     "test": "vitest run",
     "typecheck": "tsc --noEmit"
   },

@@ -4,19 +4,19 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { useState, useCallback } from 'react';
 import {
-  SessionService,
   type Config,
-  SessionStartSource,
   type PermissionMode,
-} from '@airiscode/runtime';
-import { buildResumedHistoryItems } from '../utils/resumeHistoryUtils.js';
-import type { UseHistoryManagerReturn } from './useHistoryManager.js';
+  SessionService,
+  SessionStartSource,
+} from "@airiscode/runtime";
+import { useCallback, useState } from "react";
+import { buildResumedHistoryItems } from "../utils/resumeHistoryUtils.js";
+import type { UseHistoryManagerReturn } from "./useHistoryManager.js";
 
 export interface UseResumeCommandOptions {
   config: Config | null;
-  historyManager: Pick<UseHistoryManagerReturn, 'clearItems' | 'loadHistory'>;
+  historyManager: Pick<UseHistoryManagerReturn, "clearItems" | "loadHistory">;
   startNewSession: (sessionId: string) => void;
   remount?: () => void;
 }
@@ -28,9 +28,7 @@ export interface UseResumeCommandResult {
   handleResume: (sessionId: string) => void;
 }
 
-export function useResumeCommand(
-  options?: UseResumeCommandOptions,
-): UseResumeCommandResult {
+export function useResumeCommand(options?: UseResumeCommandOptions): UseResumeCommandResult {
   const [isResumeDialogOpen, setIsResumeDialogOpen] = useState(false);
 
   const openResumeDialog = useCallback(() => {
@@ -78,7 +76,7 @@ export function useResumeCommand(
           .getHookSystem()
           ?.fireSessionStartEvent(
             SessionStartSource.Resume,
-            config.getModel() ?? '',
+            config.getModel() ?? "",
             String(config.getApprovalMode()) as PermissionMode,
           );
       } catch (err) {

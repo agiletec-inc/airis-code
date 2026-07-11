@@ -2,13 +2,8 @@
  * Tool registry implementation
  */
 
-import { McpClient, McpToolSpec, McpToolInvocation, McpToolResult } from '@airiscode/mcp-client';
-import type {
-  RegistryConfig,
-  ToolMatch,
-  ToolSearchQuery,
-  ToolInvocationRecord,
-} from './types.js';
+import { McpClient, McpToolInvocation, McpToolResult, McpToolSpec } from "@airiscode/mcp-client";
+import type { RegistryConfig, ToolInvocationRecord, ToolMatch, ToolSearchQuery } from "./types.js";
 
 /**
  * Tool registry for managing MCP tools
@@ -27,12 +22,12 @@ export class ToolRegistry {
 
   constructor(
     private mcpClient: McpClient,
-    config: RegistryConfig = {}
+    config: RegistryConfig = {},
   ) {
     this.config = {
       lazyLoading: config.lazyLoading !== false,
       preloadTools: config.preloadTools || [],
-      selectionStrategy: config.selectionStrategy || 'best-match',
+      selectionStrategy: config.selectionStrategy || "best-match",
     };
   }
 
@@ -45,9 +40,7 @@ export class ToolRegistry {
 
     // Preload specified tools
     if (this.config.preloadTools.length > 0) {
-      await Promise.all(
-        this.config.preloadTools.map((name) => this.resolveToolSpec(name))
-      );
+      await Promise.all(this.config.preloadTools.map((name) => this.resolveToolSpec(name)));
     }
   }
 
@@ -185,8 +178,7 @@ export class ToolRegistry {
     }
 
     const successes = records.filter((r) => r.success).length;
-    const avgExecutionTime =
-      records.reduce((sum, r) => sum + r.executionTime, 0) / records.length;
+    const avgExecutionTime = records.reduce((sum, r) => sum + r.executionTime, 0) / records.length;
 
     return {
       invocations: records.length,
@@ -263,6 +255,6 @@ export class ToolRegistry {
       reasons.push(`from server "${query.server}"`);
     }
 
-    return reasons.length > 0 ? reasons.join(', ') : 'default match';
+    return reasons.length > 0 ? reasons.join(", ") : "default match";
   }
 }

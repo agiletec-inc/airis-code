@@ -7,11 +7,11 @@
  */
 export enum ApprovalsLevel {
   /** Fully autonomous, no user approval required */
-  NEVER = 'never',
+  NEVER = "never",
   /** Pause for user input when errors occur */
-  ON_FAILURE = 'on-failure',
+  ON_FAILURE = "on-failure",
   /** Require explicit user approval before executing actions */
-  ON_REQUEST = 'on-request',
+  ON_REQUEST = "on-request",
 }
 
 /**
@@ -19,11 +19,11 @@ export enum ApprovalsLevel {
  */
 export enum TrustLevel {
   /** Read-only filesystem, shell disabled */
-  RESTRICTED = 'restricted',
+  RESTRICTED = "restricted",
   /** Workspace write allowed, external network blocked */
-  SANDBOXED = 'sandboxed',
+  SANDBOXED = "sandboxed",
   /** Full access, but Shell Guard still blocks dangerous commands */
-  UNTRUSTED = 'untrusted',
+  UNTRUSTED = "untrusted",
 }
 
 /**

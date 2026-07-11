@@ -4,10 +4,10 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import * as fs from 'node:fs';
-import * as path from 'node:path';
-import type { Config } from '../config/config.js';
-import { bfsFileSearchSync } from './bfsFileSearch.js';
+import * as fs from "node:fs";
+import * as path from "node:path";
+import type { Config } from "../config/config.js";
+import { bfsFileSearchSync } from "./bfsFileSearch.js";
 
 type SuccessfulPathCorrection = {
   success: true;
@@ -27,13 +27,8 @@ type FailedPathCorrection = {
  * @param config The application configuration.
  * @returns A `PathCorrectionResult` object with either a `correctedPath` or an `error`.
  */
-export type PathCorrectionResult =
-  | SuccessfulPathCorrection
-  | FailedPathCorrection;
-export function correctPath(
-  filePath: string,
-  config: Config,
-): PathCorrectionResult {
+export type PathCorrectionResult = SuccessfulPathCorrection | FailedPathCorrection;
+export function correctPath(filePath: string, config: Config): PathCorrectionResult {
   // Check for direct path relative to the primary target directory.
   const directPath = path.join(config.getTargetDir(), filePath);
   if (fs.existsSync(directPath)) {
@@ -44,7 +39,7 @@ export function correctPath(
   const workspaceContext = config.getWorkspaceContext();
   const searchPaths = workspaceContext.getDirectories();
   const basename = path.basename(filePath);
-  const normalizedTarget = filePath.replace(/\\/g, '/');
+  const normalizedTarget = filePath.replace(/\\/g, "/");
 
   // Normalize path for matching and check if it ends with the provided relative path
   const foundFiles = searchPaths
@@ -56,7 +51,7 @@ export function correctPath(
         fileFilteringOptions: config.getFileFilteringOptions(),
       }),
     )
-    .filter((f) => f.replace(/\\/g, '/').endsWith(normalizedTarget));
+    .filter((f) => f.replace(/\\/g, "/").endsWith(normalizedTarget));
 
   if (foundFiles.length === 0) {
     return {
@@ -68,7 +63,7 @@ export function correctPath(
   if (foundFiles.length > 1) {
     return {
       success: false,
-      error: `The file path '${filePath}' is ambiguous and matches multiple files. Please provide a more specific path. Matches: ${foundFiles.join(', ')}`,
+      error: `The file path '${filePath}' is ambiguous and matches multiple files. Please provide a more specific path. Matches: ${foundFiles.join(", ")}`,
     };
   }
 

@@ -4,20 +4,20 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { getBoundingBox, type DOMElement } from 'ink';
-import type React from 'react';
-import { useMouse, type MouseEvent } from '../contexts/MouseContext.js';
+import { type DOMElement, getBoundingBox } from "ink";
+import type React from "react";
+import { type MouseEvent, useMouse } from "../contexts/MouseContext.js";
 
 export const useMouseClick = (
   containerRef: React.RefObject<DOMElement | null>,
   handler: (event: MouseEvent, relativeX: number, relativeY: number) => void,
-  options: { isActive?: boolean; button?: 'left' | 'right' } = {},
+  options: { isActive?: boolean; button?: "left" | "right" } = {},
 ) => {
-  const { isActive = true, button = 'left' } = options;
+  const { isActive = true, button = "left" } = options;
 
   useMouse(
     (event: MouseEvent) => {
-      const eventName = button === 'left' ? 'left-press' : 'right-release';
+      const eventName = button === "left" ? "left-press" : "right-release";
       if (event.name === eventName && containerRef.current) {
         const { x, y, width, height } = getBoundingBox(containerRef.current);
         // Terminal mouse events are 1-based, Ink layout is 0-based.
@@ -27,12 +27,7 @@ export const useMouseClick = (
         const relativeX = mouseX - x;
         const relativeY = mouseY - y;
 
-        if (
-          relativeX >= 0 &&
-          relativeX < width &&
-          relativeY >= 0 &&
-          relativeY < height
-        ) {
+        if (relativeX >= 0 && relativeX < width && relativeY >= 0 && relativeY < height) {
           handler(event, relativeX, relativeY);
         }
       }

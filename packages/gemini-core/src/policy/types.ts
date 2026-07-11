@@ -5,15 +5,15 @@
  */
 
 export enum PolicyDecision {
-  ALLOW = 'allow',
-  DENY = 'deny',
-  ASK_USER = 'ask_user',
+  ALLOW = "allow",
+  DENY = "deny",
+  ASK_USER = "ask_user",
 }
 
 export enum ApprovalMode {
-  DEFAULT = 'default',
-  AUTO_EDIT = 'autoEdit',
-  YOLO = 'yolo',
+  DEFAULT = "default",
+  AUTO_EDIT = "autoEdit",
+  YOLO = "yolo",
 }
 
 export interface PolicyRule {

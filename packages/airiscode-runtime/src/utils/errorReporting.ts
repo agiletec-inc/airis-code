@@ -4,10 +4,10 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import type { Content } from '../types/llm.js';
-import { createDebugLogger } from './debugLogger.js';
+import type { Content } from "../types/llm.js";
+import { createDebugLogger } from "./debugLogger.js";
 
-const debugLogger = createDebugLogger('ERROR_REPORT');
+const debugLogger = createDebugLogger("ERROR_REPORT");
 
 interface ErrorReportData {
   error: { message: string; stack?: string } | { message: string };
@@ -26,16 +26,12 @@ export async function reportError(
   error: Error | unknown,
   baseMessage: string,
   context?: Content[] | Record<string, unknown> | unknown[],
-  type = 'general',
+  type = "general",
 ): Promise<void> {
   let errorToReport: { message: string; stack?: string };
   if (error instanceof Error) {
     errorToReport = { message: error.message, stack: error.stack };
-  } else if (
-    typeof error === 'object' &&
-    error !== null &&
-    'message' in error
-  ) {
+  } else if (typeof error === "object" && error !== null && "message" in error) {
     errorToReport = {
       message: String((error as { message: unknown }).message),
     };

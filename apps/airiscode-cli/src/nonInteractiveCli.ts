@@ -4,48 +4,47 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import type { Config, ToolCallRequestInfo } from '@airiscode/runtime';
-import { isSlashCommand } from './ui/utils/commandUtils.js';
-import type { LoadedSettings } from './config/settings.js';
+import type { Config, Content, Part, PartListUnion, ToolCallRequestInfo } from "@airiscode/runtime";
 import {
-  executeToolCall,
-  shutdownTelemetry,
-  isTelemetrySdkInitialized,
-  GeminiEventType,
-  FatalInputError,
-  promptIdContext,
-  OutputFormat,
-  InputFormat,
-  uiTelemetryService,
-  parseAndFormatApiError,
   createDebugLogger,
+  executeToolCall,
+  FatalInputError,
+  GeminiEventType,
+  InputFormat,
+  isTelemetrySdkInitialized,
+  OutputFormat,
+  parseAndFormatApiError,
+  promptIdContext,
   SendMessageType,
-} from '@airiscode/runtime';
-import type { Content, Part, PartListUnion } from '@airiscode/runtime';
-import type { CLIUserMessage, PermissionMode } from './nonInteractive/types.js';
-import type { JsonOutputAdapterInterface } from './nonInteractive/io/BaseJsonOutputAdapter.js';
-import { JsonOutputAdapter } from './nonInteractive/io/JsonOutputAdapter.js';
-import { StreamJsonOutputAdapter } from './nonInteractive/io/StreamJsonOutputAdapter.js';
-import type { ControlService } from './nonInteractive/control/ControlService.js';
-
-import { handleSlashCommand } from './nonInteractiveCliCommands.js';
-import { handleAtCommand } from './ui/hooks/atCommandProcessor.js';
+  shutdownTelemetry,
+  uiTelemetryService,
+} from "@airiscode/runtime";
+import type { LoadedSettings } from "./config/settings.js";
+import type { ControlService } from "./nonInteractive/control/ControlService.js";
+import type { JsonOutputAdapterInterface } from "./nonInteractive/io/BaseJsonOutputAdapter.js";
+import { JsonOutputAdapter } from "./nonInteractive/io/JsonOutputAdapter.js";
+import { StreamJsonOutputAdapter } from "./nonInteractive/io/StreamJsonOutputAdapter.js";
+import type { CLIUserMessage, PermissionMode } from "./nonInteractive/types.js";
+import { handleSlashCommand } from "./nonInteractiveCliCommands.js";
+import { handleAtCommand } from "./ui/hooks/atCommandProcessor.js";
+import { isSlashCommand } from "./ui/utils/commandUtils.js";
 import {
-  handleError,
-  handleToolError,
   handleCancellationError,
+  handleError,
   handleMaxTurnsExceededError,
-} from './utils/errors.js';
+  handleToolError,
+} from "./utils/errors.js";
 
-const debugLogger = createDebugLogger('NON_INTERACTIVE_CLI');
+const debugLogger = createDebugLogger("NON_INTERACTIVE_CLI");
+
 import {
-  normalizePartList,
-  extractPartsFromUserMessage,
   buildSystemMessage,
-  createToolProgressHandler,
-  createAgentToolProgressHandler,
   computeUsageFromMetrics,
-} from './utils/nonInteractiveHelpers.js';
+  createAgentToolProgressHandler,
+  createToolProgressHandler,
+  extractPartsFromUserMessage,
+  normalizePartList,
+} from "./utils/nonInteractiveHelpers.js";
 
 /**
  * Emits a final message for slash command results.
@@ -66,16 +65,13 @@ async function emitNonInteractiveFinalMessage(params: {
   adapter.processEvent({
     type: GeminiEventType.Content,
     value: message,
-  } as unknown as Parameters<JsonOutputAdapterInterface['processEvent']>[0]);
+  } as unknown as Parameters<JsonOutputAdapterInterface["processEvent"]>[0]);
   adapter.finalizeAssistantMessage();
 
   const metrics = uiTelemetryService.getMetrics();
   const usage = computeUsageFromMetrics(metrics);
   const outputFormat = config.getOutputFormat();
-  const stats =
-    outputFormat === OutputFormat.JSON
-      ? uiTelemetryService.getMetrics()
-      : undefined;
+  const stats = outputFormat === OutputFormat.JSON ? uiTelemetryService.getMetrics() : undefined;
 
   adapter.emitResult({
     isError,
@@ -122,10 +118,7 @@ export async function runNonInteractive(
     if (options.adapter) {
       adapter = options.adapter;
     } else if (outputFormat === OutputFormat.STREAM_JSON) {
-      adapter = new StreamJsonOutputAdapter(
-        config,
-        config.getIncludePartialMessages(),
-      );
+      adapter = new StreamJsonOutputAdapter(config, config.getIncludePartialMessages());
     } else {
       adapter = new JsonOutputAdapter(config);
     }
@@ -139,8 +132,8 @@ export async function runNonInteractive(
     const startTime = Date.now();
 
     const stdoutErrorHandler = (err: NodeJS.ErrnoException) => {
-      if (err.code === 'EPIPE') {
-        process.stdout.removeListener('error', stdoutErrorHandler);
+      if (err.code === "EPIPE") {
+        process.stdout.removeListener("error", stdoutErrorHandler);
         process.exit(0);
       }
     };
@@ -150,27 +143,21 @@ export async function runNonInteractive(
 
     // Setup signal handlers for graceful shutdown
     const shutdownHandler = () => {
-      debugLogger.debug('[runNonInteractive] Shutdown signal received');
+      debugLogger.debug("[runNonInteractive] Shutdown signal received");
       abortController.abort();
     };
 
     try {
-      process.stdout.on('error', stdoutErrorHandler);
+      process.stdout.on("error", stdoutErrorHandler);
 
-      process.on('SIGINT', shutdownHandler);
-      process.on('SIGTERM', shutdownHandler);
+      process.on("SIGINT", shutdownHandler);
+      process.on("SIGTERM", shutdownHandler);
 
       // Emit systemMessage first (always the first message in JSON mode)
-      const systemMessage = await buildSystemMessage(
-        config,
-        sessionId,
-        permissionMode,
-      );
+      const systemMessage = await buildSystemMessage(config, sessionId, permissionMode);
       adapter.emitMessage(systemMessage);
 
-      let initialPartList: PartListUnion | null = extractPartsFromUserMessage(
-        options.userMessage,
-      );
+      let initialPartList: PartListUnion | null = extractPartsFromUserMessage(options.userMessage);
 
       if (!initialPartList) {
         let slashHandled = false;
@@ -182,27 +169,27 @@ export async function runNonInteractive(
             settings,
           );
           switch (slashCommandResult.type) {
-            case 'submit_prompt':
+            case "submit_prompt":
               // A slash command can replace the prompt entirely; fall back to @-command processing otherwise.
               initialPartList = slashCommandResult.content;
               slashHandled = true;
               break;
-            case 'message': {
+            case "message": {
               // systemMessage already emitted above
               await emitNonInteractiveFinalMessage({
                 message: slashCommandResult.content,
-                isError: slashCommandResult.messageType === 'error',
+                isError: slashCommandResult.messageType === "error",
                 adapter,
                 config,
                 startTimeMs: startTime,
               });
               return;
             }
-            case 'stream_messages':
+            case "stream_messages":
               throw new FatalInputError(
-                'Stream messages mode is not supported in non-interactive CLI',
+                "Stream messages mode is not supported in non-interactive CLI",
               );
-            case 'unsupported': {
+            case "unsupported": {
               await emitNonInteractiveFinalMessage({
                 message: slashCommandResult.reason,
                 isError: true,
@@ -212,7 +199,7 @@ export async function runNonInteractive(
               });
               return;
             }
-            case 'no_command':
+            case "no_command":
               break;
             default: {
               const _exhaustive: never = slashCommandResult;
@@ -235,9 +222,7 @@ export async function runNonInteractive(
           if (!shouldProceed || !processedQuery) {
             // An error occurred during @include processing (e.g., file not found).
             // The error message is already logged by handleAtCommand.
-            throw new FatalInputError(
-              'Exiting due to an error processing the @ command.',
-            );
+            throw new FatalInputError("Exiting due to an error processing the @ command.");
           }
           initialPartList = processedQuery as PartListUnion;
         }
@@ -248,15 +233,12 @@ export async function runNonInteractive(
       }
 
       const initialParts = normalizePartList(initialPartList);
-      let currentMessages: Content[] = [{ role: 'user', parts: initialParts }];
+      let currentMessages: Content[] = [{ role: "user", parts: initialParts }];
 
       let isFirstTurn = true;
       while (true) {
         turnCount++;
-        if (
-          config.getMaxSessionTurns() >= 0 &&
-          turnCount > config.getMaxSessionTurns()
-        ) {
+        if (config.getMaxSessionTurns() >= 0 && turnCount > config.getMaxSessionTurns()) {
           handleMaxTurnsExceededError(config);
         }
 
@@ -267,9 +249,7 @@ export async function runNonInteractive(
           abortController.signal,
           prompt_id,
           {
-            type: isFirstTurn
-              ? SendMessageType.UserQuery
-              : SendMessageType.ToolResult,
+            type: isFirstTurn ? SendMessageType.UserQuery : SendMessageType.ToolResult,
           },
         );
         isFirstTurn = false;
@@ -286,10 +266,7 @@ export async function runNonInteractive(
           if (event.type === GeminiEventType.ToolCallRequest) {
             toolCallRequests.push(event.value);
           }
-          if (
-            outputFormat === OutputFormat.TEXT &&
-            event.type === GeminiEventType.Error
-          ) {
+          if (outputFormat === OutputFormat.TEXT && event.type === GeminiEventType.Error) {
             const errorText = parseAndFormatApiError(
               event.value.error,
               config.getContentGeneratorConfig()?.authType,
@@ -311,7 +288,7 @@ export async function runNonInteractive(
             const finalRequestInfo = requestInfo;
 
             const inputFormat =
-              typeof config.getInputFormat === 'function'
+              typeof config.getInputFormat === "function"
                 ? config.getInputFormat()
                 : InputFormat.TEXT;
             const toolCallUpdateCallback =
@@ -323,13 +300,9 @@ export async function runNonInteractive(
             // Agent tool has its own complex handler (subagent messages).
             // All other tools with canUpdateOutput=true (e.g., MCP tools)
             // get a generic handler that emits progress via the adapter.
-            const isAgentTool = finalRequestInfo.name === 'agent';
+            const isAgentTool = finalRequestInfo.name === "agent";
             const { handler: outputUpdateHandler } = isAgentTool
-              ? createAgentToolProgressHandler(
-                  config,
-                  finalRequestInfo.callId,
-                  adapter,
-                )
+              ? createAgentToolProgressHandler(config, finalRequestInfo.callId, adapter)
               : createToolProgressHandler(finalRequestInfo, adapter);
 
             const toolResponse = await executeToolCall(
@@ -356,8 +329,8 @@ export async function runNonInteractive(
                 finalRequestInfo.name,
                 toolResponse.error,
                 config,
-                toolResponse.errorType || 'TOOL_EXECUTION_ERROR',
-                typeof toolResponse.resultDisplay === 'string'
+                toolResponse.errorType || "TOOL_EXECUTION_ERROR",
+                typeof toolResponse.resultDisplay === "string"
                   ? toolResponse.resultDisplay
                   : undefined,
               );
@@ -369,12 +342,10 @@ export async function runNonInteractive(
               toolResponseParts.push(...toolResponse.responseParts);
             }
           }
-          currentMessages = [{ role: 'user', parts: toolResponseParts }];
+          currentMessages = [{ role: "user", parts: toolResponseParts }];
         } else {
           // No more tool calls — check if cron jobs are keeping us alive
-          const scheduler = !config.isCronEnabled()
-            ? null
-            : config.getCronScheduler();
+          const scheduler = !config.isCronEnabled() ? null : config.getCronScheduler();
           if (scheduler && scheduler.size > 0) {
             // Start the scheduler and wait for all jobs to complete or be deleted.
             // Each fired prompt is processed as a new turn through the same loop.
@@ -396,9 +367,7 @@ export async function runNonInteractive(
                   while (cronQueue.length > 0) {
                     const cronPrompt = cronQueue.shift()!;
                     turnCount++;
-                    let cronMessages: Content[] = [
-                      { role: 'user', parts: [{ text: cronPrompt }] },
-                    ];
+                    let cronMessages: Content[] = [{ role: "user", parts: [{ text: cronPrompt }] }];
                     let cronIsFirstTurn = true;
 
                     while (true) {
@@ -409,9 +378,7 @@ export async function runNonInteractive(
                         abortController.signal,
                         prompt_id,
                         {
-                          type: cronIsFirstTurn
-                            ? SendMessageType.Cron
-                            : SendMessageType.ToolResult,
+                          type: cronIsFirstTurn ? SendMessageType.Cron : SendMessageType.ToolResult,
                         },
                       );
                       cronIsFirstTurn = false;
@@ -423,7 +390,7 @@ export async function runNonInteractive(
                           const summary = scheduler.getExitSummary();
                           scheduler.stop();
                           if (summary) {
-                            process.stderr.write(summary + '\n');
+                            process.stderr.write(summary + "\n");
                           }
                           resolve();
                           return;
@@ -441,13 +408,9 @@ export async function runNonInteractive(
                         const cronToolResponseParts: Part[] = [];
 
                         for (const requestInfo of cronToolCallRequests) {
-                          const isAgentTool = requestInfo.name === 'agent';
+                          const isAgentTool = requestInfo.name === "agent";
                           const { handler: outputUpdateHandler } = isAgentTool
-                            ? createAgentToolProgressHandler(
-                                config,
-                                requestInfo.callId,
-                                adapter,
-                              )
+                            ? createAgentToolProgressHandler(config, requestInfo.callId, adapter)
                             : createToolProgressHandler(requestInfo, adapter);
 
                           const toolResponse = await executeToolCall(
@@ -462,8 +425,8 @@ export async function runNonInteractive(
                               requestInfo.name,
                               toolResponse.error,
                               config,
-                              toolResponse.errorType || 'TOOL_EXECUTION_ERROR',
-                              typeof toolResponse.resultDisplay === 'string'
+                              toolResponse.errorType || "TOOL_EXECUTION_ERROR",
+                              typeof toolResponse.resultDisplay === "string"
                                 ? toolResponse.resultDisplay
                                 : undefined,
                             );
@@ -472,21 +435,17 @@ export async function runNonInteractive(
                           adapter.emitToolResult(requestInfo, toolResponse);
 
                           if (toolResponse.responseParts) {
-                            cronToolResponseParts.push(
-                              ...toolResponse.responseParts,
-                            );
+                            cronToolResponseParts.push(...toolResponse.responseParts);
                           }
                         }
-                        cronMessages = [
-                          { role: 'user', parts: cronToolResponseParts },
-                        ];
+                        cronMessages = [{ role: "user", parts: cronToolResponseParts }];
                       } else {
                         break;
                       }
                     }
                   }
                 } catch (error) {
-                  debugLogger.error('Error processing cron prompt:', error);
+                  debugLogger.error("Error processing cron prompt:", error);
                 } finally {
                   processing = false;
                   checkDone();
@@ -507,9 +466,7 @@ export async function runNonInteractive(
           const usage = computeUsageFromMetrics(metrics);
           // Get stats for JSON format output
           const stats =
-            outputFormat === OutputFormat.JSON
-              ? uiTelemetryService.getMetrics()
-              : undefined;
+            outputFormat === OutputFormat.JSON ? uiTelemetryService.getMetrics() : undefined;
           adapter.emitResult({
             isError: false,
             durationMs: Date.now() - startTime,
@@ -538,9 +495,7 @@ export async function runNonInteractive(
       const usage = computeUsageFromMetrics(metrics);
       // Get stats for JSON format output
       const stats =
-        outputFormat === OutputFormat.JSON
-          ? uiTelemetryService.getMetrics()
-          : undefined;
+        outputFormat === OutputFormat.JSON ? uiTelemetryService.getMetrics() : undefined;
       adapter.emitResult({
         isError: true,
         durationMs: Date.now() - startTime,
@@ -552,10 +507,10 @@ export async function runNonInteractive(
       });
       handleError(error, config);
     } finally {
-      process.stdout.removeListener('error', stdoutErrorHandler);
+      process.stdout.removeListener("error", stdoutErrorHandler);
       // Cleanup signal handlers
-      process.removeListener('SIGINT', shutdownHandler);
-      process.removeListener('SIGTERM', shutdownHandler);
+      process.removeListener("SIGINT", shutdownHandler);
+      process.removeListener("SIGTERM", shutdownHandler);
       if (isTelemetrySdkInitialized()) {
         await shutdownTelemetry();
       }

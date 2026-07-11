@@ -4,26 +4,19 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { execSync, spawn, spawnSync } from 'node:child_process';
-import { debugLogger } from './debugLogger.js';
-import { coreEvents, CoreEvent } from './events.js';
+import { execSync, spawn, spawnSync } from "node:child_process";
+import { debugLogger } from "./debugLogger.js";
+import { CoreEvent, coreEvents } from "./events.js";
 
-const GUI_EDITORS = [
-  'vscode',
-  'vscodium',
-  'windsurf',
-  'cursor',
-  'zed',
-  'antigravity',
-] as const;
-const TERMINAL_EDITORS = ['vim', 'neovim', 'emacs'] as const;
+const GUI_EDITORS = ["vscode", "vscodium", "windsurf", "cursor", "zed", "antigravity"] as const;
+const TERMINAL_EDITORS = ["vim", "neovim", "emacs"] as const;
 const EDITORS = [...GUI_EDITORS, ...TERMINAL_EDITORS] as const;
 
 const GUI_EDITORS_SET = new Set<string>(GUI_EDITORS);
 const TERMINAL_EDITORS_SET = new Set<string>(TERMINAL_EDITORS);
 const EDITORS_SET = new Set<string>(EDITORS);
 
-export const DEFAULT_GUI_EDITOR: GuiEditorType = 'vscode';
+export const DEFAULT_GUI_EDITOR: GuiEditorType = "vscode";
 
 export type GuiEditorType = (typeof GUI_EDITORS)[number];
 export type TerminalEditorType = (typeof TERMINAL_EDITORS)[number];
@@ -33,22 +26,20 @@ export function isGuiEditor(editor: EditorType): editor is GuiEditorType {
   return GUI_EDITORS_SET.has(editor);
 }
 
-export function isTerminalEditor(
-  editor: EditorType,
-): editor is TerminalEditorType {
+export function isTerminalEditor(editor: EditorType): editor is TerminalEditorType {
   return TERMINAL_EDITORS_SET.has(editor);
 }
 
 export const EDITOR_DISPLAY_NAMES: Record<EditorType, string> = {
-  vscode: 'VS Code',
-  vscodium: 'VSCodium',
-  windsurf: 'Windsurf',
-  cursor: 'Cursor',
-  vim: 'Vim',
-  neovim: 'Neovim',
-  zed: 'Zed',
-  emacs: 'Emacs',
-  antigravity: 'Antigravity',
+  vscode: "VS Code",
+  vscodium: "VSCodium",
+  windsurf: "Windsurf",
+  cursor: "Cursor",
+  vim: "Vim",
+  neovim: "Neovim",
+  zed: "Zed",
+  emacs: "Emacs",
+  antigravity: "Antigravity",
 };
 
 export function getEditorDisplayName(editor: EditorType): string {
@@ -66,10 +57,9 @@ interface DiffCommand {
 
 function commandExists(cmd: string): boolean {
   try {
-    execSync(
-      process.platform === 'win32' ? `where.exe ${cmd}` : `command -v ${cmd}`,
-      { stdio: 'ignore' },
-    );
+    execSync(process.platform === "win32" ? `where.exe ${cmd}` : `command -v ${cmd}`, {
+      stdio: "ignore",
+    });
     return true;
   } catch {
     return false;
@@ -80,30 +70,26 @@ function commandExists(cmd: string): boolean {
  * Editor command configurations for different platforms.
  * Each editor can have multiple possible command names, listed in order of preference.
  */
-const editorCommands: Record<
-  EditorType,
-  { win32: string[]; default: string[] }
-> = {
-  vscode: { win32: ['code.cmd'], default: ['code'] },
-  vscodium: { win32: ['codium.cmd'], default: ['codium'] },
-  windsurf: { win32: ['windsurf'], default: ['windsurf'] },
-  cursor: { win32: ['cursor'], default: ['cursor'] },
-  vim: { win32: ['vim'], default: ['vim'] },
-  neovim: { win32: ['nvim'], default: ['nvim'] },
-  zed: { win32: ['zed'], default: ['zed', 'zeditor'] },
-  emacs: { win32: ['emacs.exe'], default: ['emacs'] },
-  antigravity: { win32: ['agy.cmd'], default: ['agy'] },
+const editorCommands: Record<EditorType, { win32: string[]; default: string[] }> = {
+  vscode: { win32: ["code.cmd"], default: ["code"] },
+  vscodium: { win32: ["codium.cmd"], default: ["codium"] },
+  windsurf: { win32: ["windsurf"], default: ["windsurf"] },
+  cursor: { win32: ["cursor"], default: ["cursor"] },
+  vim: { win32: ["vim"], default: ["vim"] },
+  neovim: { win32: ["nvim"], default: ["nvim"] },
+  zed: { win32: ["zed"], default: ["zed", "zeditor"] },
+  emacs: { win32: ["emacs.exe"], default: ["emacs"] },
+  antigravity: { win32: ["agy.cmd"], default: ["agy"] },
 };
 
 export function checkHasEditorType(editor: EditorType): boolean {
   const commandConfig = editorCommands[editor];
-  const commands =
-    process.platform === 'win32' ? commandConfig.win32 : commandConfig.default;
+  const commands = process.platform === "win32" ? commandConfig.win32 : commandConfig.default;
   return commands.some((cmd) => commandExists(cmd));
 }
 
 export function allowEditorTypeInSandbox(editor: EditorType): boolean {
-  const notUsingSandbox = !process.env['SANDBOX'];
+  const notUsingSandbox = !process.env["SANDBOX"];
   if (isGuiEditor(editor)) {
     return notUsingSandbox;
   }
@@ -134,53 +120,51 @@ export function getDiffCommand(
     return null;
   }
   const commandConfig = editorCommands[editor];
-  const commands =
-    process.platform === 'win32' ? commandConfig.win32 : commandConfig.default;
+  const commands = process.platform === "win32" ? commandConfig.win32 : commandConfig.default;
   const command =
-    commands.slice(0, -1).find((cmd) => commandExists(cmd)) ||
-    commands[commands.length - 1];
+    commands.slice(0, -1).find((cmd) => commandExists(cmd)) || commands[commands.length - 1];
 
   switch (editor) {
-    case 'vscode':
-    case 'vscodium':
-    case 'windsurf':
-    case 'cursor':
-    case 'zed':
-    case 'antigravity':
-      return { command, args: ['--wait', '--diff', oldPath, newPath] };
-    case 'vim':
-    case 'neovim':
+    case "vscode":
+    case "vscodium":
+    case "windsurf":
+    case "cursor":
+    case "zed":
+    case "antigravity":
+      return { command, args: ["--wait", "--diff", oldPath, newPath] };
+    case "vim":
+    case "neovim":
       return {
         command,
         args: [
-          '-d',
+          "-d",
           // skip viminfo file to avoid E138 errors
-          '-i',
-          'NONE',
+          "-i",
+          "NONE",
           // make the left window read-only and the right window editable
-          '-c',
-          'wincmd h | set readonly | wincmd l',
+          "-c",
+          "wincmd h | set readonly | wincmd l",
           // set up colors for diffs
-          '-c',
-          'highlight DiffAdd cterm=bold ctermbg=22 guibg=#005f00 | highlight DiffChange cterm=bold ctermbg=24 guibg=#005f87 | highlight DiffText ctermbg=21 guibg=#0000af | highlight DiffDelete ctermbg=52 guibg=#5f0000',
+          "-c",
+          "highlight DiffAdd cterm=bold ctermbg=22 guibg=#005f00 | highlight DiffChange cterm=bold ctermbg=24 guibg=#005f87 | highlight DiffText ctermbg=21 guibg=#0000af | highlight DiffDelete ctermbg=52 guibg=#5f0000",
           // Show helpful messages
-          '-c',
-          'set showtabline=2 | set tabline=[Instructions]\\ :wqa(save\\ &\\ quit)\\ \\|\\ i/esc(toggle\\ edit\\ mode)',
-          '-c',
-          'wincmd h | setlocal statusline=OLD\\ FILE',
-          '-c',
-          'wincmd l | setlocal statusline=%#StatusBold#NEW\\ FILE\\ :wqa(save\\ &\\ quit)\\ \\|\\ i/esc(toggle\\ edit\\ mode)',
+          "-c",
+          "set showtabline=2 | set tabline=[Instructions]\\ :wqa(save\\ &\\ quit)\\ \\|\\ i/esc(toggle\\ edit\\ mode)",
+          "-c",
+          "wincmd h | setlocal statusline=OLD\\ FILE",
+          "-c",
+          "wincmd l | setlocal statusline=%#StatusBold#NEW\\ FILE\\ :wqa(save\\ &\\ quit)\\ \\|\\ i/esc(toggle\\ edit\\ mode)",
           // Auto close all windows when one is closed
-          '-c',
-          'autocmd BufWritePost * wqa',
+          "-c",
+          "autocmd BufWritePost * wqa",
           oldPath,
           newPath,
         ],
       };
-    case 'emacs':
+    case "emacs":
       return {
-        command: 'emacs',
-        args: ['--eval', `(ediff "${oldPath}" "${newPath}")`],
+        command: "emacs",
+        args: ["--eval", `(ediff "${oldPath}" "${newPath}")`],
       };
     default:
       return null;
@@ -199,14 +183,14 @@ export async function openDiff(
 ): Promise<void> {
   const diffCommand = getDiffCommand(oldPath, newPath, editor);
   if (!diffCommand) {
-    debugLogger.error('No diff tool available. Install a supported editor.');
+    debugLogger.error("No diff tool available. Install a supported editor.");
     return;
   }
 
   if (isTerminalEditor(editor)) {
     try {
       const result = spawnSync(diffCommand.command, diffCommand.args, {
-        stdio: 'inherit',
+        stdio: "inherit",
       });
       if (result.error) {
         throw result.error;
@@ -222,11 +206,11 @@ export async function openDiff(
 
   return new Promise<void>((resolve, reject) => {
     const childProcess = spawn(diffCommand.command, diffCommand.args, {
-      stdio: 'inherit',
-      shell: process.platform === 'win32',
+      stdio: "inherit",
+      shell: process.platform === "win32",
     });
 
-    childProcess.on('close', (code) => {
+    childProcess.on("close", (code) => {
       if (code === 0) {
         resolve();
       } else {
@@ -234,7 +218,7 @@ export async function openDiff(
       }
     });
 
-    childProcess.on('error', (error) => {
+    childProcess.on("error", (error) => {
       reject(error);
     });
   });

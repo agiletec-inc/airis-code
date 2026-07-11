@@ -4,54 +4,44 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import {
-  describe,
-  expect,
-  it,
-  vi,
-  beforeEach,
-  afterEach,
-  type MockInstance,
-} from 'vitest';
-import { SimpleExtensionLoader } from './extensionLoader.js';
-import type { Config, GeminiCLIExtension } from '../config/config.js';
-import { type McpClientManager } from '../tools/mcp-client-manager.js';
-import type { GeminiClient } from '../core/client.js';
+import { afterEach, beforeEach, describe, expect, it, type MockInstance, vi } from "vitest";
+import type { Config, GeminiCLIExtension } from "../config/config.js";
+import type { GeminiClient } from "../core/client.js";
+import { type McpClientManager } from "../tools/mcp-client-manager.js";
+import { SimpleExtensionLoader } from "./extensionLoader.js";
 
 const mockRefreshServerHierarchicalMemory = vi.hoisted(() => vi.fn());
 
-vi.mock('./memoryDiscovery.js', async (importActual) => {
-  const actual = await importActual<typeof import('./memoryDiscovery.js')>();
+vi.mock("./memoryDiscovery.js", async (importActual) => {
+  const actual = await importActual<typeof import("./memoryDiscovery.js")>();
   return {
     ...actual,
     refreshServerHierarchicalMemory: mockRefreshServerHierarchicalMemory,
   };
 });
 
-describe('SimpleExtensionLoader', () => {
+describe("SimpleExtensionLoader", () => {
   let mockConfig: Config;
   let extensionReloadingEnabled: boolean;
   let mockMcpClientManager: McpClientManager;
-  let mockGeminiClientSetTools: MockInstance<
-    typeof GeminiClient.prototype.setTools
-  >;
+  let mockGeminiClientSetTools: MockInstance<typeof GeminiClient.prototype.setTools>;
 
   const activeExtension: GeminiCLIExtension = {
-    name: 'test-extension',
+    name: "test-extension",
     isActive: true,
-    version: '1.0.0',
-    path: '/path/to/extension',
+    version: "1.0.0",
+    path: "/path/to/extension",
     contextFiles: [],
-    excludeTools: ['some-tool'],
-    id: '123',
+    excludeTools: ["some-tool"],
+    id: "123",
   };
   const inactiveExtension: GeminiCLIExtension = {
-    name: 'test-extension',
+    name: "test-extension",
     isActive: false,
-    version: '1.0.0',
-    path: '/path/to/extension',
+    version: "1.0.0",
+    path: "/path/to/extension",
     contextFiles: [],
-    id: '123',
+    id: "123",
   };
 
   beforeEach(() => {
@@ -75,22 +65,20 @@ describe('SimpleExtensionLoader', () => {
     vi.restoreAllMocks();
   });
 
-  it('should start active extensions', async () => {
+  it("should start active extensions", async () => {
     const loader = new SimpleExtensionLoader([activeExtension]);
     await loader.start(mockConfig);
-    expect(mockMcpClientManager.startExtension).toHaveBeenCalledExactlyOnceWith(
-      activeExtension,
-    );
+    expect(mockMcpClientManager.startExtension).toHaveBeenCalledExactlyOnceWith(activeExtension);
   });
 
-  it('should not start inactive extensions', async () => {
+  it("should not start inactive extensions", async () => {
     const loader = new SimpleExtensionLoader([inactiveExtension]);
     await loader.start(mockConfig);
     expect(mockMcpClientManager.startExtension).not.toHaveBeenCalled();
   });
 
-  describe('interactive extension loading and unloading', () => {
-    it('should not call `start` or `stop` if the loader is not already started', async () => {
+  describe("interactive extension loading and unloading", () => {
+    it("should not call `start` or `stop` if the loader is not already started", async () => {
       const loader = new SimpleExtensionLoader([]);
       await loader.loadExtension(activeExtension);
       expect(mockMcpClientManager.startExtension).not.toHaveBeenCalled();
@@ -98,83 +86,78 @@ describe('SimpleExtensionLoader', () => {
       expect(mockMcpClientManager.stopExtension).not.toHaveBeenCalled();
     });
 
-    it('should start extensions that were explicitly loaded prior to initializing the loader', async () => {
+    it("should start extensions that were explicitly loaded prior to initializing the loader", async () => {
       const loader = new SimpleExtensionLoader([]);
       await loader.loadExtension(activeExtension);
       expect(mockMcpClientManager.startExtension).not.toHaveBeenCalled();
       await loader.start(mockConfig);
-      expect(
-        mockMcpClientManager.startExtension,
-      ).toHaveBeenCalledExactlyOnceWith(activeExtension);
+      expect(mockMcpClientManager.startExtension).toHaveBeenCalledExactlyOnceWith(activeExtension);
     });
 
-    describe.each([true, false])(
-      'when enableExtensionReloading === $i',
-      (reloadingEnabled) => {
-        beforeEach(() => {
-          extensionReloadingEnabled = reloadingEnabled;
-        });
+    describe.each([true, false])("when enableExtensionReloading === $i", (reloadingEnabled) => {
+      beforeEach(() => {
+        extensionReloadingEnabled = reloadingEnabled;
+      });
 
-        it(`should ${reloadingEnabled ? '' : 'not '}reload extension features`, async () => {
-          const loader = new SimpleExtensionLoader([]);
-          await loader.start(mockConfig);
+      it(`should ${reloadingEnabled ? "" : "not "}reload extension features`, async () => {
+        const loader = new SimpleExtensionLoader([]);
+        await loader.start(mockConfig);
+        expect(mockMcpClientManager.startExtension).not.toHaveBeenCalled();
+        await loader.loadExtension(activeExtension);
+        if (reloadingEnabled) {
+          expect(mockMcpClientManager.startExtension).toHaveBeenCalledExactlyOnceWith(
+            activeExtension,
+          );
+          expect(mockRefreshServerHierarchicalMemory).toHaveBeenCalledOnce();
+          expect(mockGeminiClientSetTools).toHaveBeenCalledOnce();
+        } else {
           expect(mockMcpClientManager.startExtension).not.toHaveBeenCalled();
+          expect(mockRefreshServerHierarchicalMemory).not.toHaveBeenCalled();
+          expect(mockGeminiClientSetTools).not.toHaveBeenCalledOnce();
+        }
+        mockRefreshServerHierarchicalMemory.mockClear();
+        mockGeminiClientSetTools.mockClear();
+
+        await loader.unloadExtension(activeExtension);
+        if (reloadingEnabled) {
+          expect(mockMcpClientManager.stopExtension).toHaveBeenCalledExactlyOnceWith(
+            activeExtension,
+          );
+          expect(mockRefreshServerHierarchicalMemory).toHaveBeenCalledOnce();
+          expect(mockGeminiClientSetTools).toHaveBeenCalledOnce();
+        } else {
+          expect(mockMcpClientManager.stopExtension).not.toHaveBeenCalled();
+          expect(mockRefreshServerHierarchicalMemory).not.toHaveBeenCalled();
+          expect(mockGeminiClientSetTools).not.toHaveBeenCalledOnce();
+        }
+      });
+
+      it.runIf(reloadingEnabled)(
+        "Should only reload memory once all extensions are done",
+        async () => {
+          const anotherExtension = {
+            ...activeExtension,
+            name: "another-extension",
+          };
+          const loader = new SimpleExtensionLoader([]);
           await loader.loadExtension(activeExtension);
-          if (reloadingEnabled) {
-            expect(
-              mockMcpClientManager.startExtension,
-            ).toHaveBeenCalledExactlyOnceWith(activeExtension);
-            expect(mockRefreshServerHierarchicalMemory).toHaveBeenCalledOnce();
-            expect(mockGeminiClientSetTools).toHaveBeenCalledOnce();
-          } else {
-            expect(mockMcpClientManager.startExtension).not.toHaveBeenCalled();
-            expect(mockRefreshServerHierarchicalMemory).not.toHaveBeenCalled();
-            expect(mockGeminiClientSetTools).not.toHaveBeenCalledOnce();
-          }
-          mockRefreshServerHierarchicalMemory.mockClear();
-          mockGeminiClientSetTools.mockClear();
-
-          await loader.unloadExtension(activeExtension);
-          if (reloadingEnabled) {
-            expect(
-              mockMcpClientManager.stopExtension,
-            ).toHaveBeenCalledExactlyOnceWith(activeExtension);
-            expect(mockRefreshServerHierarchicalMemory).toHaveBeenCalledOnce();
-            expect(mockGeminiClientSetTools).toHaveBeenCalledOnce();
-          } else {
-            expect(mockMcpClientManager.stopExtension).not.toHaveBeenCalled();
-            expect(mockRefreshServerHierarchicalMemory).not.toHaveBeenCalled();
-            expect(mockGeminiClientSetTools).not.toHaveBeenCalledOnce();
-          }
-        });
-
-        it.runIf(reloadingEnabled)(
-          'Should only reload memory once all extensions are done',
-          async () => {
-            const anotherExtension = {
-              ...activeExtension,
-              name: 'another-extension',
-            };
-            const loader = new SimpleExtensionLoader([]);
-            await loader.loadExtension(activeExtension);
-            await loader.start(mockConfig);
-            expect(mockRefreshServerHierarchicalMemory).not.toHaveBeenCalled();
-            await Promise.all([
-              loader.unloadExtension(activeExtension),
-              loader.loadExtension(anotherExtension),
-            ]);
-            expect(mockRefreshServerHierarchicalMemory).toHaveBeenCalledOnce();
-          },
-        );
-      },
-    );
+          await loader.start(mockConfig);
+          expect(mockRefreshServerHierarchicalMemory).not.toHaveBeenCalled();
+          await Promise.all([
+            loader.unloadExtension(activeExtension),
+            loader.loadExtension(anotherExtension),
+          ]);
+          expect(mockRefreshServerHierarchicalMemory).toHaveBeenCalledOnce();
+        },
+      );
+    });
   });
 
-  describe('restartExtension', () => {
-    it('should stop and then start the extension', async () => {
+  describe("restartExtension", () => {
+    it("should stop and then start the extension", async () => {
       const loader = new TestingSimpleExtensionLoader([activeExtension]);
-      vi.spyOn(loader, 'stopExtension');
-      vi.spyOn(loader, 'startExtension');
+      vi.spyOn(loader, "stopExtension");
+      vi.spyOn(loader, "startExtension");
       await loader.start(mockConfig);
       await loader.restartExtension(activeExtension);
       expect(loader.stopExtension).toHaveBeenCalledWith(activeExtension);

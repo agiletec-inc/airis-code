@@ -4,30 +4,27 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import type { MessageBus } from '../confirmation-bus/message-bus.js';
-import fs from 'node:fs';
-import path from 'node:path';
-import { spawn } from 'node:child_process';
-import { downloadRipGrep } from '@joshua.litt/get-ripgrep';
-import type { ToolInvocation, ToolResult } from './tools.js';
-import { BaseDeclarativeTool, BaseToolInvocation, Kind } from './tools.js';
-import { SchemaValidator } from '../utils/schemaValidator.js';
-import { makeRelative, shortenPath } from '../utils/paths.js';
-import { getErrorMessage, isNodeError } from '../utils/errors.js';
-import type { Config } from '../config/config.js';
-import { fileExists } from '../utils/fileUtils.js';
-import { Storage } from '../config/storage.js';
-import { GREP_TOOL_NAME } from './tool-names.js';
-import { debugLogger } from '../utils/debugLogger.js';
-import {
-  FileExclusions,
-  COMMON_DIRECTORY_EXCLUDES,
-} from '../utils/ignorePatterns.js';
+import { spawn } from "node:child_process";
+import fs from "node:fs";
+import path from "node:path";
+import { downloadRipGrep } from "@joshua.litt/get-ripgrep";
+import type { Config } from "../config/config.js";
+import { Storage } from "../config/storage.js";
+import type { MessageBus } from "../confirmation-bus/message-bus.js";
+import { debugLogger } from "../utils/debugLogger.js";
+import { getErrorMessage, isNodeError } from "../utils/errors.js";
+import { fileExists } from "../utils/fileUtils.js";
+import { COMMON_DIRECTORY_EXCLUDES, FileExclusions } from "../utils/ignorePatterns.js";
+import { makeRelative, shortenPath } from "../utils/paths.js";
+import { SchemaValidator } from "../utils/schemaValidator.js";
+import { GREP_TOOL_NAME } from "./tool-names.js";
+import type { ToolInvocation, ToolResult } from "./tools.js";
+import { BaseDeclarativeTool, BaseToolInvocation, Kind } from "./tools.js";
 
 const DEFAULT_TOTAL_MAX_MATCHES = 20000;
 
 function getRgCandidateFilenames(): readonly string[] {
-  return process.platform === 'win32' ? ['rg.exe', 'rg'] : ['rg'];
+  return process.platform === "win32" ? ["rg.exe", "rg"] : ["rg"];
 }
 
 async function resolveExistingRgPath(): Promise<string | null> {
@@ -76,7 +73,7 @@ export async function ensureRgPath(): Promise<string> {
   if (downloadedPath) {
     return downloadedPath;
   }
-  throw new Error('Cannot use ripgrep.');
+  throw new Error("Cannot use ripgrep.");
 }
 
 /**
@@ -86,10 +83,7 @@ export async function ensureRgPath(): Promise<string> {
  * @returns The absolute path if valid and exists, or null if no path specified.
  * @throws {Error} If path is outside root, doesn't exist, or isn't a directory/file.
  */
-function resolveAndValidatePath(
-  config: Config,
-  relativePath?: string,
-): string | null {
+function resolveAndValidatePath(config: Config, relativePath?: string): string | null {
   if (!relativePath) {
     return null;
   }
@@ -102,7 +96,7 @@ function resolveAndValidatePath(
   if (!workspaceContext.isPathWithinWorkspace(targetPath)) {
     const directories = workspaceContext.getDirectories();
     throw new Error(
-      `Path validation failed: Attempted path "${relativePath}" resolves outside the allowed workspace directories: ${directories.join(', ')}`,
+      `Path validation failed: Attempted path "${relativePath}" resolves outside the allowed workspace directories: ${directories.join(", ")}`,
     );
   }
 
@@ -110,12 +104,10 @@ function resolveAndValidatePath(
   try {
     const stats = fs.statSync(targetPath);
     if (!stats.isDirectory() && !stats.isFile()) {
-      throw new Error(
-        `Path is not a valid directory or file: ${targetPath} (CWD: ${targetDir})`,
-      );
+      throw new Error(`Path is not a valid directory or file: ${targetPath} (CWD: ${targetDir})`);
     }
   } catch (error: unknown) {
-    if (isNodeError(error) && error.code === 'ENOENT') {
+    if (isNodeError(error) && error.code === "ENOENT") {
       throw new Error(`Path does not exist: ${targetPath} (CWD: ${targetDir})`);
     }
     throw new Error(`Failed to access path stats for ${targetPath}: ${error}`);
@@ -183,10 +175,7 @@ interface GrepMatch {
   line: string;
 }
 
-class GrepToolInvocation extends BaseToolInvocation<
-  RipGrepToolParams,
-  ToolResult
-> {
+class GrepToolInvocation extends BaseToolInvocation<RipGrepToolParams, ToolResult> {
   constructor(
     private readonly config: Config,
     params: RipGrepToolParams,
@@ -201,7 +190,7 @@ class GrepToolInvocation extends BaseToolInvocation<
     try {
       // Default to '.' if path is explicitly undefined/null.
       // This forces CWD search instead of 'all workspaces' search by default.
-      const pathParam = this.params.dir_path || '.';
+      const pathParam = this.params.dir_path || ".";
 
       const searchDirAbs = resolveAndValidatePath(this.config, pathParam);
       const searchDirDisplay = pathParam;
@@ -230,7 +219,7 @@ class GrepToolInvocation extends BaseToolInvocation<
 
       const searchLocationDescription = `in path "${searchDirDisplay}"`;
       if (allMatches.length === 0) {
-        const noMatchMsg = `No matches found for pattern "${this.params.pattern}" ${searchLocationDescription}${this.params.include ? ` (filter: "${this.params.include}")` : ''}.`;
+        const noMatchMsg = `No matches found for pattern "${this.params.pattern}" ${searchLocationDescription}${this.params.include ? ` (filter: "${this.params.include}")` : ""}.`;
         return { llmContent: noMatchMsg, returnDisplay: `No matches found` };
       }
 
@@ -250,9 +239,9 @@ class GrepToolInvocation extends BaseToolInvocation<
       );
 
       const matchCount = allMatches.length;
-      const matchTerm = matchCount === 1 ? 'match' : 'matches';
+      const matchTerm = matchCount === 1 ? "match" : "matches";
 
-      let llmContent = `Found ${matchCount} ${matchTerm} for pattern "${this.params.pattern}" ${searchLocationDescription}${this.params.include ? ` (filter: "${this.params.include}")` : ''}`;
+      let llmContent = `Found ${matchCount} ${matchTerm} for pattern "${this.params.pattern}" ${searchLocationDescription}${this.params.include ? ` (filter: "${this.params.include}")` : ""}`;
 
       if (wasTruncated) {
         llmContent += ` (results limited to ${totalMaxMatches} matches for performance)`;
@@ -266,7 +255,7 @@ class GrepToolInvocation extends BaseToolInvocation<
           const trimmedLine = match.line.trim();
           llmContent += `L${match.lineNumber}: ${trimmedLine}\n`;
         });
-        llmContent += '---\n';
+        llmContent += "---\n";
       }
 
       let displayMessage = `Found ${matchCount} ${matchTerm}`;
@@ -288,21 +277,18 @@ class GrepToolInvocation extends BaseToolInvocation<
     }
   }
 
-  private parseRipgrepJsonOutput(
-    output: string,
-    basePath: string,
-  ): GrepMatch[] {
+  private parseRipgrepJsonOutput(output: string, basePath: string): GrepMatch[] {
     const results: GrepMatch[] = [];
     if (!output) return results;
 
-    const lines = output.trim().split('\n');
+    const lines = output.trim().split("\n");
 
     for (const line of lines) {
       if (!line.trim()) continue;
 
       try {
         const json = JSON.parse(line);
-        if (json.type === 'match') {
+        if (json.type === "match") {
           const match = json.data;
           // Defensive check: ensure text properties exist (skips binary/invalid encoding)
           if (match.path?.text && match.lines?.text) {
@@ -347,49 +333,49 @@ class GrepToolInvocation extends BaseToolInvocation<
       no_ignore,
     } = options;
 
-    const rgArgs = ['--json'];
+    const rgArgs = ["--json"];
 
     if (!case_sensitive) {
-      rgArgs.push('--ignore-case');
+      rgArgs.push("--ignore-case");
     }
 
     if (fixed_strings) {
-      rgArgs.push('--fixed-strings');
+      rgArgs.push("--fixed-strings");
       rgArgs.push(pattern);
     } else {
-      rgArgs.push('--regexp', pattern);
+      rgArgs.push("--regexp", pattern);
     }
 
     if (context) {
-      rgArgs.push('--context', context.toString());
+      rgArgs.push("--context", context.toString());
     }
     if (after) {
-      rgArgs.push('--after-context', after.toString());
+      rgArgs.push("--after-context", after.toString());
     }
     if (before) {
-      rgArgs.push('--before-context', before.toString());
+      rgArgs.push("--before-context", before.toString());
     }
     if (no_ignore) {
-      rgArgs.push('--no-ignore');
+      rgArgs.push("--no-ignore");
     }
 
     if (include) {
-      rgArgs.push('--glob', include);
+      rgArgs.push("--glob", include);
     }
 
     if (!no_ignore) {
       const fileExclusions = new FileExclusions(this.config);
       const excludes = fileExclusions.getGlobExcludes([
         ...COMMON_DIRECTORY_EXCLUDES,
-        '*.log',
-        '*.tmp',
+        "*.log",
+        "*.tmp",
       ]);
       excludes.forEach((exclude) => {
-        rgArgs.push('--glob', `!${exclude}`);
+        rgArgs.push("--glob", `!${exclude}`);
       });
     }
 
-    rgArgs.push('--threads', '4');
+    rgArgs.push("--threads", "4");
     rgArgs.push(absolutePath);
 
     try {
@@ -408,13 +394,13 @@ class GrepToolInvocation extends BaseToolInvocation<
           }
         };
 
-        options.signal.addEventListener('abort', cleanup, { once: true });
+        options.signal.addEventListener("abort", cleanup, { once: true });
 
-        child.stdout.on('data', (chunk) => stdoutChunks.push(chunk));
-        child.stderr.on('data', (chunk) => stderrChunks.push(chunk));
+        child.stdout.on("data", (chunk) => stdoutChunks.push(chunk));
+        child.stderr.on("data", (chunk) => stderrChunks.push(chunk));
 
-        child.on('error', (err) => {
-          options.signal.removeEventListener('abort', cleanup);
+        child.on("error", (err) => {
+          options.signal.removeEventListener("abort", cleanup);
           reject(
             new Error(
               `Failed to start ripgrep: ${err.message}. Please ensure @lvce-editor/ripgrep is properly installed.`,
@@ -422,19 +408,17 @@ class GrepToolInvocation extends BaseToolInvocation<
           );
         });
 
-        child.on('close', (code) => {
-          options.signal.removeEventListener('abort', cleanup);
-          const stdoutData = Buffer.concat(stdoutChunks).toString('utf8');
-          const stderrData = Buffer.concat(stderrChunks).toString('utf8');
+        child.on("close", (code) => {
+          options.signal.removeEventListener("abort", cleanup);
+          const stdoutData = Buffer.concat(stdoutChunks).toString("utf8");
+          const stderrData = Buffer.concat(stderrChunks).toString("utf8");
 
           if (code === 0) {
             resolve(stdoutData);
           } else if (code === 1) {
-            resolve(''); // No matches found
+            resolve(""); // No matches found
           } else {
-            reject(
-              new Error(`ripgrep exited with code ${code}: ${stderrData}`),
-            );
+            reject(new Error(`ripgrep exited with code ${code}: ${stderrData}`));
           }
         });
       });
@@ -456,15 +440,12 @@ class GrepToolInvocation extends BaseToolInvocation<
     if (this.params.include) {
       description += ` in ${this.params.include}`;
     }
-    const pathParam = this.params.dir_path || '.';
+    const pathParam = this.params.dir_path || ".";
     const resolvedPath = path.resolve(this.config.getTargetDir(), pathParam);
-    if (resolvedPath === this.config.getTargetDir() || pathParam === '.') {
+    if (resolvedPath === this.config.getTargetDir() || pathParam === ".") {
       description += ` within ./`;
     } else {
-      const relativePath = makeRelative(
-        resolvedPath,
-        this.config.getTargetDir(),
-      );
+      const relativePath = makeRelative(resolvedPath, this.config.getTargetDir());
       description += ` within ${shortenPath(relativePath)}`;
     }
     return description;
@@ -474,10 +455,7 @@ class GrepToolInvocation extends BaseToolInvocation<
 /**
  * Implementation of the Grep tool logic (moved from CLI)
  */
-export class RipGrepTool extends BaseDeclarativeTool<
-  RipGrepToolParams,
-  ToolResult
-> {
+export class RipGrepTool extends BaseDeclarativeTool<RipGrepToolParams, ToolResult> {
   static readonly Name = GREP_TOOL_NAME;
 
   constructor(
@@ -486,7 +464,7 @@ export class RipGrepTool extends BaseDeclarativeTool<
   ) {
     super(
       RipGrepTool.Name,
-      'SearchText',
+      "SearchText",
       'FAST, optimized search powered by `ripgrep`. PREFERRED over standard `run_shell_command("grep ...")` due to better performance and automatic output limiting (max 20k matches).',
       Kind.Search,
       {
@@ -494,51 +472,51 @@ export class RipGrepTool extends BaseDeclarativeTool<
           pattern: {
             description:
               "The pattern to search for. By default, treated as a Rust-flavored regular expression. Use '\\b' for precise symbol matching (e.g., '\\bMatchMe\\b').",
-            type: 'string',
+            type: "string",
           },
           dir_path: {
             description:
               "Directory or file to search. Directories are searched recursively. Relative paths are resolved against current working directory. Defaults to current working directory ('.') if omitted.",
-            type: 'string',
+            type: "string",
           },
           include: {
             description:
               "Glob pattern to filter files (e.g., '*.ts', 'src/**'). Recommended for large repositories to reduce noise. Defaults to all files if omitted.",
-            type: 'string',
+            type: "string",
           },
           case_sensitive: {
             description:
-              'If true, search is case-sensitive. Defaults to false (ignore case) if omitted.',
-            type: 'boolean',
+              "If true, search is case-sensitive. Defaults to false (ignore case) if omitted.",
+            type: "boolean",
           },
           fixed_strings: {
             description:
-              'If true, treats the `pattern` as a literal string instead of a regular expression. Defaults to false (basic regex) if omitted.',
-            type: 'boolean',
+              "If true, treats the `pattern` as a literal string instead of a regular expression. Defaults to false (basic regex) if omitted.",
+            type: "boolean",
           },
           context: {
             description:
-              'Show this many lines of context around each match (equivalent to grep -C). Defaults to 0 if omitted.',
-            type: 'integer',
+              "Show this many lines of context around each match (equivalent to grep -C). Defaults to 0 if omitted.",
+            type: "integer",
           },
           after: {
             description:
-              'Show this many lines after each match (equivalent to grep -A). Defaults to 0 if omitted.',
-            type: 'integer',
+              "Show this many lines after each match (equivalent to grep -A). Defaults to 0 if omitted.",
+            type: "integer",
           },
           before: {
             description:
-              'Show this many lines before each match (equivalent to grep -B). Defaults to 0 if omitted.',
-            type: 'integer',
+              "Show this many lines before each match (equivalent to grep -B). Defaults to 0 if omitted.",
+            type: "integer",
           },
           no_ignore: {
             description:
-              'If true, searches all files including those usually ignored (like in .gitignore, build/, dist/, etc). Defaults to false if omitted.',
-            type: 'boolean',
+              "If true, searches all files including those usually ignored (like in .gitignore, build/, dist/, etc). Defaults to false if omitted.",
+            type: "boolean",
           },
         },
-        required: ['pattern'],
-        type: 'object',
+        required: ["pattern"],
+        type: "object",
       },
       true, // isOutputMarkdown
       false, // canUpdateOutput
@@ -552,10 +530,7 @@ export class RipGrepTool extends BaseDeclarativeTool<
    * @returns An error message string if invalid, null otherwise
    */
   override validateToolParams(params: RipGrepToolParams): string | null {
-    const errors = SchemaValidator.validate(
-      this.schema.parametersJsonSchema,
-      params,
-    );
+    const errors = SchemaValidator.validate(this.schema.parametersJsonSchema, params);
     if (errors) {
       return errors;
     }
@@ -578,12 +553,6 @@ export class RipGrepTool extends BaseDeclarativeTool<
     _toolName?: string,
     _toolDisplayName?: string,
   ): ToolInvocation<RipGrepToolParams, ToolResult> {
-    return new GrepToolInvocation(
-      this.config,
-      params,
-      messageBus,
-      _toolName,
-      _toolDisplayName,
-    );
+    return new GrepToolInvocation(this.config, params, messageBus, _toolName, _toolDisplayName);
   }
 }

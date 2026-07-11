@@ -4,11 +4,11 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import type { Config } from '../config/config.js';
-import { isPerformanceMonitoringActive } from './metrics.js';
-import { getMemoryMonitor } from './memory-monitor.js';
-import { ActivityType } from './activity-types.js';
-import { debugLogger } from '../utils/debugLogger.js';
+import type { Config } from "../config/config.js";
+import { debugLogger } from "../utils/debugLogger.js";
+import { ActivityType } from "./activity-types.js";
+import { getMemoryMonitor } from "./memory-monitor.js";
+import { isPerformanceMonitoringActive } from "./metrics.js";
 
 /**
  * Activity event data structure
@@ -86,10 +86,7 @@ export class ActivityMonitor {
     this.addListener(this.memoryMonitoringListener);
 
     // Record activity monitoring start
-    this.recordActivity(
-      ActivityType.MANUAL_TRIGGER,
-      'activity_monitoring_start',
-    );
+    this.recordActivity(ActivityType.MANUAL_TRIGGER, "activity_monitoring_start");
   }
 
   /**
@@ -125,11 +122,7 @@ export class ActivityMonitor {
   /**
    * Record a user activity event
    */
-  recordActivity(
-    type: ActivityType,
-    context?: string,
-    metadata?: Record<string, unknown>,
-  ): void {
+  recordActivity(type: ActivityType, context?: string, metadata?: Record<string, unknown>): void {
     if (!this.isActive || !this.config.enabled) {
       return;
     }
@@ -153,7 +146,7 @@ export class ActivityMonitor {
         listener(event);
       } catch (error) {
         // Silently catch listener errors to avoid disrupting the application
-        debugLogger.debug('ActivityMonitor listener error:', error);
+        debugLogger.debug("ActivityMonitor listener error:", error);
       }
     });
   }
@@ -201,10 +194,7 @@ export class ActivityMonitor {
   /**
    * Handle memory monitoring for activity events
    */
-  private handleMemoryMonitoringActivity(
-    event: ActivityEvent,
-    config: Config,
-  ): void {
+  private handleMemoryMonitoringActivity(event: ActivityEvent, config: Config): void {
     // Check if this activity type should trigger memory monitoring
     if (!this.config.triggerActivities.includes(event.type)) {
       return;
@@ -243,9 +233,7 @@ let globalActivityMonitor: ActivityMonitor | null = null;
 /**
  * Initialize global activity monitor
  */
-export function initializeActivityMonitor(
-  config?: ActivityMonitorConfig,
-): ActivityMonitor {
+export function initializeActivityMonitor(config?: ActivityMonitorConfig): ActivityMonitor {
   if (!globalActivityMonitor) {
     globalActivityMonitor = new ActivityMonitor(config);
   }

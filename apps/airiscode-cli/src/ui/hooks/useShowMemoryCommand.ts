@@ -4,13 +4,13 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import type { Message } from '../types.js';
-import { MessageType } from '../types.js';
-import type { Config } from '@airiscode/runtime';
-import type { LoadedSettings } from '../../config/settings.js';
-import { createDebugLogger } from '@airiscode/runtime';
+import type { Config } from "@airiscode/runtime";
+import { createDebugLogger } from "@airiscode/runtime";
+import type { LoadedSettings } from "../../config/settings.js";
+import type { Message } from "../types.js";
+import { MessageType } from "../types.js";
 
-const debugLogger = createDebugLogger('SHOW_MEMORY');
+const debugLogger = createDebugLogger("SHOW_MEMORY");
 
 export function createShowMemoryAction(
   config: Config | null,
@@ -21,20 +21,18 @@ export function createShowMemoryAction(
     if (!config) {
       addMessage({
         type: MessageType.ERROR,
-        content: 'Configuration not available. Cannot show memory.',
+        content: "Configuration not available. Cannot show memory.",
         timestamp: new Date(),
       });
       return;
     }
 
-    debugLogger.debug('[DEBUG] Show Memory command invoked.');
+    debugLogger.debug("[DEBUG] Show Memory command invoked.");
 
     const currentMemory = config.getUserMemory();
     const fileCount = config.getGeminiMdFileCount();
     const contextFileName = settings.merged.context?.fileName;
-    const contextFileNames = Array.isArray(contextFileName)
-      ? contextFileName
-      : [contextFileName];
+    const contextFileNames = Array.isArray(contextFileName) ? contextFileName : [contextFileName];
 
     debugLogger.debug(
       `[DEBUG] Showing memory. Content from config.getUserMemory() (first 200 chars): ${currentMemory.substring(0, 200)}...`,
@@ -43,12 +41,10 @@ export function createShowMemoryAction(
 
     if (fileCount > 0) {
       const allNamesTheSame = new Set(contextFileNames).size < 2;
-      const name = allNamesTheSame ? contextFileNames[0] : 'context';
+      const name = allNamesTheSame ? contextFileNames[0] : "context";
       addMessage({
         type: MessageType.INFO,
-        content: `Loaded memory from ${fileCount} ${name} file${
-          fileCount > 1 ? 's' : ''
-        }.`,
+        content: `Loaded memory from ${fileCount} ${name} file${fileCount > 1 ? "s" : ""}.`,
         timestamp: new Date(),
       });
     }
@@ -64,8 +60,8 @@ export function createShowMemoryAction(
         type: MessageType.INFO,
         content:
           fileCount > 0
-            ? 'Hierarchical memory (AIRISCODE.md or other context files) is loaded but content is empty.'
-            : 'No hierarchical memory (AIRISCODE.md or other context files) is currently loaded.',
+            ? "Hierarchical memory (AIRISCODE.md or other context files) is loaded but content is empty."
+            : "No hierarchical memory (AIRISCODE.md or other context files) is currently loaded.",
         timestamp: new Date(),
       });
     }

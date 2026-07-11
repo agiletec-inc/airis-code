@@ -4,26 +4,21 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { useState, useRef, useCallback, useMemo } from 'react';
-import type { HistoryItem } from '../types.js';
-import type { ChatRecordingService } from '@airiscode/gemini-cli-core';
+import type { ChatRecordingService } from "@airiscode/gemini-cli-core";
+import { useCallback, useMemo, useRef, useState } from "react";
+import type { HistoryItem } from "../types.js";
 
 // Type for the updater function passed to updateHistoryItem
-type HistoryItemUpdater = (
-  prevItem: HistoryItem,
-) => Partial<Omit<HistoryItem, 'id'>>;
+type HistoryItemUpdater = (prevItem: HistoryItem) => Partial<Omit<HistoryItem, "id">>;
 
 export interface UseHistoryManagerReturn {
   history: HistoryItem[];
   addItem: (
-    itemData: Omit<HistoryItem, 'id'>,
+    itemData: Omit<HistoryItem, "id">,
     baseTimestamp: number,
     isResuming?: boolean,
   ) => number; // Returns the generated ID
-  updateItem: (
-    id: number,
-    updates: Partial<Omit<HistoryItem, 'id'>> | HistoryItemUpdater,
-  ) => void;
+  updateItem: (id: number, updates: Partial<Omit<HistoryItem, "id">> | HistoryItemUpdater) => void;
   clearItems: () => void;
   loadHistory: (newHistory: HistoryItem[]) => void;
 }
@@ -55,7 +50,7 @@ export function useHistory({
   // Adds a new item to the history state with a unique ID.
   const addItem = useCallback(
     (
-      itemData: Omit<HistoryItem, 'id'>,
+      itemData: Omit<HistoryItem, "id">,
       baseTimestamp: number,
       isResuming: boolean = false,
     ): number => {
@@ -67,8 +62,8 @@ export function useHistory({
           const lastItem = prevHistory[prevHistory.length - 1];
           // Prevent adding duplicate consecutive user messages
           if (
-            lastItem.type === 'user' &&
-            newItem.type === 'user' &&
+            lastItem.type === "user" &&
+            newItem.type === "user" &&
             lastItem.text === newItem.text
           ) {
             return prevHistory; // Don't add the duplicate
@@ -81,31 +76,31 @@ export function useHistory({
       // an existing session.
       if (!isResuming && chatRecordingService) {
         switch (itemData.type) {
-          case 'compression':
-          case 'info':
+          case "compression":
+          case "info":
             chatRecordingService?.recordMessage({
               model: undefined,
-              type: 'info',
-              content: itemData.text ?? '',
+              type: "info",
+              content: itemData.text ?? "",
             });
             break;
-          case 'warning':
+          case "warning":
             chatRecordingService?.recordMessage({
               model: undefined,
-              type: 'warning',
-              content: itemData.text ?? '',
+              type: "warning",
+              content: itemData.text ?? "",
             });
             break;
-          case 'error':
+          case "error":
             chatRecordingService?.recordMessage({
               model: undefined,
-              type: 'error',
-              content: itemData.text ?? '',
+              type: "error",
+              content: itemData.text ?? "",
             });
             break;
-          case 'user':
-          case 'gemini':
-          case 'gemini_content':
+          case "user":
+          case "gemini":
+          case "gemini_content":
             // Core conversation recording handled by GeminiChat.
             break;
           default:
@@ -127,16 +122,12 @@ export function useHistory({
    */
   //
   const updateItem = useCallback(
-    (
-      id: number,
-      updates: Partial<Omit<HistoryItem, 'id'>> | HistoryItemUpdater,
-    ) => {
+    (id: number, updates: Partial<Omit<HistoryItem, "id">> | HistoryItemUpdater) => {
       setHistory((prevHistory) =>
         prevHistory.map((item) => {
           if (item.id === id) {
             // Apply updates based on whether it's an object or a function
-            const newUpdates =
-              typeof updates === 'function' ? updates(item) : updates;
+            const newUpdates = typeof updates === "function" ? updates(item) : updates;
             return { ...item, ...newUpdates } as HistoryItem;
           }
           return item;

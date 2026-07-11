@@ -4,18 +4,18 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import type { Content } from '../types/llm.js';
-import type { Config } from '../config/config.js';
-import type { GeminiChat } from '../core/geminiChat.js';
-import { type ChatCompressionInfo, CompressionStatus } from '../core/turn.js';
-import { uiTelemetryService } from '../telemetry/uiTelemetry.js';
-import { DEFAULT_TOKEN_LIMIT } from '../core/tokenLimits.js';
-import { getCompressionPrompt } from '../core/prompts.js';
-import { getResponseText } from '../utils/partUtils.js';
-import { logChatCompression } from '../telemetry/loggers.js';
-import { makeChatCompressionEvent } from '../telemetry/types.js';
-import type { PermissionMode } from '../hooks/types.js';
-import { SessionStartSource, PreCompactTrigger } from '../hooks/types.js';
+import type { Config } from "../config/config.js";
+import type { GeminiChat } from "../core/geminiChat.js";
+import { getCompressionPrompt } from "../core/prompts.js";
+import { DEFAULT_TOKEN_LIMIT } from "../core/tokenLimits.js";
+import { type ChatCompressionInfo, CompressionStatus } from "../core/turn.js";
+import type { PermissionMode } from "../hooks/types.js";
+import { PreCompactTrigger, SessionStartSource } from "../hooks/types.js";
+import { logChatCompression } from "../telemetry/loggers.js";
+import { makeChatCompressionEvent } from "../telemetry/types.js";
+import { uiTelemetryService } from "../telemetry/uiTelemetry.js";
+import type { Content } from "../types/llm.js";
+import { getResponseText } from "../utils/partUtils.js";
 
 /**
  * Threshold for compression token count as a fraction of the model's token limit.
@@ -45,12 +45,9 @@ export const MIN_COMPRESSION_FRACTION = 0.05;
  *
  * Exported for testing purposes.
  */
-export function findCompressSplitPoint(
-  contents: Content[],
-  fraction: number,
-): number {
+export function findCompressSplitPoint(contents: Content[], fraction: number): number {
   if (fraction <= 0 || fraction >= 1) {
-    throw new Error('Fraction must be between 0 and 1');
+    throw new Error("Fraction must be between 0 and 1");
   }
 
   const charCounts = contents.map((content) => JSON.stringify(content).length);
@@ -61,10 +58,7 @@ export function findCompressSplitPoint(
   let cumulativeCharCount = 0;
   for (let i = 0; i < contents.length; i++) {
     const content = contents[i];
-    if (
-      content.role === 'user' &&
-      !content.parts?.some((part) => !!part.functionResponse)
-    ) {
+    if (content.role === "user" && !content.parts?.some((part) => !!part.functionResponse)) {
       if (cumulativeCharCount >= targetCharCount) {
         return i;
       }
@@ -76,18 +70,12 @@ export function findCompressSplitPoint(
   // We found no split points after targetCharCount.
   // Check if it's safe to compress everything.
   const lastContent = contents[contents.length - 1];
-  if (
-    lastContent?.role === 'model' &&
-    !lastContent?.parts?.some((part) => part.functionCall)
-  ) {
+  if (lastContent?.role === "model" && !lastContent?.parts?.some((part) => part.functionCall)) {
     return contents.length;
   }
   // Also safe to compress everything if the last message completes a tool call
   // sequence (all function calls have matching responses).
-  if (
-    lastContent?.role === 'user' &&
-    lastContent?.parts?.some((part) => !!part.functionResponse)
-  ) {
+  if (lastContent?.role === "user" && lastContent?.parts?.some((part) => !!part.functionResponse)) {
     return contents.length;
   }
 
@@ -106,15 +94,10 @@ export class ChatCompressionService {
   ): Promise<{ newHistory: Content[] | null; info: ChatCompressionInfo }> {
     const curatedHistory = chat.getHistory(true);
     const threshold =
-      config.getChatCompression()?.contextPercentageThreshold ??
-      COMPRESSION_TOKEN_THRESHOLD;
+      config.getChatCompression()?.contextPercentageThreshold ?? COMPRESSION_TOKEN_THRESHOLD;
 
     // Regardless of `force`, don't do anything if the history is empty.
-    if (
-      curatedHistory.length === 0 ||
-      threshold <= 0 ||
-      (hasFailedCompressionAttempt && !force)
-    ) {
+    if (curatedHistory.length === 0 || threshold <= 0 || (hasFailedCompressionAttempt && !force)) {
       return {
         newHistory: null,
         info: {
@@ -130,8 +113,7 @@ export class ChatCompressionService {
     // Don't compress if not forced and we are under the limit.
     if (!force) {
       const contextLimit =
-        config.getContentGeneratorConfig()?.contextWindowSize ??
-        DEFAULT_TOKEN_LIMIT;
+        config.getContentGeneratorConfig()?.contextWindowSize ?? DEFAULT_TOKEN_LIMIT;
       if (originalTokenCount < threshold * contextLimit) {
         return {
           newHistory: null,
@@ -149,7 +131,7 @@ export class ChatCompressionService {
     if (hookSystem) {
       const trigger = force ? PreCompactTrigger.Manual : PreCompactTrigger.Auto;
       try {
-        await hookSystem.firePreCompactEvent(trigger, '', signal);
+        await hookSystem.firePreCompactEvent(trigger, "", signal);
       } catch (err) {
         config.getDebugLogger().warn(`PreCompact hook failed: ${err}`);
       }
@@ -166,17 +148,10 @@ export class ChatCompressionService {
     // history, so the trailing funcCall is still active, not orphaned.
     const lastMessage = curatedHistory[curatedHistory.length - 1];
     const hasOrphanedFuncCall =
-      force &&
-      lastMessage?.role === 'model' &&
-      lastMessage.parts?.some((p) => !!p.functionCall);
-    const historyForSplit = hasOrphanedFuncCall
-      ? curatedHistory.slice(0, -1)
-      : curatedHistory;
+      force && lastMessage?.role === "model" && lastMessage.parts?.some((p) => !!p.functionCall);
+    const historyForSplit = hasOrphanedFuncCall ? curatedHistory.slice(0, -1) : curatedHistory;
 
-    const splitPoint = findCompressSplitPoint(
-      historyForSplit,
-      1 - COMPRESSION_PRESERVE_THRESHOLD,
-    );
+    const splitPoint = findCompressSplitPoint(historyForSplit, 1 - COMPRESSION_PRESERVE_THRESHOLD);
 
     const historyToCompress = historyForSplit.slice(0, splitPoint);
     const historyToKeep = historyForSplit.slice(splitPoint);
@@ -203,14 +178,8 @@ export class ChatCompressionService {
       (sum, c) => sum + JSON.stringify(c).length,
       0,
     );
-    const totalCharCount = historyForSplit.reduce(
-      (sum, c) => sum + JSON.stringify(c).length,
-      0,
-    );
-    if (
-      totalCharCount > 0 &&
-      compressCharCount / totalCharCount < MIN_COMPRESSION_FRACTION
-    ) {
+    const totalCharCount = historyForSplit.reduce((sum, c) => sum + JSON.stringify(c).length, 0);
+    if (totalCharCount > 0 && compressCharCount / totalCharCount < MIN_COMPRESSION_FRACTION) {
       return {
         newHistory: null,
         info: {
@@ -227,10 +196,10 @@ export class ChatCompressionService {
         contents: [
           ...historyToCompress,
           {
-            role: 'user',
+            role: "user",
             parts: [
               {
-                text: 'First, reason in your scratchpad. Then, generate the <state_snapshot>.',
+                text: "First, reason in your scratchpad. Then, generate the <state_snapshot>.",
               },
             ],
           },
@@ -241,17 +210,15 @@ export class ChatCompressionService {
       },
       promptId,
     );
-    const summary = getResponseText(summaryResponse) ?? '';
+    const summary = getResponseText(summaryResponse) ?? "";
     const isSummaryEmpty = !summary || summary.trim().length === 0;
     const compressionUsageMetadata = summaryResponse.usageMetadata;
-    const compressionInputTokenCount =
-      compressionUsageMetadata?.promptTokenCount;
-    let compressionOutputTokenCount =
-      compressionUsageMetadata?.candidatesTokenCount;
+    const compressionInputTokenCount = compressionUsageMetadata?.promptTokenCount;
+    let compressionOutputTokenCount = compressionUsageMetadata?.candidatesTokenCount;
     if (
       compressionOutputTokenCount === undefined &&
-      typeof compressionUsageMetadata?.totalTokenCount === 'number' &&
-      typeof compressionInputTokenCount === 'number'
+      typeof compressionUsageMetadata?.totalTokenCount === "number" &&
+      typeof compressionInputTokenCount === "number"
     ) {
       compressionOutputTokenCount = Math.max(
         0,
@@ -266,12 +233,12 @@ export class ChatCompressionService {
     if (!isSummaryEmpty) {
       extraHistory = [
         {
-          role: 'user',
+          role: "user",
           parts: [{ text: summary }],
         },
         {
-          role: 'model',
-          parts: [{ text: 'Got it. Thanks for the additional context!' }],
+          role: "model",
+          parts: [{ text: "Got it. Thanks for the additional context!" }],
         },
         ...historyToKeep,
       ];
@@ -283,17 +250,15 @@ export class ChatCompressionService {
       // compressionOutputTokenCount may include non-persisted tokens (thoughts).
       // We accept these inaccuracies to avoid local token estimation.
       if (
-        typeof compressionInputTokenCount === 'number' &&
+        typeof compressionInputTokenCount === "number" &&
         compressionInputTokenCount > 0 &&
-        typeof compressionOutputTokenCount === 'number' &&
+        typeof compressionOutputTokenCount === "number" &&
         compressionOutputTokenCount > 0
       ) {
         canCalculateNewTokenCount = true;
         newTokenCount = Math.max(
           0,
-          originalTokenCount -
-            (compressionInputTokenCount - 1000) +
-            compressionOutputTokenCount,
+          originalTokenCount - (compressionInputTokenCount - 1000) + compressionOutputTokenCount,
         );
       }
     }
@@ -323,8 +288,7 @@ export class ChatCompressionService {
         info: {
           originalTokenCount,
           newTokenCount: originalTokenCount,
-          compressionStatus:
-            CompressionStatus.COMPRESSION_FAILED_TOKEN_COUNT_ERROR,
+          compressionStatus: CompressionStatus.COMPRESSION_FAILED_TOKEN_COUNT_ERROR,
         },
       };
     } else if (newTokenCount > originalTokenCount) {
@@ -333,8 +297,7 @@ export class ChatCompressionService {
         info: {
           originalTokenCount,
           newTokenCount,
-          compressionStatus:
-            CompressionStatus.COMPRESSION_FAILED_INFLATED_TOKEN_COUNT,
+          compressionStatus: CompressionStatus.COMPRESSION_FAILED_INFLATED_TOKEN_COUNT,
         },
       };
     } else {
@@ -342,14 +305,12 @@ export class ChatCompressionService {
 
       // Fire SessionStart event after successful compression
       try {
-        const permissionMode = String(
-          config.getApprovalMode(),
-        ) as PermissionMode;
+        const permissionMode = String(config.getApprovalMode()) as PermissionMode;
         await config
           .getHookSystem()
           ?.fireSessionStartEvent(
             SessionStartSource.Compact,
-            model ?? '',
+            model ?? "",
             permissionMode,
             undefined,
             signal,

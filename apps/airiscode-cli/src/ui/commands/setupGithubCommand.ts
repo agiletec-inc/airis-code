@@ -4,33 +4,31 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import path from 'node:path';
-import * as fs from 'node:fs';
-import { Writable } from 'node:stream';
-import { ProxyAgent } from 'undici';
-
-import type { CommandContext } from '../../ui/commands/types.js';
+import * as fs from "node:fs";
+import path from "node:path";
+import { Writable } from "node:stream";
+import { createDebugLogger } from "@airiscode/runtime";
+import { ProxyAgent } from "undici";
+import { t } from "../../i18n/index.js";
+import type { CommandContext } from "../../ui/commands/types.js";
+import { getUrlOpenCommand } from "../../ui/utils/commandUtils.js";
 import {
+  getGitHubRepoInfo,
   getGitRepoRoot,
   getLatestGitHubRelease,
   isGitHubRepository,
-  getGitHubRepoInfo,
-} from '../../utils/gitUtils.js';
+} from "../../utils/gitUtils.js";
+import type { SlashCommand, SlashCommandActionReturn } from "./types.js";
+import { CommandKind } from "./types.js";
 
-import type { SlashCommand, SlashCommandActionReturn } from './types.js';
-import { CommandKind } from './types.js';
-import { getUrlOpenCommand } from '../../ui/utils/commandUtils.js';
-import { t } from '../../i18n/index.js';
-import { createDebugLogger } from '@airiscode/runtime';
-
-const debugLogger = createDebugLogger('SETUP_GITHUB');
+const debugLogger = createDebugLogger("SETUP_GITHUB");
 
 export const GITHUB_WORKFLOW_PATHS = [
-  'qwen-dispatch/qwen-dispatch.yml',
-  'qwen-assistant/qwen-invoke.yml',
-  'issue-triage/qwen-triage.yml',
-  'issue-triage/qwen-scheduled-triage.yml',
-  'pr-review/qwen-review.yml',
+  "qwen-dispatch/qwen-dispatch.yml",
+  "qwen-assistant/qwen-invoke.yml",
+  "issue-triage/qwen-triage.yml",
+  "issue-triage/qwen-scheduled-triage.yml",
+  "pr-review/qwen-review.yml",
 ];
 
 // Generate OS-specific commands to open the GitHub pages needed for setup.
@@ -55,15 +53,15 @@ function getOpenUrlsCommands(readmeUrl: string): string[] {
 
 // Add AIRIS Code specific entries to .gitignore file
 export async function updateGitignore(gitRepoRoot: string): Promise<void> {
-  const gitignoreEntries = ['.airiscode/', 'gha-creds-*.json'];
+  const gitignoreEntries = [".airiscode/", "gha-creds-*.json"];
 
-  const gitignorePath = path.join(gitRepoRoot, '.gitignore');
+  const gitignorePath = path.join(gitRepoRoot, ".gitignore");
   try {
     // Check if .gitignore exists and read its content
-    let existingContent = '';
+    let existingContent = "";
     let fileExists = true;
     try {
-      existingContent = await fs.promises.readFile(gitignorePath, 'utf8');
+      existingContent = await fs.promises.readFile(gitignorePath, "utf8");
     } catch (_error) {
       // File doesn't exist
       fileExists = false;
@@ -71,51 +69,43 @@ export async function updateGitignore(gitRepoRoot: string): Promise<void> {
 
     if (!fileExists) {
       // Create new .gitignore file with the entries
-      const contentToWrite = gitignoreEntries.join('\n') + '\n';
+      const contentToWrite = gitignoreEntries.join("\n") + "\n";
       await fs.promises.writeFile(gitignorePath, contentToWrite);
     } else {
       // Check which entries are missing
       const missingEntries = gitignoreEntries.filter(
         (entry) =>
-          !existingContent
-            .split(/\r?\n/)
-            .some((line) => line.split('#')[0].trim() === entry),
+          !existingContent.split(/\r?\n/).some((line) => line.split("#")[0].trim() === entry),
       );
 
       if (missingEntries.length > 0) {
-        const contentToAdd = '\n' + missingEntries.join('\n') + '\n';
+        const contentToAdd = "\n" + missingEntries.join("\n") + "\n";
         await fs.promises.appendFile(gitignorePath, contentToAdd);
       }
     }
   } catch (error) {
-    debugLogger.debug('Failed to update .gitignore:', error);
+    debugLogger.debug("Failed to update .gitignore:", error);
     // Continue without failing the whole command
   }
 }
 
 export const setupGithubCommand: SlashCommand = {
-  name: 'setup-github',
+  name: "setup-github",
   get description() {
-    return t('Set up GitHub Actions');
+    return t("Set up GitHub Actions");
   },
   kind: CommandKind.BUILT_IN,
-  action: async (
-    context: CommandContext,
-  ): Promise<SlashCommandActionReturn> => {
+  action: async (context: CommandContext): Promise<SlashCommandActionReturn> => {
     const abortController = new AbortController();
 
     // If we have a context abort signal (from ESC cancellation), link it to our controller
     if (context.abortSignal) {
-      context.abortSignal.addEventListener(
-        'abort',
-        () => abortController.abort(),
-        { once: true },
-      );
+      context.abortSignal.addEventListener("abort", () => abortController.abort(), { once: true });
     }
 
     if (!isGitHubRepository()) {
       throw new Error(
-        'Unable to determine the GitHub repository. /setup-github must be run from a git repository.',
+        "Unable to determine the GitHub repository. /setup-github must be run from a git repository.",
       );
     }
 
@@ -126,7 +116,7 @@ export const setupGithubCommand: SlashCommand = {
     } catch (_error) {
       debugLogger.debug(`Failed to get git repo root:`, _error);
       throw new Error(
-        'Unable to determine the GitHub repository. /setup-github must be run from a git repository.',
+        "Unable to determine the GitHub repository. /setup-github must be run from a git repository.",
       );
     }
 
@@ -136,14 +126,11 @@ export const setupGithubCommand: SlashCommand = {
     const readmeUrl = `https://github.com/QwenLM/airiscode-action/blob/${releaseTag}/README.md#quick-start`;
 
     // Create the .github/workflows directory to download the files into
-    const githubWorkflowsDir = path.join(gitRepoRoot, '.github', 'workflows');
+    const githubWorkflowsDir = path.join(gitRepoRoot, ".github", "workflows");
     try {
       await fs.promises.mkdir(githubWorkflowsDir, { recursive: true });
     } catch (_error) {
-      debugLogger.debug(
-        `Failed to create ${githubWorkflowsDir} directory:`,
-        _error,
-      );
+      debugLogger.debug(`Failed to create ${githubWorkflowsDir} directory:`, _error);
       throw new Error(
         `Unable to create ${githubWorkflowsDir} directory. Do you have file permissions in the current directory?`,
       );
@@ -157,12 +144,9 @@ export const setupGithubCommand: SlashCommand = {
         (async () => {
           const endpoint = `https://raw.githubusercontent.com/QwenLM/airiscode-action/refs/tags/${releaseTag}/examples/workflows/${workflow}`;
           const response = await fetch(endpoint, {
-            method: 'GET',
+            method: "GET",
             dispatcher: proxy ? new ProxyAgent(proxy) : undefined,
-            signal: AbortSignal.any([
-              AbortSignal.timeout(30_000),
-              abortController.signal,
-            ]),
+            signal: AbortSignal.any([AbortSignal.timeout(30_000), abortController.signal]),
           } as RequestInit);
 
           if (!response.ok) {
@@ -177,14 +161,11 @@ export const setupGithubCommand: SlashCommand = {
             );
           }
 
-          const destination = path.resolve(
-            githubWorkflowsDir,
-            path.basename(workflow),
-          );
+          const destination = path.resolve(githubWorkflowsDir, path.basename(workflow));
 
           const fileStream = fs.createWriteStream(destination, {
             mode: 0o644, // -rw-r--r--, user(rw), group(r), other(r)
-            flags: 'w', // write and overwrite
+            flags: "w", // write and overwrite
             flush: true,
           });
 
@@ -204,19 +185,18 @@ export const setupGithubCommand: SlashCommand = {
 
     // Print out a message
     const commands = [];
-    commands.push('set -eEuo pipefail');
+    commands.push("set -eEuo pipefail");
     commands.push(
       `echo "Successfully downloaded ${GITHUB_WORKFLOW_PATHS.length} workflows and updated .gitignore. Follow the steps in ${readmeUrl} (skipping the /setup-github step) to complete setup."`,
     );
     commands.push(...getOpenUrlsCommands(readmeUrl));
 
-    const command = `(${commands.join(' && ')})`;
+    const command = `(${commands.join(" && ")})`;
     return {
-      type: 'tool',
-      toolName: 'run_shell_command',
+      type: "tool",
+      toolName: "run_shell_command",
       toolArgs: {
-        description:
-          'Setting up GitHub Actions to triage issues and review PRs with Qwen.',
+        description: "Setting up GitHub Actions to triage issues and review PRs with Qwen.",
         command,
         is_background: false,
       },

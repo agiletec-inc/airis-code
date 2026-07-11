@@ -4,16 +4,16 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+import type { ApprovalMode } from "@airiscode/runtime";
+import { APPROVAL_MODES } from "@airiscode/runtime";
+import { t } from "../../i18n/index.js";
 import type {
-  SlashCommand,
   CommandContext,
-  OpenDialogActionReturn,
   MessageActionReturn,
-} from './types.js';
-import { CommandKind } from './types.js';
-import { t } from '../../i18n/index.js';
-import type { ApprovalMode } from '@airiscode/runtime';
-import { APPROVAL_MODES } from '@airiscode/runtime';
+  OpenDialogActionReturn,
+  SlashCommand,
+} from "./types.js";
+import { CommandKind } from "./types.js";
 
 /**
  * Parses the argument string and returns the corresponding ApprovalMode if valid.
@@ -29,9 +29,9 @@ function parseApprovalModeArg(arg: string): ApprovalMode | undefined {
 }
 
 export const approvalModeCommand: SlashCommand = {
-  name: 'approval-mode',
+  name: "approval-mode",
   get description() {
-    return t('View or change the approval mode for tool usage');
+    return t("View or change the approval mode for tool usage");
   },
   kind: CommandKind.BUILT_IN,
   action: async (
@@ -43,19 +43,19 @@ export const approvalModeCommand: SlashCommand = {
     // If no argument provided, open the dialog
     if (!args.trim()) {
       return {
-        type: 'dialog',
-        dialog: 'approval-mode',
+        type: "dialog",
+        dialog: "approval-mode",
       };
     }
 
     // If invalid argument, return error message with valid options
     if (!mode) {
       return {
-        type: 'message',
-        messageType: 'error',
+        type: "message",
+        messageType: "error",
         content: t('Invalid approval mode "{{arg}}". Valid modes: {{modes}}', {
           arg: args.trim(),
-          modes: APPROVAL_MODES.join(', '),
+          modes: APPROVAL_MODES.join(", "),
         }),
       };
     }
@@ -67,16 +67,16 @@ export const approvalModeCommand: SlashCommand = {
         config.setApprovalMode(mode);
       } catch (e) {
         return {
-          type: 'message',
-          messageType: 'error',
+          type: "message",
+          messageType: "error",
           content: (e as Error).message,
         };
       }
     }
 
     return {
-      type: 'message',
-      messageType: 'info',
+      type: "message",
+      messageType: "info",
       content: t('Approval mode set to "{{mode}}"', { mode }),
     };
   },

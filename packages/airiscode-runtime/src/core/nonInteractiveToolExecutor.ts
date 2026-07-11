@@ -4,17 +4,13 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import type {
-  ToolCallRequestInfo,
-  ToolCallResponseInfo,
-  Config,
-} from '../index.js';
+import type { Config, ToolCallRequestInfo, ToolCallResponseInfo } from "../index.js";
 import {
-  CoreToolScheduler,
   type AllToolCallsCompleteHandler,
+  CoreToolScheduler,
   type OutputUpdateHandler,
   type ToolCallsUpdateHandler,
-} from './coreToolScheduler.js';
+} from "./coreToolScheduler.js";
 
 export interface ExecuteToolCallOptions {
   outputUpdateHandler?: OutputUpdateHandler;

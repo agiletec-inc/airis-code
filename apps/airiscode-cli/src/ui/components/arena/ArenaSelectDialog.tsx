@@ -4,27 +4,23 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import type React from 'react';
-import { useCallback, useMemo } from 'react';
-import { Box, Text } from 'ink';
-import {
-  type ArenaManager,
-  isSuccessStatus,
-  type Config,
-} from '@airiscode/runtime';
-import { theme } from '../../semantic-colors.js';
-import { useKeypress } from '../../hooks/useKeypress.js';
-import { MessageType, type HistoryItemWithoutId } from '../../types.js';
-import type { UseHistoryManagerReturn } from '../../hooks/useHistoryManager.js';
-import { formatDuration } from '../../utils/formatters.js';
-import { getArenaStatusLabel } from '../../utils/displayUtils.js';
-import { DescriptiveRadioButtonSelect } from '../shared/DescriptiveRadioButtonSelect.js';
-import type { DescriptiveRadioSelectItem } from '../shared/DescriptiveRadioButtonSelect.js';
+import { type ArenaManager, type Config, isSuccessStatus } from "@airiscode/runtime";
+import { Box, Text } from "ink";
+import type React from "react";
+import { useCallback, useMemo } from "react";
+import type { UseHistoryManagerReturn } from "../../hooks/useHistoryManager.js";
+import { useKeypress } from "../../hooks/useKeypress.js";
+import { theme } from "../../semantic-colors.js";
+import { type HistoryItemWithoutId, MessageType } from "../../types.js";
+import { getArenaStatusLabel } from "../../utils/displayUtils.js";
+import { formatDuration } from "../../utils/formatters.js";
+import type { DescriptiveRadioSelectItem } from "../shared/DescriptiveRadioButtonSelect.js";
+import { DescriptiveRadioButtonSelect } from "../shared/DescriptiveRadioButtonSelect.js";
 
 interface ArenaSelectDialogProps {
   manager: ArenaManager;
   config: Config;
-  addItem: UseHistoryManagerReturn['addItem'];
+  addItem: UseHistoryManagerReturn["addItem"];
   closeArenaDialog: () => void;
 }
 
@@ -35,10 +31,9 @@ export function ArenaSelectDialog({
   closeArenaDialog,
 }: ArenaSelectDialogProps): React.JSX.Element {
   const pushMessage = useCallback(
-    (result: { messageType: 'info' | 'error'; content: string }) => {
+    (result: { messageType: "info" | "error"; content: string }) => {
       const item: HistoryItemWithoutId = {
-        type:
-          result.messageType === 'info' ? MessageType.INFO : MessageType.ERROR,
+        type: result.messageType === "info" ? MessageType.INFO : MessageType.ERROR,
         text: result.content,
       };
       addItem(item, Date.now());
@@ -46,8 +41,8 @@ export function ArenaSelectDialog({
       try {
         const chatRecorder = config.getChatRecordingService();
         chatRecorder?.recordSlashCommand({
-          phase: 'result',
-          rawCommand: '/arena select',
+          phase: "result",
+          rawCommand: "/arena select",
           outputHistoryItems: [{ ...item } as Record<string, unknown>],
         });
       } catch {
@@ -63,25 +58,24 @@ export function ArenaSelectDialog({
       const mgr = config.getArenaManager();
       if (!mgr) {
         pushMessage({
-          messageType: 'error',
-          content: 'No arena session found. Start one with /arena start.',
+          messageType: "error",
+          content: "No arena session found. Start one with /arena start.",
         });
         return;
       }
 
       const agent =
-        mgr.getAgentState(agentId) ??
-        mgr.getAgentStates().find((item) => item.agentId === agentId);
+        mgr.getAgentState(agentId) ?? mgr.getAgentStates().find((item) => item.agentId === agentId);
       const label = agent?.model.modelId || agentId;
 
       pushMessage({
-        messageType: 'info',
+        messageType: "info",
         content: `Applying changes from ${label}…`,
       });
       const result = await mgr.applyAgentResult(agentId);
       if (!result.success) {
         pushMessage({
-          messageType: 'error',
+          messageType: "error",
           content: `Failed to apply changes from ${label}: ${result.error}`,
         });
         return;
@@ -91,12 +85,12 @@ export function ArenaSelectDialog({
         await config.cleanupArenaRuntime(true);
       } catch (err) {
         pushMessage({
-          messageType: 'error',
+          messageType: "error",
           content: `Warning: failed to clean up arena resources: ${err instanceof Error ? err.message : String(err)}`,
         });
       }
       pushMessage({
-        messageType: 'info',
+        messageType: "info",
         content: `Applied changes from ${label} to workspace. Arena session complete.`,
       });
     },
@@ -108,25 +102,25 @@ export function ArenaSelectDialog({
     const mgr = config.getArenaManager();
     if (!mgr) {
       pushMessage({
-        messageType: 'error',
-        content: 'No arena session found. Start one with /arena start.',
+        messageType: "error",
+        content: "No arena session found. Start one with /arena start.",
       });
       return;
     }
 
     try {
       pushMessage({
-        messageType: 'info',
-        content: 'Discarding Arena results and cleaning up…',
+        messageType: "info",
+        content: "Discarding Arena results and cleaning up…",
       });
       await config.cleanupArenaRuntime(true);
       pushMessage({
-        messageType: 'info',
-        content: 'Arena results discarded. All worktrees cleaned up.',
+        messageType: "info",
+        content: "Arena results discarded. All worktrees cleaned up.",
       });
     } catch (err) {
       pushMessage({
-        messageType: 'error',
+        messageType: "error",
         content: `Failed to clean up arena worktrees: ${err instanceof Error ? err.message : String(err)}`,
       });
     }
@@ -147,15 +141,13 @@ export function ArenaSelectDialog({
         let diffAdditions = 0;
         let diffDeletions = 0;
         if (isSuccessStatus(agent.status) && result) {
-          const agentResult = result.agents.find(
-            (a) => a.agentId === agent.agentId,
-          );
+          const agentResult = result.agents.find((a) => a.agentId === agent.agentId);
           if (agentResult?.diff) {
-            const lines = agentResult.diff.split('\n');
+            const lines = agentResult.diff.split("\n");
             for (const line of lines) {
-              if (line.startsWith('+') && !line.startsWith('+++')) {
+              if (line.startsWith("+") && !line.startsWith("+++")) {
                 diffAdditions++;
-              } else if (line.startsWith('-') && !line.startsWith('---')) {
+              } else if (line.startsWith("-") && !line.startsWith("---")) {
                 diffDeletions++;
               }
             }
@@ -198,17 +190,17 @@ export function ArenaSelectDialog({
 
   useKeypress(
     (key) => {
-      if (key.name === 'escape') {
+      if (key.name === "escape") {
         closeArenaDialog();
       }
-      if (key.name === 'd' && !key.ctrl && !key.meta) {
+      if (key.name === "d" && !key.ctrl && !key.meta) {
         onDiscard();
       }
     },
     { isActive: true },
   );
 
-  const task = result?.task || '';
+  const task = result?.task || "";
 
   return (
     <Box
@@ -228,14 +220,12 @@ export function ArenaSelectDialog({
           <Text color={theme.text.secondary}>Task: </Text>
           <Text
             color={theme.text.primary}
-          >{`"${task.length > 60 ? task.slice(0, 59) + '…' : task}"`}</Text>
+          >{`"${task.length > 60 ? task.slice(0, 59) + "…" : task}"`}</Text>
         </Text>
       </Box>
 
       <Box marginTop={1}>
-        <Text color={theme.text.secondary}>
-          Select a winner to apply changes:
-        </Text>
+        <Text color={theme.text.secondary}>Select a winner to apply changes:</Text>
       </Box>
 
       <Box marginTop={1} flexDirection="column">
@@ -251,9 +241,7 @@ export function ArenaSelectDialog({
       </Box>
 
       <Box marginTop={1}>
-        <Text color={theme.text.secondary}>
-          Enter to select, d to discard all, Esc to cancel
-        </Text>
+        <Text color={theme.text.secondary}>Enter to select, d to discard all, Esc to cancel</Text>
       </Box>
     </Box>
   );

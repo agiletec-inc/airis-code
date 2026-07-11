@@ -4,13 +4,13 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { useState, useEffect, useMemo } from 'react';
-import { Box, Text } from 'ink';
-import { theme } from '../../../semantic-colors.js';
-import { useKeypress } from '../../../hooks/useKeypress.js';
-import { type Extension } from '@airiscode/runtime';
-import { t } from '../../../../i18n/index.js';
-import { ExtensionUpdateState } from '../../../state/extensions.js';
+import { type Extension } from "@airiscode/runtime";
+import { Box, Text } from "ink";
+import { useEffect, useMemo, useState } from "react";
+import { t } from "../../../../i18n/index.js";
+import { useKeypress } from "../../../hooks/useKeypress.js";
+import { theme } from "../../../semantic-colors.js";
+import { ExtensionUpdateState } from "../../../state/extensions.js";
 
 interface ExtensionListStepProps {
   extensions: Extension[];
@@ -33,9 +33,7 @@ export const ExtensionListStep = ({
     for (const ext of extensions) {
       maxName = Math.max(maxName, ext.name.length);
       maxVersion = Math.max(maxVersion, ext.version.length);
-      const statusLength = ext.isActive
-        ? t('active').length
-        : t('disabled').length;
+      const statusLength = ext.isActive ? t("active").length : t("disabled").length;
       maxStatus = Math.max(maxStatus, statusLength);
     }
     return {
@@ -55,15 +53,11 @@ export const ExtensionListStep = ({
   // Keyboard navigation
   useKeypress(
     (key) => {
-      if (key.name === 'up' || key.name === 'k') {
-        setSelectedIndex((prev) =>
-          prev > 0 ? prev - 1 : extensions.length - 1,
-        );
-      } else if (key.name === 'down' || key.name === 'j') {
-        setSelectedIndex((prev) =>
-          prev < extensions.length - 1 ? prev + 1 : 0,
-        );
-      } else if (key.name === 'return' || key.name === 'space') {
+      if (key.name === "up" || key.name === "k") {
+        setSelectedIndex((prev) => (prev > 0 ? prev - 1 : extensions.length - 1));
+      } else if (key.name === "down" || key.name === "j") {
+        setSelectedIndex((prev) => (prev < extensions.length - 1 ? prev + 1 : 0));
+      } else if (key.name === "return" || key.name === "space") {
         if (extensions.length > 0) {
           onExtensionSelect(selectedIndex);
         }
@@ -75,9 +69,7 @@ export const ExtensionListStep = ({
   if (extensions.length === 0) {
     return (
       <Box flexDirection="column">
-        <Text color={theme.text.secondary}>
-          {t('No extensions installed.')}
-        </Text>
+        <Text color={theme.text.secondary}>{t("No extensions installed.")}</Text>
         <Text color={theme.text.secondary}>
           {t("Use '/extensions install' to install your first extension.")}
         </Text>
@@ -107,26 +99,22 @@ export const ExtensionListStep = ({
   };
 
   const getLocalizedUpdateState = (state: string | undefined): string => {
-    if (!state) return '';
+    if (!state) return "";
     // Map internal state values to translation keys
     const stateMap: Record<string, string> = {
-      'up to date': t('up to date'),
-      'update available': t('update available'),
-      'checking...': t('checking...'),
-      'not updatable': t('not updatable'),
-      error: t('error'),
+      "up to date": t("up to date"),
+      "update available": t("update available"),
+      "checking...": t("checking..."),
+      "not updatable": t("not updatable"),
+      error: t("error"),
     };
     return stateMap[state] || state;
   };
 
-  const renderExtensionItem = (
-    extension: Extension,
-    index: number,
-    isSelected: boolean,
-  ) => {
+  const renderExtensionItem = (extension: Extension, index: number, isSelected: boolean) => {
     const isActive = extension.isActive;
     const activeColor = isActive ? theme.status.success : theme.text.secondary;
-    const activeString = isActive ? t('active') : t('disabled');
+    const activeString = isActive ? t("active") : t("disabled");
 
     const updateState = extensionsUpdateState.get(extension.name);
     const stateColor = getUpdateStateColor(updateState);
@@ -136,14 +124,11 @@ export const ExtensionListStep = ({
       <Box key={extension.name} alignItems="center">
         <Box minWidth={2} flexShrink={0}>
           <Text color={isSelected ? theme.text.accent : theme.text.primary}>
-            {isSelected ? '●' : ' '}
+            {isSelected ? "●" : " "}
           </Text>
         </Box>
         <Box width={maxNameWidth} flexShrink={0}>
-          <Text
-            color={isSelected ? theme.text.accent : theme.text.primary}
-            wrap="truncate"
-          >
+          <Text color={isSelected ? theme.text.accent : theme.text.primary} wrap="truncate">
             {extension.name}
           </Text>
         </Box>
@@ -162,7 +147,7 @@ export const ExtensionListStep = ({
     <Box flexDirection="column">
       <Box marginBottom={1}>
         <Text color={theme.text.secondary}>
-          {t('{{count}} extensions installed', {
+          {t("{{count}} extensions installed", {
             count: extensions.length.toString(),
           })}
         </Text>

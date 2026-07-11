@@ -4,14 +4,14 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { performance } from 'node:perf_hooks';
-import * as os from 'node:os';
-import * as fs from 'node:fs';
-import type { Config } from '../config/config.js';
-import { recordStartupPerformance } from './metrics.js';
-import { debugLogger } from '../utils/debugLogger.js';
-import { StartupStatsEvent, type StartupPhaseStats } from './types.js';
-import { logStartupStats } from './loggers.js';
+import * as fs from "node:fs";
+import * as os from "node:os";
+import { performance } from "node:perf_hooks";
+import type { Config } from "../config/config.js";
+import { debugLogger } from "../utils/debugLogger.js";
+import { logStartupStats } from "./loggers.js";
+import { recordStartupPerformance } from "./metrics.js";
+import { type StartupPhaseStats, StartupStatsEvent } from "./types.js";
 
 interface StartupPhase {
   name: string;
@@ -107,15 +107,10 @@ export class StartupProfiler {
    * Marks the end of a phase and calculates duration.
    * This is now a private method; callers should use the handle returned by start().
    */
-  private _end(
-    phase: StartupPhase,
-    details?: Record<string, string | number | boolean>,
-  ): void {
+  private _end(phase: StartupPhase, details?: Record<string, string | number | boolean>): void {
     // Error if ending a phase that's already ended.
     if (phase.ended) {
-      debugLogger.warn(
-        `[STARTUP] Cannot end phase '${phase.name}': phase was already ended.`,
-      );
+      debugLogger.warn(`[STARTUP] Cannot end phase '${phase.name}': phase was already ended.`);
       return;
     }
 
@@ -145,21 +140,17 @@ export class StartupProfiler {
    * Flushes buffered metrics to the telemetry system.
    */
   flush(config: Config): void {
-    debugLogger.log(
-      '[STARTUP] StartupProfiler.flush() called with',
-      this.phases.size,
-      'phases',
-    );
+    debugLogger.log("[STARTUP] StartupProfiler.flush() called with", this.phases.size, "phases");
 
     const commonDetails = {
       os_platform: os.platform(),
       os_arch: os.arch(),
       os_release: os.release(),
-      is_docker: fs.existsSync('/.dockerenv'),
+      is_docker: fs.existsSync("/.dockerenv"),
     };
 
     // Get all performance measures.
-    const measures = performance.getEntriesByType('measure');
+    const measures = performance.getEntriesByType("measure");
 
     for (const phase of this.phases.values()) {
       // Warn about incomplete phases.
@@ -182,9 +173,9 @@ export class StartupProfiler {
         };
 
         debugLogger.log(
-          '[STARTUP] Recording metric for phase:',
+          "[STARTUP] Recording metric for phase:",
           phase.name,
-          'duration:',
+          "duration:",
           measure.duration,
         );
         recordStartupPerformance(config, measure.duration, {
@@ -192,10 +183,7 @@ export class StartupProfiler {
           details,
         });
       } else {
-        debugLogger.log(
-          '[STARTUP] Skipping phase without measure:',
-          phase.name,
-        );
+        debugLogger.log("[STARTUP] Skipping phase without measure:", phase.name);
       }
     }
 
@@ -211,9 +199,7 @@ export class StartupProfiler {
           cpu_usage_user_usec: phase.cpuUsage.user,
           cpu_usage_system_usec: phase.cpuUsage.system,
           start_time_usec: (performance.timeOrigin + measure.startTime) * 1000,
-          end_time_usec:
-            (performance.timeOrigin + measure.startTime + measure.duration) *
-            1000,
+          end_time_usec: (performance.timeOrigin + measure.startTime + measure.duration) * 1000,
         });
       }
     }
@@ -225,7 +211,7 @@ export class StartupProfiler {
           startupPhases,
           os.platform(),
           os.release(),
-          fs.existsSync('/.dockerenv'),
+          fs.existsSync("/.dockerenv"),
         ),
       );
     }

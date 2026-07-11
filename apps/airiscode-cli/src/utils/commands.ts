@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { type SlashCommand } from '../ui/commands/types.js';
+import { type SlashCommand } from "../ui/commands/types.js";
 
 export type ParsedSlashCommand = {
   commandToExecute: SlashCommand | undefined;
@@ -46,9 +46,7 @@ export const parseSlashCommand = (
 
     // Second pass: if no primary name matches, check for an alias.
     if (!foundCommand) {
-      foundCommand = currentCommands.find((cmd) =>
-        cmd.altNames?.includes(part),
-      );
+      foundCommand = currentCommands.find((cmd) => cmd.altNames?.includes(part));
     }
 
     if (foundCommand) {
@@ -65,7 +63,7 @@ export const parseSlashCommand = (
     }
   }
 
-  const args = parts.slice(pathIndex).join(' ');
+  const args = parts.slice(pathIndex).join(" ");
 
   return { commandToExecute, args, canonicalPath };
 };

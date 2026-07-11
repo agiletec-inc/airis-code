@@ -4,57 +4,55 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { SubagentToolWrapper } from './subagent-tool-wrapper.js';
-import { SubagentInvocation } from './invocation.js';
-import { convertInputConfigToJsonSchema } from './schema-utils.js';
-import { makeFakeConfig } from '../test-utils/config.js';
-import type { AgentDefinition, AgentInputs } from './types.js';
-import type { Config } from '../config/config.js';
-import { Kind } from '../tools/tools.js';
-import type { MessageBus } from '../confirmation-bus/message-bus.js';
+import { beforeEach, describe, expect, it, vi } from "vitest";
+import type { Config } from "../config/config.js";
+import type { MessageBus } from "../confirmation-bus/message-bus.js";
+import { makeFakeConfig } from "../test-utils/config.js";
+import { Kind } from "../tools/tools.js";
+import { SubagentInvocation } from "./invocation.js";
+import { convertInputConfigToJsonSchema } from "./schema-utils.js";
+import { SubagentToolWrapper } from "./subagent-tool-wrapper.js";
+import type { AgentDefinition, AgentInputs } from "./types.js";
 
 // Mock dependencies to isolate the SubagentToolWrapper class
-vi.mock('./invocation.js');
-vi.mock('./schema-utils.js');
+vi.mock("./invocation.js");
+vi.mock("./schema-utils.js");
 
 const MockedSubagentInvocation = vi.mocked(SubagentInvocation);
-const mockConvertInputConfigToJsonSchema = vi.mocked(
-  convertInputConfigToJsonSchema,
-);
+const mockConvertInputConfigToJsonSchema = vi.mocked(convertInputConfigToJsonSchema);
 
 // Define reusable test data
 let mockConfig: Config;
 
 const mockDefinition: AgentDefinition = {
-  name: 'TestAgent',
-  displayName: 'Test Agent Display Name',
-  description: 'An agent for testing.',
+  name: "TestAgent",
+  displayName: "Test Agent Display Name",
+  description: "An agent for testing.",
   inputConfig: {
     inputs: {
-      goal: { type: 'string', required: true, description: 'The goal.' },
+      goal: { type: "string", required: true, description: "The goal." },
       priority: {
-        type: 'number',
+        type: "number",
         required: false,
-        description: 'The priority.',
+        description: "The priority.",
       },
     },
   },
-  modelConfig: { model: 'gemini-test-model', temp: 0, top_p: 1 },
+  modelConfig: { model: "gemini-test-model", temp: 0, top_p: 1 },
   runConfig: { max_time_minutes: 5 },
-  promptConfig: { systemPrompt: 'You are a test agent.' },
+  promptConfig: { systemPrompt: "You are a test agent." },
 };
 
 const mockSchema = {
-  type: 'object',
+  type: "object",
   properties: {
-    goal: { type: 'string', description: 'The goal.' },
-    priority: { type: 'number', description: 'The priority.' },
+    goal: { type: "string", description: "The goal." },
+    priority: { type: "number", description: "The priority." },
   },
-  required: ['goal'],
+  required: ["goal"],
 };
 
-describe('SubagentToolWrapper', () => {
+describe("SubagentToolWrapper", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     mockConfig = makeFakeConfig();
@@ -63,8 +61,8 @@ describe('SubagentToolWrapper', () => {
     mockConvertInputConfigToJsonSchema.mockReturnValue(mockSchema as any);
   });
 
-  describe('constructor', () => {
-    it('should call convertInputConfigToJsonSchema with the correct agent inputConfig', () => {
+  describe("constructor", () => {
+    it("should call convertInputConfigToJsonSchema with the correct agent inputConfig", () => {
       new SubagentToolWrapper(mockDefinition, mockConfig);
 
       expect(convertInputConfigToJsonSchema).toHaveBeenCalledExactlyOnceWith(
@@ -72,7 +70,7 @@ describe('SubagentToolWrapper', () => {
       );
     });
 
-    it('should correctly configure the tool properties from the agent definition', () => {
+    it("should correctly configure the tool properties from the agent definition", () => {
       const wrapper = new SubagentToolWrapper(mockDefinition, mockConfig);
 
       expect(wrapper.name).toBe(mockDefinition.name);
@@ -83,19 +81,16 @@ describe('SubagentToolWrapper', () => {
       expect(wrapper.canUpdateOutput).toBe(true);
     });
 
-    it('should fall back to the agent name for displayName if it is not provided', () => {
+    it("should fall back to the agent name for displayName if it is not provided", () => {
       const definitionWithoutDisplayName = {
         ...mockDefinition,
         displayName: undefined,
       };
-      const wrapper = new SubagentToolWrapper(
-        definitionWithoutDisplayName,
-        mockConfig,
-      );
+      const wrapper = new SubagentToolWrapper(definitionWithoutDisplayName, mockConfig);
       expect(wrapper.displayName).toBe(definitionWithoutDisplayName.name);
     });
 
-    it('should generate a valid tool schema using the definition and converted schema', () => {
+    it("should generate a valid tool schema using the definition and converted schema", () => {
       const wrapper = new SubagentToolWrapper(mockDefinition, mockConfig);
       const schema = wrapper.schema;
 
@@ -105,10 +100,10 @@ describe('SubagentToolWrapper', () => {
     });
   });
 
-  describe('createInvocation', () => {
-    it('should create a SubagentInvocation with the correct parameters', () => {
+  describe("createInvocation", () => {
+    it("should create a SubagentInvocation with the correct parameters", () => {
       const wrapper = new SubagentToolWrapper(mockDefinition, mockConfig);
-      const params: AgentInputs = { goal: 'Test the invocation', priority: 1 };
+      const params: AgentInputs = { goal: "Test the invocation", priority: 1 };
 
       // The public `build` method calls the protected `createInvocation` after validation
       const invocation = wrapper.build(params);
@@ -122,14 +117,10 @@ describe('SubagentToolWrapper', () => {
       );
     });
 
-    it('should pass the messageBus to the SubagentInvocation constructor', () => {
+    it("should pass the messageBus to the SubagentInvocation constructor", () => {
       const mockMessageBus = {} as MessageBus;
-      const wrapper = new SubagentToolWrapper(
-        mockDefinition,
-        mockConfig,
-        mockMessageBus,
-      );
-      const params: AgentInputs = { goal: 'Test the invocation', priority: 1 };
+      const wrapper = new SubagentToolWrapper(mockDefinition, mockConfig, mockMessageBus);
+      const params: AgentInputs = { goal: "Test the invocation", priority: 1 };
 
       wrapper.build(params);
 
@@ -141,7 +132,7 @@ describe('SubagentToolWrapper', () => {
       );
     });
 
-    it('should throw a validation error for invalid parameters before creating an invocation', () => {
+    it("should throw a validation error for invalid parameters before creating an invocation", () => {
       const wrapper = new SubagentToolWrapper(mockDefinition, mockConfig);
       // Missing the required 'goal' parameter
       const invalidParams = { priority: 1 };

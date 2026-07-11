@@ -4,16 +4,16 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { SettingScope, type LoadedSettings } from './settings.js';
+import { type LoadedSettings, SettingScope } from "./settings.js";
 
 function hasOwnModelProviders(settingsObj: unknown): boolean {
-  if (!settingsObj || typeof settingsObj !== 'object') {
+  if (!settingsObj || typeof settingsObj !== "object") {
     return false;
   }
   const obj = settingsObj as Record<string, unknown>;
   // Treat an explicitly configured empty object (modelProviders: {}) as "owned"
   // by this scope, which is important when mergeStrategy is REPLACE.
-  return Object.prototype.hasOwnProperty.call(obj, 'modelProviders');
+  return Object.hasOwn(obj, "modelProviders");
 }
 
 /**
@@ -22,9 +22,7 @@ function hasOwnModelProviders(settingsObj: unknown): boolean {
  *
  * Note: Workspace scope is only considered when the workspace is trusted.
  */
-export function getModelProvidersOwnerScope(
-  settings: LoadedSettings,
-): SettingScope | undefined {
+export function getModelProvidersOwnerScope(settings: LoadedSettings): SettingScope | undefined {
   if (settings.isTrusted && hasOwnModelProviders(settings.workspace.settings)) {
     return SettingScope.Workspace;
   }
@@ -41,8 +39,6 @@ export function getModelProvidersOwnerScope(
  * Prefer persisting back to the scope that contains the effective modelProviders
  * config, otherwise fall back to the legacy trust-based heuristic.
  */
-export function getPersistScopeForModelSelection(
-  settings: LoadedSettings,
-): SettingScope {
+export function getPersistScopeForModelSelection(settings: LoadedSettings): SettingScope {
   return getModelProvidersOwnerScope(settings) ?? SettingScope.User;
 }

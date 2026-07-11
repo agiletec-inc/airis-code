@@ -4,26 +4,22 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import type { AnyToolInvocation } from '../index.js';
-import type { Config } from '../config/config.js';
-import os from 'node:os';
-import { quote } from 'shell-quote';
-import { doesToolInvocationMatch } from './tool-utils.js';
-import {
-  spawn,
-  spawnSync,
-  type SpawnOptionsWithoutStdio,
-} from 'node:child_process';
-import type { Node } from 'web-tree-sitter';
-import { Language, Parser } from 'web-tree-sitter';
-import { loadWasmBinary } from './fileUtils.js';
+import { type SpawnOptionsWithoutStdio, spawn, spawnSync } from "node:child_process";
+import os from "node:os";
+import { quote } from "shell-quote";
+import type { Node } from "web-tree-sitter";
+import { Language, Parser } from "web-tree-sitter";
+import type { Config } from "../config/config.js";
+import type { AnyToolInvocation } from "../index.js";
+import { loadWasmBinary } from "./fileUtils.js";
+import { doesToolInvocationMatch } from "./tool-utils.js";
 
-export const SHELL_TOOL_NAMES = ['run_shell_command', 'ShellTool'];
+export const SHELL_TOOL_NAMES = ["run_shell_command", "ShellTool"];
 
 /**
  * An identifier for the shell type.
  */
-export type ShellType = 'cmd' | 'powershell' | 'bash';
+export type ShellType = "cmd" | "powershell" | "bash";
 
 /**
  * Defines the configuration required to execute a command string within a specific shell.
@@ -46,7 +42,7 @@ let treeSitterInitializationError: Error | null = null;
 class ShellParserInitializationError extends Error {
   constructor(cause: Error) {
     super(`Failed to initialize bash parser: ${cause.message}`, { cause });
-    this.name = 'ShellParserInitializationError';
+    this.name = "ShellParserInitializationError";
   }
 }
 
@@ -54,10 +50,10 @@ function toError(value: unknown): Error {
   if (value instanceof Error) {
     return value;
   }
-  if (typeof value === 'string') {
+  if (typeof value === "string") {
     return new Error(value);
   }
-  return new Error('Unknown tree-sitter initialization error', {
+  return new Error("Unknown tree-sitter initialization error", {
     cause: value,
   });
 }
@@ -69,16 +65,16 @@ async function loadBashLanguage(): Promise<void> {
       loadWasmBinary(
         () =>
           // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-          // @ts-ignore resolved by esbuild-plugin-wasm during bundling
-          import('web-tree-sitter/tree-sitter.wasm?binary'),
-        'web-tree-sitter/tree-sitter.wasm',
+          // @ts-expect-error resolved by esbuild-plugin-wasm during bundling
+          import("web-tree-sitter/tree-sitter.wasm?binary"),
+        "web-tree-sitter/tree-sitter.wasm",
       ),
       loadWasmBinary(
         () =>
           // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-          // @ts-ignore resolved by esbuild-plugin-wasm during bundling
-          import('tree-sitter-bash/tree-sitter-bash.wasm?binary'),
-        'tree-sitter-bash/tree-sitter-bash.wasm',
+          // @ts-expect-error resolved by esbuild-plugin-wasm during bundling
+          import("tree-sitter-bash/tree-sitter-bash.wasm?binary"),
+        "tree-sitter-bash/tree-sitter-bash.wasm",
       ),
     ]);
 
@@ -117,7 +113,7 @@ interface CommandParseResult {
   hasError: boolean;
 }
 
-const POWERSHELL_COMMAND_ENV = '__GCLI_POWERSHELL_COMMAND__';
+const POWERSHELL_COMMAND_ENV = "__GCLI_POWERSHELL_COMMAND__";
 
 // Encode the parser script as UTF-16LE base64 so we can pass it via PowerShell's -EncodedCommand flag;
 // this avoids brittle quoting/escaping when spawning PowerShell and ensures the script is received byte-for-byte.
@@ -153,8 +149,8 @@ foreach ($commandAst in $commandAsts) {
   commands = $commandObjects
 } | ConvertTo-Json -Compress
 `,
-  'utf16le',
-).toString('base64');
+  "utf16le",
+).toString("base64");
 
 function createParser(): Parser | null {
   if (!bashLanguage) {
@@ -203,16 +199,16 @@ function normalizeCommandName(raw: string): string {
 
 function extractNameFromNode(node: Node): string | null {
   switch (node.type) {
-    case 'command': {
-      const nameNode = node.childForFieldName('name');
+    case "command": {
+      const nameNode = node.childForFieldName("name");
       if (!nameNode) {
         return null;
       }
       return normalizeCommandName(nameNode.text);
     }
-    case 'declaration_command':
-    case 'unset_command':
-    case 'test_command': {
+    case "declaration_command":
+    case "unset_command":
+    case "test_command": {
       const firstChild = node.child(0);
       if (!firstChild) {
         return null;
@@ -224,10 +220,7 @@ function extractNameFromNode(node: Node): string | null {
   }
 }
 
-function collectCommandDetails(
-  root: Node,
-  source: string,
-): ParsedCommandDetail[] {
+function collectCommandDetails(root: Node, source: string): ParsedCommandDetail[] {
   const stack: Node[] = [root];
   const details: ParsedCommandDetail[] = [];
 
@@ -265,15 +258,12 @@ function hasPromptCommandTransform(root: Node): boolean {
       continue;
     }
 
-    if (current.type === 'expansion') {
+    if (current.type === "expansion") {
       for (let i = 0; i < current.childCount - 1; i += 1) {
         const operatorNode = current.child(i);
         const transformNode = current.child(i + 1);
 
-        if (
-          operatorNode?.type === '@' &&
-          transformNode?.text?.toLowerCase() === 'p'
-        ) {
+        if (operatorNode?.type === "@" && transformNode?.text?.toLowerCase() === "p") {
           return true;
         }
       }
@@ -311,9 +301,7 @@ function parseBashCommandDetails(command: string): CommandParseResult | null {
   return {
     details,
     hasError:
-      tree.rootNode.hasError ||
-      details.length === 0 ||
-      hasPromptCommandTransform(tree.rootNode),
+      tree.rootNode.hasError || details.length === 0 || hasPromptCommandTransform(tree.rootNode),
   };
 }
 
@@ -332,19 +320,13 @@ function parsePowerShellCommandDetails(
   try {
     const result = spawnSync(
       executable,
-      [
-        '-NoLogo',
-        '-NoProfile',
-        '-NonInteractive',
-        '-EncodedCommand',
-        POWERSHELL_PARSER_SCRIPT,
-      ],
+      ["-NoLogo", "-NoProfile", "-NonInteractive", "-EncodedCommand", POWERSHELL_PARSER_SCRIPT],
       {
         env: {
           ...process.env,
           [POWERSHELL_COMMAND_ENV]: command,
         },
-        encoding: 'utf-8',
+        encoding: "utf-8",
       },
     );
 
@@ -352,7 +334,7 @@ function parsePowerShellCommandDetails(
       return null;
     }
 
-    const output = (result.stdout ?? '').toString().trim();
+    const output = (result.stdout ?? "").toString().trim();
     if (!output) {
       return { details: [], hasError: true };
     }
@@ -373,15 +355,12 @@ function parsePowerShellCommandDetails(
 
     const details = (parsed.commands ?? [])
       .map((commandDetail) => {
-        if (!commandDetail || typeof commandDetail.name !== 'string') {
+        if (!commandDetail || typeof commandDetail.name !== "string") {
           return null;
         }
 
         const name = normalizeCommandName(commandDetail.name);
-        const text =
-          typeof commandDetail.text === 'string'
-            ? commandDetail.text.trim()
-            : command;
+        const text = typeof commandDetail.text === "string" ? commandDetail.text.trim() : command;
 
         return {
           name,
@@ -402,11 +381,11 @@ function parsePowerShellCommandDetails(
 function parseCommandDetails(command: string): CommandParseResult | null {
   const configuration = getShellConfiguration();
 
-  if (configuration.shell === 'powershell') {
+  if (configuration.shell === "powershell") {
     return parsePowerShellCommandDetails(command, configuration.executable);
   }
 
-  if (configuration.shell === 'bash') {
+  if (configuration.shell === "bash") {
     return parseBashCommandDetails(command);
   }
 
@@ -423,37 +402,34 @@ function parseCommandDetails(command: string): CommandParseResult | null {
  */
 export function getShellConfiguration(): ShellConfiguration {
   if (isWindows()) {
-    const comSpec = process.env['ComSpec'];
+    const comSpec = process.env["ComSpec"];
     if (comSpec) {
       const executable = comSpec.toLowerCase();
-      if (
-        executable.endsWith('powershell.exe') ||
-        executable.endsWith('pwsh.exe')
-      ) {
+      if (executable.endsWith("powershell.exe") || executable.endsWith("pwsh.exe")) {
         return {
           executable: comSpec,
-          argsPrefix: ['-NoProfile', '-Command'],
-          shell: 'powershell',
+          argsPrefix: ["-NoProfile", "-Command"],
+          shell: "powershell",
         };
       }
     }
 
     // Default to PowerShell for all other Windows configurations.
     return {
-      executable: 'powershell.exe',
-      argsPrefix: ['-NoProfile', '-Command'],
-      shell: 'powershell',
+      executable: "powershell.exe",
+      argsPrefix: ["-NoProfile", "-Command"],
+      shell: "powershell",
     };
   }
 
   // Unix-like systems (Linux, macOS)
-  return { executable: 'bash', argsPrefix: ['-c'], shell: 'bash' };
+  return { executable: "bash", argsPrefix: ["-c"], shell: "bash" };
 }
 
 /**
  * Export the platform detection constant for use in process management (e.g., killing processes).
  */
-export const isWindows = () => os.platform() === 'win32';
+export const isWindows = () => os.platform() === "win32";
 
 /**
  * Escapes a string so that it can be safely used as a single argument
@@ -465,17 +441,17 @@ export const isWindows = () => os.platform() === 'win32';
  */
 export function escapeShellArg(arg: string, shell: ShellType): string {
   if (!arg) {
-    return '';
+    return "";
   }
 
   switch (shell) {
-    case 'powershell':
+    case "powershell":
       // For PowerShell, wrap in single quotes and escape internal single quotes by doubling them.
       return `'${arg.replace(/'/g, "''")}'`;
-    case 'cmd':
+    case "cmd":
       // Simple Windows escaping for cmd.exe: wrap in double quotes and escape inner double quotes.
       return `"${arg.replace(/"/g, '""')}"`;
-    case 'bash':
+    case "bash":
     default:
       // POSIX shell escaping using shell-quote.
       return quote([arg]);
@@ -591,41 +567,35 @@ export function checkCommandPermissions(
     return {
       allAllowed: false,
       disallowedCommands: [command],
-      blockReason: 'Command rejected because it could not be parsed safely',
+      blockReason: "Command rejected because it could not be parsed safely",
       isHardDenial: true,
     };
   }
 
-  const normalize = (cmd: string): string => cmd.trim().replace(/\s+/g, ' ');
+  const normalize = (cmd: string): string => cmd.trim().replace(/\s+/g, " ");
   const commandsToValidate = parseResult.details
     .map((detail) => normalize(detail.text))
     .filter(Boolean);
   const invocation: AnyToolInvocation & { params: { command: string } } = {
-    params: { command: '' },
+    params: { command: "" },
   } as AnyToolInvocation & { params: { command: string } };
 
   // 1. Blocklist Check (Highest Priority)
   const excludeTools = config.getExcludeTools() || new Set([]);
-  const isWildcardBlocked = SHELL_TOOL_NAMES.some((name) =>
-    excludeTools.has(name),
-  );
+  const isWildcardBlocked = SHELL_TOOL_NAMES.some((name) => excludeTools.has(name));
 
   if (isWildcardBlocked) {
     return {
       allAllowed: false,
       disallowedCommands: commandsToValidate,
-      blockReason: 'Shell tool is globally disabled in configuration',
+      blockReason: "Shell tool is globally disabled in configuration",
       isHardDenial: true,
     };
   }
 
   for (const cmd of commandsToValidate) {
-    invocation.params['command'] = cmd;
-    if (
-      doesToolInvocationMatch('run_shell_command', invocation, [
-        ...excludeTools,
-      ])
-    ) {
+    invocation.params["command"] = cmd;
+    if (doesToolInvocationMatch("run_shell_command", invocation, [...excludeTools])) {
       return {
         allAllowed: false,
         disallowedCommands: [cmd],
@@ -636,9 +606,7 @@ export function checkCommandPermissions(
   }
 
   const coreTools = config.getCoreTools() || [];
-  const isWildcardAllowed = SHELL_TOOL_NAMES.some((name) =>
-    coreTools.includes(name),
-  );
+  const isWildcardAllowed = SHELL_TOOL_NAMES.some((name) => coreTools.includes(name));
 
   // If there's a global wildcard, all commands are allowed at this point
   // because they have already passed the blocklist check.
@@ -652,25 +620,17 @@ export function checkCommandPermissions(
     // "DEFAULT DENY" MODE: A session allowlist is provided.
     // All commands must be in either the session or global allowlist.
     const normalizedSessionAllowlist = new Set(
-      [...sessionAllowlist].flatMap((cmd) =>
-        SHELL_TOOL_NAMES.map((name) => `${name}(${cmd})`),
-      ),
+      [...sessionAllowlist].flatMap((cmd) => SHELL_TOOL_NAMES.map((name) => `${name}(${cmd})`)),
     );
 
     for (const cmd of commandsToValidate) {
-      invocation.params['command'] = cmd;
-      const isSessionAllowed = doesToolInvocationMatch(
-        'run_shell_command',
-        invocation,
-        [...normalizedSessionAllowlist],
-      );
+      invocation.params["command"] = cmd;
+      const isSessionAllowed = doesToolInvocationMatch("run_shell_command", invocation, [
+        ...normalizedSessionAllowlist,
+      ]);
       if (isSessionAllowed) continue;
 
-      const isGloballyAllowed = doesToolInvocationMatch(
-        'run_shell_command',
-        invocation,
-        coreTools,
-      );
+      const isGloballyAllowed = doesToolInvocationMatch("run_shell_command", invocation, coreTools);
       if (isGloballyAllowed) continue;
 
       disallowedCommands.push(cmd);
@@ -682,22 +642,21 @@ export function checkCommandPermissions(
         disallowedCommands,
         blockReason: `Command(s) not on the global or session allowlist. Disallowed commands: ${disallowedCommands
           .map((c) => JSON.stringify(c))
-          .join(', ')}`,
+          .join(", ")}`,
         isHardDenial: false, // This is a soft denial; confirmation is possible.
       };
     }
   } else {
     // "DEFAULT ALLOW" MODE: No session allowlist.
     const hasSpecificAllowedCommands =
-      coreTools.filter((tool) =>
-        SHELL_TOOL_NAMES.some((name) => tool.startsWith(`${name}(`)),
-      ).length > 0;
+      coreTools.filter((tool) => SHELL_TOOL_NAMES.some((name) => tool.startsWith(`${name}(`)))
+        .length > 0;
 
     if (hasSpecificAllowedCommands) {
       for (const cmd of commandsToValidate) {
-        invocation.params['command'] = cmd;
+        invocation.params["command"] = cmd;
         const isGloballyAllowed = doesToolInvocationMatch(
-          'run_shell_command',
+          "run_shell_command",
           invocation,
           coreTools,
         );
@@ -711,7 +670,7 @@ export function checkCommandPermissions(
           disallowedCommands,
           blockReason: `Command(s) not in the allowed commands list. Disallowed commands: ${disallowedCommands
             .map((c) => JSON.stringify(c))
-            .join(', ')}`,
+            .join(", ")}`,
           isHardDenial: false, // This is a soft denial.
         };
       }
@@ -742,18 +701,18 @@ export const spawnAsync = (
 ): Promise<{ stdout: string; stderr: string }> =>
   new Promise((resolve, reject) => {
     const child = spawn(command, args, options);
-    let stdout = '';
-    let stderr = '';
+    let stdout = "";
+    let stderr = "";
 
-    child.stdout.on('data', (data) => {
+    child.stdout.on("data", (data) => {
       stdout += data.toString();
     });
 
-    child.stderr.on('data', (data) => {
+    child.stderr.on("data", (data) => {
       stderr += data.toString();
     });
 
-    child.on('close', (code) => {
+    child.on("close", (code) => {
       if (code === 0) {
         resolve({ stdout, stderr });
       } else {
@@ -761,7 +720,7 @@ export const spawnAsync = (
       }
     });
 
-    child.on('error', (err) => {
+    child.on("error", (err) => {
       reject(err);
     });
   });
@@ -796,9 +755,7 @@ export function isShellInvocationAllowlisted(
     return false;
   }
 
-  const hasShellWildcard = allowedPatterns.some((pattern) =>
-    SHELL_TOOL_NAMES.includes(pattern),
-  );
+  const hasShellWildcard = allowedPatterns.some((pattern) => SHELL_TOOL_NAMES.includes(pattern));
   const hasShellSpecificPattern = allowedPatterns.some((pattern) =>
     SHELL_TOOL_NAMES.some((name) => pattern.startsWith(`${name}(`)),
   );
@@ -812,16 +769,16 @@ export function isShellInvocationAllowlisted(
   }
 
   if (
-    !('params' in invocation) ||
-    typeof invocation.params !== 'object' ||
+    !("params" in invocation) ||
+    typeof invocation.params !== "object" ||
     invocation.params === null ||
-    !('command' in invocation.params)
+    !("command" in invocation.params)
   ) {
     return false;
   }
 
   const commandValue = (invocation.params as { command?: unknown }).command;
-  if (typeof commandValue !== 'string' || !commandValue.trim()) {
+  if (typeof commandValue !== "string" || !commandValue.trim()) {
     return false;
   }
 
@@ -832,7 +789,7 @@ export function isShellInvocationAllowlisted(
     return false;
   }
 
-  const normalize = (cmd: string): string => cmd.trim().replace(/\s+/g, ' ');
+  const normalize = (cmd: string): string => cmd.trim().replace(/\s+/g, " ");
   const commandsToValidate = parseResult.details
     .map((detail) => normalize(detail.text))
     .filter(Boolean);

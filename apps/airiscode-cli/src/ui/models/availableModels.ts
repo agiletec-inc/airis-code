@@ -4,12 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import {
-  AuthType,
-  type Config,
-  type AvailableModel as CoreAvailableModel,
-} from '@airiscode/runtime';
-import { t } from '../../i18n/index.js';
+import { AuthType, type Config, type AvailableModel as CoreAvailableModel } from "@airiscode/runtime";
+import { t } from "../../i18n/index.js";
 
 export type AvailableModel = {
   id: string;
@@ -31,26 +27,26 @@ export function getFilteredQwenModels(): AvailableModel[] {
  * In the future, after settings.json is updated, we will allow users to configure this themselves.
  */
 export function getOpenAIAvailableModelFromEnv(): AvailableModel | null {
-  const id = process.env['OPENAI_MODEL']?.trim();
+  const id = process.env["OPENAI_MODEL"]?.trim();
   return id
     ? {
         id,
         label: id,
         get description() {
-          return t('Configured via OPENAI_MODEL environment variable');
+          return t("Configured via OPENAI_MODEL environment variable");
         },
       }
     : null;
 }
 
 export function getAnthropicAvailableModelFromEnv(): AvailableModel | null {
-  const id = process.env['ANTHROPIC_MODEL']?.trim();
+  const id = process.env["ANTHROPIC_MODEL"]?.trim();
   return id
     ? {
         id,
         label: id,
         get description() {
-          return t('Configured via ANTHROPIC_MODEL environment variable');
+          return t("Configured via ANTHROPIC_MODEL environment variable");
         },
       }
     : null;
@@ -59,9 +55,7 @@ export function getAnthropicAvailableModelFromEnv(): AvailableModel | null {
 /**
  * Convert core AvailableModel to CLI AvailableModel format
  */
-function convertCoreModelToCliModel(
-  coreModel: CoreAvailableModel,
-): AvailableModel {
+function convertCoreModelToCliModel(coreModel: CoreAvailableModel): AvailableModel {
   return {
     id: coreModel.id,
     label: coreModel.label,

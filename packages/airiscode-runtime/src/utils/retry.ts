@@ -4,11 +4,11 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import type { GenerateContentResponse } from '../types/llm.js';
-import { createDebugLogger } from './debugLogger.js';
-import { getErrorStatus } from './errors.js';
+import type { GenerateContentResponse } from "../types/llm.js";
+import { createDebugLogger } from "./debugLogger.js";
+import { getErrorStatus } from "./errors.js";
 
-const debugLogger = createDebugLogger('RETRY');
+const debugLogger = createDebugLogger("RETRY");
 
 export interface HttpError extends Error {
   status?: number;
@@ -38,9 +38,7 @@ const DEFAULT_RETRY_OPTIONS: RetryOptions = {
  */
 function defaultShouldRetry(error: Error | unknown): boolean {
   const status = getErrorStatus(error);
-  return (
-    status === 429 || (status !== undefined && status >= 500 && status < 600)
-  );
+  return status === 429 || (status !== undefined && status >= 500 && status < 600);
 }
 
 /**
@@ -64,20 +62,14 @@ export async function retryWithBackoff<T>(
   options?: Partial<RetryOptions>,
 ): Promise<T> {
   if (options?.maxAttempts !== undefined && options.maxAttempts <= 0) {
-    throw new Error('maxAttempts must be a positive number.');
+    throw new Error("maxAttempts must be a positive number.");
   }
 
   const cleanOptions = options
     ? Object.fromEntries(Object.entries(options).filter(([_, v]) => v != null))
     : {};
 
-  const {
-    maxAttempts,
-    initialDelayMs,
-    maxDelayMs,
-    shouldRetryOnError,
-    shouldRetryOnContent,
-  } = {
+  const { maxAttempts, initialDelayMs, maxDelayMs, shouldRetryOnError, shouldRetryOnContent } = {
     ...DEFAULT_RETRY_OPTIONS,
     ...cleanOptions,
   };
@@ -90,10 +82,7 @@ export async function retryWithBackoff<T>(
     try {
       const result = await fn();
 
-      if (
-        shouldRetryOnContent &&
-        shouldRetryOnContent(result as GenerateContentResponse)
-      ) {
+      if (shouldRetryOnContent && shouldRetryOnContent(result as GenerateContentResponse)) {
         const jitter = currentDelay * 0.3 * (Math.random() * 2 - 1);
         const delayWithJitter = Math.max(0, currentDelay + jitter);
         await delay(delayWithJitter);
@@ -110,13 +99,12 @@ export async function retryWithBackoff<T>(
         throw error;
       }
 
-      const retryAfterMs =
-        errorStatus === 429 ? getRetryAfterDelayMs(error) : 0;
+      const retryAfterMs = errorStatus === 429 ? getRetryAfterDelayMs(error) : 0;
 
       if (retryAfterMs > 0) {
         // Respect Retry-After header if present and parsed
         debugLogger.warn(
-          `Attempt ${attempt} failed with status ${errorStatus ?? 'unknown'}. Retrying after explicit delay of ${retryAfterMs}ms...`,
+          `Attempt ${attempt} failed with status ${errorStatus ?? "unknown"}. Retrying after explicit delay of ${retryAfterMs}ms...`,
           error,
         );
         await delay(retryAfterMs);
@@ -135,7 +123,7 @@ export async function retryWithBackoff<T>(
   }
   // This line should theoretically be unreachable due to the throw in the catch block.
   // Added for type safety and to satisfy the compiler that a promise is always returned.
-  throw new Error('Retry attempts exhausted');
+  throw new Error("Retry attempts exhausted");
 }
 
 /**
@@ -144,22 +132,22 @@ export async function retryWithBackoff<T>(
  * @returns The delay in milliseconds, or 0 if not found or invalid.
  */
 function getRetryAfterDelayMs(error: unknown): number {
-  if (typeof error === 'object' && error !== null) {
+  if (typeof error === "object" && error !== null) {
     // Check for error.response.headers (common in axios errors)
     if (
-      'response' in error &&
-      typeof (error as { response?: unknown }).response === 'object' &&
+      "response" in error &&
+      typeof (error as { response?: unknown }).response === "object" &&
       (error as { response?: unknown }).response !== null
     ) {
       const response = (error as { response: { headers?: unknown } }).response;
       if (
-        'headers' in response &&
-        typeof response.headers === 'object' &&
+        "headers" in response &&
+        typeof response.headers === "object" &&
         response.headers !== null
       ) {
-        const headers = response.headers as { 'retry-after'?: unknown };
-        const retryAfterHeader = headers['retry-after'];
-        if (typeof retryAfterHeader === 'string') {
+        const headers = response.headers as { "retry-after"?: unknown };
+        const retryAfterHeader = headers["retry-after"];
+        if (typeof retryAfterHeader === "string") {
           const retryAfterSeconds = parseInt(retryAfterHeader, 10);
           if (!isNaN(retryAfterSeconds)) {
             return retryAfterSeconds * 1000;
@@ -182,11 +170,7 @@ function getRetryAfterDelayMs(error: unknown): number {
  * @param error The error that caused the retry.
  * @param errorStatus The HTTP status code of the error, if available.
  */
-function logRetryAttempt(
-  attempt: number,
-  error: unknown,
-  errorStatus?: number,
-): void {
+function logRetryAttempt(attempt: number, error: unknown, errorStatus?: number): void {
   const message = errorStatus
     ? `Attempt ${attempt} failed with status ${errorStatus}. Retrying with backoff...`
     : `Attempt ${attempt} failed. Retrying with backoff...`;

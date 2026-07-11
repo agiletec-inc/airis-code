@@ -4,37 +4,31 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import open from 'open';
-import process from 'node:process';
-import {
-  type CommandContext,
-  type SlashCommand,
-  CommandKind,
-} from './types.js';
-import { MessageType } from '../types.js';
-import { GIT_COMMIT_INFO } from '../../generated/git-commit.js';
-import { formatMemoryUsage } from '../utils/formatters.js';
-import { IdeClient, sessionId, getVersion } from '@airiscode/gemini-cli-core';
+import process from "node:process";
+import { getVersion, IdeClient, sessionId } from "@airiscode/gemini-cli-core";
+import open from "open";
+import { GIT_COMMIT_INFO } from "../../generated/git-commit.js";
+import { MessageType } from "../types.js";
+import { formatMemoryUsage } from "../utils/formatters.js";
+import { type CommandContext, CommandKind, type SlashCommand } from "./types.js";
 
 export const bugCommand: SlashCommand = {
-  name: 'bug',
-  description: 'Submit a bug report',
+  name: "bug",
+  description: "Submit a bug report",
   kind: CommandKind.BUILT_IN,
   autoExecute: false,
   action: async (context: CommandContext, args?: string): Promise<void> => {
-    const bugDescription = (args || '').trim();
+    const bugDescription = (args || "").trim();
     const { config } = context.services;
 
     const osVersion = `${process.platform} ${process.version}`;
-    let sandboxEnv = 'no sandbox';
-    if (process.env['SANDBOX'] && process.env['SANDBOX'] !== 'sandbox-exec') {
-      sandboxEnv = process.env['SANDBOX'].replace(/^gemini-(?:code-)?/, '');
-    } else if (process.env['SANDBOX'] === 'sandbox-exec') {
-      sandboxEnv = `sandbox-exec (${
-        process.env['SEATBELT_PROFILE'] || 'unknown'
-      })`;
+    let sandboxEnv = "no sandbox";
+    if (process.env["SANDBOX"] && process.env["SANDBOX"] !== "sandbox-exec") {
+      sandboxEnv = process.env["SANDBOX"].replace(/^gemini-(?:code-)?/, "");
+    } else if (process.env["SANDBOX"] === "sandbox-exec") {
+      sandboxEnv = `sandbox-exec (${process.env["SEATBELT_PROFILE"] || "unknown"})`;
     }
-    const modelVersion = config?.getModel() || 'Unknown';
+    const modelVersion = config?.getModel() || "Unknown";
     const cliVersion = await getVersion();
     const memoryUsage = formatMemoryUsage(process.memoryUsage().rss);
     const ideClient = await getIdeClientName(context);
@@ -53,7 +47,7 @@ export const bugCommand: SlashCommand = {
     }
 
     let bugReportUrl =
-      'https://github.com/google-gemini/gemini-cli/issues/new?template=bug_report.yml&title={title}&info={info}';
+      "https://github.com/google-gemini/gemini-cli/issues/new?template=bug_report.yml&title={title}&info={info}";
 
     const bugCommandSettings = config?.getBugCommand();
     if (bugCommandSettings?.urlTemplate) {
@@ -61,8 +55,8 @@ export const bugCommand: SlashCommand = {
     }
 
     bugReportUrl = bugReportUrl
-      .replace('{title}', encodeURIComponent(bugDescription))
-      .replace('{info}', encodeURIComponent(info));
+      .replace("{title}", encodeURIComponent(bugDescription))
+      .replace("{info}", encodeURIComponent(info));
 
     context.ui.addItem(
       {
@@ -75,8 +69,7 @@ export const bugCommand: SlashCommand = {
     try {
       await open(bugReportUrl);
     } catch (error) {
-      const errorMessage =
-        error instanceof Error ? error.message : String(error);
+      const errorMessage = error instanceof Error ? error.message : String(error);
       context.ui.addItem(
         {
           type: MessageType.ERROR,
@@ -90,8 +83,8 @@ export const bugCommand: SlashCommand = {
 
 async function getIdeClientName(context: CommandContext) {
   if (!context.services.config?.getIdeMode()) {
-    return '';
+    return "";
   }
   const ideClient = await IdeClient.getInstance();
-  return ideClient.getDetectedIdeDisplayName() ?? '';
+  return ideClient.getDetectedIdeDisplayName() ?? "";
 }

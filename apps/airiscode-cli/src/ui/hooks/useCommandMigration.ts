@@ -4,19 +4,16 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { useEffect, useState } from 'react';
-import { Storage } from '@airiscode/runtime';
-import { detectTomlCommands } from '../../services/command-migration-tool.js';
-import type { LoadedSettings } from '../../config/settings.js';
+import { Storage } from "@airiscode/runtime";
+import { useEffect, useState } from "react";
+import type { LoadedSettings } from "../../config/settings.js";
+import { detectTomlCommands } from "../../services/command-migration-tool.js";
 
 /**
  * Hook to detect TOML command files and manage migration nudge visibility.
  * Checks all command directories: workspace, user, and global levels.
  */
-export function useCommandMigration(
-  settings: LoadedSettings,
-  storage: Storage,
-) {
+export function useCommandMigration(settings: LoadedSettings, storage: Storage) {
   const [showMigrationNudge, setShowMigrationNudge] = useState(false);
   const [tomlFiles, setTomlFiles] = useState<string[]>([]);
 

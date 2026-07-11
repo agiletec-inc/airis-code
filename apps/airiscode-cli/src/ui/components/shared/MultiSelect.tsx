@@ -4,13 +4,13 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import type React from 'react';
-import { useCallback, useEffect, useMemo, useState } from 'react';
-import { Box, Text } from 'ink';
-import { theme } from '../../semantic-colors.js';
-import { useSelectionList } from '../../hooks/useSelectionList.js';
-import { useKeypress } from '../../hooks/useKeypress.js';
-import type { SelectionListItem } from '../../hooks/useSelectionList.js';
+import { Box, Text } from "ink";
+import type React from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
+import { useKeypress } from "../../hooks/useKeypress.js";
+import type { SelectionListItem } from "../../hooks/useSelectionList.js";
+import { useSelectionList } from "../../hooks/useSelectionList.js";
+import { theme } from "../../semantic-colors.js";
 
 export interface MultiSelectItem<T> extends SelectionListItem<T> {
   label: string;
@@ -31,13 +31,8 @@ export interface MultiSelectProps<T> {
 
 const EMPTY_SELECTED_KEYS: string[] = [];
 
-function getSelectedValues<T>(
-  items: Array<MultiSelectItem<T>>,
-  selectedKeys: Set<string>,
-): T[] {
-  return items
-    .filter((item) => selectedKeys.has(item.key))
-    .map((item) => item.value);
+function getSelectedValues<T>(items: Array<MultiSelectItem<T>>, selectedKeys: Set<string>): T[] {
+  return items.filter((item) => selectedKeys.has(item.key)).map((item) => item.value);
 }
 
 export function MultiSelect<T>({
@@ -52,18 +47,13 @@ export function MultiSelect<T>({
   showScrollArrows = false,
   maxItemsToShow = 10,
 }: MultiSelectProps<T>): React.JSX.Element {
-  const [selectedKeys, setSelectedKeys] = useState<Set<string>>(
-    () => new Set(initialSelectedKeys),
-  );
+  const [selectedKeys, setSelectedKeys] = useState<Set<string>>(() => new Set(initialSelectedKeys));
   const [scrollOffset, setScrollOffset] = useState(0);
 
   useEffect(() => {
     setSelectedKeys((prev) => {
       const next = new Set(initialSelectedKeys);
-      if (
-        prev.size === next.size &&
-        Array.from(next).every((key) => prev.has(key))
-      ) {
+      if (prev.size === next.size && Array.from(next).every((key) => prev.has(key))) {
         return prev;
       }
       return next;
@@ -111,7 +101,7 @@ export function MultiSelect<T>({
 
   useKeypress(
     (key) => {
-      if (key.name === 'space' || key.sequence === ' ') {
+      if (key.name === "space" || key.sequence === " ") {
         toggleSelectionAtIndex(activeIndex);
       }
     },
@@ -138,10 +128,7 @@ export function MultiSelect<T>({
   const hasMoreAbove = scrollOffset > 0;
   const hasMoreBelow = scrollOffset + maxItemsToShow < items.length;
   const moreAboveCount = scrollOffset;
-  const moreBelowCount = Math.max(
-    0,
-    items.length - (scrollOffset + maxItemsToShow),
-  );
+  const moreBelowCount = Math.max(0, items.length - (scrollOffset + maxItemsToShow));
 
   return (
     <Box flexDirection="column">
@@ -154,10 +141,8 @@ export function MultiSelect<T>({
         const isActive = activeIndex === itemIndex;
         const isChecked = selectedKeys.has(item.key);
 
-        const itemNumberText = `${String(itemIndex + 1).padStart(
-          numberColumnWidth,
-        )}.`;
-        const checkboxText = item.disabled ? '[x]' : isChecked ? '[✓]' : '[ ]';
+        const itemNumberText = `${String(itemIndex + 1).padStart(numberColumnWidth)}.`;
+        const checkboxText = item.disabled ? "[x]" : isChecked ? "[✓]" : "[ ]";
 
         let textColor = theme.text.primary;
         if (item.disabled) {

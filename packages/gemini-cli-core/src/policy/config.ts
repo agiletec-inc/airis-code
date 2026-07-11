@@ -4,28 +4,25 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import * as path from 'node:path';
-import { fileURLToPath } from 'node:url';
-import { Storage } from '../config/storage.js';
+import * as path from "node:path";
+import { fileURLToPath } from "node:url";
+import { Storage } from "../config/storage.js";
+import { type MessageBus } from "../confirmation-bus/message-bus.js";
+import { MessageBusType, type UpdatePolicy } from "../confirmation-bus/types.js";
+import { coreEvents } from "../utils/events.js";
+import type { PolicyEngine } from "./policy-engine.js";
+import { loadPoliciesFromToml, type PolicyFileError } from "./toml-loader.js";
 import {
-  type PolicyEngineConfig,
-  PolicyDecision,
-  type PolicyRule,
   type ApprovalMode,
+  PolicyDecision,
+  type PolicyEngineConfig,
+  type PolicyRule,
   type PolicySettings,
-} from './types.js';
-import type { PolicyEngine } from './policy-engine.js';
-import { loadPoliciesFromToml, type PolicyFileError } from './toml-loader.js';
-import {
-  MessageBusType,
-  type UpdatePolicy,
-} from '../confirmation-bus/types.js';
-import { type MessageBus } from '../confirmation-bus/message-bus.js';
-import { coreEvents } from '../utils/events.js';
+} from "./types.js";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
-export const DEFAULT_CORE_POLICIES_DIR = path.join(__dirname, 'policies');
+export const DEFAULT_CORE_POLICIES_DIR = path.join(__dirname, "policies");
 
 // Policy tier constants for priority calculation
 export const DEFAULT_POLICY_TIER = 1;
@@ -60,10 +57,7 @@ export function getPolicyDirectories(defaultPoliciesDir?: string): string[] {
  * Determines the policy tier (1=default, 2=user, 3=admin) for a given directory.
  * This is used by the TOML loader to assign priority bands.
  */
-export function getPolicyTier(
-  dir: string,
-  defaultPoliciesDir?: string,
-): number {
+export function getPolicyTier(dir: string, defaultPoliciesDir?: string): number {
   const USER_POLICIES_DIR = Storage.getUserPoliciesDir();
   const ADMIN_POLICIES_DIR = Storage.getSystemPoliciesDir();
 
@@ -71,10 +65,7 @@ export function getPolicyTier(
   const normalizedUser = path.resolve(USER_POLICIES_DIR);
   const normalizedAdmin = path.resolve(ADMIN_POLICIES_DIR);
 
-  if (
-    defaultPoliciesDir &&
-    normalizedDir === path.resolve(defaultPoliciesDir)
-  ) {
+  if (defaultPoliciesDir && normalizedDir === path.resolve(defaultPoliciesDir)) {
     return DEFAULT_POLICY_TIER;
   }
   if (normalizedDir === path.resolve(DEFAULT_CORE_POLICIES_DIR)) {
@@ -126,7 +117,7 @@ export async function createPolicyEngineConfig(
   // coreEvents has a buffer that will display these once the UI is ready
   if (errors.length > 0) {
     for (const error of errors) {
-      coreEvents.emitFeedback('error', formatPolicyError(error));
+      coreEvents.emitFeedback("error", formatPolicyError(error));
     }
   }
 
@@ -199,9 +190,7 @@ export async function createPolicyEngineConfig(
   // MCP servers that are trusted in the settings.
   // Priority: 2.2 (user tier - persistent trusted servers)
   if (settings.mcpServers) {
-    for (const [serverName, serverConfig] of Object.entries(
-      settings.mcpServers,
-    )) {
+    for (const [serverName, serverConfig] of Object.entries(settings.mcpServers)) {
       if (serverConfig.trust) {
         // Trust all tools from this MCP server
         // Using pattern matching for MCP tool names which are formatted as "serverName__toolName"
@@ -233,23 +222,17 @@ export async function createPolicyEngineConfig(
   };
 }
 
-export function createPolicyUpdater(
-  policyEngine: PolicyEngine,
-  messageBus: MessageBus,
-) {
-  messageBus.subscribe(
-    MessageBusType.UPDATE_POLICY,
-    (message: UpdatePolicy) => {
-      const toolName = message.toolName;
+export function createPolicyUpdater(policyEngine: PolicyEngine, messageBus: MessageBus) {
+  messageBus.subscribe(MessageBusType.UPDATE_POLICY, (message: UpdatePolicy) => {
+    const toolName = message.toolName;
 
-      policyEngine.addRule({
-        toolName,
-        decision: PolicyDecision.ALLOW,
-        // User tier (2) + high priority (950/1000) = 2.95
-        // This ensures user "always allow" selections are high priority
-        // but still lose to admin policies (3.xxx) and settings excludes (200)
-        priority: 2.95,
-      });
-    },
-  );
+    policyEngine.addRule({
+      toolName,
+      decision: PolicyDecision.ALLOW,
+      // User tier (2) + high priority (950/1000) = 2.95
+      // This ensures user "always allow" selections are high priority
+      // but still lose to admin policies (3.xxx) and settings excludes (200)
+      priority: 2.95,
+    });
+  });
 }

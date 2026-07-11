@@ -4,17 +4,17 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { act } from 'react';
-import { render } from '../../test-utils/render.js';
-import { waitFor } from '../../test-utils/async.js';
-import { ConfigInitDisplay } from './ConfigInitDisplay.js';
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { AppEvent } from '../../utils/events.js';
-import { MCPServerStatus, type McpClient } from '@airiscode/gemini-cli-core';
-import { Text } from 'ink';
+import { MCPServerStatus, type McpClient } from "@airiscode/gemini-cli-core";
+import { Text } from "ink";
+import { act } from "react";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { waitFor } from "../../test-utils/async.js";
+import { render } from "../../test-utils/render.js";
+import { AppEvent } from "../../utils/events.js";
+import { ConfigInitDisplay } from "./ConfigInitDisplay.js";
 
 // Mock GeminiSpinner
-vi.mock('./GeminiRespondingSpinner.js', () => ({
+vi.mock("./GeminiRespondingSpinner.js", () => ({
   GeminiSpinner: () => <Text>Spinner</Text>,
 }));
 
@@ -25,8 +25,8 @@ const { mockOn, mockOff, mockEmit } = vi.hoisted(() => ({
   mockEmit: vi.fn(),
 }));
 
-vi.mock('../../utils/events.js', async (importOriginal) => {
-  const actual = await importOriginal<typeof import('../../utils/events.js')>();
+vi.mock("../../utils/events.js", async (importOriginal) => {
+  const actual = await importOriginal<typeof import("../../utils/events.js")>();
   return {
     ...actual,
     appEvents: {
@@ -37,7 +37,7 @@ vi.mock('../../utils/events.js', async (importOriginal) => {
   };
 });
 
-describe('ConfigInitDisplay', () => {
+describe("ConfigInitDisplay", () => {
   beforeEach(() => {
     mockOn.mockClear();
     mockOff.mockClear();
@@ -48,12 +48,12 @@ describe('ConfigInitDisplay', () => {
     vi.restoreAllMocks();
   });
 
-  it('renders initial state', () => {
+  it("renders initial state", () => {
     const { lastFrame } = render(<ConfigInitDisplay />);
     expect(lastFrame()).toMatchSnapshot();
   });
 
-  it('updates message on McpClientUpdate event', async () => {
+  it("updates message on McpClientUpdate event", async () => {
     let listener: ((clients?: Map<string, McpClient>) => void) | undefined;
     mockOn.mockImplementation((event, fn) => {
       if (event === AppEvent.McpClientUpdate) {
@@ -65,7 +65,7 @@ describe('ConfigInitDisplay', () => {
 
     // Wait for listener to be registered
     await waitFor(() => {
-      if (!listener) throw new Error('Listener not registered yet');
+      if (!listener) throw new Error("Listener not registered yet");
     });
 
     const mockClient1 = {
@@ -75,8 +75,8 @@ describe('ConfigInitDisplay', () => {
       getStatus: () => MCPServerStatus.CONNECTING,
     } as McpClient;
     const clients = new Map<string, McpClient>([
-      ['server1', mockClient1],
-      ['server2', mockClient2],
+      ["server1", mockClient1],
+      ["server2", mockClient2],
     ]);
 
     // Trigger the listener manually since we mocked the event emitter
@@ -90,7 +90,7 @@ describe('ConfigInitDisplay', () => {
     });
   });
 
-  it('truncates list of waiting servers if too many', async () => {
+  it("truncates list of waiting servers if too many", async () => {
     let listener: ((clients?: Map<string, McpClient>) => void) | undefined;
     mockOn.mockImplementation((event, fn) => {
       if (event === AppEvent.McpClientUpdate) {
@@ -101,7 +101,7 @@ describe('ConfigInitDisplay', () => {
     const { lastFrame } = render(<ConfigInitDisplay />);
 
     await waitFor(() => {
-      if (!listener) throw new Error('Listener not registered yet');
+      if (!listener) throw new Error("Listener not registered yet");
     });
 
     const mockClientConnecting = {
@@ -109,11 +109,11 @@ describe('ConfigInitDisplay', () => {
     } as McpClient;
 
     const clients = new Map<string, McpClient>([
-      ['s1', mockClientConnecting],
-      ['s2', mockClientConnecting],
-      ['s3', mockClientConnecting],
-      ['s4', mockClientConnecting],
-      ['s5', mockClientConnecting],
+      ["s1", mockClientConnecting],
+      ["s2", mockClientConnecting],
+      ["s3", mockClientConnecting],
+      ["s4", mockClientConnecting],
+      ["s5", mockClientConnecting],
     ]);
 
     act(() => {
@@ -125,7 +125,7 @@ describe('ConfigInitDisplay', () => {
     });
   });
 
-  it('handles empty clients map', async () => {
+  it("handles empty clients map", async () => {
     let listener: ((clients?: Map<string, McpClient>) => void) | undefined;
     mockOn.mockImplementation((event, fn) => {
       if (event === AppEvent.McpClientUpdate) {
@@ -136,7 +136,7 @@ describe('ConfigInitDisplay', () => {
     const { lastFrame } = render(<ConfigInitDisplay />);
 
     await waitFor(() => {
-      if (!listener) throw new Error('Listener not registered yet');
+      if (!listener) throw new Error("Listener not registered yet");
     });
 
     if (listener) {

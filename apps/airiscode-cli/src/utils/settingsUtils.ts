@@ -4,21 +4,17 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import * as fs from 'node:fs';
-import type {
-  Settings,
-  SettingScope,
-  LoadedSettings,
-} from '../config/settings.js';
+import * as fs from "node:fs";
+import type { LoadedSettings, SettingScope, Settings } from "../config/settings.js";
 import type {
   SettingDefinition,
   SettingsSchema,
   SettingsType,
   SettingsValue,
-} from '../config/settingsSchema.js';
-import { getSettingsSchema } from '../config/settingsSchema.js';
-import { t } from '../i18n/index.js';
-import { isAutoLanguage } from './languageUtils.js';
+} from "../config/settingsSchema.js";
+import { getSettingsSchema } from "../config/settingsSchema.js";
+import { t } from "../i18n/index.js";
+import { isAutoLanguage } from "./languageUtils.js";
 
 // The schema is now nested, but many parts of the UI and logic work better
 // with a flattened structure and dot-notation keys. This section flattens the
@@ -26,7 +22,7 @@ import { isAutoLanguage } from './languageUtils.js';
 
 type FlattenedSchema = Record<string, SettingDefinition & { key: string }>;
 
-function flattenSchema(schema: SettingsSchema, prefix = ''): FlattenedSchema {
+function flattenSchema(schema: SettingsSchema, prefix = ""): FlattenedSchema {
   let result: FlattenedSchema = {};
   for (const key in schema) {
     const newKey = prefix ? `${prefix}.${key}` : key;
@@ -43,10 +39,7 @@ let _FLATTENED_SCHEMA: FlattenedSchema | undefined;
 
 /** Returns a flattened schema, the first call is memoized for future requests. */
 export function getFlattenedSchema() {
-  return (
-    _FLATTENED_SCHEMA ??
-    (_FLATTENED_SCHEMA = flattenSchema(getSettingsSchema()))
-  );
+  return _FLATTENED_SCHEMA ?? (_FLATTENED_SCHEMA = flattenSchema(getSettingsSchema()));
 }
 
 function clearFlattenedSchema() {
@@ -60,10 +53,7 @@ export function getSettingsByCategory(): Record<
   string,
   Array<SettingDefinition & { key: string }>
 > {
-  const categories: Record<
-    string,
-    Array<SettingDefinition & { key: string }>
-  > = {};
+  const categories: Record<string, Array<SettingDefinition & { key: string }>> = {};
 
   Object.values(getFlattenedSchema()).forEach((definition) => {
     const category = definition.category;
@@ -111,10 +101,7 @@ export function getRestartRequiredSettings(): string[] {
 /**
  * Recursively gets a value from a nested object using a key path array.
  */
-export function getNestedValue(
-  obj: Record<string, unknown>,
-  path: string[],
-): unknown {
+export function getNestedValue(obj: Record<string, unknown>, path: string[]): unknown {
   const [first, ...rest] = path;
   if (!first || !(first in obj)) {
     return undefined;
@@ -123,17 +110,14 @@ export function getNestedValue(
   if (rest.length === 0) {
     return value;
   }
-  if (value && typeof value === 'object' && value !== null) {
+  if (value && typeof value === "object" && value !== null) {
     return getNestedValue(value as Record<string, unknown>, rest);
   }
   return undefined;
 }
 
-export function getNestedProperty(
-  obj: Record<string, unknown>,
-  path: string,
-): unknown {
-  return getNestedValue(obj, path.split('.'));
+export function getNestedProperty(obj: Record<string, unknown>, path: string): unknown {
+  return getNestedValue(obj, path.split("."));
 }
 
 /**
@@ -150,7 +134,7 @@ export function getEffectiveValue(
     return undefined;
   }
 
-  const path = key.split('.');
+  const path = key.split(".");
 
   // Check the current scope's settings first
   let value = getNestedValue(settings as Record<string, unknown>, path);
@@ -178,12 +162,8 @@ export function getAllSettingKeys(): string[] {
 /**
  * Get settings by type
  */
-export function getSettingsByType(
-  type: SettingsType,
-): Array<SettingDefinition & { key: string }> {
-  return Object.values(getFlattenedSchema()).filter(
-    (definition) => definition.type === type,
-  );
+export function getSettingsByType(type: SettingsType): Array<SettingDefinition & { key: string }> {
+  return Object.values(getFlattenedSchema()).filter((definition) => definition.type === type);
 }
 
 /**
@@ -194,9 +174,7 @@ export function getSettingsRequiringRestart(): Array<
     key: string;
   }
 > {
-  return Object.values(getFlattenedSchema()).filter(
-    (definition) => definition.requiresRestart,
-  );
+  return Object.values(getFlattenedSchema()).filter((definition) => definition.requiresRestart);
 }
 
 /**
@@ -227,10 +205,7 @@ export function getDialogSettingsByCategory(): Record<
   string,
   Array<SettingDefinition & { key: string }>
 > {
-  const categories: Record<
-    string,
-    Array<SettingDefinition & { key: string }>
-  > = {};
+  const categories: Record<string, Array<SettingDefinition & { key: string }>> = {};
 
   Object.values(getFlattenedSchema())
     .filter((definition) => definition.showInDialog !== false)
@@ -252,8 +227,7 @@ export function getDialogSettingsByType(
   type: SettingsType,
 ): Array<SettingDefinition & { key: string }> {
   return Object.values(getFlattenedSchema()).filter(
-    (definition) =>
-      definition.type === type && definition.showInDialog !== false,
+    (definition) => definition.type === type && definition.showInDialog !== false,
   );
 }
 
@@ -273,39 +247,39 @@ export function getDialogSettingsByType(
  */
 const SETTINGS_DIALOG_ORDER: readonly string[] = [
   // Workflow Control - most impactful setting
-  'tools.approvalMode',
+  "tools.approvalMode",
 
   // Localization - users often set this first
-  'general.language',
-  'general.outputLanguage',
+  "general.language",
+  "general.outputLanguage",
 
   // Theme
-  'ui.theme',
+  "ui.theme",
 
   // Editor/Shell Experience
-  'general.vimMode',
-  'tools.shell.enableInteractiveShell',
+  "general.vimMode",
+  "tools.shell.enableInteractiveShell",
 
   // Display Preferences
-  'general.preferredEditor',
-  'ide.enabled',
-  'ui.showLineNumbers',
-  'ui.hideTips',
-  'general.terminalBell',
-  'ui.enableWelcomeBack',
+  "general.preferredEditor",
+  "ide.enabled",
+  "ui.showLineNumbers",
+  "ui.hideTips",
+  "general.terminalBell",
+  "ui.enableWelcomeBack",
 
   // Git Behavior
-  'general.gitCoAuthor',
+  "general.gitCoAuthor",
 
   // File Filtering
-  'context.fileFiltering.respectGitIgnore',
-  'context.fileFiltering.respectAiriscodeIgnore',
+  "context.fileFiltering.respectGitIgnore",
+  "context.fileFiltering.respectAiriscodeIgnore",
 
   // System Settings - rarely changed
-  'general.disableAutoUpdate',
+  "general.disableAutoUpdate",
 
   // Privacy
-  'privacy.usageStatisticsEnabled',
+  "privacy.usageStatisticsEnabled",
 ] as const;
 
 /**
@@ -353,12 +327,12 @@ export function getSettingValue(
 
   const value = getEffectiveValue(key, settings, mergedSettings);
   // Ensure we return a boolean value, converting from the more general type
-  if (typeof value === 'boolean') {
+  if (typeof value === "boolean") {
     return value;
   }
   // Fall back to default value, ensuring it's a boolean
   const defaultValue = definition.default;
-  if (typeof defaultValue === 'boolean') {
+  if (typeof defaultValue === "boolean") {
     return defaultValue;
   }
   return false; // Final fallback
@@ -370,7 +344,7 @@ export function getSettingValue(
 export function isSettingModified(key: string, value: boolean): boolean {
   const defaultValue = getDefaultValue(key);
   // Handle type comparison properly
-  if (typeof defaultValue === 'boolean') {
+  if (typeof defaultValue === "boolean") {
     return value !== defaultValue;
   }
   // If default is not a boolean, consider it modified if value is true
@@ -380,11 +354,8 @@ export function isSettingModified(key: string, value: boolean): boolean {
 /**
  * Check if a setting exists in the original settings file for a scope
  */
-export function settingExistsInScope(
-  key: string,
-  scopeSettings: Settings,
-): boolean {
-  const path = key.split('.');
+export function settingExistsInScope(key: string, scopeSettings: Settings): boolean {
+  const path = key.split(".");
   const value = getNestedValue(scopeSettings as Record<string, unknown>, path);
   return value !== undefined;
 }
@@ -394,13 +365,13 @@ export function setNestedPropertyForce(
   path: string,
   value: unknown,
 ): void {
-  const keys = path.split('.');
+  const keys = path.split(".");
   const lastKey = keys.pop();
   if (!lastKey) return;
 
   let current: Record<string, unknown> = obj;
   for (const key of keys) {
-    if (!current[key] || typeof current[key] !== 'object') {
+    if (!current[key] || typeof current[key] !== "object") {
       current[key] = {};
     }
     current = current[key] as Record<string, unknown>;
@@ -414,7 +385,7 @@ export function setNestedPropertySafe(
   path: string,
   value: unknown,
 ): void {
-  const keys = path.split('.');
+  const keys = path.split(".");
   const lastKey = keys.pop();
   if (!lastKey) return;
 
@@ -424,7 +395,7 @@ export function setNestedPropertySafe(
       current[key] = {};
     }
     const next = current[key];
-    if (typeof next === 'object' && next !== null) {
+    if (typeof next === "object" && next !== null) {
       current = next as Record<string, unknown>;
     } else {
       return;
@@ -434,18 +405,15 @@ export function setNestedPropertySafe(
   current[lastKey] = value;
 }
 
-export function deleteNestedPropertySafe(
-  obj: Record<string, unknown>,
-  path: string,
-): void {
-  const keys = path.split('.');
+export function deleteNestedPropertySafe(obj: Record<string, unknown>, path: string): void {
+  const keys = path.split(".");
   const lastKey = keys.pop();
   if (!lastKey) return;
 
   let current: Record<string, unknown> = obj;
   for (const key of keys) {
     const next = current[key];
-    if (typeof next !== 'object' || next === null) {
+    if (typeof next !== "object" || next === null) {
       return;
     }
     current = next as Record<string, unknown>;
@@ -483,18 +451,14 @@ export function setPendingSettingValueAny(
 /**
  * Check if any modified settings require a restart
  */
-export function hasRestartRequiredSettings(
-  modifiedSettings: Set<string>,
-): boolean {
+export function hasRestartRequiredSettings(modifiedSettings: Set<string>): boolean {
   return Array.from(modifiedSettings).some((key) => requiresRestart(key));
 }
 
 /**
  * Get the restart required settings from a set of modified settings
  */
-export function getRestartRequiredFromModified(
-  modifiedSettings: Set<string>,
-): string[] {
+export function getRestartRequiredFromModified(modifiedSettings: Set<string>): string[] {
   return Array.from(modifiedSettings).filter((key) => requiresRestart(key));
 }
 
@@ -508,11 +472,8 @@ export function saveModifiedSettings(
   scope: SettingScope,
 ): void {
   modifiedSettings.forEach((settingKey) => {
-    const path = settingKey.split('.');
-    const value = getNestedValue(
-      pendingSettings as Record<string, unknown>,
-      path,
-    );
+    const path = settingKey.split(".");
+    const value = getNestedValue(pendingSettings as Record<string, unknown>, path);
 
     const existsInOriginalFile = settingExistsInScope(
       settingKey,
@@ -565,9 +526,9 @@ export function getDisplayValue(
   let valueString = String(value);
 
   // Special handling for outputLanguage 'auto' value
-  if (key === 'general.outputLanguage' && isAutoLanguage(value as string)) {
-    valueString = t('Auto (detect from system)');
-  } else if (definition?.type === 'enum' && definition.options) {
+  if (key === "general.outputLanguage" && isAutoLanguage(value as string)) {
+    valueString = t("Auto (detect from system)");
+  } else if (definition?.type === "enum" && definition.options) {
     const option = definition.options?.find((option) => option.value === value);
     if (option?.label) {
       valueString = t(option.label) || option.label;

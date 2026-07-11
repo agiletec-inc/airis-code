@@ -4,23 +4,21 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import fs from 'node:fs';
-import fsPromises from 'node:fs/promises';
-import path from 'node:path';
-import type { PartUnion } from '@google/genai';
+import fs from "node:fs";
+import fsPromises from "node:fs/promises";
+import { createRequire as createModuleRequire } from "node:module";
+import path from "node:path";
+import type { PartUnion } from "@google/genai";
 // eslint-disable-next-line import/no-internal-modules
-import mime from 'mime/lite';
-import type { FileSystemService } from '../services/fileSystemService.js';
-import { ToolErrorType } from '../tools/tool-error.js';
-import { BINARY_EXTENSIONS } from './ignorePatterns.js';
-import { createRequire as createModuleRequire } from 'node:module';
-import { debugLogger } from './debugLogger.js';
+import mime from "mime/lite";
+import type { FileSystemService } from "../services/fileSystemService.js";
+import { ToolErrorType } from "../tools/tool-error.js";
+import { debugLogger } from "./debugLogger.js";
+import { BINARY_EXTENSIONS } from "./ignorePatterns.js";
 
 const requireModule = createModuleRequire(import.meta.url);
 
-export async function readWasmBinaryFromDisk(
-  specifier: string,
-): Promise<Uint8Array> {
+export async function readWasmBinaryFromDisk(specifier: string): Promise<Uint8Array> {
   const resolvedPath = requireModule.resolve(specifier);
   const buffer = await fsPromises.readFile(resolvedPath);
   return new Uint8Array(buffer);
@@ -46,7 +44,7 @@ export async function loadWasmBinary(
   try {
     return await readWasmBinaryFromDisk(fallbackSpecifier);
   } catch (error) {
-    throw new Error('WASM binary module did not provide a Uint8Array export', {
+    throw new Error("WASM binary module did not provide a Uint8Array export", {
       cause: error,
     });
   }
@@ -57,11 +55,11 @@ const DEFAULT_MAX_LINES_TEXT_FILE = 2000;
 const MAX_LINE_LENGTH_TEXT_FILE = 2000;
 
 // Default values for encoding and separator format
-export const DEFAULT_ENCODING: BufferEncoding = 'utf-8';
+export const DEFAULT_ENCODING: BufferEncoding = "utf-8";
 
 // --- Unicode BOM detection & decoding helpers --------------------------------
 
-type UnicodeEncoding = 'utf8' | 'utf16le' | 'utf16be' | 'utf32le' | 'utf32be';
+type UnicodeEncoding = "utf8" | "utf16le" | "utf16be" | "utf32le" | "utf32be";
 
 interface BOMInfo {
   encoding: UnicodeEncoding;
@@ -75,28 +73,18 @@ interface BOMInfo {
 export function detectBOM(buf: Buffer): BOMInfo | null {
   if (buf.length >= 4) {
     // UTF-32 LE: FF FE 00 00
-    if (
-      buf[0] === 0xff &&
-      buf[1] === 0xfe &&
-      buf[2] === 0x00 &&
-      buf[3] === 0x00
-    ) {
-      return { encoding: 'utf32le', bomLength: 4 };
+    if (buf[0] === 0xff && buf[1] === 0xfe && buf[2] === 0x00 && buf[3] === 0x00) {
+      return { encoding: "utf32le", bomLength: 4 };
     }
     // UTF-32 BE: 00 00 FE FF
-    if (
-      buf[0] === 0x00 &&
-      buf[1] === 0x00 &&
-      buf[2] === 0xfe &&
-      buf[3] === 0xff
-    ) {
-      return { encoding: 'utf32be', bomLength: 4 };
+    if (buf[0] === 0x00 && buf[1] === 0x00 && buf[2] === 0xfe && buf[3] === 0xff) {
+      return { encoding: "utf32be", bomLength: 4 };
     }
   }
   if (buf.length >= 3) {
     // UTF-8: EF BB BF
     if (buf[0] === 0xef && buf[1] === 0xbb && buf[2] === 0xbf) {
-      return { encoding: 'utf8', bomLength: 3 };
+      return { encoding: "utf8", bomLength: 3 };
     }
   }
   if (buf.length >= 2) {
@@ -106,11 +94,11 @@ export function detectBOM(buf: Buffer): BOMInfo | null {
       buf[1] === 0xfe &&
       (buf.length < 4 || buf[2] !== 0x00 || buf[3] !== 0x00)
     ) {
-      return { encoding: 'utf16le', bomLength: 2 };
+      return { encoding: "utf16le", bomLength: 2 };
     }
     // UTF-16 BE: FE FF
     if (buf[0] === 0xfe && buf[1] === 0xff) {
-      return { encoding: 'utf16be', bomLength: 2 };
+      return { encoding: "utf16be", bomLength: 2 };
     }
   }
   return null;
@@ -121,10 +109,10 @@ export function detectBOM(buf: Buffer): BOMInfo | null {
  * (Node has 'utf16le' but not 'utf16be'.)
  */
 function decodeUTF16BE(buf: Buffer): string {
-  if (buf.length === 0) return '';
+  if (buf.length === 0) return "";
   const swapped = Buffer.from(buf); // swap16 mutates in place, so copy
   swapped.swap16();
-  return swapped.toString('utf16le');
+  return swapped.toString("utf16le");
 }
 
 /**
@@ -132,26 +120,18 @@ function decodeUTF16BE(buf: Buffer): string {
  * Invalid code points are replaced with U+FFFD, partial trailing bytes are ignored.
  */
 function decodeUTF32(buf: Buffer, littleEndian: boolean): string {
-  if (buf.length < 4) return '';
+  if (buf.length < 4) return "";
   const usable = buf.length - (buf.length % 4);
-  let out = '';
+  let out = "";
   for (let i = 0; i < usable; i += 4) {
     const cp = littleEndian
-      ? (buf[i] |
-          (buf[i + 1] << 8) |
-          (buf[i + 2] << 16) |
-          (buf[i + 3] << 24)) >>>
-        0
-      : (buf[i + 3] |
-          (buf[i + 2] << 8) |
-          (buf[i + 1] << 16) |
-          (buf[i] << 24)) >>>
-        0;
+      ? (buf[i] | (buf[i + 1] << 8) | (buf[i + 2] << 16) | (buf[i + 3] << 24)) >>> 0
+      : (buf[i + 3] | (buf[i + 2] << 8) | (buf[i + 1] << 16) | (buf[i] << 24)) >>> 0;
     // Valid planes: 0x0000..0x10FFFF excluding surrogates
     if (cp <= 0x10ffff && !(cp >= 0xd800 && cp <= 0xdfff)) {
       out += String.fromCodePoint(cp);
     } else {
-      out += '\uFFFD';
+      out += "\uFFFD";
     }
   }
   return out;
@@ -164,30 +144,30 @@ function decodeUTF32(buf: Buffer, littleEndian: boolean): string {
 export async function readFileWithEncoding(filePath: string): Promise<string> {
   // Read the file once; detect BOM and decode from the single buffer.
   const full = await fs.promises.readFile(filePath);
-  if (full.length === 0) return '';
+  if (full.length === 0) return "";
 
   const bom = detectBOM(full);
   if (!bom) {
     // No BOM → treat as UTF‑8
-    return full.toString('utf8');
+    return full.toString("utf8");
   }
 
   // Strip BOM and decode per encoding
   const content = full.subarray(bom.bomLength);
   switch (bom.encoding) {
-    case 'utf8':
-      return content.toString('utf8');
-    case 'utf16le':
-      return content.toString('utf16le');
-    case 'utf16be':
+    case "utf8":
+      return content.toString("utf8");
+    case "utf16le":
+      return content.toString("utf16le");
+    case "utf16be":
       return decodeUTF16BE(content);
-    case 'utf32le':
+    case "utf32le":
       return decodeUTF32(content, true);
-    case 'utf32be':
+    case "utf32be":
       return decodeUTF32(content, false);
     default:
       // Defensive fallback; should be unreachable
-      return content.toString('utf8');
+      return content.toString("utf8");
   }
 }
 
@@ -198,7 +178,7 @@ export async function readFileWithEncoding(filePath: string): Promise<string> {
  */
 export function getSpecificMimeType(filePath: string): string | undefined {
   const lookedUpMime = mime.getType(filePath);
-  return typeof lookedUpMime === 'string' ? lookedUpMime : undefined;
+  return typeof lookedUpMime === "string" ? lookedUpMime : undefined;
 }
 
 /**
@@ -207,18 +187,14 @@ export function getSpecificMimeType(filePath: string): string | undefined {
  * @param rootDirectory The absolute root directory.
  * @returns True if the path is within the root directory, false otherwise.
  */
-export function isWithinRoot(
-  pathToCheck: string,
-  rootDirectory: string,
-): boolean {
+export function isWithinRoot(pathToCheck: string, rootDirectory: string): boolean {
   const normalizedPathToCheck = path.resolve(pathToCheck);
   const normalizedRootDirectory = path.resolve(rootDirectory);
 
   // Ensure the rootDirectory path ends with a separator for correct startsWith comparison,
   // unless it's the root path itself (e.g., '/' or 'C:\').
   const rootWithSeparator =
-    normalizedRootDirectory === path.sep ||
-    normalizedRootDirectory.endsWith(path.sep)
+    normalizedRootDirectory === path.sep || normalizedRootDirectory.endsWith(path.sep)
       ? normalizedRootDirectory
       : normalizedRootDirectory + path.sep;
 
@@ -236,7 +212,7 @@ export function isWithinRoot(
 export async function isBinaryFile(filePath: string): Promise<boolean> {
   let fh: fs.promises.FileHandle | null = null;
   try {
-    fh = await fs.promises.open(filePath, 'r');
+    fh = await fs.promises.open(filePath, "r");
     const stats = await fh.stat();
     const fileSize = stats.size;
     if (fileSize === 0) return false; // empty is not binary
@@ -287,49 +263,49 @@ export async function isBinaryFile(filePath: string): Promise<boolean> {
  */
 export async function detectFileType(
   filePath: string,
-): Promise<'text' | 'image' | 'pdf' | 'audio' | 'video' | 'binary' | 'svg'> {
+): Promise<"text" | "image" | "pdf" | "audio" | "video" | "binary" | "svg"> {
   const ext = path.extname(filePath).toLowerCase();
 
   // The mimetype for various TypeScript extensions (ts, mts, cts, tsx) can be
   // MPEG transport stream (a video format), but we want to assume these are
   // TypeScript files instead.
-  if (['.ts', '.mts', '.cts'].includes(ext)) {
-    return 'text';
+  if ([".ts", ".mts", ".cts"].includes(ext)) {
+    return "text";
   }
 
-  if (ext === '.svg') {
-    return 'svg';
+  if (ext === ".svg") {
+    return "svg";
   }
 
   const lookedUpMimeType = mime.getType(filePath); // Returns null if not found, or the mime type string
   if (lookedUpMimeType) {
-    if (lookedUpMimeType.startsWith('image/')) {
-      return 'image';
+    if (lookedUpMimeType.startsWith("image/")) {
+      return "image";
     }
-    if (lookedUpMimeType.startsWith('audio/')) {
-      return 'audio';
+    if (lookedUpMimeType.startsWith("audio/")) {
+      return "audio";
     }
-    if (lookedUpMimeType.startsWith('video/')) {
-      return 'video';
+    if (lookedUpMimeType.startsWith("video/")) {
+      return "video";
     }
-    if (lookedUpMimeType === 'application/pdf') {
-      return 'pdf';
+    if (lookedUpMimeType === "application/pdf") {
+      return "pdf";
     }
   }
 
   // Stricter binary check for common non-text extensions before content check
   // These are often not well-covered by mime-types or might be misidentified.
   if (BINARY_EXTENSIONS.includes(ext)) {
-    return 'binary';
+    return "binary";
   }
 
   // Fall back to content-based check if mime type wasn't conclusive for image/pdf
   // and it's not a known binary extension.
   if (await isBinaryFile(filePath)) {
-    return 'binary';
+    return "binary";
   }
 
-  return 'text';
+  return "text";
 }
 
 export interface ProcessedFileReadResult {
@@ -361,9 +337,8 @@ export async function processSingleFileContent(
     if (!fs.existsSync(filePath)) {
       // Sync check is acceptable before async read
       return {
-        llmContent:
-          'Could not read file because no file was found at the specified path.',
-        returnDisplay: 'File not found.',
+        llmContent: "Could not read file because no file was found at the specified path.",
+        returnDisplay: "File not found.",
         error: `File not found: ${filePath}`,
         errorType: ToolErrorType.FILE_NOT_FOUND,
       };
@@ -371,9 +346,8 @@ export async function processSingleFileContent(
     const stats = await fs.promises.stat(filePath);
     if (stats.isDirectory()) {
       return {
-        llmContent:
-          'Could not read file because the provided path is a directory, not a file.',
-        returnDisplay: 'Path is a directory.',
+        llmContent: "Could not read file because the provided path is a directory, not a file.",
+        returnDisplay: "Path is a directory.",
         error: `Path is a directory, not a file: ${filePath}`,
         errorType: ToolErrorType.TARGET_IS_DIRECTORY,
       };
@@ -382,26 +356,24 @@ export async function processSingleFileContent(
     const fileSizeInMB = stats.size / (1024 * 1024);
     if (fileSizeInMB > 20) {
       return {
-        llmContent: 'File size exceeds the 20MB limit.',
-        returnDisplay: 'File size exceeds the 20MB limit.',
+        llmContent: "File size exceeds the 20MB limit.",
+        returnDisplay: "File size exceeds the 20MB limit.",
         error: `File size exceeds the 20MB limit: ${filePath} (${fileSizeInMB.toFixed(2)}MB)`,
         errorType: ToolErrorType.FILE_TOO_LARGE,
       };
     }
 
     const fileType = await detectFileType(filePath);
-    const relativePathForDisplay = path
-      .relative(rootDirectory, filePath)
-      .replace(/\\/g, '/');
+    const relativePathForDisplay = path.relative(rootDirectory, filePath).replace(/\\/g, "/");
 
     switch (fileType) {
-      case 'binary': {
+      case "binary": {
         return {
           llmContent: `Cannot display content of binary file: ${relativePathForDisplay}`,
           returnDisplay: `Skipped binary file: ${relativePathForDisplay}`,
         };
       }
-      case 'svg': {
+      case "svg": {
         const SVG_MAX_SIZE_BYTES = 1 * 1024 * 1024;
         if (stats.size > SVG_MAX_SIZE_BYTES) {
           return {
@@ -415,15 +387,14 @@ export async function processSingleFileContent(
           returnDisplay: `Read SVG as text: ${relativePathForDisplay}`,
         };
       }
-      case 'text': {
+      case "text": {
         // Use BOM-aware reader to avoid leaving a BOM character in content and to support UTF-16/32 transparently
         const content = await readFileWithEncoding(filePath);
-        const lines = content.split('\n');
+        const lines = content.split("\n");
         const originalLineCount = lines.length;
 
         const startLine = offset || 0;
-        const effectiveLimit =
-          limit === undefined ? DEFAULT_MAX_LINES_TEXT_FILE : limit;
+        const effectiveLimit = limit === undefined ? DEFAULT_MAX_LINES_TEXT_FILE : limit;
         // Ensure endLine does not exceed originalLineCount
         const endLine = Math.min(startLine + effectiveLimit, originalLineCount);
         // Ensure selectedLines doesn't try to slice beyond array bounds if startLine is too high
@@ -434,26 +405,23 @@ export async function processSingleFileContent(
         const formattedLines = selectedLines.map((line) => {
           if (line.length > MAX_LINE_LENGTH_TEXT_FILE) {
             linesWereTruncatedInLength = true;
-            return (
-              line.substring(0, MAX_LINE_LENGTH_TEXT_FILE) + '... [truncated]'
-            );
+            return line.substring(0, MAX_LINE_LENGTH_TEXT_FILE) + "... [truncated]";
           }
           return line;
         });
 
-        const contentRangeTruncated =
-          startLine > 0 || endLine < originalLineCount;
+        const contentRangeTruncated = startLine > 0 || endLine < originalLineCount;
         const isTruncated = contentRangeTruncated || linesWereTruncatedInLength;
-        const llmContent = formattedLines.join('\n');
+        const llmContent = formattedLines.join("\n");
 
         // By default, return nothing to streamline the common case of a successful read_file.
-        let returnDisplay = '';
+        let returnDisplay = "";
         if (contentRangeTruncated) {
           returnDisplay = `Read lines ${
             actualStartLine + 1
           }-${endLine} of ${originalLineCount} from ${relativePathForDisplay}`;
           if (linesWereTruncatedInLength) {
-            returnDisplay += ' (some lines were shortened)';
+            returnDisplay += " (some lines were shortened)";
           }
         } else if (linesWereTruncatedInLength) {
           returnDisplay = `Read all ${originalLineCount} lines from ${relativePathForDisplay} (some lines were shortened)`;
@@ -467,17 +435,17 @@ export async function processSingleFileContent(
           linesShown: [actualStartLine + 1, endLine],
         };
       }
-      case 'image':
-      case 'pdf':
-      case 'audio':
-      case 'video': {
+      case "image":
+      case "pdf":
+      case "audio":
+      case "video": {
         const contentBuffer = await fs.promises.readFile(filePath);
-        const base64Data = contentBuffer.toString('base64');
+        const base64Data = contentBuffer.toString("base64");
         return {
           llmContent: {
             inlineData: {
               data: base64Data,
-              mimeType: mime.getType(filePath) || 'application/octet-stream',
+              mimeType: mime.getType(filePath) || "application/octet-stream",
             },
           },
           returnDisplay: `Read ${fileType} file: ${relativePathForDisplay}`,
@@ -495,9 +463,7 @@ export async function processSingleFileContent(
     }
   } catch (error) {
     const errorMessage = error instanceof Error ? error.message : String(error);
-    const displayPath = path
-      .relative(rootDirectory, filePath)
-      .replace(/\\/g, '/');
+    const displayPath = path.relative(rootDirectory, filePath).replace(/\\/g, "/");
     return {
       llmContent: `Error reading file ${displayPath}: ${errorMessage}`,
       returnDisplay: `Error reading file ${displayPath}: ${errorMessage}`,

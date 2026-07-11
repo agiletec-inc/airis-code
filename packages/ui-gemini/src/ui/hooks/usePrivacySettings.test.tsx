@@ -4,25 +4,24 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { describe, it, expect, beforeEach, vi } from 'vitest';
-import { act } from 'react';
-import { render } from '../../test-utils/render.js';
-import type { Config, CodeAssistServer } from '@airiscode/gemini-cli-core';
-import { UserTierId, getCodeAssistServer } from '@airiscode/gemini-cli-core';
-import { usePrivacySettings } from './usePrivacySettings.js';
-import { waitFor } from '../../test-utils/async.js';
+import type { CodeAssistServer, Config } from "@airiscode/gemini-cli-core";
+import { getCodeAssistServer, UserTierId } from "@airiscode/gemini-cli-core";
+import { act } from "react";
+import { beforeEach, describe, expect, it, vi } from "vitest";
+import { waitFor } from "../../test-utils/async.js";
+import { render } from "../../test-utils/render.js";
+import { usePrivacySettings } from "./usePrivacySettings.js";
 
 // Mock the dependencies
-vi.mock('@airiscode/gemini-cli-core', async (importOriginal) => {
-  const actual =
-    await importOriginal<typeof import('@airiscode/gemini-cli-core')>();
+vi.mock("@airiscode/gemini-cli-core", async (importOriginal) => {
+  const actual = await importOriginal<typeof import("@airiscode/gemini-cli-core")>();
   return {
     ...actual,
     getCodeAssistServer: vi.fn(),
   };
 });
 
-describe('usePrivacySettings', () => {
+describe("usePrivacySettings", () => {
   const mockConfig = {} as unknown as Config;
 
   beforeEach(() => {
@@ -45,7 +44,7 @@ describe('usePrivacySettings', () => {
     };
   };
 
-  it('should throw error when content generator is not a CodeAssistServer', async () => {
+  it("should throw error when content generator is not a CodeAssistServer", async () => {
     vi.mocked(getCodeAssistServer).mockReturnValue(undefined);
 
     const { result } = renderPrivacySettingsHook();
@@ -54,13 +53,13 @@ describe('usePrivacySettings', () => {
       expect(result.current.privacyState.isLoading).toBe(false);
     });
 
-    expect(result.current.privacyState.error).toBe('Oauth not being used');
+    expect(result.current.privacyState.error).toBe("Oauth not being used");
   });
 
-  it('should handle paid tier users correctly', async () => {
+  it("should handle paid tier users correctly", async () => {
     // Mock paid tier response
     vi.mocked(getCodeAssistServer).mockReturnValue({
-      projectId: 'test-project-id',
+      projectId: "test-project-id",
       userTier: UserTierId.STANDARD,
     } as unknown as CodeAssistServer);
 
@@ -75,7 +74,7 @@ describe('usePrivacySettings', () => {
     expect(result.current.privacyState.dataCollectionOptIn).toBeUndefined();
   });
 
-  it('should throw error when CodeAssistServer has no projectId', async () => {
+  it("should throw error when CodeAssistServer has no projectId", async () => {
     vi.mocked(getCodeAssistServer).mockReturnValue({
       userTier: UserTierId.FREE,
     } as unknown as CodeAssistServer);
@@ -86,14 +85,12 @@ describe('usePrivacySettings', () => {
       expect(result.current.privacyState.isLoading).toBe(false);
     });
 
-    expect(result.current.privacyState.error).toBe(
-      'CodeAssist server is missing a project ID',
-    );
+    expect(result.current.privacyState.error).toBe("CodeAssist server is missing a project ID");
   });
 
-  it('should update data collection opt-in setting', async () => {
+  it("should update data collection opt-in setting", async () => {
     const mockCodeAssistServer = {
-      projectId: 'test-project-id',
+      projectId: "test-project-id",
       getCodeAssistGlobalUserSetting: vi.fn().mockResolvedValue({
         freeTierDataCollectionOptin: true,
       }),
@@ -121,10 +118,8 @@ describe('usePrivacySettings', () => {
       expect(result.current.privacyState.dataCollectionOptIn).toBe(false);
     });
 
-    expect(
-      mockCodeAssistServer.setCodeAssistGlobalUserSetting,
-    ).toHaveBeenCalledWith({
-      cloudaicompanionProject: 'test-project-id',
+    expect(mockCodeAssistServer.setCodeAssistGlobalUserSetting).toHaveBeenCalledWith({
+      cloudaicompanionProject: "test-project-id",
       freeTierDataCollectionOptin: false,
     });
   });

@@ -4,45 +4,43 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+import readline from "node:readline";
 import type {
-  Config,
-  ToolCallRequestInfo,
-  ResumedSessionData,
   CompletedToolCall,
+  Config,
+  ResumedSessionData,
+  ToolCallRequestInfo,
   UserFeedbackPayload,
-} from '@airiscode/gemini-cli-core';
-import { isSlashCommand } from './ui/utils/commandUtils.js';
-import type { LoadedSettings } from './config/settings.js';
+} from "@airiscode/gemini-cli-core";
 import {
-  executeToolCall,
-  GeminiEventType,
-  FatalInputError,
-  promptIdContext,
-  OutputFormat,
-  JsonFormatter,
-  StreamJsonFormatter,
-  JsonStreamEventType,
-  uiTelemetryService,
-  debugLogger,
-  coreEvents,
   CoreEvent,
+  coreEvents,
   createWorkingStdio,
-} from '@airiscode/gemini-cli-core';
-
-import type { Content, Part } from '@google/genai';
-import readline from 'node:readline';
-
-import { convertSessionToHistoryFormats } from './ui/hooks/useSessionBrowser.js';
-import { handleSlashCommand } from './nonInteractiveCliCommands.js';
-import { ConsolePatcher } from './ui/utils/ConsolePatcher.js';
-import { handleAtCommand } from './ui/hooks/atCommandProcessor.js';
+  debugLogger,
+  executeToolCall,
+  FatalInputError,
+  GeminiEventType,
+  JsonFormatter,
+  JsonStreamEventType,
+  OutputFormat,
+  promptIdContext,
+  StreamJsonFormatter,
+  uiTelemetryService,
+} from "@airiscode/gemini-cli-core";
+import type { Content, Part } from "@google/genai";
+import type { LoadedSettings } from "./config/settings.js";
+import { handleSlashCommand } from "./nonInteractiveCliCommands.js";
+import { handleAtCommand } from "./ui/hooks/atCommandProcessor.js";
+import { convertSessionToHistoryFormats } from "./ui/hooks/useSessionBrowser.js";
+import { ConsolePatcher } from "./ui/utils/ConsolePatcher.js";
+import { isSlashCommand } from "./ui/utils/commandUtils.js";
+import { TextOutput } from "./ui/utils/textOutput.js";
 import {
-  handleError,
-  handleToolError,
   handleCancellationError,
+  handleError,
   handleMaxTurnsExceededError,
-} from './utils/errors.js';
-import { TextOutput } from './ui/utils/textOutput.js';
+  handleToolError,
+} from "./utils/errors.js";
 
 interface RunNonInteractiveParams {
   config: Config;
@@ -86,9 +84,7 @@ export async function runNonInteractive({
 
     const startTime = Date.now();
     const streamFormatter =
-      config.getOutputFormat() === OutputFormat.STREAM_JSON
-        ? new StreamJsonFormatter()
-        : null;
+      config.getOutputFormat() === OutputFormat.STREAM_JSON ? new StreamJsonFormatter() : null;
 
     const abortController = new AbortController();
 
@@ -121,12 +117,9 @@ export async function runNonInteractive({
       readline.emitKeypressEvents(process.stdin, rl);
 
       // Listen for Ctrl+C
-      const keypressHandler = (
-        str: string,
-        key: { name?: string; ctrl?: boolean },
-      ) => {
+      const keypressHandler = (str: string, key: { name?: string; ctrl?: boolean }) => {
         // Detect Ctrl+C: either ctrl+c key combo or raw character code 3
-        if ((key && key.ctrl && key.name === 'c') || str === '\u0003') {
+        if ((key && key.ctrl && key.name === "c") || str === "\u0003") {
           // Only handle once
           if (isAborting) {
             return;
@@ -137,7 +130,7 @@ export async function runNonInteractive({
           // Only show message if cancellation takes longer than 200ms
           // This reduces verbosity for fast cancellations
           cancelMessageTimer = setTimeout(() => {
-            process.stderr.write('\nCancelling...\n');
+            process.stderr.write("\nCancelling...\n");
           }, 200);
 
           abortController.abort();
@@ -146,7 +139,7 @@ export async function runNonInteractive({
         }
       };
 
-      process.stdin.on('keypress', keypressHandler);
+      process.stdin.on("keypress", keypressHandler);
     };
 
     const cleanupStdinCancellation = () => {
@@ -163,7 +156,7 @@ export async function runNonInteractive({
       }
 
       // Remove keypress listener
-      process.stdin.removeAllListeners('keypress');
+      process.stdin.removeAllListeners("keypress");
 
       // Restore stdin to original state
       if (process.stdin.isTTY) {
@@ -183,8 +176,8 @@ export async function runNonInteractive({
       coreEvents.drainBacklogs();
 
       // Handle EPIPE errors when the output is piped to a command that closes early.
-      process.stdout.on('error', (err: NodeJS.ErrnoException) => {
-        if (err.code === 'EPIPE') {
+      process.stdout.on("error", (err: NodeJS.ErrnoException) => {
+        if (err.code === "EPIPE") {
           // Exit gracefully if the pipe is closed.
           process.exit(0);
         }
@@ -195,9 +188,7 @@ export async function runNonInteractive({
       // Initialize chat.  Resume if resume data is passed.
       if (resumedSessionData) {
         await geminiClient.resumeChat(
-          convertSessionToHistoryFormats(
-            resumedSessionData.conversation.messages,
-          ).clientHistory,
+          convertSessionToHistoryFormats(resumedSessionData.conversation.messages).clientHistory,
           resumedSessionData,
         );
       }
@@ -242,9 +233,7 @@ export async function runNonInteractive({
         if (!shouldProceed || !processedQuery) {
           // An error occurred during @include processing (e.g., file not found).
           // The error message is already logged by handleAtCommand.
-          throw new FatalInputError(
-            'Exiting due to an error processing the @ command.',
-          );
+          throw new FatalInputError("Exiting due to an error processing the @ command.");
         }
         query = processedQuery as Part[];
       }
@@ -254,22 +243,22 @@ export async function runNonInteractive({
         streamFormatter.emitEvent({
           type: JsonStreamEventType.MESSAGE,
           timestamp: new Date().toISOString(),
-          role: 'user',
+          role: "user",
           content: input,
         });
       }
 
-      let currentMessages: Content[] = [{ role: 'user', parts: query }];
+      let currentMessages: Content[] = [{ role: "user", parts: query }];
 
       let turnCount = 0;
       const deprecateText =
-        'The --prompt (-p) flag has been deprecated and will be removed in a future version. Please use a positional argument for your prompt. See gemini --help for more information.\n';
+        "The --prompt (-p) flag has been deprecated and will be removed in a future version. Please use a positional argument for your prompt. See gemini --help for more information.\n";
       if (hasDeprecatedPromptArg) {
         if (streamFormatter) {
           streamFormatter.emitEvent({
             type: JsonStreamEventType.MESSAGE,
             timestamp: new Date().toISOString(),
-            role: 'assistant',
+            role: "assistant",
             content: deprecateText,
             delta: true,
           });
@@ -279,10 +268,7 @@ export async function runNonInteractive({
       }
       while (true) {
         turnCount++;
-        if (
-          config.getMaxSessionTurns() >= 0 &&
-          turnCount > config.getMaxSessionTurns()
-        ) {
+        if (config.getMaxSessionTurns() >= 0 && turnCount > config.getMaxSessionTurns()) {
           handleMaxTurnsExceededError(config);
         }
         const toolCallRequests: ToolCallRequestInfo[] = [];
@@ -293,7 +279,7 @@ export async function runNonInteractive({
           prompt_id,
         );
 
-        let responseText = '';
+        let responseText = "";
         for await (const event of responseStream) {
           if (abortController.signal.aborted) {
             handleCancellationError(config);
@@ -304,7 +290,7 @@ export async function runNonInteractive({
               streamFormatter.emitEvent({
                 type: JsonStreamEventType.MESSAGE,
                 timestamp: new Date().toISOString(),
-                role: 'assistant',
+                role: "assistant",
                 content: event.value,
                 delta: true,
               });
@@ -331,8 +317,8 @@ export async function runNonInteractive({
               streamFormatter.emitEvent({
                 type: JsonStreamEventType.ERROR,
                 timestamp: new Date().toISOString(),
-                severity: 'warning',
-                message: 'Loop detected, stopping execution',
+                severity: "warning",
+                message: "Loop detected, stopping execution",
               });
             }
           } else if (event.type === GeminiEventType.MaxSessionTurns) {
@@ -340,8 +326,8 @@ export async function runNonInteractive({
               streamFormatter.emitEvent({
                 type: JsonStreamEventType.ERROR,
                 timestamp: new Date().toISOString(),
-                severity: 'error',
-                message: 'Maximum session turns exceeded',
+                severity: "error",
+                message: "Maximum session turns exceeded",
               });
             }
           } else if (event.type === GeminiEventType.Error) {
@@ -369,14 +355,14 @@ export async function runNonInteractive({
                 type: JsonStreamEventType.TOOL_RESULT,
                 timestamp: new Date().toISOString(),
                 tool_id: requestInfo.callId,
-                status: toolResponse.error ? 'error' : 'success',
+                status: toolResponse.error ? "error" : "success",
                 output:
-                  typeof toolResponse.resultDisplay === 'string'
+                  typeof toolResponse.resultDisplay === "string"
                     ? toolResponse.resultDisplay
                     : undefined,
                 error: toolResponse.error
                   ? {
-                      type: toolResponse.errorType || 'TOOL_EXECUTION_ERROR',
+                      type: toolResponse.errorType || "TOOL_EXECUTION_ERROR",
                       message: toolResponse.error.message,
                     }
                   : undefined,
@@ -388,8 +374,8 @@ export async function runNonInteractive({
                 requestInfo.name,
                 toolResponse.error,
                 config,
-                toolResponse.errorType || 'TOOL_EXECUTION_ERROR',
-                typeof toolResponse.resultDisplay === 'string'
+                toolResponse.errorType || "TOOL_EXECUTION_ERROR",
+                typeof toolResponse.resultDisplay === "string"
                   ? toolResponse.resultDisplay
                   : undefined,
               );
@@ -402,18 +388,13 @@ export async function runNonInteractive({
 
           // Record tool calls with full metadata before sending responses to Gemini
           try {
-            const currentModel =
-              geminiClient.getCurrentSequenceModel() ?? config.getModel();
-            geminiClient
-              .getChat()
-              .recordCompletedToolCalls(currentModel, completedToolCalls);
+            const currentModel = geminiClient.getCurrentSequenceModel() ?? config.getModel();
+            geminiClient.getChat().recordCompletedToolCalls(currentModel, completedToolCalls);
           } catch (error) {
-            debugLogger.error(
-              `Error recording completed tool call information: ${error}`,
-            );
+            debugLogger.error(`Error recording completed tool call information: ${error}`);
           }
 
-          currentMessages = [{ role: 'user', parts: toolResponseParts }];
+          currentMessages = [{ role: "user", parts: toolResponseParts }];
         } else {
           // Emit final result event for streaming JSON
           if (streamFormatter) {
@@ -422,15 +403,13 @@ export async function runNonInteractive({
             streamFormatter.emitEvent({
               type: JsonStreamEventType.RESULT,
               timestamp: new Date().toISOString(),
-              status: 'success',
+              status: "success",
               stats: streamFormatter.convertToStreamStats(metrics, durationMs),
             });
           } else if (config.getOutputFormat() === OutputFormat.JSON) {
             const formatter = new JsonFormatter();
             const stats = uiTelemetryService.getMetrics();
-            textOutput.write(
-              formatter.format(config.getSessionId(), responseText, stats),
-            );
+            textOutput.write(formatter.format(config.getSessionId(), responseText, stats));
           } else {
             textOutput.ensureTrailingNewline(); // Ensure a final newline
           }

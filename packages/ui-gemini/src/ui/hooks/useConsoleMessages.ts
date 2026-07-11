@@ -4,35 +4,20 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import {
-  useCallback,
-  useEffect,
-  useReducer,
-  useRef,
-  useTransition,
-} from 'react';
-import type { ConsoleMessageItem } from '../types.js';
-import {
-  coreEvents,
-  CoreEvent,
-  type ConsoleLogPayload,
-} from '@airiscode/gemini-cli-core';
+import { type ConsoleLogPayload, CoreEvent, coreEvents } from "@airiscode/gemini-cli-core";
+import { useCallback, useEffect, useReducer, useRef, useTransition } from "react";
+import type { ConsoleMessageItem } from "../types.js";
 
 export interface UseConsoleMessagesReturn {
   consoleMessages: ConsoleMessageItem[];
   clearConsoleMessages: () => void;
 }
 
-type Action =
-  | { type: 'ADD_MESSAGES'; payload: ConsoleMessageItem[] }
-  | { type: 'CLEAR' };
+type Action = { type: "ADD_MESSAGES"; payload: ConsoleMessageItem[] } | { type: "CLEAR" };
 
-function consoleMessagesReducer(
-  state: ConsoleMessageItem[],
-  action: Action,
-): ConsoleMessageItem[] {
+function consoleMessagesReducer(state: ConsoleMessageItem[], action: Action): ConsoleMessageItem[] {
   switch (action.type) {
-    case 'ADD_MESSAGES': {
+    case "ADD_MESSAGES": {
       const newMessages = [...state];
       for (const queuedMessage of action.payload) {
         const lastMessage = newMessages[newMessages.length - 1];
@@ -53,7 +38,7 @@ function consoleMessagesReducer(
       }
       return newMessages;
     }
-    case 'CLEAR':
+    case "CLEAR":
       return [];
     default:
       return state;
@@ -71,7 +56,7 @@ export function useConsoleMessages(): UseConsoleMessagesReturn {
       const messagesToProcess = messageQueueRef.current;
       messageQueueRef.current = [];
       startTransition(() => {
-        dispatch({ type: 'ADD_MESSAGES', payload: messagesToProcess });
+        dispatch({ type: "ADD_MESSAGES", payload: messagesToProcess });
       });
     }
     timeoutRef.current = null;
@@ -98,18 +83,13 @@ export function useConsoleMessages(): UseConsoleMessagesReturn {
       });
     };
 
-    const handleOutput = (payload: {
-      isStderr: boolean;
-      chunk: Uint8Array | string;
-    }) => {
+    const handleOutput = (payload: { isStderr: boolean; chunk: Uint8Array | string }) => {
       const content =
-        typeof payload.chunk === 'string'
-          ? payload.chunk
-          : new TextDecoder().decode(payload.chunk);
+        typeof payload.chunk === "string" ? payload.chunk : new TextDecoder().decode(payload.chunk);
       // It would be nice if we could show stderr as 'warn' but unfortunately
       // we log non warning info to stderr before the app starts so that would
       // be misleading.
-      handleNewMessage({ type: 'log', content, count: 1 });
+      handleNewMessage({ type: "log", content, count: 1 });
     };
 
     coreEvents.on(CoreEvent.ConsoleLog, handleConsoleLog);
@@ -127,7 +107,7 @@ export function useConsoleMessages(): UseConsoleMessagesReturn {
     }
     messageQueueRef.current = [];
     startTransition(() => {
-      dispatch({ type: 'CLEAR' });
+      dispatch({ type: "CLEAR" });
     });
   }, []);
 

@@ -4,17 +4,17 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { render } from '../../test-utils/render.js';
-import { CliSpinner } from './CliSpinner.js';
-import { debugState } from '../debug.js';
-import { describe, it, expect, beforeEach } from 'vitest';
+import { beforeEach, describe, expect, it } from "vitest";
+import { render } from "../../test-utils/render.js";
+import { debugState } from "../debug.js";
+import { CliSpinner } from "./CliSpinner.js";
 
-describe('<CliSpinner />', () => {
+describe("<CliSpinner />", () => {
   beforeEach(() => {
     debugState.debugNumAnimatedComponents = 0;
   });
 
-  it('should increment debugNumAnimatedComponents on mount and decrement on unmount', () => {
+  it("should increment debugNumAnimatedComponents on mount and decrement on unmount", () => {
     expect(debugState.debugNumAnimatedComponents).toBe(0);
     const { unmount } = render(<CliSpinner />);
     expect(debugState.debugNumAnimatedComponents).toBe(1);

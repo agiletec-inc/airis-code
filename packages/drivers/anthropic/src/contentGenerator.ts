@@ -6,13 +6,13 @@
 
 import type {
   ContentGenerator,
-  GenerateContentResponse,
-  GenerateContentParameters,
-  CountTokensResponse,
   CountTokensParameters,
-  EmbedContentResponse,
+  CountTokensResponse,
   EmbedContentParameters,
-} from "@airiscode/runtime-gemini";
+  EmbedContentResponse,
+  GenerateContentParameters,
+  GenerateContentResponse,
+} from "@airiscode/core-gemini";
 
 export interface AnthropicOptions {
   apiKey: string;
@@ -25,13 +25,11 @@ export class AnthropicContentGenerator implements ContentGenerator {
 
   async generateContent(
     req: GenerateContentParameters,
-    userPromptId?: string
+    userPromptId?: string,
   ): Promise<GenerateContentResponse> {
     const url = `${this.opts.baseUrl ?? "https://api.anthropic.com"}/v1/messages`;
 
-    const messages = req.messages || [
-      { role: "user", content: req.prompt || "" }
-    ];
+    const messages = req.messages || [{ role: "user", content: req.prompt || "" }];
 
     const body: any = {
       model: this.opts.model,
@@ -65,20 +63,18 @@ export class AnthropicContentGenerator implements ContentGenerator {
 
   async generateContentStream(
     req: GenerateContentParameters,
-    userPromptId?: string
+    userPromptId?: string,
   ): Promise<AsyncGenerator<GenerateContentResponse>> {
     return this._generateContentStream(req, userPromptId);
   }
 
   private async *_generateContentStream(
     req: GenerateContentParameters,
-    userPromptId?: string
+    userPromptId?: string,
   ): AsyncGenerator<GenerateContentResponse> {
     const url = `${this.opts.baseUrl ?? "https://api.anthropic.com"}/v1/messages`;
 
-    const messages = req.messages || [
-      { role: "user", content: req.prompt || "" }
-    ];
+    const messages = req.messages || [{ role: "user", content: req.prompt || "" }];
 
     const body: any = {
       model: this.opts.model,
@@ -136,7 +132,7 @@ export class AnthropicContentGenerator implements ContentGenerator {
               yield { content, raw: json };
             }
           }
-        } catch (e) {
+        } catch {
           // Skip invalid JSON
         }
       }

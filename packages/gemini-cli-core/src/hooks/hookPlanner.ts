@@ -4,10 +4,9 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import type { HookRegistry, HookRegistryEntry } from './hookRegistry.js';
-import type { HookExecutionPlan } from './types.js';
-import type { HookEventName } from './types.js';
-import { debugLogger } from '../utils/debugLogger.js';
+import { debugLogger } from "../utils/debugLogger.js";
+import type { HookRegistry, HookRegistryEntry } from "./hookRegistry.js";
+import type { HookEventName, HookExecutionPlan } from "./types.js";
 
 /**
  * Hook planner that selects matching hooks and creates execution plans
@@ -33,9 +32,7 @@ export class HookPlanner {
     }
 
     // Filter hooks by matcher
-    const matchingEntries = hookEntries.filter((entry) =>
-      this.matchesContext(entry, context),
-    );
+    const matchingEntries = hookEntries.filter((entry) => this.matchesContext(entry, context));
 
     if (matchingEntries.length === 0) {
       return null;
@@ -48,9 +45,7 @@ export class HookPlanner {
     const hookConfigs = deduplicatedEntries.map((entry) => entry.config);
 
     // Determine execution strategy - if ANY hook definition has sequential=true, run all sequentially
-    const sequential = deduplicatedEntries.some(
-      (entry) => entry.sequential === true,
-    );
+    const sequential = deduplicatedEntries.some((entry) => entry.sequential === true);
 
     const plan: HookExecutionPlan = {
       eventName,
@@ -59,7 +54,7 @@ export class HookPlanner {
     };
 
     debugLogger.debug(
-      `Created execution plan for ${eventName}: ${hookConfigs.length} hook(s) to execute ${sequential ? 'sequentially' : 'in parallel'}`,
+      `Created execution plan for ${eventName}: ${hookConfigs.length} hook(s) to execute ${sequential ? "sequentially" : "in parallel"}`,
     );
 
     return plan;
@@ -68,17 +63,14 @@ export class HookPlanner {
   /**
    * Check if a hook entry matches the given context
    */
-  private matchesContext(
-    entry: HookRegistryEntry,
-    context?: HookEventContext,
-  ): boolean {
+  private matchesContext(entry: HookRegistryEntry, context?: HookEventContext): boolean {
     if (!entry.matcher || !context) {
       return true; // No matcher means match all
     }
 
     const matcher = entry.matcher.trim();
 
-    if (matcher === '' || matcher === '*') {
+    if (matcher === "" || matcher === "*") {
       return true; // Empty string or wildcard matches all
     }
 

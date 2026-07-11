@@ -4,12 +4,12 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import type { MessageRecord } from './chatRecordingService.js';
-import type { BaseLlmClient } from '../core/baseLlmClient.js';
-import { partListUnionToString } from '../core/geminiRequest.js';
-import { debugLogger } from '../utils/debugLogger.js';
-import type { Content } from '@google/genai';
-import { getResponseText } from '../utils/partUtils.js';
+import type { Content } from "@google/genai";
+import type { BaseLlmClient } from "../core/baseLlmClient.js";
+import { partListUnionToString } from "../core/geminiRequest.js";
+import { debugLogger } from "../utils/debugLogger.js";
+import { getResponseText } from "../utils/partUtils.js";
+import type { MessageRecord } from "./chatRecordingService.js";
 
 const DEFAULT_MAX_MESSAGES = 20;
 const DEFAULT_TIMEOUT_MS = 5000;
@@ -50,20 +50,14 @@ export class SessionSummaryService {
    * Generate a 1-line summary of a chat session focusing on user intent.
    * Returns null if generation fails for any reason.
    */
-  async generateSummary(
-    options: GenerateSummaryOptions,
-  ): Promise<string | null> {
-    const {
-      messages,
-      maxMessages = DEFAULT_MAX_MESSAGES,
-      timeout = DEFAULT_TIMEOUT_MS,
-    } = options;
+  async generateSummary(options: GenerateSummaryOptions): Promise<string | null> {
+    const { messages, maxMessages = DEFAULT_MAX_MESSAGES, timeout = DEFAULT_TIMEOUT_MS } = options;
 
     try {
       // Filter to user/gemini messages only (exclude system messages)
       const filteredMessages = messages.filter((msg) => {
         // Skip system messages (info, error, warning)
-        if (msg.type !== 'user' && msg.type !== 'gemini') {
+        if (msg.type !== "user" && msg.type !== "gemini") {
           return false;
         }
         const content = partListUnionToString(msg.content);
@@ -85,25 +79,25 @@ export class SessionSummaryService {
       }
 
       if (relevantMessages.length === 0) {
-        debugLogger.debug('[SessionSummary] No messages to summarize');
+        debugLogger.debug("[SessionSummary] No messages to summarize");
         return null;
       }
 
       // Format conversation for the prompt
       const conversationText = relevantMessages
         .map((msg) => {
-          const role = msg.type === 'user' ? 'User' : 'Assistant';
+          const role = msg.type === "user" ? "User" : "Assistant";
           const content = partListUnionToString(msg.content);
           // Truncate very long messages to avoid token limit
           const truncated =
             content.length > MAX_MESSAGE_LENGTH
-              ? content.slice(0, MAX_MESSAGE_LENGTH) + '...'
+              ? content.slice(0, MAX_MESSAGE_LENGTH) + "..."
               : content;
           return `${role}: ${truncated}`;
         })
-        .join('\n\n');
+        .join("\n\n");
 
-      const prompt = SUMMARY_PROMPT.replace('{conversation}', conversationText);
+      const prompt = SUMMARY_PROMPT.replace("{conversation}", conversationText);
 
       // Create abort controller with timeout
       const abortController = new AbortController();
@@ -114,33 +108,33 @@ export class SessionSummaryService {
       try {
         const contents: Content[] = [
           {
-            role: 'user',
+            role: "user",
             parts: [{ text: prompt }],
           },
         ];
 
         const response = await this.baseLlmClient.generateContent({
-          modelConfigKey: { model: 'summarizer-default' },
+          modelConfigKey: { model: "summarizer-default" },
           contents,
           abortSignal: abortController.signal,
-          promptId: 'session-summary-generation',
+          promptId: "session-summary-generation",
         });
 
         const summary = getResponseText(response);
 
         if (!summary || summary.trim().length === 0) {
-          debugLogger.debug('[SessionSummary] Empty summary returned');
+          debugLogger.debug("[SessionSummary] Empty summary returned");
           return null;
         }
 
         // Clean the summary
         let cleanedSummary = summary
-          .replace(/\n+/g, ' ') // Collapse newlines to spaces
-          .replace(/\s+/g, ' ') // Normalize whitespace
+          .replace(/\n+/g, " ") // Collapse newlines to spaces
+          .replace(/\s+/g, " ") // Normalize whitespace
           .trim(); // Trim after all processing
 
         // Remove quotes if the model added them
-        cleanedSummary = cleanedSummary.replace(/^["']|["']$/g, '');
+        cleanedSummary = cleanedSummary.replace(/^["']|["']$/g, "");
 
         debugLogger.debug(`[SessionSummary] Generated: "${cleanedSummary}"`);
         return cleanedSummary;
@@ -149,8 +143,8 @@ export class SessionSummaryService {
       }
     } catch (error) {
       // Log the error but don't throw - we want graceful degradation
-      if (error instanceof Error && error.name === 'AbortError') {
-        debugLogger.debug('[SessionSummary] Timeout generating summary');
+      if (error instanceof Error && error.name === "AbortError") {
+        debugLogger.debug("[SessionSummary] Timeout generating summary");
       } else {
         debugLogger.debug(
           `[SessionSummary] Error generating summary: ${error instanceof Error ? error.message : String(error)}`,

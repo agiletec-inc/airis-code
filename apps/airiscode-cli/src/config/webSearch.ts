@@ -4,8 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import type { WebSearchProviderConfig } from '@airiscode/runtime';
-import type { Settings } from './settings.js';
+import type { WebSearchProviderConfig } from "@airiscode/runtime";
+import type { Settings } from "./settings.js";
 
 /**
  * CLI arguments related to web search configuration
@@ -52,22 +52,19 @@ export function buildWebSearchConfig(
   } else {
     // Build providers from command line args and environment variables
     const tavilyKey =
-      argv.tavilyApiKey ||
-      settings.advanced?.tavilyApiKey ||
-      process.env['TAVILY_API_KEY'];
+      argv.tavilyApiKey || settings.advanced?.tavilyApiKey || process.env["TAVILY_API_KEY"];
     if (tavilyKey) {
       providers.push({
-        type: 'tavily',
+        type: "tavily",
         apiKey: tavilyKey,
       } as WebSearchProviderConfig);
     }
 
-    const googleKey = argv.googleApiKey || process.env['GOOGLE_API_KEY'];
-    const googleEngineId =
-      argv.googleSearchEngineId || process.env['GOOGLE_SEARCH_ENGINE_ID'];
+    const googleKey = argv.googleApiKey || process.env["GOOGLE_API_KEY"];
+    const googleEngineId = argv.googleSearchEngineId || process.env["GOOGLE_SEARCH_ENGINE_ID"];
     if (googleKey && googleEngineId) {
       providers.push({
-        type: 'google',
+        type: "google",
         apiKey: googleKey,
         searchEngineId: googleEngineId,
       } as WebSearchProviderConfig);
@@ -81,10 +78,10 @@ export function buildWebSearchConfig(
 
   // Step 4: Determine default provider
   // Priority: user explicit config > CLI arg > first available provider (tavily > google > dashscope)
-  const providerPriority: Array<'tavily' | 'google' | 'dashscope'> = [
-    'tavily',
-    'google',
-    'dashscope',
+  const providerPriority: Array<"tavily" | "google" | "dashscope"> = [
+    "tavily",
+    "google",
+    "dashscope",
   ];
 
   // Determine default provider based on availability
@@ -99,7 +96,7 @@ export function buildWebSearchConfig(
     }
     // Fallback to first available provider if none found in priority list
     if (!defaultProvider) {
-      defaultProvider = providers[0]?.type || 'dashscope';
+      defaultProvider = providers[0]?.type || "dashscope";
     }
   }
 

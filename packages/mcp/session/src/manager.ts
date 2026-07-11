@@ -4,11 +4,11 @@
  */
 
 import {
-  MCPGatewayClient,
   type GatewayConfig,
+  MCPGatewayClient,
   type ToolDescription,
-} from '@airiscode/mcp-gateway-client';
-import { LazyMCPLoader } from '@airiscode/mcp-lazy-loader';
+} from "@airiscode/mcp-gateway-client";
+import { LazyMCPLoader } from "@airiscode/mcp-lazy-loader";
 
 export interface SessionConfig extends GatewayConfig {
   sessionId: string;
@@ -58,7 +58,7 @@ export class MCPSessionManager {
       this.state.startedAt = new Date();
     } catch (error) {
       throw new Error(
-        `Failed to initialize MCP session: ${error instanceof Error ? error.message : String(error)}`
+        `Failed to initialize MCP session: ${error instanceof Error ? error.message : String(error)}`,
       );
     }
   }
@@ -68,10 +68,10 @@ export class MCPSessionManager {
    */
   async enableLazyServer(
     serverName: string,
-    env?: Record<string, string>
+    env?: Record<string, string>,
   ): Promise<ToolDescription[]> {
     if (!this.state.connected) {
-      throw new Error('Session not initialized');
+      throw new Error("Session not initialized");
     }
 
     return await this.loader.enableServer(serverName, env);
@@ -113,10 +113,10 @@ export class MCPSessionManager {
   async invokeTool(
     serverName: string,
     toolName: string,
-    args: Record<string, unknown>
+    args: Record<string, unknown>,
   ): Promise<unknown> {
     if (!this.state.connected) {
-      throw new Error('Session not initialized');
+      throw new Error("Session not initialized");
     }
 
     return await this.client.invokeTool(serverName, toolName, args);
@@ -128,9 +128,7 @@ export class MCPSessionManager {
   async cleanup(): Promise<void> {
     // Disable all lazy servers
     const enabledServers = this.loader.getEnabledServers();
-    await Promise.all(
-      enabledServers.map((server) => this.loader.disableServer(server))
-    );
+    await Promise.all(enabledServers.map((server) => this.loader.disableServer(server)));
 
     this.state.connected = false;
     this.state.lazyTools.clear();

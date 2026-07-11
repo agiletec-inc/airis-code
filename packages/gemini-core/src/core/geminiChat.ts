@@ -8,46 +8,34 @@
 // where function responses are not treated as "valid" responses: https://b.corp.google.com/issues/420354090
 
 import type {
-  GenerateContentResponse,
   Content,
   GenerateContentConfig,
-  SendMessageParameters,
+  GenerateContentResponse,
   Part,
+  SendMessageParameters,
   Tool,
-} from '@google/genai';
-import { toParts } from '../code_assist/converter.js';
-import { createUserContent } from '@google/genai';
-import { retryWithBackoff } from '../utils/retry.js';
-import type { Config } from '../config/config.js';
-import {
-  DEFAULT_GEMINI_FLASH_MODEL,
-  getEffectiveModel,
-} from '../config/models.js';
-import { hasCycleInSchema } from '../tools/tools.js';
-import type { StructuredError } from './turn.js';
-import type { CompletedToolCall } from './coreToolScheduler.js';
-import {
-  logContentRetry,
-  logContentRetryFailure,
-} from '../telemetry/loggers.js';
-import {
-  ChatRecordingService,
-  type ResumedSessionData,
-} from '../services/chatRecordingService.js';
-import {
-  ContentRetryEvent,
-  ContentRetryFailureEvent,
-} from '../telemetry/types.js';
-import { handleFallback } from '../fallback/handler.js';
-import { isFunctionResponse } from '../utils/messageInspectors.js';
-import { partListUnionToString } from './geminiRequest.js';
+} from "@google/genai";
+import { createUserContent } from "@google/genai";
+import { toParts } from "../code_assist/converter.js";
+import type { Config } from "../config/config.js";
+import { DEFAULT_GEMINI_FLASH_MODEL, getEffectiveModel } from "../config/models.js";
+import { handleFallback } from "../fallback/handler.js";
+import { ChatRecordingService, type ResumedSessionData } from "../services/chatRecordingService.js";
+import { logContentRetry, logContentRetryFailure } from "../telemetry/loggers.js";
+import { ContentRetryEvent, ContentRetryFailureEvent } from "../telemetry/types.js";
+import { hasCycleInSchema } from "../tools/tools.js";
+import { isFunctionResponse } from "../utils/messageInspectors.js";
+import { retryWithBackoff } from "../utils/retry.js";
+import type { CompletedToolCall } from "./coreToolScheduler.js";
+import { partListUnionToString } from "./geminiRequest.js";
+import type { StructuredError } from "./turn.js";
 
 export enum StreamEventType {
   /** A regular content chunk from the API. */
-  CHUNK = 'chunk',
+  CHUNK = "chunk",
   /** A signal that a retry is about to happen. The UI should discard any partial
    * content from the attempt that just failed. */
-  RETRY = 'retry',
+  RETRY = "retry",
 }
 
 export type StreamEvent =
@@ -85,7 +73,7 @@ function isValidResponse(response: GenerateContentResponse): boolean {
 
 export function isValidNonThoughtTextPart(part: Part): boolean {
   return (
-    typeof part.text === 'string' &&
+    typeof part.text === "string" &&
     !part.thought &&
     // Technically, the model should never generate parts that have text and
     //  any of these but we don't trust them so check anyways.
@@ -104,7 +92,7 @@ function isValidContent(content: Content): boolean {
     if (part === undefined || Object.keys(part).length === 0) {
       return false;
     }
-    if (!part.thought && part.text !== undefined && part.text === '') {
+    if (!part.thought && part.text !== undefined && part.text === "") {
       return false;
     }
   }
@@ -119,7 +107,7 @@ function isValidContent(content: Content): boolean {
  */
 function validateHistory(history: Content[]) {
   for (const content of history) {
-    if (content.role !== 'user' && content.role !== 'model') {
+    if (content.role !== "user" && content.role !== "model") {
       throw new Error(`Role must be user or model, but got ${content.role}.`);
     }
   }
@@ -141,13 +129,13 @@ function extractCuratedHistory(comprehensiveHistory: Content[]): Content[] {
   const length = comprehensiveHistory.length;
   let i = 0;
   while (i < length) {
-    if (comprehensiveHistory[i].role === 'user') {
+    if (comprehensiveHistory[i].role === "user") {
       curatedHistory.push(comprehensiveHistory[i]);
       i++;
     } else {
       const modelOutput: Content[] = [];
       let isValid = true;
-      while (i < length && comprehensiveHistory[i].role === 'model') {
+      while (i < length && comprehensiveHistory[i].role === "model") {
         modelOutput.push(comprehensiveHistory[i]);
         if (isValid && !isValidContent(comprehensiveHistory[i])) {
           isValid = false;
@@ -167,11 +155,11 @@ function extractCuratedHistory(comprehensiveHistory: Content[]): Content[] {
  * which should trigger a retry.
  */
 export class InvalidStreamError extends Error {
-  readonly type: 'NO_FINISH_REASON' | 'NO_RESPONSE_TEXT';
+  readonly type: "NO_FINISH_REASON" | "NO_RESPONSE_TEXT";
 
-  constructor(message: string, type: 'NO_FINISH_REASON' | 'NO_RESPONSE_TEXT') {
+  constructor(message: string, type: "NO_FINISH_REASON" | "NO_RESPONSE_TEXT") {
     super(message);
-    this.name = 'InvalidStreamError';
+    this.name = "InvalidStreamError";
     this.type = type;
   }
 }
@@ -199,9 +187,7 @@ export class GeminiChat {
     validateHistory(history);
     this.chatRecordingService = new ChatRecordingService(config);
     this.chatRecordingService.initialize(resumedSessionData);
-    this.lastPromptTokenCount = Math.ceil(
-      JSON.stringify(this.history).length / 4,
-    );
+    this.lastPromptTokenCount = Math.ceil(JSON.stringify(this.history).length / 4);
   }
 
   setSystemInstruction(sysInstr: string) {
@@ -248,13 +234,11 @@ export class GeminiChat {
     // Record user input - capture complete message with all parts (text, files, images, etc.)
     // but skip recording function responses (tool call results) as they should be stored in tool call records
     if (!isFunctionResponse(userContent)) {
-      const userMessage = Array.isArray(params.message)
-        ? params.message
-        : [params.message];
+      const userMessage = Array.isArray(params.message) ? params.message : [params.message];
       const userMessageContent = partListUnionToString(toParts(userMessage));
       this.chatRecordingService.recordMessage({
         model,
-        type: 'user',
+        type: "user",
         content: userMessageContent,
       });
     }
@@ -267,13 +251,9 @@ export class GeminiChat {
     const self = this;
     return (async function* () {
       try {
-        let lastError: unknown = new Error('Request failed after all retries.');
+        let lastError: unknown = new Error("Request failed after all retries.");
 
-        for (
-          let attempt = 0;
-          attempt < INVALID_CONTENT_RETRY_OPTIONS.maxAttempts;
-          attempt++
-        ) {
+        for (let attempt = 0; attempt < INVALID_CONTENT_RETRY_OPTIONS.maxAttempts; attempt++) {
           try {
             if (attempt > 0) {
               yield { type: StreamEventType.RETRY };
@@ -318,11 +298,7 @@ export class GeminiChat {
                   ),
                 );
                 await new Promise((res) =>
-                  setTimeout(
-                    res,
-                    INVALID_CONTENT_RETRY_OPTIONS.initialDelayMs *
-                      (attempt + 1),
-                  ),
+                  setTimeout(res, INVALID_CONTENT_RETRY_OPTIONS.initialDelayMs * (attempt + 1)),
                 );
                 continue;
               }
@@ -357,18 +333,10 @@ export class GeminiChat {
     prompt_id: string,
   ): Promise<AsyncGenerator<GenerateContentResponse>> {
     const apiCall = () => {
-      const modelToUse = getEffectiveModel(
-        this.config.isInFallbackMode(),
-        model,
-      );
+      const modelToUse = getEffectiveModel(this.config.isInFallbackMode(), model);
 
-      if (
-        this.config.getQuotaErrorOccurred() &&
-        modelToUse === DEFAULT_GEMINI_FLASH_MODEL
-      ) {
-        throw new Error(
-          'Please submit a new query to continue with the Flash model.',
-        );
+      if (this.config.getQuotaErrorOccurred() && modelToUse === DEFAULT_GEMINI_FLASH_MODEL) {
+        throw new Error("Please submit a new query to continue with the Flash model.");
       }
 
       return this.config.getContentGenerator().generateContentStream(
@@ -381,10 +349,8 @@ export class GeminiChat {
       );
     };
 
-    const onPersistent429Callback = async (
-      authType?: string,
-      error?: unknown,
-    ) => await handleFallback(this.config, model, authType, error);
+    const onPersistent429Callback = async (authType?: string, error?: unknown) =>
+      await handleFallback(this.config, model, authType, error);
 
     const streamResponse = await retryWithBackoff(apiCall, {
       onPersistent429: onPersistent429Callback,
@@ -420,9 +386,7 @@ export class GeminiChat {
    * chat session.
    */
   getHistory(curated: boolean = false): Content[] {
-    const history = curated
-      ? extractCuratedHistory(this.history)
-      : this.history;
+    const history = curated ? extractCuratedHistory(this.history) : this.history;
     // Deep copy the history to avoid mutating the history outside of the
     // chat session.
     return structuredClone(history);
@@ -451,7 +415,7 @@ export class GeminiChat {
       const newContent = { ...content };
       if (newContent.parts) {
         newContent.parts = newContent.parts.map((part) => {
-          if (part && typeof part === 'object' && 'thoughtSignature' in part) {
+          if (part && typeof part === "object" && "thoughtSignature" in part) {
             const newPart = { ...part };
             delete (newPart as { thoughtSignature?: string }).thoughtSignature;
             return newPart;
@@ -470,10 +434,7 @@ export class GeminiChat {
   async maybeIncludeSchemaDepthContext(error: StructuredError): Promise<void> {
     // Check for potentially problematic cyclic tools with cyclic schemas
     // and include a recommendation to remove potentially problematic tools.
-    if (
-      isSchemaDepthError(error.message) ||
-      isInvalidArgumentError(error.message)
-    ) {
+    if (isSchemaDepthError(error.message) || isInvalidArgumentError(error.message)) {
       const tools = this.config.getToolRegistry().getAllTools();
       const cyclicSchemaTools: string[] = [];
       for (const tool of tools) {
@@ -505,8 +466,7 @@ export class GeminiChat {
     let hasFinishReason = false;
 
     for await (const chunk of streamResponse) {
-      hasFinishReason =
-        chunk?.candidates?.some((candidate) => candidate.finishReason) ?? false;
+      hasFinishReason = chunk?.candidates?.some((candidate) => candidate.finishReason) ?? false;
       if (isValidResponse(chunk)) {
         const content = chunk.candidates?.[0]?.content;
         if (content?.parts) {
@@ -518,9 +478,7 @@ export class GeminiChat {
             hasToolCall = true;
           }
 
-          modelResponseParts.push(
-            ...content.parts.filter((part) => !part.thought),
-          );
+          modelResponseParts.push(...content.parts.filter((part) => !part.thought));
         }
       }
 
@@ -553,14 +511,14 @@ export class GeminiChat {
     const responseText = consolidatedParts
       .filter((part) => part.text)
       .map((part) => part.text)
-      .join('')
+      .join("")
       .trim();
 
     // Record model response text from the collected parts
     if (responseText) {
       this.chatRecordingService.recordMessage({
         model,
-        type: 'gemini',
+        type: "gemini",
         content: responseText,
       });
     }
@@ -575,18 +533,18 @@ export class GeminiChat {
     if (!hasToolCall && (!hasFinishReason || !responseText)) {
       if (!hasFinishReason) {
         throw new InvalidStreamError(
-          'Model stream ended without a finish reason.',
-          'NO_FINISH_REASON',
+          "Model stream ended without a finish reason.",
+          "NO_FINISH_REASON",
         );
       } else {
         throw new InvalidStreamError(
-          'Model stream ended with empty response text.',
-          'NO_RESPONSE_TEXT',
+          "Model stream ended with empty response text.",
+          "NO_RESPONSE_TEXT",
         );
       }
     }
 
-    this.history.push({ role: 'model', parts: consolidatedParts });
+    this.history.push({ role: "model", parts: consolidatedParts });
   }
 
   getLastPromptTokenCount(): number {
@@ -604,21 +562,17 @@ export class GeminiChat {
    * Records completed tool calls with full metadata.
    * This is called by external components when tool calls complete, before sending responses to Gemini.
    */
-  recordCompletedToolCalls(
-    model: string,
-    toolCalls: CompletedToolCall[],
-  ): void {
+  recordCompletedToolCalls(model: string, toolCalls: CompletedToolCall[]): void {
     const toolCallRecords = toolCalls.map((call) => {
       const resultDisplayRaw = call.response?.resultDisplay;
-      const resultDisplay =
-        typeof resultDisplayRaw === 'string' ? resultDisplayRaw : undefined;
+      const resultDisplay = typeof resultDisplayRaw === "string" ? resultDisplayRaw : undefined;
 
       return {
         id: call.request.callId,
         name: call.request.name,
         args: call.request.args,
         result: call.response?.responseParts || null,
-        status: call.status as 'error' | 'success' | 'cancelled',
+        status: call.status as "error" | "success" | "cancelled",
         timestamp: new Date().toISOString(),
         resultDisplay,
       };
@@ -640,10 +594,8 @@ export class GeminiChat {
       // Extract subject and description using the same logic as turn.ts
       const rawText = thoughtPart.text;
       const subjectStringMatches = rawText.match(/\*\*(.*?)\*\*/s);
-      const subject = subjectStringMatches
-        ? subjectStringMatches[1].trim()
-        : '';
-      const description = rawText.replace(/\*\*(.*?)\*\*/s, '').trim();
+      const subject = subjectStringMatches ? subjectStringMatches[1].trim() : "";
+      const description = rawText.replace(/\*\*(.*?)\*\*/s, "").trim();
 
       this.chatRecordingService.recordThought({
         subject,
@@ -655,9 +607,9 @@ export class GeminiChat {
 
 /** Visible for Testing */
 export function isSchemaDepthError(errorMessage: string): boolean {
-  return errorMessage.includes('maximum schema depth exceeded');
+  return errorMessage.includes("maximum schema depth exceeded");
 }
 
 export function isInvalidArgumentError(errorMessage: string): boolean {
-  return errorMessage.includes('Request contains an invalid argument');
+  return errorMessage.includes("Request contains an invalid argument");
 }

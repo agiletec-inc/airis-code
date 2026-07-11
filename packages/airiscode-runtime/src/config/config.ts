@@ -4,158 +4,132 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+import { randomUUID } from "node:crypto";
 // Node built-ins
-import type { EventEmitter } from 'node:events';
-import * as fs from 'node:fs';
-import * as path from 'node:path';
-import process from 'node:process';
-
+import type { EventEmitter } from "node:events";
+import * as fs from "node:fs";
+import * as path from "node:path";
+import process from "node:process";
 // External dependencies
-import { ProxyAgent, setGlobalDispatcher } from 'undici';
-
+import { ProxyAgent, setGlobalDispatcher } from "undici";
+import { ArenaAgentClient } from "../agents/arena/ArenaAgentClient.js";
+import type { ArenaManager } from "../agents/arena/ArenaManager.js";
+import { MessageBus } from "../confirmation-bus/message-bus.js";
+import {
+  type HookExecutionRequest,
+  type HookExecutionResponse,
+  MessageBusType,
+} from "../confirmation-bus/types.js";
+// Core
+import { BaseLlmClient } from "../core/baseLlmClient.js";
+import { GeminiClient } from "../core/client.js";
 // Types
 import type {
   ContentGenerator,
   ContentGeneratorConfig,
-} from '../core/contentGenerator.js';
-import type { ContentGeneratorConfigSources } from '../core/contentGenerator.js';
-import type { MCPOAuthConfig } from '../mcp/oauth-provider.js';
-import type { ShellExecutionConfig } from '../services/shellExecutionService.js';
-import type { AnyToolInvocation } from '../tools/tools.js';
-import type { ArenaManager } from '../agents/arena/ArenaManager.js';
-import { ArenaAgentClient } from '../agents/arena/ArenaAgentClient.js';
-
-// Core
-import { BaseLlmClient } from '../core/baseLlmClient.js';
-import { GeminiClient } from '../core/client.js';
+  ContentGeneratorConfigSources,
+} from "../core/contentGenerator.js";
 import {
   AuthType,
   createContentGenerator,
   resolveContentGeneratorConfigWithSources,
-} from '../core/contentGenerator.js';
-
-// Services
-import { FileDiscoveryService } from '../services/fileDiscoveryService.js';
+} from "../core/contentGenerator.js";
+import { fireNotificationHook } from "../core/toolHookTriggers.js";
+import type { ClaudeMarketplaceConfig } from "../extension/claude-converter.js";
+import { type Extension, ExtensionManager } from "../extension/extensionManager.js";
+import { createHookOutput, HookSystem } from "../hooks/index.js";
+import { NotificationType, PermissionMode, type PermissionSuggestion } from "../hooks/types.js";
+// Other modules
+import { ideContextStore } from "../ide/ideContext.js";
+import type { LspClient } from "../lsp/types.js";
+import type { MCPOAuthConfig } from "../mcp/oauth-provider.js";
 import {
+  type AvailableModel,
+  type ModelProvidersConfig,
+  ModelsConfig,
+  type RuntimeModelSnapshot,
+} from "../models/index.js";
+import { InputFormat, OutputFormat } from "../output/types.js";
+import { PermissionManager } from "../permissions/permission-manager.js";
+import { PromptRegistry } from "../prompts/prompt-registry.js";
+import { ChatRecordingService } from "../services/chatRecordingService.js";
+import { CronScheduler } from "../services/cronScheduler.js";
+// Services
+import { FileDiscoveryService } from "../services/fileDiscoveryService.js";
+import {
+  type FileEncodingType,
   type FileSystemService,
   StandardFileSystemService,
-  type FileEncodingType,
-} from '../services/fileSystemService.js';
-import { GitService } from '../services/gitService.js';
-import { CronScheduler } from '../services/cronScheduler.js';
-
-// Tools
-import { AskUserQuestionTool } from '../tools/askUserQuestion.js';
-import { EditTool } from '../tools/edit.js';
-import { ExitPlanModeTool } from '../tools/exitPlanMode.js';
-import { GlobTool } from '../tools/glob.js';
-import { GrepTool } from '../tools/grep.js';
-import { LSTool } from '../tools/ls.js';
-import type { SendSdkMcpMessage } from '../tools/mcp-client.js';
-import { MemoryTool, setGeminiMdFilename } from '../tools/memoryTool.js';
-import { ReadFileTool } from '../tools/read-file.js';
-import { canUseRipgrep } from '../utils/ripgrepUtils.js';
-import { RipGrepTool } from '../tools/ripGrep.js';
-import { ShellTool } from '../tools/shell.js';
-import { SkillTool } from '../tools/skill.js';
-import { AgentTool } from '../tools/agent.js';
-import { TodoWriteTool } from '../tools/todoWrite.js';
-import { ToolRegistry } from '../tools/tool-registry.js';
-import { WebFetchTool } from '../tools/web-fetch.js';
-import { WebSearchTool } from '../tools/web-search/index.js';
-import { WriteFileTool } from '../tools/write-file.js';
-import { LspTool } from '../tools/lsp.js';
-import { CronCreateTool } from '../tools/cron-create.js';
-import { CronListTool } from '../tools/cron-list.js';
-import { CronDeleteTool } from '../tools/cron-delete.js';
-import type { LspClient } from '../lsp/types.js';
-
-// Other modules
-import { ideContextStore } from '../ide/ideContext.js';
-import { InputFormat, OutputFormat } from '../output/types.js';
-import { PromptRegistry } from '../prompts/prompt-registry.js';
-import { SkillManager } from '../skills/skill-manager.js';
-import { PermissionManager } from '../permissions/permission-manager.js';
-import { SubagentManager } from '../subagents/subagent-manager.js';
-import type { SubagentConfig } from '../subagents/types.js';
+} from "../services/fileSystemService.js";
+import { GitService } from "../services/gitService.js";
+import { type ResumedSessionData, SessionService } from "../services/sessionService.js";
+import type { ShellExecutionConfig } from "../services/shellExecutionService.js";
+import { SkillManager } from "../skills/skill-manager.js";
+import { SubagentManager } from "../subagents/subagent-manager.js";
+import type { SubagentConfig } from "../subagents/types.js";
 import {
   DEFAULT_OTLP_ENDPOINT,
   DEFAULT_TELEMETRY_TARGET,
   initializeTelemetry,
-  logStartSession,
   logRipgrepFallback,
+  logStartSession,
   RipgrepFallbackEvent,
   StartSessionEvent,
   type TelemetryTarget,
-} from '../telemetry/index.js';
-import {
-  ExtensionManager,
-  type Extension,
-} from '../extension/extensionManager.js';
-import { HookSystem, createHookOutput } from '../hooks/index.js';
-import { MessageBus } from '../confirmation-bus/message-bus.js';
-import {
-  MessageBusType,
-  type HookExecutionRequest,
-  type HookExecutionResponse,
-} from '../confirmation-bus/types.js';
-import {
-  PermissionMode,
-  NotificationType,
-  type PermissionSuggestion,
-} from '../hooks/types.js';
-import { fireNotificationHook } from '../core/toolHookTriggers.js';
-
+} from "../telemetry/index.js";
+import { AgentTool } from "../tools/agent.js";
+// Tools
+import { AskUserQuestionTool } from "../tools/askUserQuestion.js";
+import { CronCreateTool } from "../tools/cron-create.js";
+import { CronDeleteTool } from "../tools/cron-delete.js";
+import { CronListTool } from "../tools/cron-list.js";
+import { EditTool } from "../tools/edit.js";
+import { ExitPlanModeTool } from "../tools/exitPlanMode.js";
+import { GlobTool } from "../tools/glob.js";
+import { GrepTool } from "../tools/grep.js";
+import { LSTool } from "../tools/ls.js";
+import { LspTool } from "../tools/lsp.js";
+import type { SendSdkMcpMessage } from "../tools/mcp-client.js";
+import { MemoryTool, setGeminiMdFilename } from "../tools/memoryTool.js";
+import { ReadFileTool } from "../tools/read-file.js";
+import { RipGrepTool } from "../tools/ripGrep.js";
+import { ShellTool } from "../tools/shell.js";
+import { SkillTool } from "../tools/skill.js";
+import { TodoWriteTool } from "../tools/todoWrite.js";
+import { ToolRegistry } from "../tools/tool-registry.js";
+import type { AnyToolInvocation } from "../tools/tools.js";
+import { WebFetchTool } from "../tools/web-fetch.js";
+import { WebSearchTool } from "../tools/web-search/index.js";
+import { WriteFileTool } from "../tools/write-file.js";
 // Utils
-import { shouldAttemptBrowserLaunch } from '../utils/browser.js';
-import { FileExclusions } from '../utils/ignorePatterns.js';
-import { shouldDefaultToNodePty } from '../utils/shell-utils.js';
-import { WorkspaceContext } from '../utils/workspaceContext.js';
-import { type ToolName } from '../utils/tool-utils.js';
-import { getErrorMessage } from '../utils/errors.js';
-import { normalizeProxyUrl } from '../utils/proxyUtils.js';
-
+import { shouldAttemptBrowserLaunch } from "../utils/browser.js";
+import { createDebugLogger, type DebugLogger, setDebugLogSession } from "../utils/debugLogger.js";
+import { getErrorMessage } from "../utils/errors.js";
+import { FileExclusions } from "../utils/ignorePatterns.js";
+import { loadServerHierarchicalMemory } from "../utils/memoryDiscovery.js";
+import { normalizeProxyUrl } from "../utils/proxyUtils.js";
+import { canUseRipgrep } from "../utils/ripgrepUtils.js";
+import { shouldDefaultToNodePty } from "../utils/shell-utils.js";
+import { type ToolName } from "../utils/tool-utils.js";
+import { WorkspaceContext } from "../utils/workspaceContext.js";
 // Local config modules
-import type { FileFilteringOptions } from './constants.js';
+import type { FileFilteringOptions } from "./constants.js";
 import {
   DEFAULT_FILE_FILTERING_OPTIONS,
   DEFAULT_MEMORY_FILE_FILTERING_OPTIONS,
-} from './constants.js';
-import { DEFAULT_QWEN_EMBEDDING_MODEL } from './models.js';
-import { Storage } from './storage.js';
-import { ChatRecordingService } from '../services/chatRecordingService.js';
-import {
-  SessionService,
-  type ResumedSessionData,
-} from '../services/sessionService.js';
-import { randomUUID } from 'node:crypto';
-import { loadServerHierarchicalMemory } from '../utils/memoryDiscovery.js';
-import {
-  createDebugLogger,
-  setDebugLogSession,
-  type DebugLogger,
-} from '../utils/debugLogger.js';
-
-import {
-  ModelsConfig,
-  type ModelProvidersConfig,
-  type AvailableModel,
-  type RuntimeModelSnapshot,
-} from '../models/index.js';
-import type { ClaudeMarketplaceConfig } from '../extension/claude-converter.js';
+} from "./constants.js";
+import { DEFAULT_QWEN_EMBEDDING_MODEL } from "./models.js";
+import { Storage } from "./storage.js";
 
 // Re-export types
 export type { AnyToolInvocation, FileFilteringOptions, MCPOAuthConfig };
-export {
-  DEFAULT_FILE_FILTERING_OPTIONS,
-  DEFAULT_MEMORY_FILE_FILTERING_OPTIONS,
-};
+export { DEFAULT_FILE_FILTERING_OPTIONS, DEFAULT_MEMORY_FILE_FILTERING_OPTIONS };
 
 export enum ApprovalMode {
-  PLAN = 'plan',
-  DEFAULT = 'default',
-  AUTO_EDIT = 'auto-edit',
-  YOLO = 'yolo',
+  PLAN = "plan",
+  DEFAULT = "default",
+  AUTO_EDIT = "auto-edit",
+  YOLO = "yolo",
 }
 
 export const APPROVAL_MODES = Object.values(ApprovalMode);
@@ -176,23 +150,23 @@ export interface ApprovalModeInfo {
 export const APPROVAL_MODE_INFO: Record<ApprovalMode, ApprovalModeInfo> = {
   [ApprovalMode.PLAN]: {
     id: ApprovalMode.PLAN,
-    name: 'Plan',
-    description: 'Analyze only, do not modify files or execute commands',
+    name: "Plan",
+    description: "Analyze only, do not modify files or execute commands",
   },
   [ApprovalMode.DEFAULT]: {
     id: ApprovalMode.DEFAULT,
-    name: 'Default',
-    description: 'Require approval for file edits or shell commands',
+    name: "Default",
+    description: "Require approval for file edits or shell commands",
   },
   [ApprovalMode.AUTO_EDIT]: {
     id: ApprovalMode.AUTO_EDIT,
-    name: 'Auto Edit',
-    description: 'Automatically approve file edits',
+    name: "Auto Edit",
+    description: "Automatically approve file edits",
   },
   [ApprovalMode.YOLO]: {
     id: ApprovalMode.YOLO,
-    name: 'YOLO',
-    description: 'Automatically approve all tools',
+    name: "YOLO",
+    description: "Automatically approve all tools",
   },
 };
 
@@ -213,7 +187,7 @@ export interface TelemetrySettings {
   enabled?: boolean;
   target?: TelemetryTarget;
   otlpEndpoint?: string;
-  otlpProtocol?: 'grpc' | 'http';
+  otlpProtocol?: "grpc" | "http";
   logPrompts?: boolean;
   outfile?: string;
   useCollector?: boolean;
@@ -229,11 +203,11 @@ export interface GitCoAuthorSettings {
   email?: string;
 }
 
-export type ExtensionOriginSource = 'AirisCode' | 'Claude' | 'Gemini';
+export type ExtensionOriginSource = "AirisCode" | "Claude" | "Gemini";
 
 export interface ExtensionInstallMetadata {
   source: string;
-  type: 'git' | 'local' | 'link' | 'github-release' | 'npm';
+  type: "git" | "local" | "link" | "github-release" | "npm";
   originSource?: ExtensionOriginSource;
   releaseTag?: string; // Only present for github-release and npm installs.
   registryUrl?: string; // Only present for npm installs.
@@ -278,7 +252,7 @@ export class MCPServerConfig {
     /* targetServiceAccount format: <service-account-name>@<project-num>.iam.gserviceaccount.com */
     readonly targetServiceAccount?: string,
     // SDK MCP server type - 'sdk' indicates server runs in SDK process
-    readonly type?: 'sdk',
+    readonly type?: "sdk",
   ) {}
 }
 
@@ -286,15 +260,15 @@ export class MCPServerConfig {
  * Check if an MCP server config represents an SDK server
  */
 export function isSdkMcpServerConfig(config: MCPServerConfig): boolean {
-  return config.type === 'sdk';
+  return config.type === "sdk";
 }
 
 export enum AuthProviderType {
-  DYNAMIC_DISCOVERY = 'dynamic_discovery',
+  DYNAMIC_DISCOVERY = "dynamic_discovery",
 }
 
 export interface SandboxConfig {
-  command: 'docker' | 'podman' | 'sandbox-exec';
+  command: "docker" | "podman" | "sandbox-exec";
   image: string;
 }
 
@@ -391,12 +365,12 @@ export interface ConfigParameters {
   generationConfigSources?: ContentGeneratorConfigSources;
   cliVersion?: string;
   loadMemoryFromIncludeDirectories?: boolean;
-  importFormat?: 'tree' | 'flat';
+  importFormat?: "tree" | "flat";
   chatRecording?: boolean;
   // Web search providers
   webSearch?: {
     provider: Array<{
-      type: 'tavily' | 'google';
+      type: "tavily" | "google";
       apiKey?: string;
       searchEngineId?: string;
     }>;
@@ -447,25 +421,23 @@ export interface ConfigParameters {
    * @param rule - The raw rule string, e.g. "Bash(git *)" or "Edit".
    */
   onPersistPermissionRule?: (
-    scope: 'project' | 'user',
-    ruleType: 'allow' | 'ask' | 'deny',
+    scope: "project" | "user",
+    ruleType: "allow" | "ask" | "deny",
     rule: string,
   ) => Promise<void>;
 }
 
-function normalizeConfigOutputFormat(
-  format: OutputFormat | undefined,
-): OutputFormat | undefined {
+function normalizeConfigOutputFormat(format: OutputFormat | undefined): OutputFormat | undefined {
   if (!format) {
     return undefined;
   }
   switch (format) {
-    case 'stream-json':
+    case "stream-json":
       return OutputFormat.STREAM_JSON;
-    case 'json':
+    case "json":
     case OutputFormat.JSON:
       return OutputFormat.JSON;
-    case 'text':
+    case "text":
     case OutputFormat.TEXT:
     default:
       return OutputFormat.TEXT;
@@ -569,10 +541,10 @@ export class Config {
   private readonly cronEnabled: boolean = false;
   private readonly chatRecordingEnabled: boolean;
   private readonly loadMemoryFromIncludeDirectories: boolean = false;
-  private readonly importFormat: 'tree' | 'flat';
+  private readonly importFormat: "tree" | "flat";
   private readonly webSearch?: {
     provider: Array<{
-      type: 'tavily' | 'google';
+      type: "tavily" | "google";
       apiKey?: string;
       searchEngineId?: string;
     }>;
@@ -587,17 +559,15 @@ export class Config {
   private readonly skipNextSpeakerCheck: boolean;
   private shellExecutionConfig: ShellExecutionConfig;
   private arenaManager: ArenaManager | null = null;
-  private arenaManagerChangeCallback:
-    | ((manager: ArenaManager | null) => void)
-    | null = null;
+  private arenaManagerChangeCallback: ((manager: ArenaManager | null) => void) | null = null;
   private readonly arenaAgentClient: ArenaAgentClient | null;
   private readonly agentsSettings: AgentsCollabSettings;
   private readonly skipLoopDetection: boolean;
   private readonly skipStartupContext: boolean;
   private readonly warnings: string[];
   private readonly onPersistPermissionRuleCallback?: (
-    scope: 'project' | 'user',
-    ruleType: 'allow' | 'ask' | 'deny',
+    scope: "project" | "user",
+    ruleType: "allow" | "ask" | "deny",
     rule: string,
   ) => Promise<void>;
   private initialized: boolean = false;
@@ -622,10 +592,7 @@ export class Config {
     this.fileSystemService = new StandardFileSystemService();
     this.sandbox = params.sandbox;
     this.targetDir = path.resolve(params.targetDir);
-    this.workspaceContext = new WorkspaceContext(
-      this.targetDir,
-      params.includeDirectories ?? [],
-    );
+    this.workspaceContext = new WorkspaceContext(this.targetDir, params.includeDirectories ?? []);
     this.debugMode = params.debugMode;
     this.inputFormat = params.inputFormat ?? InputFormat.TEXT;
     const normalizedOutputFormat = normalizeConfigOutputFormat(
@@ -652,7 +619,7 @@ export class Config {
     this.excludedMcpServers = params.excludedMcpServers;
     this.sessionSubagents = params.sessionSubagents ?? [];
     this.sdkMode = params.sdkMode ?? false;
-    this.userMemory = params.userMemory ?? '';
+    this.userMemory = params.userMemory ?? "";
     this.geminiMdFileCount = params.geminiMdFileCount ?? 0;
     this.approvalMode = params.approvalMode ?? ApprovalMode.DEFAULT;
     this.accessibility = params.accessibility ?? {};
@@ -667,8 +634,8 @@ export class Config {
     };
     this.gitCoAuthor = {
       enabled: params.gitCoAuthor ?? true,
-      name: 'Qwen-Coder',
-      email: 'airiscoder@alibabacloud.com',
+      name: "Qwen-Coder",
+      email: "airiscoder@alibabacloud.com",
     };
     this.usageStatisticsEnabled = params.usageStatisticsEnabled ?? true;
     this.outputLanguageFilePath = params.outputLanguageFilePath;
@@ -676,8 +643,7 @@ export class Config {
     this.fileFiltering = {
       respectGitIgnore: params.fileFiltering?.respectGitIgnore ?? true,
       respectAiriscodeIgnore: params.fileFiltering?.respectAiriscodeIgnore ?? true,
-      enableRecursiveFileSearch:
-        params.fileFiltering?.enableRecursiveFileSearch ?? true,
+      enableRecursiveFileSearch: params.fileFiltering?.enableRecursiveFileSearch ?? true,
       enableFuzzySearch: params.fileFiltering?.enableFuzzySearch ?? true,
     };
     this.checkpointing = params.checkpointing ?? false;
@@ -686,11 +652,9 @@ export class Config {
     this.fileDiscoveryService = params.fileDiscoveryService ?? null;
     this.bugCommand = params.bugCommand;
     this.maxSessionTurns = params.maxSessionTurns ?? -1;
-    this.thinkingIdleThresholdMs =
-      (params.thinkingIdleThresholdMinutes ?? 5) * 60 * 1000;
+    this.thinkingIdleThresholdMs = (params.thinkingIdleThresholdMinutes ?? 5) * 60 * 1000;
     this.sessionTokenLimit = params.sessionTokenLimit ?? -1;
-    this.experimentalZedIntegration =
-      params.experimentalZedIntegration ?? false;
+    this.experimentalZedIntegration = params.experimentalZedIntegration ?? false;
     this.cronEnabled = params.cronEnabled ?? false;
     this.listExtensions = params.listExtensions ?? false;
     this.overrideExtensions = params.overrideExtensions;
@@ -703,9 +667,8 @@ export class Config {
 
     this.chatRecordingEnabled = params.chatRecording ?? true;
 
-    this.loadMemoryFromIncludeDirectories =
-      params.loadMemoryFromIncludeDirectories ?? false;
-    this.importFormat = params.importFormat ?? 'tree';
+    this.loadMemoryFromIncludeDirectories = params.loadMemoryFromIncludeDirectories ?? false;
+    this.importFormat = params.importFormat ?? "tree";
     this.chatCompression = params.chatCompression;
     this.interactive = params.interactive ?? false;
     this.trustedFolder = params.trustedFolder;
@@ -718,18 +681,16 @@ export class Config {
     this.webSearch = params.webSearch;
     this.useRipgrep = params.useRipgrep ?? true;
     this.useBuiltinRipgrep = params.useBuiltinRipgrep ?? true;
-    this.shouldUseNodePtyShell =
-      params.shouldUseNodePtyShell ?? shouldDefaultToNodePty();
+    this.shouldUseNodePtyShell = params.shouldUseNodePtyShell ?? shouldDefaultToNodePty();
     this.skipNextSpeakerCheck = params.skipNextSpeakerCheck ?? true;
     this.shellExecutionConfig = {
       terminalWidth: params.shellExecutionConfig?.terminalWidth ?? 80,
       terminalHeight: params.shellExecutionConfig?.terminalHeight ?? 24,
       showColor: params.shellExecutionConfig?.showColor ?? false,
-      pager: params.shellExecutionConfig?.pager ?? 'cat',
+      pager: params.shellExecutionConfig?.pager ?? "cat",
     };
     this.truncateToolOutputThreshold =
-      params.truncateToolOutputThreshold ??
-      DEFAULT_TRUNCATE_TOOL_OUTPUT_THRESHOLD;
+      params.truncateToolOutputThreshold ?? DEFAULT_TRUNCATE_TOOL_OUTPUT_THRESHOLD;
     this.truncateToolOutputLines =
       params.truncateToolOutputLines ?? DEFAULT_TRUNCATE_TOOL_OUTPUT_LINES;
     this.channel = params.channel;
@@ -787,10 +748,10 @@ export class Config {
    */
   async initialize(options?: ConfigInitializeOptions): Promise<void> {
     if (this.initialized) {
-      throw Error('Config was already initialized');
+      throw Error("Config was already initialized");
     }
     this.initialized = true;
-    this.debugLogger.info('Config initialization started');
+    this.debugLogger.info("Config initialization started");
 
     // Initialize centralized FileDiscoveryService
     this.getFileService();
@@ -800,13 +761,13 @@ export class Config {
     this.promptRegistry = new PromptRegistry();
     this.extensionManager.setConfig(this);
     await this.extensionManager.refreshCache();
-    this.debugLogger.debug('Extension manager initialized');
+    this.debugLogger.debug("Extension manager initialized");
 
     // Initialize hook system if enabled
     if (!this.disableAllHooks) {
       this.hookSystem = new HookSystem(this);
       await this.hookSystem.initialize();
-      this.debugLogger.debug('Hook system initialized');
+      this.debugLogger.debug("Hook system initialized");
 
       // Initialize MessageBus for hook execution
       this.messageBus = new MessageBus();
@@ -822,7 +783,7 @@ export class Config {
                 type: MessageBusType.HOOK_EXECUTION_RESPONSE,
                 correlationId: request.correlationId,
                 success: false,
-                error: new Error('Hook system not initialized'),
+                error: new Error("Hook system not initialized"),
               } as HookExecutionResponse);
               return;
             }
@@ -833,7 +794,7 @@ export class Config {
                 type: MessageBusType.HOOK_EXECUTION_RESPONSE,
                 correlationId: request.correlationId,
                 success: false,
-                error: new Error('Hook execution cancelled (aborted)'),
+                error: new Error("Hook execution cancelled (aborted)"),
               } as HookExecutionResponse);
               return;
             }
@@ -844,101 +805,95 @@ export class Config {
             const input = request.input || {};
             const signal = request.signal;
             switch (request.eventName) {
-              case 'UserPromptSubmit':
+              case "UserPromptSubmit":
                 result = await hookSystem.fireUserPromptSubmitEvent(
-                  (input['prompt'] as string) || '',
+                  (input["prompt"] as string) || "",
                   signal,
                 );
                 break;
-              case 'Stop': {
+              case "Stop": {
                 const stopResult = await hookSystem.fireStopEvent(
-                  (input['stop_hook_active'] as boolean) || false,
-                  (input['last_assistant_message'] as string) || '',
+                  (input["stop_hook_active"] as boolean) || false,
+                  (input["last_assistant_message"] as string) || "",
                   signal,
                 );
                 result = stopResult.finalOutput
-                  ? createHookOutput('Stop', stopResult.finalOutput)
+                  ? createHookOutput("Stop", stopResult.finalOutput)
                   : undefined;
                 stopHookCount = stopResult.allOutputs.length;
                 break;
               }
-              case 'PreToolUse': {
+              case "PreToolUse": {
                 result = await hookSystem.firePreToolUseEvent(
-                  (input['tool_name'] as string) || '',
-                  (input['tool_input'] as Record<string, unknown>) || {},
-                  (input['tool_use_id'] as string) || '',
-                  (input['permission_mode'] as PermissionMode | undefined) ??
+                  (input["tool_name"] as string) || "",
+                  (input["tool_input"] as Record<string, unknown>) || {},
+                  (input["tool_use_id"] as string) || "",
+                  (input["permission_mode"] as PermissionMode | undefined) ??
                     PermissionMode.Default,
                   signal,
                 );
                 break;
               }
-              case 'PostToolUse':
+              case "PostToolUse":
                 result = await hookSystem.firePostToolUseEvent(
-                  (input['tool_name'] as string) || '',
-                  (input['tool_input'] as Record<string, unknown>) || {},
-                  (input['tool_response'] as Record<string, unknown>) || {},
-                  (input['tool_use_id'] as string) || '',
-                  (input['permission_mode'] as any) || 'default',
+                  (input["tool_name"] as string) || "",
+                  (input["tool_input"] as Record<string, unknown>) || {},
+                  (input["tool_response"] as Record<string, unknown>) || {},
+                  (input["tool_use_id"] as string) || "",
+                  (input["permission_mode"] as any) || "default",
                   signal,
                 );
                 break;
-              case 'PostToolUseFailure':
+              case "PostToolUseFailure":
                 result = await hookSystem.firePostToolUseFailureEvent(
-                  (input['tool_use_id'] as string) || '',
-                  (input['tool_name'] as string) || '',
-                  (input['tool_input'] as Record<string, unknown>) || {},
-                  (input['error'] as string) || '',
-                  input['is_interrupt'] as boolean | undefined,
-                  (input['permission_mode'] as any) || 'default',
+                  (input["tool_use_id"] as string) || "",
+                  (input["tool_name"] as string) || "",
+                  (input["tool_input"] as Record<string, unknown>) || {},
+                  (input["error"] as string) || "",
+                  input["is_interrupt"] as boolean | undefined,
+                  (input["permission_mode"] as any) || "default",
                   signal,
                 );
                 break;
-              case 'Notification':
+              case "Notification":
                 result = await hookSystem.fireNotificationEvent(
-                  (input['message'] as string) || '',
-                  ((input['notification_type'] || 'permission_prompt') as any),
-                  (input['title'] as string) || undefined,
+                  (input["message"] as string) || "",
+                  (input["notification_type"] || "permission_prompt") as any,
+                  (input["title"] as string) || undefined,
                   signal,
                 );
                 break;
-              case 'PermissionRequest':
+              case "PermissionRequest":
                 result = await hookSystem.firePermissionRequestEvent(
-                  (input['tool_name'] as string) || '',
-                  (input['tool_input'] as Record<string, unknown>) || {},
-                  (input['permission_mode'] as any) ||
-                    PermissionMode.Default,
-                  (input['permission_suggestions'] as
-                    | PermissionSuggestion[]
-                    | undefined) || undefined,
+                  (input["tool_name"] as string) || "",
+                  (input["tool_input"] as Record<string, unknown>) || {},
+                  (input["permission_mode"] as any) || PermissionMode.Default,
+                  (input["permission_suggestions"] as PermissionSuggestion[] | undefined) ||
+                    undefined,
                   signal,
                 );
                 break;
-              case 'SubagentStart':
+              case "SubagentStart":
                 result = await hookSystem.fireSubagentStartEvent(
-                  (input['agent_id'] as string) || '',
-                  (input['agent_type'] as string) || '',
-                  (input['permission_mode'] as any) ||
-                    PermissionMode.Default,
+                  (input["agent_id"] as string) || "",
+                  (input["agent_type"] as string) || "",
+                  (input["permission_mode"] as any) || PermissionMode.Default,
                   signal,
                 );
                 break;
-              case 'SubagentStop':
+              case "SubagentStop":
                 result = await hookSystem.fireSubagentStopEvent(
-                  (input['agent_id'] as string) || '',
-                  (input['agent_type'] as string) || '',
-                  (input['agent_transcript_path'] as string) || '',
-                  (input['last_assistant_message'] as string) || '',
-                  (input['stop_hook_active'] as boolean) || false,
-                  (input['permission_mode'] as any) ||
-                    PermissionMode.Default,
+                  (input["agent_id"] as string) || "",
+                  (input["agent_type"] as string) || "",
+                  (input["agent_transcript_path"] as string) || "",
+                  (input["last_assistant_message"] as string) || "",
+                  (input["stop_hook_active"] as boolean) || false,
+                  (input["permission_mode"] as any) || PermissionMode.Default,
                   signal,
                 );
                 break;
               default:
-                this.debugLogger.warn(
-                  `Unknown hook event: ${request.eventName}`,
-                );
+                this.debugLogger.warn(`Unknown hook event: ${request.eventName}`);
                 result = undefined;
             }
 
@@ -963,19 +918,19 @@ export class Config {
         },
       );
 
-      this.debugLogger.debug('MessageBus initialized with hook subscription');
+      this.debugLogger.debug("MessageBus initialized with hook subscription");
     } else {
-      this.debugLogger.debug('Hook system disabled, skipping initialization');
+      this.debugLogger.debug("Hook system disabled, skipping initialization");
     }
 
     this.subagentManager = new SubagentManager(this);
     this.skillManager = new SkillManager(this);
     await this.skillManager.startWatching();
-    this.debugLogger.debug('Skill manager initialized');
+    this.debugLogger.debug("Skill manager initialized");
 
     this.permissionManager = new PermissionManager(this);
     this.permissionManager.initialize();
-    this.debugLogger.debug('Permission manager initialized');
+    this.debugLogger.debug("Permission manager initialized");
 
     // Load session subagents if they were provided before initialization
     if (this.sessionSubagents.length > 0) {
@@ -985,23 +940,21 @@ export class Config {
     await this.extensionManager.refreshCache();
 
     await this.refreshHierarchicalMemory();
-    this.debugLogger.debug('Hierarchical memory loaded');
+    this.debugLogger.debug("Hierarchical memory loaded");
 
-    this.toolRegistry = await this.createToolRegistry(
-      options?.sendSdkMcpMessage,
-    );
+    this.toolRegistry = await this.createToolRegistry(options?.sendSdkMcpMessage);
     this.debugLogger.info(
       `Tool registry initialized with ${this.toolRegistry.getAllToolNames().length} tools`,
     );
 
     await this.geminiClient.initialize();
-    this.debugLogger.info('Gemini client initialized');
+    this.debugLogger.info("Gemini client initialized");
 
     // Detect and capture runtime model snapshot (from CLI/ENV/credentials)
     this.modelsConfig.detectAndCaptureRuntimeModel();
 
     logStartSession(this, new StartSessionEvent(this));
-    this.debugLogger.info('Config initialization completed');
+    this.debugLogger.info("Config initialization completed");
   }
 
   async refreshHierarchicalMemory(): Promise<void> {
@@ -1054,9 +1007,7 @@ export class Config {
    *
    * @param modelProvidersConfig - The updated model providers configuration
    */
-  reloadModelProvidersConfig(
-    modelProvidersConfig?: ModelProvidersConfig,
-  ): void {
+  reloadModelProvidersConfig(modelProvidersConfig?: ModelProvidersConfig): void {
     this.modelsConfig.reloadModelProvidersConfig(modelProvidersConfig);
   }
 
@@ -1069,8 +1020,7 @@ export class Config {
     this.modelsConfig.syncAfterAuthRefresh(authMethod, modelId);
 
     // Check and consume cached credentials flag
-    const requireCached =
-      this.modelsConfig.consumeRequireCachedCredentialsFlag();
+    const requireCached = this.modelsConfig.consumeRequireCachedCredentialsFlag();
 
     const { config, sources } = resolveContentGeneratorConfigWithSources(
       this,
@@ -1102,7 +1052,7 @@ export class Config {
         messageBus,
         `Successfully authenticated with ${authMethod}`,
         NotificationType.AuthSuccess,
-        'Authentication successful',
+        "Authentication successful",
       ).catch(() => {
         // Silently ignore errors - fireNotificationHook has internal error handling
         // and notification hooks should not block the auth flow
@@ -1117,13 +1067,10 @@ export class Config {
     if (!this.baseLlmClient) {
       // Handle cases where initialization might be deferred or authentication failed
       if (this.contentGenerator) {
-        this.baseLlmClient = new BaseLlmClient(
-          this.getContentGenerator(),
-          this,
-        );
+        this.baseLlmClient = new BaseLlmClient(this.getContentGenerator(), this);
       } else {
         throw new Error(
-          'BaseLlmClient not initialized. Ensure authentication has occurred and ContentGenerator is ready.',
+          "BaseLlmClient not initialized. Ensure authentication has occurred and ContentGenerator is ready.",
         );
       }
     }
@@ -1150,10 +1097,7 @@ export class Config {
   /**
    * Starts a new session and resets session-scoped services.
    */
-  startNewSession(
-    sessionId?: string,
-    sessionData?: ResumedSessionData,
-  ): string {
+  startNewSession(sessionId?: string, sessionData?: ResumedSessionData): string {
     this.sessionId = sessionId ?? randomUUID();
     this.sessionData = sessionData;
     setDebugLogSession(this);
@@ -1178,7 +1122,7 @@ export class Config {
     return this.loadMemoryFromIncludeDirectories;
   }
 
-  getImportFormat(): 'tree' | 'flat' {
+  getImportFormat(): "tree" | "flat" {
     return this.importFormat;
   }
 
@@ -1189,10 +1133,7 @@ export class Config {
   getContentGeneratorConfigSources(): ContentGeneratorConfigSources {
     // If contentGeneratorConfigSources is empty (before initializeAuth),
     // get sources from ModelsConfig
-    if (
-      Object.keys(this.contentGeneratorConfigSources).length === 0 &&
-      this.modelsConfig
-    ) {
+    if (Object.keys(this.contentGeneratorConfigSources).length === 0 && this.modelsConfig) {
       return this.modelsConfig.getGenerationConfigSources();
     }
     return this.contentGeneratorConfigSources;
@@ -1221,10 +1162,7 @@ export class Config {
    * Handle model change from ModelsConfig.
    * This updates the content generator config with the new model settings.
    */
-  private async handleModelChange(
-    authType: AuthType,
-    requiresRefresh: boolean,
-  ): Promise<void> {
+  private async handleModelChange(authType: AuthType, requiresRefresh: boolean): Promise<void> {
     if (!this.contentGeneratorConfig) {
       return;
     }
@@ -1307,12 +1245,12 @@ export class Config {
 
   isRestrictiveSandbox(): boolean {
     const sandboxConfig = this.getSandbox();
-    const seatbeltProfile = process.env['SEATBELT_PROFILE'];
+    const seatbeltProfile = process.env["SEATBELT_PROFILE"];
     return (
       !!sandboxConfig &&
-      sandboxConfig.command === 'sandbox-exec' &&
+      sandboxConfig.command === "sandbox-exec" &&
       !!seatbeltProfile &&
-      seatbeltProfile.startsWith('restrictive-')
+      seatbeltProfile.startsWith("restrictive-")
     );
   }
 
@@ -1356,7 +1294,7 @@ export class Config {
       await this.cleanupArenaRuntime();
     } catch (error) {
       // Log but don't throw - cleanup should be best-effort
-      this.debugLogger.error('Error during Config shutdown:', error);
+      this.debugLogger.error("Error during Config shutdown:", error);
     }
   }
 
@@ -1452,22 +1390,18 @@ export class Config {
     let mcpServers = { ...(this.mcpServers || {}) };
     const extensions = this.getActiveExtensions();
     for (const extension of extensions) {
-      Object.entries(extension.config.mcpServers || {}).forEach(
-        ([key, server]) => {
-          if (mcpServers[key]) return;
-          mcpServers[key] = {
-            ...server,
-            extensionName: extension.config.name,
-          };
-        },
-      );
+      Object.entries(extension.config.mcpServers || {}).forEach(([key, server]) => {
+        if (mcpServers[key]) return;
+        mcpServers[key] = {
+          ...server,
+          extensionName: extension.config.name,
+        };
+      });
     }
 
     if (this.allowedMcpServers) {
       mcpServers = Object.fromEntries(
-        Object.entries(mcpServers).filter(([key]) =>
-          this.allowedMcpServers?.includes(key),
-        ),
+        Object.entries(mcpServers).filter(([key]) => this.allowedMcpServers?.includes(key)),
       );
     }
 
@@ -1492,7 +1426,7 @@ export class Config {
 
   addMcpServers(servers: Record<string, MCPServerConfig>): void {
     if (this.initialized) {
-      throw new Error('Cannot modify mcpServers after initialization');
+      throw new Error("Cannot modify mcpServers after initialization");
     }
     this.mcpServers = { ...this.mcpServers, ...servers };
   }
@@ -1510,7 +1444,7 @@ export class Config {
    */
   setLspClient(client: LspClient | undefined): void {
     if (this.initialized) {
-      throw new Error('Cannot set LSP client after initialization');
+      throw new Error("Cannot set LSP client after initialization");
     }
     this.lspClient = client;
   }
@@ -1521,7 +1455,7 @@ export class Config {
 
   setSessionSubagents(subagents: SubagentConfig[]): void {
     if (this.initialized) {
-      throw new Error('Cannot modify sessionSubagents after initialization');
+      throw new Error("Cannot modify sessionSubagents after initialization");
     }
     this.sessionSubagents = subagents;
   }
@@ -1563,9 +1497,7 @@ export class Config {
    * Register a callback invoked whenever the arena manager changes.
    * Pass `null` to unsubscribe. Only one subscriber is supported.
    */
-  onArenaManagerChange(
-    cb: ((manager: ArenaManager | null) => void) | null,
-  ): void {
+  onArenaManagerChange(cb: ((manager: ArenaManager | null) => void) | null): void {
     this.arenaManagerChangeCallback = cb;
   }
 
@@ -1607,22 +1539,13 @@ export class Config {
   }
 
   setApprovalMode(mode: ApprovalMode): void {
-    if (
-      !this.isTrustedFolder() &&
-      mode !== ApprovalMode.DEFAULT &&
-      mode !== ApprovalMode.PLAN
-    ) {
-      throw new Error(
-        'Cannot enable privileged approval modes in an untrusted folder.',
-      );
+    if (!this.isTrustedFolder() && mode !== ApprovalMode.DEFAULT && mode !== ApprovalMode.PLAN) {
+      throw new Error("Cannot enable privileged approval modes in an untrusted folder.");
     }
     // Track the mode before entering plan mode so it can be restored later
     if (mode === ApprovalMode.PLAN && this.approvalMode !== ApprovalMode.PLAN) {
       this.prePlanMode = this.approvalMode;
-    } else if (
-      mode !== ApprovalMode.PLAN &&
-      this.approvalMode === ApprovalMode.PLAN
-    ) {
+    } else if (mode !== ApprovalMode.PLAN && this.approvalMode === ApprovalMode.PLAN) {
       this.prePlanMode = undefined;
     }
     this.approvalMode = mode;
@@ -1642,7 +1565,7 @@ export class Config {
     const filePath = this.getPlanFilePath();
     const dir = path.dirname(filePath);
     fs.mkdirSync(dir, { recursive: true });
-    fs.writeFileSync(filePath, plan, 'utf-8');
+    fs.writeFileSync(filePath, plan, "utf-8");
   }
 
   /**
@@ -1651,13 +1574,13 @@ export class Config {
   loadPlan(): string | undefined {
     const filePath = this.getPlanFilePath();
     try {
-      return fs.readFileSync(filePath, 'utf-8');
+      return fs.readFileSync(filePath, "utf-8");
     } catch (error: unknown) {
       if (
-        typeof error === 'object' &&
+        typeof error === "object" &&
         error !== null &&
-        'code' in error &&
-        (error as NodeJS.ErrnoException).code === 'ENOENT'
+        "code" in error &&
+        (error as NodeJS.ErrnoException).code === "ENOENT"
       ) {
         return undefined;
       }
@@ -1665,7 +1588,7 @@ export class Config {
     }
   }
 
-  getInputFormat(): 'text' | 'stream-json' {
+  getInputFormat(): "text" | "stream-json" {
     return this.inputFormat;
   }
 
@@ -1689,8 +1612,8 @@ export class Config {
     return this.telemetrySettings.otlpEndpoint ?? DEFAULT_OTLP_ENDPOINT;
   }
 
-  getTelemetryOtlpProtocol(): 'grpc' | 'http' {
-    return this.telemetrySettings.otlpProtocol ?? 'grpc';
+  getTelemetryOtlpProtocol(): "grpc" | "http" {
+    return this.telemetrySettings.otlpProtocol ?? "grpc";
   }
 
   getTelemetryTarget(): TelemetryTarget {
@@ -1722,7 +1645,7 @@ export class Config {
 
   isCronEnabled(): boolean {
     // Cron is experimental and opt-in: enabled via settings or env var
-    if (process.env['AIRISCODE_ENABLE_CRON'] === '1') return true;
+    if (process.env["AIRISCODE_ENABLE_CRON"] === "1") return true;
     return this.cronEnabled;
   }
 
@@ -1791,9 +1714,7 @@ export class Config {
   }
 
   getExtensionContextFilePaths(): string[] {
-    const extensionContextFilePaths = this.getActiveExtensions().flatMap(
-      (e) => e.contextFiles,
-    );
+    const extensionContextFilePaths = this.getActiveExtensions().flatMap((e) => e.contextFiles);
     return [
       ...extensionContextFilePaths,
       ...(this.outputLanguageFilePath ? [this.outputLanguageFilePath] : []),
@@ -1873,9 +1794,7 @@ export class Config {
   getExtensions(): Extension[] {
     const extensions = this.extensionManager.getLoadedExtensions();
     if (this.overrideExtensions) {
-      return extensions.filter((e) =>
-        this.overrideExtensions?.includes(e.name),
-      );
+      return extensions.filter((e) => this.overrideExtensions?.includes(e.name));
     } else {
       return extensions;
     }
@@ -1889,18 +1808,15 @@ export class Config {
     const mcpServers = { ...(this.mcpServers || {}) };
     const extensions = this.getActiveExtensions();
     for (const extension of extensions) {
-      Object.entries(extension.config.mcpServers || {}).forEach(
-        ([key, server]) => {
-          if (mcpServers[key]) return;
-          mcpServers[key] = {
-            ...server,
-            extensionName: extension.config.name,
-          };
-        },
-      );
+      Object.entries(extension.config.mcpServers || {}).forEach(([key, server]) => {
+        if (mcpServers[key]) return;
+        mcpServers[key] = {
+          ...server,
+          extensionName: extension.config.name,
+        };
+      });
     }
-    const blockedMcpServers: Array<{ name: string; extensionName: string }> =
-      [];
+    const blockedMcpServers: Array<{ name: string; extensionName: string }> = [];
 
     if (this.allowedMcpServers) {
       Object.entries(mcpServers).forEach(([key, server]) => {
@@ -1908,7 +1824,7 @@ export class Config {
         if (!isAllowed) {
           blockedMcpServers.push({
             name: key,
-            extensionName: server.extensionName || '',
+            extensionName: server.extensionName || "",
           });
         }
       });
@@ -2032,10 +1948,8 @@ export class Config {
 
   setShellExecutionConfig(config: ShellExecutionConfig): void {
     this.shellExecutionConfig = {
-      terminalWidth:
-        config.terminalWidth ?? this.shellExecutionConfig.terminalWidth,
-      terminalHeight:
-        config.terminalHeight ?? this.shellExecutionConfig.terminalHeight,
+      terminalWidth: config.terminalWidth ?? this.shellExecutionConfig.terminalWidth,
+      terminalHeight: config.terminalHeight ?? this.shellExecutionConfig.terminalHeight,
       showColor: config.showColor ?? this.shellExecutionConfig.showColor,
       pager: config.pager ?? this.shellExecutionConfig.pager,
     };
@@ -2100,12 +2014,12 @@ export class Config {
    */
   getTranscriptPath(): string {
     if (!this.chatRecordingEnabled) {
-      return '';
+      return "";
     }
     const projectDir = this.storage.getProjectDir();
     const sessionId = this.getSessionId();
     const safeFilename = `${sessionId}.jsonl`;
-    return path.join(projectDir, 'chats', safeFilename);
+    return path.join(projectDir, "chats", safeFilename);
   }
 
   /**
@@ -2140,8 +2054,8 @@ export class Config {
    */
   getOnPersistPermissionRule():
     | ((
-        scope: 'project' | 'user',
-        ruleType: 'allow' | 'ask' | 'deny',
+        scope: "project" | "user",
+        ruleType: "allow" | "ask" | "deny",
         rule: string,
       ) => Promise<void>)
     | undefined {
@@ -2152,17 +2066,13 @@ export class Config {
     sendSdkMcpMessage?: SendSdkMcpMessage,
     options?: { skipDiscovery?: boolean },
   ): Promise<ToolRegistry> {
-    const registry = new ToolRegistry(
-      this,
-      this.eventEmitter,
-      sendSdkMcpMessage,
-    );
+    const registry = new ToolRegistry(this, this.eventEmitter, sendSdkMcpMessage);
 
     // Helper to create & register core tools that are enabled
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const registerCoreTool = async (ToolClass: any, ...args: unknown[]) => {
       const toolName = ToolClass?.Name as ToolName | undefined;
-      const className = ToolClass?.name ?? 'UnknownTool';
+      const className = ToolClass?.name ?? "UnknownTool";
 
       if (!toolName) {
         // Log warning and skip this tool instead of crashing
@@ -2183,10 +2093,7 @@ export class Config {
         try {
           registry.registerTool(new ToolClass(...args));
         } catch (error) {
-          this.debugLogger.error(
-            `Failed to register tool ${className} (${toolName}):`,
-            error,
-          );
+          this.debugLogger.error(`Failed to register tool ${className} (${toolName}):`, error);
           throw error; // Re-throw after logging context
         }
       }
@@ -2214,7 +2121,7 @@ export class Config {
           new RipgrepFallbackEvent(
             this.getUseRipgrep(),
             this.getUseBuiltinRipgrep(),
-            errorString || 'ripgrep is not available',
+            errorString || "ripgrep is not available",
           ),
         );
         await registerCoreTool(GrepTool, this);

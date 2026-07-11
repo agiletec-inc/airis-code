@@ -4,10 +4,10 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import * as path from 'node:path';
-import * as fs from 'node:fs';
-import { type InProcessChecker, AllowedPathChecker } from './built-in.js';
-import { InProcessCheckerType } from '../policy/types.js';
+import * as fs from "node:fs";
+import * as path from "node:path";
+import { InProcessCheckerType } from "../policy/types.js";
+import { AllowedPathChecker, type InProcessChecker } from "./built-in.js";
 
 /**
  * Registry for managing safety checker resolution.
@@ -17,10 +17,9 @@ export class CheckerRegistry {
     // No external built-ins for now
   ]);
 
-  private static readonly BUILT_IN_IN_PROCESS_CHECKERS = new Map<
-    string,
-    InProcessChecker
-  >([[InProcessCheckerType.ALLOWED_PATH, new AllowedPathChecker()]]);
+  private static readonly BUILT_IN_IN_PROCESS_CHECKERS = new Map<string, InProcessChecker>([
+    [InProcessCheckerType.ALLOWED_PATH, new AllowedPathChecker()],
+  ]);
 
   // Regex to validate checker names (alphanumeric and hyphens only)
   private static readonly VALID_NAME_PATTERN = /^[a-z0-9-]+$/;
@@ -66,12 +65,12 @@ export class CheckerRegistry {
     throw new Error(
       `Unknown in-process checker "${name}". Available: ${Array.from(
         CheckerRegistry.BUILT_IN_IN_PROCESS_CHECKERS.keys(),
-      ).join(', ')}`,
+      ).join(", ")}`,
     );
   }
 
   private static isValidCheckerName(name: string): boolean {
-    return this.VALID_NAME_PATTERN.test(name) && !name.includes('..');
+    return this.VALID_NAME_PATTERN.test(name) && !name.includes("..");
   }
 
   static getBuiltInCheckers(): string[] {

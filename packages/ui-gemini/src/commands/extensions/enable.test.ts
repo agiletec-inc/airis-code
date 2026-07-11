@@ -4,40 +4,27 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import {
-  vi,
-  describe,
-  it,
-  expect,
-  beforeEach,
-  afterEach,
-  type Mock,
-} from 'vitest';
-import { format } from 'node:util';
-import { type CommandModule, type Argv } from 'yargs';
-import { handleEnable, enableCommand } from './enable.js';
-import { ExtensionManager } from '../../config/extension-manager.js';
-import {
-  loadSettings,
-  SettingScope,
-  type LoadedSettings,
-} from '../../config/settings.js';
-import { FatalConfigError } from '@airiscode/gemini-cli-core';
+import { format } from "node:util";
+import { FatalConfigError } from "@airiscode/gemini-cli-core";
+import { afterEach, beforeEach, describe, expect, it, type Mock, vi } from "vitest";
+import { type Argv, type CommandModule } from "yargs";
+import { ExtensionManager } from "../../config/extension-manager.js";
+import { type LoadedSettings, loadSettings, SettingScope } from "../../config/settings.js";
+import { enableCommand, handleEnable } from "./enable.js";
 
 // Mock dependencies
 const emitConsoleLog = vi.hoisted(() => vi.fn());
 const debugLogger = vi.hoisted(() => ({
   log: vi.fn((message, ...args) => {
-    emitConsoleLog('log', format(message, ...args));
+    emitConsoleLog("log", format(message, ...args));
   }),
   error: vi.fn((message, ...args) => {
-    emitConsoleLog('error', format(message, ...args));
+    emitConsoleLog("error", format(message, ...args));
   }),
 }));
 
-vi.mock('@airiscode/gemini-cli-core', async (importOriginal) => {
-  const actual =
-    await importOriginal<typeof import('@airiscode/gemini-cli-core')>();
+vi.mock("@airiscode/gemini-cli-core", async (importOriginal) => {
+  const actual = await importOriginal<typeof import("@airiscode/gemini-cli-core")>();
   return {
     ...actual,
     coreEvents: {
@@ -48,21 +35,21 @@ vi.mock('@airiscode/gemini-cli-core', async (importOriginal) => {
     FatalConfigError: class extends Error {
       constructor(message: string) {
         super(message);
-        this.name = 'FatalConfigError';
+        this.name = "FatalConfigError";
       }
     },
   };
 });
 
-vi.mock('../../config/extension-manager.js');
-vi.mock('../../config/settings.js');
-vi.mock('../../config/extensions/consent.js');
-vi.mock('../../config/extensions/extensionSettings.js');
-vi.mock('../utils.js', () => ({
+vi.mock("../../config/extension-manager.js");
+vi.mock("../../config/settings.js");
+vi.mock("../../config/extensions/consent.js");
+vi.mock("../../config/extensions/extensionSettings.js");
+vi.mock("../utils.js", () => ({
   exitCli: vi.fn(),
 }));
 
-describe('extensions enable command', () => {
+describe("extensions enable command", () => {
   const mockLoadSettings = vi.mocked(loadSettings);
   const mockExtensionManager = vi.mocked(ExtensionManager);
 
@@ -71,9 +58,7 @@ describe('extensions enable command', () => {
     mockLoadSettings.mockReturnValue({
       merged: {},
     } as unknown as LoadedSettings);
-    mockExtensionManager.prototype.loadExtensions = vi
-      .fn()
-      .mockResolvedValue(undefined);
+    mockExtensionManager.prototype.loadExtensions = vi.fn().mockResolvedValue(undefined);
     mockExtensionManager.prototype.enableExtension = vi.fn();
   });
 
@@ -81,70 +66,67 @@ describe('extensions enable command', () => {
     vi.restoreAllMocks();
   });
 
-  describe('handleEnable', () => {
+  describe("handleEnable", () => {
     it.each([
       {
-        name: 'my-extension',
+        name: "my-extension",
         scope: undefined,
         expectedScope: SettingScope.User,
-        expectedLog:
-          'Extension "my-extension" successfully enabled in all scopes.',
+        expectedLog: 'Extension "my-extension" successfully enabled in all scopes.',
       },
       {
-        name: 'my-extension',
-        scope: 'workspace',
+        name: "my-extension",
+        scope: "workspace",
         expectedScope: SettingScope.Workspace,
-        expectedLog:
-          'Extension "my-extension" successfully enabled for scope "workspace".',
+        expectedLog: 'Extension "my-extension" successfully enabled for scope "workspace".',
       },
-    ])(
-      'should enable an extension in the $expectedScope scope when scope is $scope',
-      async ({ name, scope, expectedScope, expectedLog }) => {
-        const mockCwd = vi.spyOn(process, 'cwd').mockReturnValue('/test/dir');
-        await handleEnable({ name, scope });
+    ])("should enable an extension in the $expectedScope scope when scope is $scope", async ({
+      name,
+      scope,
+      expectedScope,
+      expectedLog,
+    }) => {
+      const mockCwd = vi.spyOn(process, "cwd").mockReturnValue("/test/dir");
+      await handleEnable({ name, scope });
 
-        expect(mockExtensionManager).toHaveBeenCalledWith(
-          expect.objectContaining({
-            workspaceDir: '/test/dir',
-          }),
-        );
-        expect(
-          mockExtensionManager.prototype.loadExtensions,
-        ).toHaveBeenCalled();
-        expect(
-          mockExtensionManager.prototype.enableExtension,
-        ).toHaveBeenCalledWith(name, expectedScope);
-        expect(emitConsoleLog).toHaveBeenCalledWith('log', expectedLog);
-        mockCwd.mockRestore();
-      },
-    );
+      expect(mockExtensionManager).toHaveBeenCalledWith(
+        expect.objectContaining({
+          workspaceDir: "/test/dir",
+        }),
+      );
+      expect(mockExtensionManager.prototype.loadExtensions).toHaveBeenCalled();
+      expect(mockExtensionManager.prototype.enableExtension).toHaveBeenCalledWith(
+        name,
+        expectedScope,
+      );
+      expect(emitConsoleLog).toHaveBeenCalledWith("log", expectedLog);
+      mockCwd.mockRestore();
+    });
 
-    it('should throw FatalConfigError when extension enabling fails', async () => {
-      const mockCwd = vi.spyOn(process, 'cwd').mockReturnValue('/test/dir');
-      const error = new Error('Enable failed');
-      (
-        mockExtensionManager.prototype.enableExtension as Mock
-      ).mockImplementation(() => {
+    it("should throw FatalConfigError when extension enabling fails", async () => {
+      const mockCwd = vi.spyOn(process, "cwd").mockReturnValue("/test/dir");
+      const error = new Error("Enable failed");
+      (mockExtensionManager.prototype.enableExtension as Mock).mockImplementation(() => {
         throw error;
       });
 
-      const promise = handleEnable({ name: 'my-extension' });
+      const promise = handleEnable({ name: "my-extension" });
       await expect(promise).rejects.toThrow(FatalConfigError);
-      await expect(promise).rejects.toThrow('Enable failed');
+      await expect(promise).rejects.toThrow("Enable failed");
 
       mockCwd.mockRestore();
     });
   });
 
-  describe('enableCommand', () => {
+  describe("enableCommand", () => {
     const command = enableCommand as CommandModule;
 
-    it('should have correct command and describe', () => {
-      expect(command.command).toBe('enable [--scope] <name>');
-      expect(command.describe).toBe('Enables an extension.');
+    it("should have correct command and describe", () => {
+      expect(command.command).toBe("enable [--scope] <name>");
+      expect(command.describe).toBe("Enables an extension.");
     });
 
-    describe('builder', () => {
+    describe("builder", () => {
       interface MockYargs {
         positional: Mock;
         option: Mock;
@@ -160,56 +142,51 @@ describe('extensions enable command', () => {
         };
       });
 
-      it('should configure positional and option arguments', () => {
-        (command.builder as (yargs: Argv) => Argv)(
-          yargsMock as unknown as Argv,
-        );
-        expect(yargsMock.positional).toHaveBeenCalledWith('name', {
-          describe: 'The name of the extension to enable.',
-          type: 'string',
+      it("should configure positional and option arguments", () => {
+        (command.builder as (yargs: Argv) => Argv)(yargsMock as unknown as Argv);
+        expect(yargsMock.positional).toHaveBeenCalledWith("name", {
+          describe: "The name of the extension to enable.",
+          type: "string",
         });
-        expect(yargsMock.option).toHaveBeenCalledWith('scope', {
+        expect(yargsMock.option).toHaveBeenCalledWith("scope", {
           describe:
-            'The scope to enable the extension in. If not set, will be enabled in all scopes.',
-          type: 'string',
+            "The scope to enable the extension in. If not set, will be enabled in all scopes.",
+          type: "string",
         });
         expect(yargsMock.check).toHaveBeenCalled();
       });
 
-      it('check function should throw for invalid scope', () => {
-        (command.builder as (yargs: Argv) => Argv)(
-          yargsMock as unknown as Argv,
-        );
+      it("check function should throw for invalid scope", () => {
+        (command.builder as (yargs: Argv) => Argv)(yargsMock as unknown as Argv);
         const checkCallback = yargsMock.check.mock.calls[0][0];
         const expectedError = `Invalid scope: invalid. Please use one of ${Object.values(
           SettingScope,
         )
           .map((s) => s.toLowerCase())
-          .join(', ')}.`;
-        expect(() => checkCallback({ scope: 'invalid' })).toThrow(
-          expectedError,
-        );
+          .join(", ")}.`;
+        expect(() => checkCallback({ scope: "invalid" })).toThrow(expectedError);
       });
     });
 
-    it('handler should call handleEnable', async () => {
-      const mockCwd = vi.spyOn(process, 'cwd').mockReturnValue('/test/dir');
+    it("handler should call handleEnable", async () => {
+      const mockCwd = vi.spyOn(process, "cwd").mockReturnValue("/test/dir");
       interface TestArgv {
         name: string;
         scope: string;
         [key: string]: unknown;
       }
       const argv: TestArgv = {
-        name: 'test-ext',
-        scope: 'workspace',
+        name: "test-ext",
+        scope: "workspace",
         _: [],
-        $0: '',
+        $0: "",
       };
       await (command.handler as unknown as (args: TestArgv) => void)(argv);
 
-      expect(
-        mockExtensionManager.prototype.enableExtension,
-      ).toHaveBeenCalledWith('test-ext', SettingScope.Workspace);
+      expect(mockExtensionManager.prototype.enableExtension).toHaveBeenCalledWith(
+        "test-ext",
+        SettingScope.Workspace,
+      );
       mockCwd.mockRestore();
     });
   });

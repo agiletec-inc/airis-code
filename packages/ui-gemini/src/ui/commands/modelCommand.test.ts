@@ -4,35 +4,33 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { describe, it, expect, beforeEach } from 'vitest';
-import { modelCommand } from './modelCommand.js';
-import { type CommandContext } from './types.js';
-import { createMockCommandContext } from '../../test-utils/mockCommandContext.js';
+import { beforeEach, describe, expect, it } from "vitest";
+import { createMockCommandContext } from "../../test-utils/mockCommandContext.js";
+import { modelCommand } from "./modelCommand.js";
+import { type CommandContext } from "./types.js";
 
-describe('modelCommand', () => {
+describe("modelCommand", () => {
   let mockContext: CommandContext;
 
   beforeEach(() => {
     mockContext = createMockCommandContext();
   });
 
-  it('should return a dialog action to open the model dialog', async () => {
+  it("should return a dialog action to open the model dialog", async () => {
     if (!modelCommand.action) {
-      throw new Error('The model command must have an action.');
+      throw new Error("The model command must have an action.");
     }
 
-    const result = await modelCommand.action(mockContext, '');
+    const result = await modelCommand.action(mockContext, "");
 
     expect(result).toEqual({
-      type: 'dialog',
-      dialog: 'model',
+      type: "dialog",
+      dialog: "model",
     });
   });
 
-  it('should have the correct name and description', () => {
-    expect(modelCommand.name).toBe('model');
-    expect(modelCommand.description).toBe(
-      'Opens a dialog to configure the model',
-    );
+  it("should have the correct name and description", () => {
+    expect(modelCommand.name).toBe("model");
+    expect(modelCommand.description).toBe("Opens a dialog to configure the model");
   });
 });

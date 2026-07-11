@@ -4,14 +4,14 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import type { CommandModule } from 'yargs';
-import { getErrorMessage } from '../../utils/errors.js';
-import { debugLogger } from '@airiscode/gemini-cli-core';
-import { requestConsentNonInteractive } from '../../config/extensions/consent.js';
-import { ExtensionManager } from '../../config/extension-manager.js';
-import { loadSettings } from '../../config/settings.js';
-import { promptForSetting } from '../../config/extensions/extensionSettings.js';
-import { exitCli } from '../utils.js';
+import { debugLogger } from "@airiscode/gemini-cli-core";
+import type { CommandModule } from "yargs";
+import { ExtensionManager } from "../../config/extension-manager.js";
+import { requestConsentNonInteractive } from "../../config/extensions/consent.js";
+import { promptForSetting } from "../../config/extensions/extensionSettings.js";
+import { loadSettings } from "../../config/settings.js";
+import { getErrorMessage } from "../../utils/errors.js";
+import { exitCli } from "../utils.js";
 
 interface UninstallArgs {
   names: string[]; // can be extension names or source URLs.
@@ -51,27 +51,26 @@ export async function handleUninstall(args: UninstallArgs) {
 }
 
 export const uninstallCommand: CommandModule = {
-  command: 'uninstall <names..>',
-  describe: 'Uninstalls one or more extensions.',
+  command: "uninstall <names..>",
+  describe: "Uninstalls one or more extensions.",
   builder: (yargs) =>
     yargs
-      .positional('names', {
-        describe:
-          'The name(s) or source path(s) of the extension(s) to uninstall.',
-        type: 'string',
+      .positional("names", {
+        describe: "The name(s) or source path(s) of the extension(s) to uninstall.",
+        type: "string",
         array: true,
       })
       .check((argv) => {
         if (!argv.names || (argv.names as string[]).length === 0) {
           throw new Error(
-            'Please include at least one extension name to uninstall as a positional argument.',
+            "Please include at least one extension name to uninstall as a positional argument.",
           );
         }
         return true;
       }),
   handler: async (argv) => {
     await handleUninstall({
-      names: argv['names'] as string[],
+      names: argv["names"] as string[],
     });
     await exitCli();
   },

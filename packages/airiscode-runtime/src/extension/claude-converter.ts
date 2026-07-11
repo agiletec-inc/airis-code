@@ -4,31 +4,25 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+import { createHash } from "node:crypto";
 /**
  * Converter for Claude Code plugins to AIRIS Code format.
  */
-import * as fs from 'node:fs';
-import * as path from 'node:path';
-import { glob } from 'glob';
-import type { ExtensionConfig } from './extensionManager.js';
-import { ExtensionStorage } from './storage.js';
-import type {
-  ExtensionInstallMetadata,
-  MCPServerConfig,
-} from '../config/config.js';
-import type { HookEventName, HookDefinition } from '../hooks/types.js';
-import { cloneFromGit, downloadFromGitHubRelease } from './github.js';
-import { createHash } from 'node:crypto';
-import { copyDirectory } from './gemini-converter.js';
-import {
-  parse as parseYaml,
-  stringify as stringifyYaml,
-} from '../utils/yaml-parser.js';
-import { createDebugLogger } from '../utils/debugLogger.js';
-import { normalizeContent } from '../utils/textUtils.js';
-import { substituteHookVariables } from './variables.js';
+import * as fs from "node:fs";
+import * as path from "node:path";
+import { glob } from "glob";
+import type { ExtensionInstallMetadata, MCPServerConfig } from "../config/config.js";
+import type { HookDefinition, HookEventName } from "../hooks/types.js";
+import { createDebugLogger } from "../utils/debugLogger.js";
+import { normalizeContent } from "../utils/textUtils.js";
+import { parse as parseYaml, stringify as stringifyYaml } from "../utils/yaml-parser.js";
+import type { ExtensionConfig } from "./extensionManager.js";
+import { copyDirectory } from "./gemini-converter.js";
+import { cloneFromGit, downloadFromGitHubRelease } from "./github.js";
+import { ExtensionStorage } from "./storage.js";
+import { substituteHookVariables } from "./variables.js";
 
-const debugLogger = createDebugLogger('CLAUDE_CONVERTER');
+const debugLogger = createDebugLogger("CLAUDE_CONVERTER");
 
 export interface ClaudePluginConfig {
   name: string;
@@ -76,8 +70,8 @@ export interface ClaudeAgentConfig {
 }
 
 export type ClaudePluginSource =
-  | { source: 'github'; repo: string }
-  | { source: 'url'; url: string };
+  | { source: "github"; repo: string }
+  | { source: "url"; url: string };
 
 export interface ClaudeMarketplacePluginConfig extends ClaudePluginConfig {
   source: string | ClaudePluginSource;
@@ -94,23 +88,23 @@ export interface ClaudeMarketplaceConfig {
 }
 
 const CLAUDE_TOOLS_MAPPING: Record<string, string | string[]> = {
-  AskUserQuestion: 'AskUserQuestion',
-  Bash: 'Shell',
-  BashOutput: 'None',
-  Edit: 'Edit',
-  ExitPlanMode: 'ExitPlanMode',
-  Glob: 'Glob',
-  Grep: 'Grep',
-  KillShell: 'None',
-  NotebookEdit: 'None',
-  Read: 'ReadFile',
-  Skill: 'Skill',
-  Task: 'Task',
-  TodoWrite: 'TodoWrite',
-  WebFetch: 'WebFetch',
-  WebSearch: 'WebSearch',
-  Write: 'WriteFile',
-  LS: 'ListFiles',
+  AskUserQuestion: "AskUserQuestion",
+  Bash: "Shell",
+  BashOutput: "None",
+  Edit: "Edit",
+  ExitPlanMode: "ExitPlanMode",
+  Glob: "Glob",
+  Grep: "Grep",
+  KillShell: "None",
+  NotebookEdit: "None",
+  Read: "ReadFile",
+  Skill: "Skill",
+  Task: "Task",
+  TodoWrite: "TodoWrite",
+  WebFetch: "WebFetch",
+  WebSearch: "WebSearch",
+  Write: "WriteFile",
+  LS: "ListFiles",
 };
 
 const claudeBuildInToolsTransform = (tools: string[]): string[] => {
@@ -119,7 +113,7 @@ const claudeBuildInToolsTransform = (tools: string[]): string[] => {
     if (!CLAUDE_TOOLS_MAPPING[tool]) {
       transformedTools.push(tool);
     } else {
-      if (CLAUDE_TOOLS_MAPPING[tool] === 'None') {
+      if (CLAUDE_TOOLS_MAPPING[tool] === "None") {
         return;
       } else if (Array.isArray(CLAUDE_TOOLS_MAPPING[tool])) {
         transformedTools.push(...CLAUDE_TOOLS_MAPPING[tool]);
@@ -144,10 +138,10 @@ function parseStringOrArray(value: unknown): string[] | undefined {
   if (Array.isArray(value)) {
     return value.map(String);
   }
-  if (typeof value === 'string') {
+  if (typeof value === "string") {
     // Split by comma and trim whitespace
     return value
-      .split(',')
+      .split(",")
       .map((s) => s.trim())
       .filter((s) => s.length > 0);
   }
@@ -159,9 +153,7 @@ function parseStringOrArray(value: unknown): string[] | undefined {
  * @param claudeAgent Claude agent configuration
  * @returns Converted agent config compatible with AIRIS Code SubagentConfig
  */
-export function convertClaudeAgentConfig(
-  claudeAgent: ClaudeAgentConfig,
-): Record<string, unknown> {
+export function convertClaudeAgentConfig(claudeAgent: ClaudeAgentConfig): Record<string, unknown> {
   // Base config with required fields
   const qwenAgent: Record<string, unknown> = {
     name: claudeAgent.name,
@@ -169,37 +161,37 @@ export function convertClaudeAgentConfig(
   };
 
   if (claudeAgent.color) {
-    qwenAgent['color'] = claudeAgent.color;
+    qwenAgent["color"] = claudeAgent.color;
   }
 
   // Convert system prompt if present
   if (claudeAgent.systemPrompt) {
-    qwenAgent['systemPrompt'] = claudeAgent.systemPrompt;
+    qwenAgent["systemPrompt"] = claudeAgent.systemPrompt;
   }
 
   // Convert tools using claudeBuildInToolsTransform
   if (claudeAgent.tools && claudeAgent.tools.length > 0) {
-    qwenAgent['tools'] = claudeBuildInToolsTransform(claudeAgent.tools);
+    qwenAgent["tools"] = claudeBuildInToolsTransform(claudeAgent.tools);
   }
 
   // Preserve Claude's top-level model selector.
   if (claudeAgent.model) {
-    qwenAgent['model'] = claudeAgent.model;
+    qwenAgent["model"] = claudeAgent.model;
   }
 
   // Preserve unsupported fields as-is for potential future compatibility
   // These fields are not supported by AIRIS Code SubagentConfig but we keep them
   if (claudeAgent.permissionMode) {
-    qwenAgent['permissionMode'] = claudeAgent.permissionMode;
+    qwenAgent["permissionMode"] = claudeAgent.permissionMode;
   }
   if (claudeAgent.hooks) {
-    qwenAgent['hooks'] = claudeAgent.hooks;
+    qwenAgent["hooks"] = claudeAgent.hooks;
   }
   if (claudeAgent.skills && claudeAgent.skills.length > 0) {
-    qwenAgent['skills'] = claudeAgent.skills;
+    qwenAgent["skills"] = claudeAgent.skills;
   }
   if (claudeAgent.disallowedTools && claudeAgent.disallowedTools.length > 0) {
-    qwenAgent['disallowedTools'] = claudeAgent.disallowedTools;
+    qwenAgent["disallowedTools"] = claudeAgent.disallowedTools;
   }
 
   return qwenAgent;
@@ -218,12 +210,12 @@ async function convertAgentFiles(agentsDir: string): Promise<void> {
   const files = await fs.promises.readdir(agentsDir);
 
   for (const file of files) {
-    if (!file.endsWith('.md')) continue;
+    if (!file.endsWith(".md")) continue;
 
     const filePath = path.join(agentsDir, file);
 
     try {
-      const content = await fs.promises.readFile(filePath, 'utf-8');
+      const content = await fs.promises.readFile(filePath, "utf-8");
       const normalizedContent = normalizeContent(content);
 
       // Parse frontmatter
@@ -241,15 +233,15 @@ async function convertAgentFiles(agentsDir: string): Promise<void> {
       // Build Claude agent config from frontmatter
       // Note: Claude tools/disallowedTools/skills can be comma-separated strings like 'Glob, Grep, Read'
       const claudeAgent: ClaudeAgentConfig = {
-        name: String(frontmatter['name'] || ''),
-        description: String(frontmatter['description'] || ''),
-        tools: parseStringOrArray(frontmatter['tools']),
-        disallowedTools: parseStringOrArray(frontmatter['disallowedTools']),
-        model: frontmatter['model'] as string | undefined,
-        permissionMode: frontmatter['permissionMode'] as string | undefined,
-        skills: parseStringOrArray(frontmatter['skills']),
-        hooks: frontmatter['hooks'],
-        color: frontmatter['color'] as string | undefined,
+        name: String(frontmatter["name"] || ""),
+        description: String(frontmatter["description"] || ""),
+        tools: parseStringOrArray(frontmatter["tools"]),
+        disallowedTools: parseStringOrArray(frontmatter["disallowedTools"]),
+        model: frontmatter["model"] as string | undefined,
+        permissionMode: frontmatter["permissionMode"] as string | undefined,
+        skills: parseStringOrArray(frontmatter["skills"]),
+        hooks: frontmatter["hooks"],
+        color: frontmatter["color"] as string | undefined,
         systemPrompt: body.trim(),
       };
 
@@ -259,14 +251,14 @@ async function convertAgentFiles(agentsDir: string): Promise<void> {
       // Build new frontmatter (excluding systemPrompt as it goes in body)
       const newFrontmatter: Record<string, unknown> = {};
       for (const [key, value] of Object.entries(qwenAgent)) {
-        if (key !== 'systemPrompt' && value !== undefined) {
+        if (key !== "systemPrompt" && value !== undefined) {
           newFrontmatter[key] = value;
         }
       }
 
       // Write converted content back
       const newYaml = stringifyYaml(newFrontmatter);
-      const systemPrompt = (qwenAgent['systemPrompt'] as string) || body.trim();
+      const systemPrompt = (qwenAgent["systemPrompt"] as string) || body.trim();
       const newContent = `---
 ${newYaml}
 ---
@@ -274,7 +266,7 @@ ${newYaml}
 ${systemPrompt}
 `;
 
-      await fs.promises.writeFile(filePath, newContent, 'utf-8');
+      await fs.promises.writeFile(filePath, newContent, "utf-8");
     } catch (error) {
       debugLogger.warn(
         `[Claude Converter] Failed to convert agent file ${filePath}: ${error instanceof Error ? error.message : String(error)}`,
@@ -288,18 +280,16 @@ ${systemPrompt}
  * @param claudeConfig Claude plugin configuration
  * @returns Qwen ExtensionConfig
  */
-export function convertClaudeToQwenConfig(
-  claudeConfig: ClaudePluginConfig,
-): ExtensionConfig {
+export function convertClaudeToQwenConfig(claudeConfig: ClaudePluginConfig): ExtensionConfig {
   // Validate required fields
   if (!claudeConfig.name) {
-    throw new Error('Claude plugin config must have name field');
+    throw new Error("Claude plugin config must have name field");
   }
 
   // Parse MCP servers
   let mcpServers: Record<string, MCPServerConfig> | undefined;
   if (claudeConfig.mcpServers) {
-    if (typeof claudeConfig.mcpServers === 'string') {
+    if (typeof claudeConfig.mcpServers === "string") {
       // TODO: Load from file path
       debugLogger.warn(
         `[Claude Converter] MCP servers path not yet supported: ${claudeConfig.mcpServers}`,
@@ -312,7 +302,7 @@ export function convertClaudeToQwenConfig(
   // Parse hooks
   let hooks: { [K in HookEventName]?: HookDefinition[] } | undefined;
   if (claudeConfig.hooks) {
-    if (typeof claudeConfig.hooks === 'string') {
+    if (typeof claudeConfig.hooks === "string") {
       // If it's a string, it's a file path, we handle it later in the conversion process
       // hooks will be loaded from file path in the convertClaudePluginPackage function
     } else {
@@ -352,25 +342,16 @@ export async function convertClaudePluginPackage(
   pluginName: string,
 ): Promise<{ config: ExtensionConfig; convertedDir: string }> {
   // Step 1: Load marketplace.json
-  const marketplaceJsonPath = path.join(
-    extensionDir,
-    '.claude-plugin',
-    'marketplace.json',
-  );
+  const marketplaceJsonPath = path.join(extensionDir, ".claude-plugin", "marketplace.json");
   if (!fs.existsSync(marketplaceJsonPath)) {
-    throw new Error(
-      `Marketplace configuration not found at ${marketplaceJsonPath}`,
-    );
+    throw new Error(`Marketplace configuration not found at ${marketplaceJsonPath}`);
   }
 
-  const marketplaceContent = fs.readFileSync(marketplaceJsonPath, 'utf-8');
-  const marketplaceConfig: ClaudeMarketplaceConfig =
-    JSON.parse(marketplaceContent);
+  const marketplaceContent = fs.readFileSync(marketplaceJsonPath, "utf-8");
+  const marketplaceConfig: ClaudeMarketplaceConfig = JSON.parse(marketplaceContent);
 
   // Find the target plugin in marketplace
-  const marketplacePlugin = marketplaceConfig.plugins.find(
-    (p) => p.name === pluginName,
-  );
+  const marketplacePlugin = marketplaceConfig.plugins.find((p) => p.name === pluginName);
   if (!marketplacePlugin) {
     throw new Error(`Plugin ${pluginName} not found in marketplace.json`);
   }
@@ -378,15 +359,11 @@ export async function convertClaudePluginPackage(
   // Step 2: Resolve plugin source directory based on source field
   const pluginDir = path.join(
     extensionDir,
-    `plugin${createHash('sha256').update(`${extensionDir}/${pluginName}`).digest('hex')}`,
+    `plugin${createHash("sha256").update(`${extensionDir}/${pluginName}`).digest("hex")}`,
   );
   await fs.promises.mkdir(pluginDir, { recursive: true });
 
-  const pluginSource = await resolvePluginSource(
-    marketplacePlugin,
-    extensionDir,
-    pluginDir,
-  );
+  const pluginSource = await resolvePluginSource(marketplacePlugin, extensionDir, pluginDir);
 
   if (!fs.existsSync(pluginSource)) {
     throw new Error(`Plugin source directory not found: ${pluginSource}`);
@@ -396,16 +373,12 @@ export async function convertClaudePluginPackage(
   const strict = marketplacePlugin.strict ?? false;
   let mergedConfig: ClaudePluginConfig;
 
-  const pluginJsonPath = path.join(
-    pluginSource,
-    '.claude-plugin',
-    'plugin.json',
-  );
+  const pluginJsonPath = path.join(pluginSource, ".claude-plugin", "plugin.json");
   if (strict && !fs.existsSync(pluginJsonPath)) {
     throw new Error(`Strict mode requires plugin.json at ${pluginJsonPath}`);
   }
   if (fs.existsSync(pluginJsonPath)) {
-    const pluginContent = fs.readFileSync(pluginJsonPath, 'utf-8');
+    const pluginContent = fs.readFileSync(pluginJsonPath, "utf-8");
     const pluginConfig: ClaudePluginConfig = JSON.parse(pluginContent);
     mergedConfig = mergeClaudeConfigs(marketplacePlugin, pluginConfig);
   } else {
@@ -413,18 +386,15 @@ export async function convertClaudePluginPackage(
   }
 
   // Step 4: Resolve MCP servers from JSON files if needed
-  if (mergedConfig.mcpServers && typeof mergedConfig.mcpServers === 'string') {
+  if (mergedConfig.mcpServers && typeof mergedConfig.mcpServers === "string") {
     const mcpServersPath = path.isAbsolute(mergedConfig.mcpServers)
       ? mergedConfig.mcpServers
       : path.join(pluginSource, mergedConfig.mcpServers);
 
     if (fs.existsSync(mcpServersPath)) {
       try {
-        const mcpContent = fs.readFileSync(mcpServersPath, 'utf-8');
-        mergedConfig.mcpServers = JSON.parse(mcpContent) as Record<
-          string,
-          MCPServerConfig
-        >;
+        const mcpContent = fs.readFileSync(mcpServersPath, "utf-8");
+        mergedConfig.mcpServers = JSON.parse(mcpContent) as Record<string, MCPServerConfig>;
       } catch (error) {
         debugLogger.warn(
           `Failed to parse MCP servers file ${mcpServersPath}: ${error instanceof Error ? error.message : String(error)}`,
@@ -444,9 +414,9 @@ export async function convertClaudePluginPackage(
     // If configuration specifies resources, only collect those
     // If configuration doesn't specify, keep the existing folder (if exists)
     const resourceConfigs = [
-      { name: 'commands', config: mergedConfig.commands },
-      { name: 'skills', config: mergedConfig.skills },
-      { name: 'agents', config: mergedConfig.agents },
+      { name: "commands", config: mergedConfig.commands },
+      { name: "skills", config: mergedConfig.skills },
+      { name: "agents", config: mergedConfig.agents },
     ];
 
     for (const { name, config } of resourceConfigs) {
@@ -469,20 +439,20 @@ export async function convertClaudePluginPackage(
     }
 
     // Step 7: Handle hooks from file paths if needed
-    if (mergedConfig.hooks && typeof mergedConfig.hooks === 'string') {
+    if (mergedConfig.hooks && typeof mergedConfig.hooks === "string") {
       const hooksPath = path.isAbsolute(mergedConfig.hooks)
         ? mergedConfig.hooks
         : path.join(pluginSource, mergedConfig.hooks);
 
       if (fs.existsSync(hooksPath)) {
         try {
-          const hooksContent = fs.readFileSync(hooksPath, 'utf-8');
+          const hooksContent = fs.readFileSync(hooksPath, "utf-8");
           const parsedHooks = JSON.parse(hooksContent);
 
           // Check if the file has a top-level "hooks" property (like Claude plugins use)
           // or if the entire file content is the hooks object
           let hooksData;
-          if (parsedHooks.hooks && typeof parsedHooks.hooks === 'object') {
+          if (parsedHooks.hooks && typeof parsedHooks.hooks === "object") {
             hooksData = parsedHooks.hooks as {
               [K in HookEventName]?: HookDefinition[];
             };
@@ -504,19 +474,15 @@ export async function convertClaudePluginPackage(
     }
 
     // Step 9: Convert collected agent files from Claude format to Qwen format
-    const agentsDestDir = path.join(tmpDir, 'agents');
+    const agentsDestDir = path.join(tmpDir, "agents");
     await convertAgentFiles(agentsDestDir);
 
     // Step 10: Convert to Qwen format config
     const qwenConfig = convertClaudeToQwenConfig(mergedConfig);
 
     // Step 11: Write qwen-extension.json
-    const qwenConfigPath = path.join(tmpDir, 'qwen-extension.json');
-    fs.writeFileSync(
-      qwenConfigPath,
-      JSON.stringify(qwenConfig, null, 2),
-      'utf-8',
-    );
+    const qwenConfigPath = path.join(tmpDir, "qwen-extension.json");
+    fs.writeFileSync(qwenConfigPath, JSON.stringify(qwenConfig, null, 2), "utf-8");
 
     return {
       config: qwenConfig,
@@ -575,9 +541,7 @@ async function collectResources(
       // If the directory is already named as the destination folder (e.g., 'commands')
       // and it's at the plugin root level, skip it
       if (dirName === destFolderName && parentDir === pluginRoot) {
-        debugLogger.debug(
-          `Skipping ${resolvedPath} as it's already in the correct location`,
-        );
+        debugLogger.debug(`Skipping ${resolvedPath} as it's already in the correct location`);
         continue;
       }
 
@@ -586,7 +550,7 @@ async function collectResources(
       const finalDestDir = path.join(destDir, dirName);
 
       // Copy all files from the directory
-      const files = await glob('**/*', {
+      const files = await glob("**/*", {
         cwd: resolvedPath,
         nodir: true,
         dot: false,
@@ -624,9 +588,7 @@ async function collectResources(
       // e.g., 'commands/test1.md' or 'commands/me/test.md' should be skipped
       const segments = relativePath.split(path.sep);
       if (segments.length > 0 && segments[0] === destFolderName) {
-        debugLogger.debug(
-          `Skipping ${resolvedPath} as it's already in ${destFolderName}/`,
-        );
+        debugLogger.debug(`Skipping ${resolvedPath} as it's already in ${destFolderName}/`);
         continue;
       }
 
@@ -650,9 +612,7 @@ export function mergeClaudeConfigs(
   pluginConfig?: ClaudePluginConfig,
 ): ClaudePluginConfig {
   if (!pluginConfig && marketplacePlugin.strict === true) {
-    throw new Error(
-      `Plugin ${marketplacePlugin.name} requires plugin.json (strict mode)`,
-    );
+    throw new Error(`Plugin ${marketplacePlugin.name} requires plugin.json (strict mode)`);
   }
 
   // Start with plugin.json config (if exists)
@@ -660,30 +620,25 @@ export function mergeClaudeConfigs(
     ? { ...pluginConfig }
     : {
         name: marketplacePlugin.name,
-        version: '1.0.0', // Default version if not in marketplace
+        version: "1.0.0", // Default version if not in marketplace
       };
 
   // Overlay marketplace config (takes precedence)
   if (marketplacePlugin.name) merged.name = marketplacePlugin.name;
   if (marketplacePlugin.version) merged.version = marketplacePlugin.version;
-  if (marketplacePlugin.description)
-    merged.description = marketplacePlugin.description;
+  if (marketplacePlugin.description) merged.description = marketplacePlugin.description;
   if (marketplacePlugin.author) merged.author = marketplacePlugin.author;
   if (marketplacePlugin.homepage) merged.homepage = marketplacePlugin.homepage;
-  if (marketplacePlugin.repository)
-    merged.repository = marketplacePlugin.repository;
+  if (marketplacePlugin.repository) merged.repository = marketplacePlugin.repository;
   if (marketplacePlugin.license) merged.license = marketplacePlugin.license;
   if (marketplacePlugin.keywords) merged.keywords = marketplacePlugin.keywords;
   if (marketplacePlugin.commands) merged.commands = marketplacePlugin.commands;
   if (marketplacePlugin.agents) merged.agents = marketplacePlugin.agents;
   if (marketplacePlugin.skills) merged.skills = marketplacePlugin.skills;
   if (marketplacePlugin.hooks) merged.hooks = marketplacePlugin.hooks;
-  if (marketplacePlugin.mcpServers)
-    merged.mcpServers = marketplacePlugin.mcpServers;
-  if (marketplacePlugin.outputStyles)
-    merged.outputStyles = marketplacePlugin.outputStyles;
-  if (marketplacePlugin.lspServers)
-    merged.lspServers = marketplacePlugin.lspServers;
+  if (marketplacePlugin.mcpServers) merged.mcpServers = marketplacePlugin.mcpServers;
+  if (marketplacePlugin.outputStyles) merged.outputStyles = marketplacePlugin.outputStyles;
+  if (marketplacePlugin.lspServers) merged.lspServers = marketplacePlugin.lspServers;
 
   return merged;
 }
@@ -697,21 +652,15 @@ export function isClaudePluginConfig(
   extensionDir: string,
   marketplace: { marketplaceSource: string; pluginName: string },
 ) {
-  const marketplaceConfigFilePath = path.join(
-    extensionDir,
-    '.claude-plugin/marketplace.json',
-  );
+  const marketplaceConfigFilePath = path.join(extensionDir, ".claude-plugin/marketplace.json");
   if (!fs.existsSync(marketplaceConfigFilePath)) {
     return false;
   }
 
-  const marketplaceConfigContent = fs.readFileSync(
-    marketplaceConfigFilePath,
-    'utf-8',
-  );
+  const marketplaceConfigContent = fs.readFileSync(marketplaceConfigFilePath, "utf-8");
   const marketplaceConfig = JSON.parse(marketplaceConfigContent);
 
-  if (typeof marketplaceConfig !== 'object' || marketplaceConfig === null) {
+  if (typeof marketplaceConfig !== "object" || marketplaceConfig === null) {
     return false;
   }
 
@@ -719,19 +668,18 @@ export function isClaudePluginConfig(
 
   // Must have name and owner
   if (
-    typeof marketplaceConfigObj['name'] !== 'string' ||
-    typeof marketplaceConfigObj['owner'] !== 'object'
+    typeof marketplaceConfigObj["name"] !== "string" ||
+    typeof marketplaceConfigObj["owner"] !== "object"
   ) {
     return false;
   }
 
-  if (!Array.isArray(marketplaceConfigObj['plugins'])) {
+  if (!Array.isArray(marketplaceConfigObj["plugins"])) {
     return false;
   }
 
-  const marketplacePluginObj = marketplaceConfigObj['plugins'].find(
-    (plugin: ClaudeMarketplacePluginConfig) =>
-      plugin.name === marketplace.pluginName,
+  const marketplacePluginObj = marketplaceConfigObj["plugins"].find(
+    (plugin: ClaudeMarketplacePluginConfig) => plugin.name === marketplace.pluginName,
   );
 
   if (!marketplacePluginObj) return false;
@@ -751,14 +699,14 @@ async function resolvePluginSource(
   const source = pluginConfig.source;
 
   // Handle string source (relative path or URL)
-  if (typeof source === 'string') {
+  if (typeof source === "string") {
     // Check if it's a URL
-    if (source.startsWith('http://') || source.startsWith('https://')) {
+    if (source.startsWith("http://") || source.startsWith("https://")) {
       // Download from URL
       const installMetadata: ExtensionInstallMetadata = {
         source,
-        type: 'git',
-        originSource: 'Claude',
+        type: "git",
+        originSource: "Claude",
       };
       try {
         await downloadFromGitHubRelease(installMetadata, pluginDir);
@@ -788,10 +736,10 @@ async function resolvePluginSource(
   }
 
   // Handle object source (github or url)
-  if (source.source === 'github') {
+  if (source.source === "github") {
     const installMetadata: ExtensionInstallMetadata = {
       source: `https://github.com/${source.repo}`,
-      type: 'git',
+      type: "git",
     };
     try {
       await downloadFromGitHubRelease(installMetadata, pluginDir);
@@ -801,10 +749,10 @@ async function resolvePluginSource(
     return pluginDir;
   }
 
-  if (source.source === 'url') {
+  if (source.source === "url") {
     const installMetadata: ExtensionInstallMetadata = {
       source: source.url,
-      type: 'git',
+      type: "git",
     };
     try {
       await downloadFromGitHubRelease(installMetadata, pluginDir);

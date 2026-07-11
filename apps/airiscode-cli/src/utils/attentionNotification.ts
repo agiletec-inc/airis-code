@@ -4,21 +4,21 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import process from 'node:process';
-import { createDebugLogger } from '@airiscode/runtime';
+import process from "node:process";
+import { createDebugLogger } from "@airiscode/runtime";
 
 export enum AttentionNotificationReason {
-  ToolApproval = 'tool_approval',
-  LongTaskComplete = 'long_task_complete',
+  ToolApproval = "tool_approval",
+  LongTaskComplete = "long_task_complete",
 }
 
 export interface TerminalNotificationOptions {
-  stream?: Pick<NodeJS.WriteStream, 'write' | 'isTTY'>;
+  stream?: Pick<NodeJS.WriteStream, "write" | "isTTY">;
   enabled?: boolean;
 }
 
-const TERMINAL_BELL = '\u0007';
-const debugLogger = createDebugLogger('ATTENTION_NOTIFICATION');
+const TERMINAL_BELL = "\u0007";
+const debugLogger = createDebugLogger("ATTENTION_NOTIFICATION");
 
 /**
  * Grabs the user's attention by emitting the terminal bell character.
@@ -45,7 +45,7 @@ export function notifyTerminalAttention(
     stream.write(TERMINAL_BELL);
     return true;
   } catch (error) {
-    debugLogger.warn('Failed to send terminal bell:', error);
+    debugLogger.warn("Failed to send terminal bell:", error);
     return false;
   }
 }

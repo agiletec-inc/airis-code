@@ -65,7 +65,7 @@ export interface McpServerInfo {
   /** Available tools count */
   toolCount: number;
   /** Server status */
-  status: 'online' | 'offline' | 'error';
+  status: "online" | "offline" | "error";
 }
 
 /**

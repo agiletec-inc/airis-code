@@ -4,37 +4,34 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { useState, useCallback, useMemo, useEffect } from 'react';
-import { Box, Text } from 'ink';
-import { AgentSelectionStep } from './AgentSelectionStep.js';
-import { ActionSelectionStep } from './ActionSelectionStep.js';
-import { AgentViewerStep } from './AgentViewerStep.js';
-import { EditOptionsStep } from './AgentEditStep.js';
-import { AgentDeleteStep } from './AgentDeleteStep.js';
-import { ToolSelector } from '../create/ToolSelector.js';
-import { ColorSelector } from '../create/ColorSelector.js';
-import { MANAGEMENT_STEPS } from '../types.js';
-import { theme } from '../../../semantic-colors.js';
-import { getColorForDisplay, shouldShowColor } from '../utils.js';
-import type { SubagentConfig, Config } from '@airiscode/runtime';
-import { createDebugLogger } from '@airiscode/runtime';
-import { useKeypress } from '../../../hooks/useKeypress.js';
-import { t } from '../../../../i18n/index.js';
+import type { Config, SubagentConfig } from "@airiscode/runtime";
+import { createDebugLogger } from "@airiscode/runtime";
+import { Box, Text } from "ink";
+import { useCallback, useEffect, useMemo, useState } from "react";
+import { t } from "../../../../i18n/index.js";
+import { useKeypress } from "../../../hooks/useKeypress.js";
+import { theme } from "../../../semantic-colors.js";
+import { ColorSelector } from "../create/ColorSelector.js";
+import { ToolSelector } from "../create/ToolSelector.js";
+import { MANAGEMENT_STEPS } from "../types.js";
+import { getColorForDisplay, shouldShowColor } from "../utils.js";
+import { ActionSelectionStep } from "./ActionSelectionStep.js";
+import { AgentDeleteStep } from "./AgentDeleteStep.js";
+import { EditOptionsStep } from "./AgentEditStep.js";
+import { AgentSelectionStep } from "./AgentSelectionStep.js";
+import { AgentViewerStep } from "./AgentViewerStep.js";
 
 interface AgentsManagerDialogProps {
   onClose: () => void;
   config: Config | null;
 }
 
-const debugLogger = createDebugLogger('AGENTS_MANAGER_DIALOG');
+const debugLogger = createDebugLogger("AGENTS_MANAGER_DIALOG");
 
 /**
  * Main orchestrator component for the agents management dialog.
  */
-export function AgentsManagerDialog({
-  onClose,
-  config,
-}: AgentsManagerDialogProps) {
+export function AgentsManagerDialog({ onClose, config }: AgentsManagerDialogProps) {
   // Simple state management with useState hooks
   const [availableAgents, setAvailableAgents] = useState<SubagentConfig[]>([]);
   const [selectedAgentIndex, setSelectedAgentIndex] = useState<number>(-1);
@@ -44,8 +41,7 @@ export function AgentsManagerDialog({
 
   // Memoized selectedAgent based on index
   const selectedAgent = useMemo(
-    () =>
-      selectedAgentIndex >= 0 ? availableAgents[selectedAgentIndex] : null,
+    () => (selectedAgentIndex >= 0 ? availableAgents[selectedAgentIndex] : null),
     [availableAgents, selectedAgentIndex],
   );
 
@@ -68,9 +64,7 @@ export function AgentsManagerDialog({
 
   // Helper to get current step
   const getCurrentStep = useCallback(
-    () =>
-      navigationStack[navigationStack.length - 1] ||
-      MANAGEMENT_STEPS.AGENT_SELECTION,
+    () => navigationStack[navigationStack.length - 1] || MANAGEMENT_STEPS.AGENT_SELECTION,
     [navigationStack],
   );
 
@@ -98,11 +92,7 @@ export function AgentsManagerDialog({
 
       try {
         const subagentManager = config.getSubagentManager();
-        await subagentManager.deleteSubagent(
-          agent.name,
-          agent.level,
-          agent.extensionName,
-        );
+        await subagentManager.deleteSubagent(agent.name, agent.level, agent.extensionName);
 
         // Reload agents to get updated state
         await loadAgents();
@@ -111,7 +101,7 @@ export function AgentsManagerDialog({
         setNavigationStack([MANAGEMENT_STEPS.AGENT_SELECTION]);
         setSelectedAgentIndex(-1);
       } catch (error) {
-        debugLogger.error('Failed to delete agent:', error);
+        debugLogger.error("Failed to delete agent:", error);
         throw error; // Re-throw to let the component handle the error state
       }
     },
@@ -121,7 +111,7 @@ export function AgentsManagerDialog({
   // Centralized ESC key handling for the entire dialog
   useKeypress(
     (key) => {
-      if (key.name !== 'escape') {
+      if (key.name !== "escape") {
         return;
       }
 
@@ -151,21 +141,21 @@ export function AgentsManagerDialog({
     const getStepHeaderText = () => {
       switch (currentStep) {
         case MANAGEMENT_STEPS.AGENT_SELECTION:
-          return t('Agents');
+          return t("Agents");
         case MANAGEMENT_STEPS.ACTION_SELECTION:
-          return t('Choose Action');
+          return t("Choose Action");
         case MANAGEMENT_STEPS.AGENT_VIEWER:
           return selectedAgent?.name;
         case MANAGEMENT_STEPS.EDIT_OPTIONS:
-          return t('Edit {{name}}', { name: selectedAgent?.name || '' });
+          return t("Edit {{name}}", { name: selectedAgent?.name || "" });
         case MANAGEMENT_STEPS.EDIT_TOOLS:
-          return t('Edit Tools: {{name}}', { name: selectedAgent?.name || '' });
+          return t("Edit Tools: {{name}}", { name: selectedAgent?.name || "" });
         case MANAGEMENT_STEPS.EDIT_COLOR:
-          return t('Edit Color: {{name}}', { name: selectedAgent?.name || '' });
+          return t("Edit Color: {{name}}", { name: selectedAgent?.name || "" });
         case MANAGEMENT_STEPS.DELETE_CONFIRMATION:
-          return t('Delete {{name}}', { name: selectedAgent?.name || '' });
+          return t("Delete {{name}}", { name: selectedAgent?.name || "" });
         default:
-          return t('Unknown Step');
+          return t("Unknown Step");
       }
     };
 
@@ -191,20 +181,20 @@ export function AgentsManagerDialog({
     const getNavigationInstructions = () => {
       if (currentStep === MANAGEMENT_STEPS.AGENT_SELECTION) {
         if (availableAgents.length === 0) {
-          return t('Esc to close');
+          return t("Esc to close");
         }
-        return t('Enter to select, ↑↓ to navigate, Esc to close');
+        return t("Enter to select, ↑↓ to navigate, Esc to close");
       }
 
       if (currentStep === MANAGEMENT_STEPS.AGENT_VIEWER) {
-        return t('Esc to go back');
+        return t("Esc to go back");
       }
 
       if (currentStep === MANAGEMENT_STEPS.DELETE_CONFIRMATION) {
-        return t('Enter to confirm, Esc to cancel');
+        return t("Enter to confirm, Esc to cancel");
       }
 
-      return t('Enter to select, ↑↓ to navigate, Esc to go back');
+      return t("Enter to select, ↑↓ to navigate, Esc to go back");
     };
 
     return (
@@ -226,17 +216,11 @@ export function AgentsManagerDialog({
           />
         );
       case MANAGEMENT_STEPS.ACTION_SELECTION:
-        return (
-          <ActionSelectionStep selectedAgent={selectedAgent} {...commonProps} />
-        );
+        return <ActionSelectionStep selectedAgent={selectedAgent} {...commonProps} />;
       case MANAGEMENT_STEPS.AGENT_VIEWER:
-        return (
-          <AgentViewerStep selectedAgent={selectedAgent} {...commonProps} />
-        );
+        return <AgentViewerStep selectedAgent={selectedAgent} {...commonProps} />;
       case MANAGEMENT_STEPS.EDIT_OPTIONS:
-        return (
-          <EditOptionsStep selectedAgent={selectedAgent} {...commonProps} />
-        );
+        return <EditOptionsStep selectedAgent={selectedAgent} {...commonProps} />;
       case MANAGEMENT_STEPS.EDIT_TOOLS:
         return (
           <Box flexDirection="column" gap={1}>
@@ -256,7 +240,7 @@ export function AgentsManagerDialog({
                     await loadAgents();
                     handleNavigateBack();
                   } catch (error) {
-                    debugLogger.error('Failed to save agent changes:', error);
+                    debugLogger.error("Failed to save agent changes:", error);
                   }
                 }
               }}
@@ -268,8 +252,8 @@ export function AgentsManagerDialog({
         return (
           <Box flexDirection="column" gap={1}>
             <ColorSelector
-              color={selectedAgent?.color || 'auto'}
-              agentName={selectedAgent?.name || 'Agent'}
+              color={selectedAgent?.color || "auto"}
+              agentName={selectedAgent?.name || "Agent"}
               onSelect={async (color) => {
                 // Save changes and reload agents
                 if (selectedAgent && config) {
@@ -285,7 +269,7 @@ export function AgentsManagerDialog({
                     await loadAgents();
                     handleNavigateBack();
                   } catch (error) {
-                    debugLogger.error('Failed to save color changes:', error);
+                    debugLogger.error("Failed to save color changes:", error);
                   }
                 }
               }}
@@ -304,7 +288,7 @@ export function AgentsManagerDialog({
         return (
           <Box>
             <Text color={theme.status.error}>
-              {t('Invalid step: {{step}}', { step: currentStep })}
+              {t("Invalid step: {{step}}", { step: currentStep })}
             </Text>
           </Box>
         );

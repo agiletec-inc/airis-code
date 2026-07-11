@@ -4,52 +4,49 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { vi, describe, it, expect, beforeEach, type Mock } from 'vitest';
-import { listMcpServers } from './list.js';
-import { loadSettings } from '../../config/settings.js';
-import { createTransport, debugLogger } from '@airiscode/gemini-cli-core';
-import { Client } from '@modelcontextprotocol/sdk/client/index.js';
-import { ExtensionStorage } from '../../config/extensions/storage.js';
-import { ExtensionManager } from '../../config/extension-manager.js';
+import { createTransport, debugLogger } from "@airiscode/gemini-cli-core";
+import { Client } from "@modelcontextprotocol/sdk/client/index.js";
+import { beforeEach, describe, expect, it, type Mock, vi } from "vitest";
+import { ExtensionManager } from "../../config/extension-manager.js";
+import { ExtensionStorage } from "../../config/extensions/storage.js";
+import { loadSettings } from "../../config/settings.js";
+import { listMcpServers } from "./list.js";
 
-vi.mock('../../config/settings.js', () => ({
+vi.mock("../../config/settings.js", () => ({
   loadSettings: vi.fn(),
 }));
-vi.mock('../../config/extensions/storage.js', () => ({
+vi.mock("../../config/extensions/storage.js", () => ({
   ExtensionStorage: {
     getUserExtensionsDir: vi.fn(),
   },
 }));
-vi.mock('../../config/extension-manager.js');
-vi.mock('@airiscode/gemini-cli-core', async (importOriginal) => {
-  const original =
-    await importOriginal<typeof import('@airiscode/gemini-cli-core')>();
+vi.mock("../../config/extension-manager.js");
+vi.mock("@airiscode/gemini-cli-core", async (importOriginal) => {
+  const original = await importOriginal<typeof import("@airiscode/gemini-cli-core")>();
   return {
     ...original,
     createTransport: vi.fn(),
     MCPServerStatus: {
-      CONNECTED: 'CONNECTED',
-      CONNECTING: 'CONNECTING',
-      DISCONNECTED: 'DISCONNECTED',
+      CONNECTED: "CONNECTED",
+      CONNECTING: "CONNECTING",
+      DISCONNECTED: "DISCONNECTED",
     },
     Storage: vi.fn().mockImplementation((_cwd: string) => ({
-      getGlobalSettingsPath: () => '/tmp/gemini/settings.json',
-      getWorkspaceSettingsPath: () => '/tmp/gemini/workspace-settings.json',
-      getProjectTempDir: () => '/test/home/.gemini/tmp/mocked_hash',
+      getGlobalSettingsPath: () => "/tmp/gemini/settings.json",
+      getWorkspaceSettingsPath: () => "/tmp/gemini/workspace-settings.json",
+      getProjectTempDir: () => "/test/home/.gemini/tmp/mocked_hash",
     })),
-    GEMINI_DIR: '.gemini',
-    getErrorMessage: (e: unknown) =>
-      e instanceof Error ? e.message : String(e),
+    GEMINI_DIR: ".gemini",
+    getErrorMessage: (e: unknown) => (e instanceof Error ? e.message : String(e)),
   };
 });
-vi.mock('@modelcontextprotocol/sdk/client/index.js');
+vi.mock("@modelcontextprotocol/sdk/client/index.js");
 
-vi.mock('../utils.js', () => ({
+vi.mock("../utils.js", () => ({
   exitCli: vi.fn(),
 }));
 
-const mockedGetUserExtensionsDir =
-  ExtensionStorage.getUserExtensionsDir as Mock;
+const mockedGetUserExtensionsDir = ExtensionStorage.getUserExtensionsDir as Mock;
 const mockedLoadSettings = loadSettings as Mock;
 const mockedCreateTransport = createTransport as Mock;
 const MockedClient = Client as Mock;
@@ -69,14 +66,14 @@ interface MockTransport {
   close: Mock;
 }
 
-describe('mcp list command', () => {
+describe("mcp list command", () => {
   let mockClient: MockClient;
   let mockExtensionManager: MockExtensionManager;
   let mockTransport: MockTransport;
 
   beforeEach(() => {
     vi.resetAllMocks();
-    vi.spyOn(debugLogger, 'log').mockImplementation(() => {});
+    vi.spyOn(debugLogger, "log").mockImplementation(() => {});
 
     mockTransport = { close: vi.fn() };
     mockClient = {
@@ -92,24 +89,24 @@ describe('mcp list command', () => {
     MockedExtensionManager.mockImplementation(() => mockExtensionManager);
     mockedCreateTransport.mockResolvedValue(mockTransport);
     mockExtensionManager.loadExtensions.mockReturnValue([]);
-    mockedGetUserExtensionsDir.mockReturnValue('/mocked/extensions/dir');
+    mockedGetUserExtensionsDir.mockReturnValue("/mocked/extensions/dir");
   });
 
-  it('should display message when no servers configured', async () => {
+  it("should display message when no servers configured", async () => {
     mockedLoadSettings.mockReturnValue({ merged: { mcpServers: {} } });
 
     await listMcpServers();
 
-    expect(debugLogger.log).toHaveBeenCalledWith('No MCP servers configured.');
+    expect(debugLogger.log).toHaveBeenCalledWith("No MCP servers configured.");
   });
 
-  it('should display different server types with connected status', async () => {
+  it("should display different server types with connected status", async () => {
     mockedLoadSettings.mockReturnValue({
       merged: {
         mcpServers: {
-          'stdio-server': { command: '/path/to/server', args: ['arg1'] },
-          'sse-server': { url: 'https://example.com/sse' },
-          'http-server': { httpUrl: 'https://example.com/http' },
+          "stdio-server": { command: "/path/to/server", args: ["arg1"] },
+          "sse-server": { url: "https://example.com/sse" },
+          "http-server": { httpUrl: "https://example.com/http" },
         },
       },
     });
@@ -119,55 +116,47 @@ describe('mcp list command', () => {
 
     await listMcpServers();
 
-    expect(debugLogger.log).toHaveBeenCalledWith('Configured MCP servers:\n');
+    expect(debugLogger.log).toHaveBeenCalledWith("Configured MCP servers:\n");
     expect(debugLogger.log).toHaveBeenCalledWith(
-      expect.stringContaining(
-        'stdio-server: /path/to/server arg1 (stdio) - Connected',
-      ),
+      expect.stringContaining("stdio-server: /path/to/server arg1 (stdio) - Connected"),
     );
     expect(debugLogger.log).toHaveBeenCalledWith(
-      expect.stringContaining(
-        'sse-server: https://example.com/sse (sse) - Connected',
-      ),
+      expect.stringContaining("sse-server: https://example.com/sse (sse) - Connected"),
     );
     expect(debugLogger.log).toHaveBeenCalledWith(
-      expect.stringContaining(
-        'http-server: https://example.com/http (http) - Connected',
-      ),
+      expect.stringContaining("http-server: https://example.com/http (http) - Connected"),
     );
   });
 
-  it('should display disconnected status when connection fails', async () => {
+  it("should display disconnected status when connection fails", async () => {
     mockedLoadSettings.mockReturnValue({
       merged: {
         mcpServers: {
-          'test-server': { command: '/test/server' },
+          "test-server": { command: "/test/server" },
         },
       },
     });
 
-    mockClient.connect.mockRejectedValue(new Error('Connection failed'));
+    mockClient.connect.mockRejectedValue(new Error("Connection failed"));
 
     await listMcpServers();
 
     expect(debugLogger.log).toHaveBeenCalledWith(
-      expect.stringContaining(
-        'test-server: /test/server  (stdio) - Disconnected',
-      ),
+      expect.stringContaining("test-server: /test/server  (stdio) - Disconnected"),
     );
   });
 
-  it('should merge extension servers with config servers', async () => {
+  it("should merge extension servers with config servers", async () => {
     mockedLoadSettings.mockReturnValue({
       merged: {
-        mcpServers: { 'config-server': { command: '/config/server' } },
+        mcpServers: { "config-server": { command: "/config/server" } },
       },
     });
 
     mockExtensionManager.loadExtensions.mockReturnValue([
       {
-        name: 'test-extension',
-        mcpServers: { 'extension-server': { command: '/ext/server' } },
+        name: "test-extension",
+        mcpServers: { "extension-server": { command: "/ext/server" } },
       },
     ]);
 
@@ -177,13 +166,11 @@ describe('mcp list command', () => {
     await listMcpServers();
 
     expect(debugLogger.log).toHaveBeenCalledWith(
-      expect.stringContaining(
-        'config-server: /config/server  (stdio) - Connected',
-      ),
+      expect.stringContaining("config-server: /config/server  (stdio) - Connected"),
     );
     expect(debugLogger.log).toHaveBeenCalledWith(
       expect.stringContaining(
-        'extension-server (from test-extension): /ext/server  (stdio) - Connected',
+        "extension-server (from test-extension): /ext/server  (stdio) - Connected",
       ),
     );
   });

@@ -13,18 +13,14 @@
  *   outside the main app.
  */
 
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import type {
-  ListSessionsResult,
-  SessionListItem,
-  SessionService,
-} from '@airiscode/runtime';
+import type { ListSessionsResult, SessionListItem, SessionService } from "@airiscode/runtime";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   filterSessions,
   SESSION_PAGE_SIZE,
   type SessionState,
-} from '../utils/sessionPickerUtils.js';
-import { useKeypress } from './useKeypress.js';
+} from "../utils/sessionPickerUtils.js";
+import { useKeypress } from "./useKeypress.js";
 
 export interface UseSessionPickerOptions {
   sessionService: SessionService | null;
@@ -109,8 +105,7 @@ export function useSessionPicker({
     [filteredSessions, maxVisibleItems, scrollOffset],
   );
   const showScrollUp = scrollOffset > 0;
-  const showScrollDown =
-    scrollOffset + maxVisibleItems < filteredSessions.length;
+  const showScrollDown = scrollOffset + maxVisibleItems < filteredSessions.length;
 
   // Initial load
   useEffect(() => {
@@ -165,27 +160,18 @@ export function useSessionPicker({
 
   // Ensure selectedIndex is valid when filtered sessions change
   useEffect(() => {
-    if (
-      selectedIndex >= filteredSessions.length &&
-      filteredSessions.length > 0
-    ) {
+    if (selectedIndex >= filteredSessions.length && filteredSessions.length > 0) {
       setSelectedIndex(filteredSessions.length - 1);
     }
   }, [filteredSessions.length, selectedIndex]);
 
   // Auto-load more when centered mode hits the sentinel or list is empty.
   useEffect(() => {
-    if (
-      isLoading ||
-      !sessionState.hasMore ||
-      isLoadingMoreRef.current ||
-      !centerSelection
-    ) {
+    if (isLoading || !sessionState.hasMore || isLoadingMoreRef.current || !centerSelection) {
       return;
     }
 
-    const sentinelVisible =
-      scrollOffset + maxVisibleItems >= filteredSessions.length;
+    const sentinelVisible = scrollOffset + maxVisibleItems >= filteredSessions.length;
     const shouldLoadMore = filteredSessions.length === 0 || sentinelVisible;
 
     if (shouldLoadMore) {
@@ -206,12 +192,12 @@ export function useSessionPicker({
     (key) => {
       const { name, sequence, ctrl } = key;
 
-      if (name === 'escape' || (ctrl && name === 'c')) {
+      if (name === "escape" || (ctrl && name === "c")) {
         onCancel();
         return;
       }
 
-      if (name === 'return') {
+      if (name === "return") {
         const session = filteredSessions[selectedIndex];
         if (session) {
           onSelect(session.sessionId);
@@ -219,7 +205,7 @@ export function useSessionPicker({
         return;
       }
 
-      if (name === 'up' || name === 'k') {
+      if (name === "up" || name === "k") {
         setSelectedIndex((prev) => {
           const newIndex = Math.max(0, prev - 1);
           if (!centerSelection && newIndex < followScrollOffset) {
@@ -230,7 +216,7 @@ export function useSessionPicker({
         return;
       }
 
-      if (name === 'down' || name === 'j') {
+      if (name === "down" || name === "j") {
         if (filteredSessions.length === 0) {
           return;
         }
@@ -238,10 +224,7 @@ export function useSessionPicker({
         setSelectedIndex((prev) => {
           const newIndex = Math.min(filteredSessions.length - 1, prev + 1);
 
-          if (
-            !centerSelection &&
-            newIndex >= followScrollOffset + maxVisibleItems
-          ) {
+          if (!centerSelection && newIndex >= followScrollOffset + maxVisibleItems) {
             setFollowScrollOffset(newIndex - maxVisibleItems + 1);
           }
 
@@ -255,7 +238,7 @@ export function useSessionPicker({
         return;
       }
 
-      if (sequence === 'b' || sequence === 'B') {
+      if (sequence === "b" || sequence === "B") {
         if (currentBranch) {
           setFilterByBranch((prev) => !prev);
         }

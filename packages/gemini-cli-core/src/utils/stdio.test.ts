@@ -4,17 +4,17 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { patchStdio, createWorkingStdio } from './stdio.js';
-import { coreEvents } from './events.js';
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { coreEvents } from "./events.js";
+import { createWorkingStdio, patchStdio } from "./stdio.js";
 
-vi.mock('./events.js', () => ({
+vi.mock("./events.js", () => ({
   coreEvents: {
     emitOutput: vi.fn(),
   },
 }));
 
-describe('stdio utils', () => {
+describe("stdio utils", () => {
   let originalStdoutWrite: typeof process.stdout.write;
   let originalStderrWrite: typeof process.stderr.write;
 
@@ -29,22 +29,14 @@ describe('stdio utils', () => {
     vi.restoreAllMocks();
   });
 
-  it('patchStdio redirects stdout and stderr to coreEvents', () => {
+  it("patchStdio redirects stdout and stderr to coreEvents", () => {
     const cleanup = patchStdio();
 
-    process.stdout.write('test stdout');
-    expect(coreEvents.emitOutput).toHaveBeenCalledWith(
-      false,
-      'test stdout',
-      undefined,
-    );
+    process.stdout.write("test stdout");
+    expect(coreEvents.emitOutput).toHaveBeenCalledWith(false, "test stdout", undefined);
 
-    process.stderr.write('test stderr');
-    expect(coreEvents.emitOutput).toHaveBeenCalledWith(
-      true,
-      'test stderr',
-      undefined,
-    );
+    process.stderr.write("test stderr");
+    expect(coreEvents.emitOutput).toHaveBeenCalledWith(true, "test stderr", undefined);
 
     cleanup();
 
@@ -53,14 +45,14 @@ describe('stdio utils', () => {
     expect(process.stderr.write).toBe(originalStderrWrite);
   });
 
-  it('createWorkingStdio writes to real stdout/stderr bypassing patch', () => {
+  it("createWorkingStdio writes to real stdout/stderr bypassing patch", () => {
     const cleanup = patchStdio();
     const { stdout, stderr } = createWorkingStdio();
 
-    stdout.write('working stdout');
+    stdout.write("working stdout");
     expect(coreEvents.emitOutput).not.toHaveBeenCalled();
 
-    stderr.write('working stderr');
+    stderr.write("working stderr");
     expect(coreEvents.emitOutput).not.toHaveBeenCalled();
 
     cleanup();

@@ -4,21 +4,16 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import type { ToolPlanConfirmationDetails, ToolResult } from './tools.js';
-import type { PermissionDecision } from '../permissions/types.js';
-import {
-  BaseDeclarativeTool,
-  BaseToolInvocation,
-  Kind,
-  ToolConfirmationOutcome,
-} from './tools.js';
-import type { FunctionDeclaration } from '../types/llm.js';
-import type { Config } from '../config/config.js';
-import { ApprovalMode } from '../config/config.js';
-import { ToolDisplayNames, ToolNames } from './tool-names.js';
-import { createDebugLogger } from '../utils/debugLogger.js';
+import type { Config } from "../config/config.js";
+import { ApprovalMode } from "../config/config.js";
+import type { PermissionDecision } from "../permissions/types.js";
+import type { FunctionDeclaration } from "../types/llm.js";
+import { createDebugLogger } from "../utils/debugLogger.js";
+import { ToolDisplayNames, ToolNames } from "./tool-names.js";
+import type { ToolPlanConfirmationDetails, ToolResult } from "./tools.js";
+import { BaseDeclarativeTool, BaseToolInvocation, Kind, ToolConfirmationOutcome } from "./tools.js";
 
-const debugLogger = createDebugLogger('EXIT_PLAN_MODE');
+const debugLogger = createDebugLogger("EXIT_PLAN_MODE");
 
 export interface ExitPlanModeParams {
   plan: string;
@@ -43,27 +38,24 @@ Ensure your plan is complete and unambiguous:
 `;
 
 const exitPlanModeToolSchemaData: FunctionDeclaration = {
-  name: 'exit_plan_mode',
+  name: "exit_plan_mode",
   description: exitPlanModeToolDescription,
   parametersJsonSchema: {
-    type: 'object',
+    type: "object",
     properties: {
       plan: {
-        type: 'string',
+        type: "string",
         description:
-          'The plan you came up with, that you want to run by the user for approval. Supports markdown. The plan should be pretty concise.',
+          "The plan you came up with, that you want to run by the user for approval. Supports markdown. The plan should be pretty concise.",
       },
     },
-    required: ['plan'],
+    required: ["plan"],
     additionalProperties: false,
-    $schema: 'http://json-schema.org/draft-07/schema#',
+    $schema: "http://json-schema.org/draft-07/schema#",
   },
 };
 
-class ExitPlanModeToolInvocation extends BaseToolInvocation<
-  ExitPlanModeParams,
-  ToolResult
-> {
+class ExitPlanModeToolInvocation extends BaseToolInvocation<ExitPlanModeParams, ToolResult> {
   private wasApproved = false;
 
   constructor(
@@ -74,14 +66,14 @@ class ExitPlanModeToolInvocation extends BaseToolInvocation<
   }
 
   getDescription(): string {
-    return 'Plan:';
+    return "Plan:";
   }
 
   /**
    * Plan mode exit always requires user confirmation.
    */
   override async getDefaultPermission(): Promise<PermissionDecision> {
-    return 'ask';
+    return "ask";
   }
 
   override async getConfirmationDetails(
@@ -89,8 +81,8 @@ class ExitPlanModeToolInvocation extends BaseToolInvocation<
   ): Promise<ToolPlanConfirmationDetails> {
     const prePlanMode = this.config.getPrePlanMode();
     const details: ToolPlanConfirmationDetails = {
-      type: 'plan',
-      title: 'Would you like to proceed?',
+      type: "plan",
+      title: "Would you like to proceed?",
       plan: this.params.plan,
       prePlanMode,
       onConfirm: async (outcome: ToolConfirmationOutcome) => {
@@ -127,8 +119,7 @@ class ExitPlanModeToolInvocation extends BaseToolInvocation<
     try {
       this.config.setApprovalMode(mode);
     } catch (error) {
-      const errorMessage =
-        error instanceof Error ? error.message : String(error);
+      const errorMessage = error instanceof Error ? error.message : String(error);
       debugLogger.error(
         `[ExitPlanModeTool] Failed to set approval mode to "${mode}": ${errorMessage}`,
       );
@@ -145,8 +136,7 @@ class ExitPlanModeToolInvocation extends BaseToolInvocation<
       const effectivelyApproved = this.wasApproved || isYolo;
 
       if (!effectivelyApproved) {
-        const rejectionMessage =
-          'Plan execution was not approved. Remaining in plan mode.';
+        const rejectionMessage = "Plan execution was not approved. Remaining in plan mode.";
         return {
           llmContent: rejectionMessage,
           returnDisplay: rejectionMessage,
@@ -163,22 +153,19 @@ class ExitPlanModeToolInvocation extends BaseToolInvocation<
       }
 
       const llmMessage = `User has approved your plan. You can now start coding. Start with updating your todo list if applicable.`;
-      const displayMessage = 'User approved the plan.';
+      const displayMessage = "User approved the plan.";
 
       return {
         llmContent: llmMessage,
         returnDisplay: {
-          type: 'plan_summary',
+          type: "plan_summary",
           message: displayMessage,
           plan,
         },
       };
     } catch (error) {
-      const errorMessage =
-        error instanceof Error ? error.message : String(error);
-      debugLogger.error(
-        `[ExitPlanModeTool] Error executing exit_plan_mode: ${errorMessage}`,
-      );
+      const errorMessage = error instanceof Error ? error.message : String(error);
+      debugLogger.error(`[ExitPlanModeTool] Error executing exit_plan_mode: ${errorMessage}`);
 
       const errorLlmContent = `Failed to present plan: ${errorMessage}`;
 
@@ -190,10 +177,7 @@ class ExitPlanModeToolInvocation extends BaseToolInvocation<
   }
 }
 
-export class ExitPlanModeTool extends BaseDeclarativeTool<
-  ExitPlanModeParams,
-  ToolResult
-> {
+export class ExitPlanModeTool extends BaseDeclarativeTool<ExitPlanModeParams, ToolResult> {
   static readonly Name: string = ToolNames.EXIT_PLAN_MODE;
 
   constructor(private readonly config: Config) {
@@ -202,20 +186,13 @@ export class ExitPlanModeTool extends BaseDeclarativeTool<
       ToolDisplayNames.EXIT_PLAN_MODE,
       exitPlanModeToolDescription,
       Kind.Think,
-      exitPlanModeToolSchemaData.parametersJsonSchema as Record<
-        string,
-        unknown
-      >,
+      exitPlanModeToolSchemaData.parametersJsonSchema as Record<string, unknown>,
     );
   }
 
   override validateToolParams(params: ExitPlanModeParams): string | null {
     // Validate plan parameter
-    if (
-      !params.plan ||
-      typeof params.plan !== 'string' ||
-      params.plan.trim() === ''
-    ) {
+    if (!params.plan || typeof params.plan !== "string" || params.plan.trim() === "") {
       return 'Parameter "plan" must be a non-empty string.';
     }
 

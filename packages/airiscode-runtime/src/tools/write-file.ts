@@ -4,11 +4,26 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import fs from 'node:fs';
-import path from 'node:path';
-import * as Diff from 'diff';
-import type { Config } from '../config/config.js';
-import { ApprovalMode } from '../config/config.js';
+import fs from "node:fs";
+import path from "node:path";
+import * as Diff from "diff";
+import type { Config } from "../config/config.js";
+import { ApprovalMode } from "../config/config.js";
+import type { PermissionDecision } from "../permissions/types.js";
+import type { LineEnding } from "../services/fileSystemService.js";
+import { detectLineEnding, FileEncoding, needsUtf8Bom } from "../services/fileSystemService.js";
+import { logFileOperation } from "../telemetry/loggers.js";
+import { FileOperation } from "../telemetry/metrics.js";
+import { FileOperationEvent } from "../telemetry/types.js";
+import { createDebugLogger } from "../utils/debugLogger.js";
+import { getErrorMessage, isNodeError } from "../utils/errors.js";
+import { getSpecificMimeType, fileExists as isFilefileExists } from "../utils/fileUtils.js";
+import { getLanguageFromFilePath } from "../utils/language-detection.js";
+import { makeRelative, shortenPath } from "../utils/paths.js";
+import { DEFAULT_DIFF_OPTIONS, getDiffStat } from "./diffOptions.js";
+import type { ModifiableDeclarativeTool, ModifyContext } from "./modifiable-tool.js";
+import { ToolErrorType } from "./tool-error.js";
+import { ToolDisplayNames, ToolNames } from "./tool-names.js";
 import type {
   FileDiff,
   ToolCallConfirmationDetails,
@@ -16,40 +31,10 @@ import type {
   ToolInvocation,
   ToolLocation,
   ToolResult,
-} from './tools.js';
-import type { PermissionDecision } from '../permissions/types.js';
-import {
-  BaseDeclarativeTool,
-  BaseToolInvocation,
-  Kind,
-  ToolConfirmationOutcome,
-} from './tools.js';
-import { ToolErrorType } from './tool-error.js';
-import {
-  FileEncoding,
-  needsUtf8Bom,
-  detectLineEnding,
-} from '../services/fileSystemService.js';
-import type { LineEnding } from '../services/fileSystemService.js';
-import { makeRelative, shortenPath } from '../utils/paths.js';
-import { getErrorMessage, isNodeError } from '../utils/errors.js';
-import { DEFAULT_DIFF_OPTIONS, getDiffStat } from './diffOptions.js';
-import { ToolNames, ToolDisplayNames } from './tool-names.js';
-import type {
-  ModifiableDeclarativeTool,
-  ModifyContext,
-} from './modifiable-tool.js';
-import { logFileOperation } from '../telemetry/loggers.js';
-import { FileOperationEvent } from '../telemetry/types.js';
-import { FileOperation } from '../telemetry/metrics.js';
-import {
-  getSpecificMimeType,
-  fileExists as isFilefileExists,
-} from '../utils/fileUtils.js';
-import { getLanguageFromFilePath } from '../utils/language-detection.js';
-import { createDebugLogger } from '../utils/debugLogger.js';
+} from "./tools.js";
+import { BaseDeclarativeTool, BaseToolInvocation, Kind, ToolConfirmationOutcome } from "./tools.js";
 
-const debugLogger = createDebugLogger('WRITE_FILE');
+const debugLogger = createDebugLogger("WRITE_FILE");
 
 /**
  * Parameters for the WriteFile tool
@@ -76,10 +61,7 @@ export interface WriteFileToolParams {
   ai_proposed_content?: string;
 }
 
-class WriteFileToolInvocation extends BaseToolInvocation<
-  WriteFileToolParams,
-  ToolResult
-> {
+class WriteFileToolInvocation extends BaseToolInvocation<WriteFileToolParams, ToolResult> {
   constructor(
     private readonly config: Config,
     params: WriteFileToolParams,
@@ -92,10 +74,7 @@ class WriteFileToolInvocation extends BaseToolInvocation<
   }
 
   override getDescription(): string {
-    const relativePath = makeRelative(
-      this.params.file_path,
-      this.config.getTargetDir(),
-    );
+    const relativePath = makeRelative(this.params.file_path, this.config.getTargetDir());
     return `Writing to ${shortenPath(relativePath)}`;
   }
 
@@ -103,7 +82,7 @@ class WriteFileToolInvocation extends BaseToolInvocation<
    * Write operations always need user confirmation.
    */
   override async getDefaultPermission(): Promise<PermissionDecision> {
-    return 'ask';
+    return "ask";
   }
 
   /**
@@ -112,7 +91,7 @@ class WriteFileToolInvocation extends BaseToolInvocation<
   override async getConfirmationDetails(
     _abortSignal: AbortSignal,
   ): Promise<ToolCallConfirmationDetails> {
-    let originalContent = '';
+    let originalContent = "";
     const fileExists = await isFilefileExists(this.params.file_path);
     if (fileExists) {
       try {
@@ -121,29 +100,24 @@ class WriteFileToolInvocation extends BaseToolInvocation<
           .readTextFile({ path: this.params.file_path });
         originalContent = content;
       } catch (err) {
-        throw new Error(
-          `Error reading existing file for confirmation: ${getErrorMessage(err)}`,
-        );
+        throw new Error(`Error reading existing file for confirmation: ${getErrorMessage(err)}`);
       }
     }
 
-    const relativePath = makeRelative(
-      this.params.file_path,
-      this.config.getTargetDir(),
-    );
+    const relativePath = makeRelative(this.params.file_path, this.config.getTargetDir());
     const fileName = path.basename(this.params.file_path);
 
     const fileDiff = Diff.createPatch(
       fileName,
       originalContent, // Original content (empty if new file or unreadable)
       this.params.content, // Content after potential correction
-      'Current',
-      'Proposed',
+      "Current",
+      "Proposed",
       DEFAULT_DIFF_OPTIONS,
     );
 
     const confirmationDetails: ToolEditConfirmationDetails = {
-      type: 'edit',
+      type: "edit",
       title: `Confirm Write: ${shortenPath(relativePath)}`,
       fileName,
       filePath: this.params.file_path,
@@ -160,33 +134,28 @@ class WriteFileToolInvocation extends BaseToolInvocation<
   }
 
   async execute(_abortSignal: AbortSignal): Promise<ToolResult> {
-    const { file_path, content, ai_proposed_content, modified_by_user } =
-      this.params;
+    const { file_path, content, ai_proposed_content, modified_by_user } = this.params;
 
     let fileExists = await isFilefileExists(file_path);
-    let originalContent = '';
+    let originalContent = "";
     let useBOM = false;
     let detectedEncoding: string | undefined;
     let detectedLineEnding: LineEnding | undefined;
     const dirName = path.dirname(file_path);
     if (fileExists) {
       try {
-        const fileInfo = await this.config
-          .getFileSystemService()
-          .readTextFile({ path: file_path });
+        const fileInfo = await this.config.getFileSystemService().readTextFile({ path: file_path });
         if (fileInfo._meta?.bom !== undefined) {
           useBOM = fileInfo._meta.bom;
         } else {
-          useBOM =
-            fileInfo.content.length > 0 &&
-            fileInfo.content.codePointAt(0) === 0xfeff;
+          useBOM = fileInfo.content.length > 0 && fileInfo.content.codePointAt(0) === 0xfeff;
         }
-        detectedEncoding = fileInfo._meta?.encoding || 'utf-8';
+        detectedEncoding = fileInfo._meta?.encoding || "utf-8";
         detectedLineEnding = detectLineEnding(fileInfo.content);
         originalContent = fileInfo.content;
         fileExists = true; // File exists and was read
       } catch (err) {
-        if (isNodeError(err) && err.code === 'ENOENT') {
+        if (isNodeError(err) && err.code === "ENOENT") {
           fileExists = false;
         } else {
           const error = {
@@ -246,8 +215,8 @@ class WriteFileToolInvocation extends BaseToolInvocation<
         fileName,
         currentContentForDiff,
         content,
-        'Original',
-        'Written',
+        "Original",
+        "Written",
         DEFAULT_DIFF_OPTIONS,
       );
 
@@ -265,20 +234,16 @@ class WriteFileToolInvocation extends BaseToolInvocation<
           : `Successfully overwrote file: ${file_path}.`,
       ];
       if (modified_by_user) {
-        llmSuccessMessageParts.push(
-          `User modified the \`content\` to be: ${content}`,
-        );
+        llmSuccessMessageParts.push(`User modified the \`content\` to be: ${content}`);
       }
 
       // Log file operation for telemetry (without diff_stat to avoid double-counting)
       const mimetype = getSpecificMimeType(file_path);
       const programmingLanguage = getLanguageFromFilePath(file_path);
       const extension = path.extname(file_path);
-      const operation = !fileExists
-        ? FileOperation.CREATE
-        : FileOperation.UPDATE;
+      const operation = !fileExists ? FileOperation.CREATE : FileOperation.UPDATE;
 
-      const lineCount = content.split('\n').length;
+      const lineCount = content.split("\n").length;
       logFileOperation(
         this.config,
         new FileOperationEvent(
@@ -300,7 +265,7 @@ class WriteFileToolInvocation extends BaseToolInvocation<
       };
 
       return {
-        llmContent: llmSuccessMessageParts.join(' '),
+        llmContent: llmSuccessMessageParts.join(" "),
         returnDisplay: displayResult,
       };
     } catch (error) {
@@ -313,20 +278,20 @@ class WriteFileToolInvocation extends BaseToolInvocation<
         errorMsg = `Error writing to file '${file_path}': ${error.message} (${error.code})`;
 
         // Log specific error types for better debugging
-        if (error.code === 'EACCES') {
+        if (error.code === "EACCES") {
           errorMsg = `Permission denied writing to file: ${file_path} (${error.code})`;
           errorType = ToolErrorType.PERMISSION_DENIED;
-        } else if (error.code === 'ENOSPC') {
+        } else if (error.code === "ENOSPC") {
           errorMsg = `No space left on device: ${file_path} (${error.code})`;
           errorType = ToolErrorType.NO_SPACE_LEFT;
-        } else if (error.code === 'EISDIR') {
+        } else if (error.code === "EISDIR") {
           errorMsg = `Target is a directory, not a file: ${file_path} (${error.code})`;
           errorType = ToolErrorType.TARGET_IS_DIRECTORY;
         }
 
         // Include stack trace in debug mode for better troubleshooting
         if (this.config.getDebugMode() && error.stack) {
-          debugLogger.debug('Write file error stack:', error.stack);
+          debugLogger.debug("Write file error stack:", error.stack);
         }
       } else if (error instanceof Error) {
         errorMsg = `Error writing to file: ${error.message}`;
@@ -368,22 +333,20 @@ export class WriteFileTool
           file_path: {
             description:
               "The absolute path to the file to write to (e.g., '/home/user/project/file.txt'). Relative paths are not supported.",
-            type: 'string',
+            type: "string",
           },
           content: {
-            description: 'The content to write to the file.',
-            type: 'string',
+            description: "The content to write to the file.",
+            type: "string",
           },
         },
-        required: ['file_path', 'content'],
-        type: 'object',
+        required: ["file_path", "content"],
+        type: "object",
       },
     );
   }
 
-  protected override validateToolParamValues(
-    params: WriteFileToolParams,
-  ): string | null {
+  protected override validateToolParamValues(params: WriteFileToolParams): string | null {
     const filePath = params.file_path;
 
     if (!filePath) {
@@ -416,9 +379,7 @@ export class WriteFileTool
     return new WriteFileToolInvocation(this.config, params);
   }
 
-  getModifyContext(
-    _abortSignal: AbortSignal,
-  ): ModifyContext<WriteFileToolParams> {
+  getModifyContext(_abortSignal: AbortSignal): ModifyContext<WriteFileToolParams> {
     return {
       getFilePath: (params: WriteFileToolParams) => params.file_path,
       getCurrentContent: async (params: WriteFileToolParams) => {
@@ -430,11 +391,11 @@ export class WriteFileTool
               .readTextFile({ path: params.file_path });
             return content;
           } catch (err) {
-            if (!isNodeError(err) || err.code !== 'ENOENT') throw err;
-            return '';
+            if (!isNodeError(err) || err.code !== "ENOENT") throw err;
+            return "";
           }
         } else {
-          return '';
+          return "";
         }
       },
       getProposedContent: async (params: WriteFileToolParams) => params.content,

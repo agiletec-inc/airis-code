@@ -4,43 +4,33 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { type VariableSchema, VARIABLE_SCHEMA } from './variableSchema.js';
-import path from 'node:path';
-import { AIRISCODE_DIR } from '../config/storage.js';
-import type { HookDefinition } from '../hooks/types.js';
-import type { HookEventName } from '../hooks/types.js';
-import * as fs from 'node:fs';
-import { glob } from 'glob';
-import { createDebugLogger } from '../utils/debugLogger.js';
+import * as fs from "node:fs";
+import path from "node:path";
+import { glob } from "glob";
+import { AIRISCODE_DIR } from "../config/storage.js";
+import type { HookDefinition, HookEventName } from "../hooks/types.js";
+import { createDebugLogger } from "../utils/debugLogger.js";
+import { VARIABLE_SCHEMA, type VariableSchema } from "./variableSchema.js";
 
-const debugLogger = createDebugLogger('Extension:variables');
+const debugLogger = createDebugLogger("Extension:variables");
 
 // Re-export types for substituteHookVariables
 export type { HookDefinition };
 
-export const EXTENSIONS_DIRECTORY_NAME = path.join(AIRISCODE_DIR, 'extensions');
-export const EXTENSIONS_CONFIG_FILENAME = 'qwen-extension.json';
-export const INSTALL_METADATA_FILENAME = '.qwen-extension-install.json';
-export const EXTENSION_SETTINGS_FILENAME = '.env';
+export const EXTENSIONS_DIRECTORY_NAME = path.join(AIRISCODE_DIR, "extensions");
+export const EXTENSIONS_CONFIG_FILENAME = "qwen-extension.json";
+export const INSTALL_METADATA_FILENAME = ".qwen-extension-install.json";
+export const EXTENSION_SETTINGS_FILENAME = ".env";
 
 export type JsonObject = { [key: string]: JsonValue };
 export type JsonArray = JsonValue[];
-export type JsonValue =
-  | string
-  | number
-  | boolean
-  | null
-  | JsonObject
-  | JsonArray;
+export type JsonValue = string | number | boolean | null | JsonObject | JsonArray;
 
 export type VariableContext = {
   [key in keyof typeof VARIABLE_SCHEMA]?: string;
 };
 
-export function validateVariables(
-  variables: VariableContext,
-  schema: VariableSchema,
-) {
+export function validateVariables(variables: VariableContext, schema: VariableSchema) {
   for (const key in schema) {
     const definition = schema[key];
     if (definition.required && !variables[key as keyof VariableContext]) {
@@ -59,20 +49,17 @@ export function hydrateString(str: string, context: VariableContext): string {
   );
 }
 
-export function recursivelyHydrateStrings(
-  obj: JsonValue,
-  values: VariableContext,
-): JsonValue {
-  if (typeof obj === 'string') {
+export function recursivelyHydrateStrings(obj: JsonValue, values: VariableContext): JsonValue {
+  if (typeof obj === "string") {
     return hydrateString(obj, values);
   }
   if (Array.isArray(obj)) {
     return obj.map((item) => recursivelyHydrateStrings(item, values));
   }
-  if (typeof obj === 'object' && obj !== null) {
+  if (typeof obj === "object" && obj !== null) {
     const newObj: JsonObject = {};
     for (const key in obj) {
-      if (Object.prototype.hasOwnProperty.call(obj, key)) {
+      if (Object.hasOwn(obj, key)) {
         newObj[key] = recursivelyHydrateStrings(obj[key], values);
       }
     }
@@ -103,11 +90,8 @@ export function substituteHookVariables(
       for (const hookDef of eventHooks) {
         if (hookDef.hooks && Array.isArray(hookDef.hooks)) {
           for (const hook of hookDef.hooks) {
-            if (hook.type === 'command' && hook.command) {
-              hook.command = hook.command.replace(
-                /\$\{CLAUDE_PLUGIN_ROOT\}/g,
-                basePath,
-              );
+            if (hook.type === "command" && hook.command) {
+              hook.command = hook.command.replace(/\$\{CLAUDE_PLUGIN_ROOT\}/g, basePath);
             }
           }
         }
@@ -125,7 +109,7 @@ export function substituteHookVariables(
  */
 export function performVariableReplacement(extensionPath: string): void {
   // Process markdown files
-  const mdGlobPattern = '**/*.md';
+  const mdGlobPattern = "**/*.md";
   const mdGlobOptions = {
     cwd: extensionPath,
     nodir: true,
@@ -138,19 +122,16 @@ export function performVariableReplacement(extensionPath: string): void {
       const filePath = path.join(extensionPath, file);
 
       try {
-        const content = fs.readFileSync(filePath, 'utf8');
+        const content = fs.readFileSync(filePath, "utf8");
 
         // Replace ${CLAUDE_PLUGIN_ROOT} with the actual extension path
-        const updatedContent = content.replace(
-          /\$\{CLAUDE_PLUGIN_ROOT\}/g,
-          extensionPath,
-        );
+        const updatedContent = content.replace(/\$\{CLAUDE_PLUGIN_ROOT\}/g, extensionPath);
 
         // Replace Markdown shell syntax ```! ... ``` with system-recognized !{...} syntax
         // This regex finds code blocks with ! language identifier and captures their content
         const syntaxUpdatedContent = updatedContent.replace(
           /```!(?:\s*\n)?([\s\S]*?)\n*```/g,
-          '!{$1}',
+          "!{$1}",
         );
 
         // Replace references to ".claude" directory with ".airiscode" in markdown files
@@ -158,15 +139,13 @@ export function performVariableReplacement(extensionPath: string): void {
         // Avoid matching URLs, comments, or string literals containing .claude
         const updatedMdContent = syntaxUpdatedContent.replace(
           /(\$\{?HOME\}?\/|~\/)?\.claude(\/|$)/g,
-          '$1.qwen$2',
+          "$1.qwen$2",
         );
 
         // Only write if content was actually changed
         if (updatedMdContent !== content) {
-          fs.writeFileSync(filePath, updatedMdContent, 'utf8');
-          debugLogger.debug(
-            `Updated variables, syntax, and .claude paths in file: ${filePath}`,
-          );
+          fs.writeFileSync(filePath, updatedMdContent, "utf8");
+          debugLogger.debug(`Updated variables, syntax, and .claude paths in file: ${filePath}`);
         }
       } catch (error) {
         debugLogger.warn(
@@ -181,7 +160,7 @@ export function performVariableReplacement(extensionPath: string): void {
   }
 
   // Process shell script files
-  const scriptGlobPattern = '**/*.sh';
+  const scriptGlobPattern = "**/*.sh";
   const scriptGlobOptions = {
     cwd: extensionPath,
     nodir: true,
@@ -194,13 +173,10 @@ export function performVariableReplacement(extensionPath: string): void {
       const filePath = path.join(extensionPath, file);
 
       try {
-        const content = fs.readFileSync(filePath, 'utf8');
+        const content = fs.readFileSync(filePath, "utf8");
 
         // Replace references to "role":"assistant" with "type":"assistant" in shell scripts
-        const updatedScriptContent = content.replace(
-          /"role":"assistant"/g,
-          '"type":"assistant"',
-        );
+        const updatedScriptContent = content.replace(/"role":"assistant"/g, '"type":"assistant"');
 
         // Replace transcript parsing logic to adapt to actual transcript structure
         // Change from .message.content | map(select(.type == "text")) to .message.parts | map(select(has("text")))
@@ -214,12 +190,12 @@ export function performVariableReplacement(extensionPath: string): void {
         // Avoid matching URLs, comments, or string literals containing .claude
         const finalScriptContent = adaptedScriptContent.replace(
           /(\$\{?HOME\}?\/|~\/)?\.claude(\/|$)/g,
-          '$1.qwen$2',
+          "$1.qwen$2",
         );
 
         // Only write if content was actually changed
         if (finalScriptContent !== content) {
-          fs.writeFileSync(filePath, finalScriptContent, 'utf8');
+          fs.writeFileSync(filePath, finalScriptContent, "utf8");
           debugLogger.debug(
             `Updated transcript format and replaced .claude with .qwen in shell script: ${filePath}`,
           );

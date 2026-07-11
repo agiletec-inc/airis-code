@@ -4,10 +4,11 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { useCallback } from 'react';
-import { SettingScope } from '../../config/settings.js';
-import type { AuthType, ApprovalMode } from '@airiscode/runtime';
-import type { ArenaDialogType } from './useArenaCommand.js';
+import type { ApprovalMode, AuthType } from "@airiscode/runtime";
+import { useCallback } from "react";
+import { SettingScope } from "../../config/settings.js";
+import type { ArenaDialogType } from "./useArenaCommand.js";
+
 // OpenAICredentials type (previously imported from OpenAIKeyPrompt)
 interface OpenAICredentials {
   apiKey: string;
@@ -22,10 +23,7 @@ export interface DialogCloseOptions {
 
   // Approval mode dialog
   isApprovalModeDialogOpen: boolean;
-  handleApprovalModeSelect: (
-    mode: ApprovalMode | undefined,
-    scope: SettingScope,
-  ) => void;
+  handleApprovalModeSelect: (mode: ApprovalMode | undefined, scope: SettingScope) => void;
 
   // Auth dialog
   isAuthDialogOpen: boolean;

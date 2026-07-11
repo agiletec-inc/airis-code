@@ -4,22 +4,22 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import type React from 'react';
-import { Box, Text } from 'ink';
-import { theme } from '../semantic-colors.js';
-import { ContextUsageDisplay } from './ContextUsageDisplay.js';
-import { useTerminalSize } from '../hooks/useTerminalSize.js';
-import { AutoAcceptIndicator } from './AutoAcceptIndicator.js';
-import { ShellModeIndicator } from './ShellModeIndicator.js';
-import { isNarrowWidth } from '../utils/isNarrowWidth.js';
+import { ApprovalMode } from "@airiscode/runtime";
+import { Box, Text } from "ink";
+import type React from "react";
+import { t } from "../../i18n/index.js";
+import { useConfig } from "../contexts/ConfigContext.js";
+import { useUIState } from "../contexts/UIStateContext.js";
+import { useVerboseMode } from "../contexts/VerboseModeContext.js";
+import { useVimMode } from "../contexts/VimModeContext.js";
 
-import { useStatusLine } from '../hooks/useStatusLine.js';
-import { useUIState } from '../contexts/UIStateContext.js';
-import { useConfig } from '../contexts/ConfigContext.js';
-import { useVimMode } from '../contexts/VimModeContext.js';
-import { useVerboseMode } from '../contexts/VerboseModeContext.js';
-import { ApprovalMode } from '@airiscode/runtime';
-import { t } from '../../i18n/index.js';
+import { useStatusLine } from "../hooks/useStatusLine.js";
+import { useTerminalSize } from "../hooks/useTerminalSize.js";
+import { theme } from "../semantic-colors.js";
+import { isNarrowWidth } from "../utils/isNarrowWidth.js";
+import { AutoAcceptIndicator } from "./AutoAcceptIndicator.js";
+import { ContextUsageDisplay } from "./ContextUsageDisplay.js";
+import { ShellModeIndicator } from "./ShellModeIndicator.js";
 
 export const Footer: React.FC = () => {
   const uiState = useUIState();
@@ -37,20 +37,19 @@ export const Footer: React.FC = () => {
   const isNarrow = isNarrowWidth(terminalWidth);
 
   // Determine sandbox info from environment
-  const sandboxEnv = process.env['SANDBOX'];
+  const sandboxEnv = process.env["SANDBOX"];
   const sandboxInfo = sandboxEnv
-    ? sandboxEnv === 'sandbox-exec'
-      ? 'seatbelt'
-      : sandboxEnv.startsWith('airiscode')
-        ? 'docker'
+    ? sandboxEnv === "sandbox-exec"
+      ? "seatbelt"
+      : sandboxEnv.startsWith("airiscode")
+        ? "docker"
         : sandboxEnv
     : null;
 
   // Check if debug mode is enabled
   const debugMode = config.getDebugMode();
 
-  const contextWindowSize =
-    config.getContentGeneratorConfig()?.contextWindowSize;
+  const contextWindowSize = config.getContentGeneratorConfig()?.contextWindowSize;
 
   // Hide "? for shortcuts" when a custom status line is active (it already
   // occupies the top row, so the hint is redundant). Matches upstream behavior.
@@ -58,38 +57,37 @@ export const Footer: React.FC = () => {
 
   // Left bottom row: high-priority messages > approval mode > hint.
   const leftBottomContent = uiState.ctrlCPressedOnce ? (
-    <Text color={theme.status.warning}>{t('Press Ctrl+C again to exit.')}</Text>
+    <Text color={theme.status.warning}>{t("Press Ctrl+C again to exit.")}</Text>
   ) : uiState.ctrlDPressedOnce ? (
-    <Text color={theme.status.warning}>{t('Press Ctrl+D again to exit.')}</Text>
+    <Text color={theme.status.warning}>{t("Press Ctrl+D again to exit.")}</Text>
   ) : uiState.showEscapePrompt ? (
-    <Text color={theme.text.secondary}>{t('Press Esc again to clear.')}</Text>
-  ) : vimEnabled && vimMode === 'INSERT' ? (
+    <Text color={theme.text.secondary}>{t("Press Esc again to clear.")}</Text>
+  ) : vimEnabled && vimMode === "INSERT" ? (
     <Text color={theme.text.secondary}>-- INSERT --</Text>
   ) : uiState.shellModeActive ? (
     <ShellModeIndicator />
-  ) : showAutoAcceptIndicator !== undefined &&
-    showAutoAcceptIndicator !== ApprovalMode.DEFAULT ? (
+  ) : showAutoAcceptIndicator !== undefined && showAutoAcceptIndicator !== ApprovalMode.DEFAULT ? (
     <AutoAcceptIndicator approvalMode={showAutoAcceptIndicator} />
   ) : suppressHint ? null : (
-    <Text color={theme.text.secondary}>{t('? for shortcuts')}</Text>
+    <Text color={theme.text.secondary}>{t("? for shortcuts")}</Text>
   );
 
   const rightItems: Array<{ key: string; node: React.ReactNode }> = [];
   if (sandboxInfo) {
     rightItems.push({
-      key: 'sandbox',
+      key: "sandbox",
       node: <Text color={theme.status.success}>🔒 {sandboxInfo}</Text>,
     });
   }
   if (debugMode) {
     rightItems.push({
-      key: 'debug',
+      key: "debug",
       node: <Text color={theme.status.warning}>Debug Mode</Text>,
     });
   }
   if (promptTokenCount > 0 && contextWindowSize) {
     rightItems.push({
-      key: 'context',
+      key: "context",
       node: (
         <Text color={theme.text.accent}>
           <ContextUsageDisplay
@@ -103,8 +101,8 @@ export const Footer: React.FC = () => {
   }
   if (verboseMode) {
     rightItems.push({
-      key: 'verbose',
-      node: <Text color={theme.text.accent}>{t('verbose')}</Text>,
+      key: "verbose",
+      node: <Text color={theme.text.accent}>{t("verbose")}</Text>,
     });
   }
 
@@ -112,21 +110,19 @@ export const Footer: React.FC = () => {
   // (bottom), right section has indicators. Status line and hints coexist.
   return (
     <Box
-      flexDirection={isNarrow ? 'column' : 'row'}
-      justifyContent={isNarrow ? 'flex-start' : 'space-between'}
+      flexDirection={isNarrow ? "column" : "row"}
+      justifyContent={isNarrow ? "flex-start" : "space-between"}
       width="100%"
       paddingX={2}
       gap={isNarrow ? 0 : 1}
     >
       {/* Left column — status line on top, hints/mode on bottom */}
       <Box flexDirection="column" flexShrink={isNarrow ? 0 : 1}>
-        {statusLineText &&
-          !uiState.ctrlCPressedOnce &&
-          !uiState.ctrlDPressedOnce && (
-            <Text dimColor wrap="truncate">
-              {statusLineText}
-            </Text>
-          )}
+        {statusLineText && !uiState.ctrlCPressedOnce && !uiState.ctrlDPressedOnce && (
+          <Text dimColor wrap="truncate">
+            {statusLineText}
+          </Text>
+        )}
         <Text wrap="truncate">{leftBottomContent}</Text>
       </Box>
 

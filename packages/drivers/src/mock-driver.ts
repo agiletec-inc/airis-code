@@ -2,14 +2,14 @@
  * Mock driver for testing
  */
 
-import { ModelDriver } from './driver.js';
+import { ModelDriver } from "./driver.js";
 import type {
+  Capabilities,
   ChatRequest,
   ChatResponse,
-  Capabilities,
-  StreamChunk,
   DriverConfig,
-} from './types.js';
+  StreamChunk,
+} from "./types.js";
 
 /**
  * Mock responses for testing
@@ -41,21 +41,18 @@ export class MockDriver extends ModelDriver {
 
   constructor(config: MockDriverConfig = {}) {
     super(config);
-    this.responses = config.responses || [
-      { text: 'Mock response 1' },
-      { text: 'Mock response 2' },
-    ];
+    this.responses = config.responses || [{ text: "Mock response 1" }, { text: "Mock response 2" }];
     this.currentIndex = config.responseIndex || 0;
     this.delay = config.delay || 0;
   }
 
   async getCapabilities(): Promise<Capabilities> {
     return {
-      models: ['mock-model-1', 'mock-model-2'],
+      models: ["mock-model-1", "mock-model-2"],
       supportsTools: true,
       supportsStream: true,
       maxContextTokens: 128000,
-      apiVersion: '1.0.0-mock',
+      apiVersion: "1.0.0-mock",
     };
   }
 
@@ -83,10 +80,9 @@ export class MockDriver extends ModelDriver {
         promptTokens: request.messages.reduce((sum, m) => sum + m.content.length, 0),
         completionTokens: mockResponse.text.length,
         totalTokens:
-          request.messages.reduce((sum, m) => sum + m.content.length, 0) +
-          mockResponse.text.length,
+          request.messages.reduce((sum, m) => sum + m.content.length, 0) + mockResponse.text.length,
       },
-      finishReason: toolCalls ? 'tool_calls' : 'stop',
+      finishReason: toolCalls ? "tool_calls" : "stop",
     };
   }
 
@@ -127,7 +123,7 @@ export class MockDriver extends ModelDriver {
             request.messages.reduce((sum, m) => sum + m.content.length, 0) +
             mockResponse.text.length,
         },
-        finishReason: 'stop',
+        finishReason: "stop",
       },
     };
   }

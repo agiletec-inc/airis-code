@@ -4,18 +4,15 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { randomUUID } from 'node:crypto';
-import type { Config, ChatRecord } from '@airiscode/runtime';
-import type { GenerateContentResponseUsageMetadata } from '@airiscode/runtime';
+import { randomUUID } from "node:crypto";
+import type { ChatRecord, Config, GenerateContentResponseUsageMetadata } from "@airiscode/runtime";
+
 type SessionContext = any;
 type SessionUpdate = any;
 type ToolCall = any;
 const HistoryReplayer = null as any;
-import type {
-  ExportMessage,
-  ExportSessionData,
-  ExportMetadata,
-} from './types.js';
+
+import type { ExportMessage, ExportMetadata, ExportSessionData } from "./types.js";
 
 /**
  * File operation statistics extracted from tool calls.
@@ -44,7 +41,7 @@ function extractToolNameFromRecord(record: ChatRecord): string | undefined {
   }
 
   for (const part of record.message.parts) {
-    if ('functionResponse' in part && part.functionResponse?.name) {
+    if ("functionResponse" in part && part.functionResponse?.name) {
       return part.functionResponse.name;
     }
   }
@@ -61,7 +58,7 @@ function extractFunctionResponseId(record: ChatRecord): string | undefined {
   }
 
   for (const part of record.message.parts) {
-    if ('functionResponse' in part && part.functionResponse?.id) {
+    if ("functionResponse" in part && part.functionResponse?.id) {
       return part.functionResponse.id;
     }
   }
@@ -72,16 +69,14 @@ function extractFunctionResponseId(record: ChatRecord): string | undefined {
 /**
  * Normalizes function call args into a plain object.
  */
-function normalizeFunctionCallArgs(
-  args: unknown,
-): Record<string, unknown> | undefined {
-  if (args && typeof args === 'object') {
+function normalizeFunctionCallArgs(args: unknown): Record<string, unknown> | undefined {
+  if (args && typeof args === "object") {
     return args as Record<string, unknown>;
   }
-  if (typeof args === 'string') {
+  if (typeof args === "string") {
     try {
       const parsed = JSON.parse(args) as unknown;
-      if (parsed && typeof parsed === 'object') {
+      if (parsed && typeof parsed === "object") {
         return parsed as Record<string, unknown>;
       }
     } catch {
@@ -99,17 +94,16 @@ function buildToolCallArgsIndex(records: ChatRecord[]): ToolCallArgsIndex {
   const byName = new Map<string, Array<Record<string, unknown>>>();
 
   for (const record of records) {
-    if (record.type !== 'assistant' || !record.message?.parts) continue;
+    if (record.type !== "assistant" || !record.message?.parts) continue;
 
     for (const part of record.message.parts) {
-      if (!('functionCall' in part) || !part.functionCall?.name) continue;
+      if (!("functionCall" in part) || !part.functionCall?.name) continue;
 
       const normalizedArgs = normalizeFunctionCallArgs(part.functionCall.args);
       if (!normalizedArgs) continue;
 
       const toolName = part.functionCall.name;
-      const callId =
-        typeof part.functionCall.id === 'string' ? part.functionCall.id : null;
+      const callId = typeof part.functionCall.id === "string" ? part.functionCall.id : null;
 
       if (callId) {
         byId.set(callId, normalizedArgs);
@@ -140,15 +134,12 @@ function calculateFileStats(records: ChatRecord[]): FileOperationStats {
   };
 
   for (const record of records) {
-    if (record.type !== 'tool_result' || !record.toolCallResult) continue;
+    if (record.type !== "tool_result" || !record.toolCallResult) continue;
 
     const toolName = extractToolNameFromRecord(record);
-    const callId =
-      record.toolCallResult.callId ?? extractFunctionResponseId(record);
+    const callId = record.toolCallResult.callId ?? extractFunctionResponseId(record);
     const argsFromId =
-      callId && argsIndex.byId.has(callId)
-        ? argsIndex.byId.get(callId)
-        : undefined;
+      callId && argsIndex.byId.has(callId) ? argsIndex.byId.get(callId) : undefined;
     let args = argsFromId;
     if (!args && toolName) {
       const queue = argsIndex.byName.get(toolName);
@@ -161,11 +152,7 @@ function calculateFileStats(records: ChatRecord[]): FileOperationStats {
     const { resultDisplay } = record.toolCallResult;
 
     // Track file locations from resultDisplay
-    if (
-      resultDisplay &&
-      typeof resultDisplay === 'object' &&
-      'fileName' in resultDisplay
-    ) {
+    if (resultDisplay && typeof resultDisplay === "object" && "fileName" in resultDisplay) {
       const display = resultDisplay as {
         fileName: string;
         fileDiff?: string;
@@ -175,17 +162,17 @@ function calculateFileStats(records: ChatRecord[]): FileOperationStats {
       };
 
       // Determine operation type based on content fields
-      const hasOriginalContent = 'originalContent' in display;
-      const hasNewContent = 'newContent' in display;
+      const hasOriginalContent = "originalContent" in display;
+      const hasNewContent = "newContent" in display;
 
       // For write/edit operations, use full path from args if available
       let filePath: string;
-      if (typeof display.fileName === 'string') {
+      if (typeof display.fileName === "string") {
         // Prefer args.file_path for full path, fallback to fileName (which may be basename)
-        filePath = (args?.['file_path'] as string) || display.fileName;
+        filePath = (args?.["file_path"] as string) || display.fileName;
       } else {
         // Fallback if fileName is not a string
-        filePath = 'unknown';
+        filePath = "unknown";
       }
 
       if (hasOriginalContent || hasNewContent) {
@@ -200,16 +187,12 @@ function calculateFileStats(records: ChatRecord[]): FileOperationStats {
           stats.linesRemoved += display.diffStat.model_removed_lines ?? 0;
         } else {
           // Fallback: count lines in content
-          const oldText = String(display.originalContent ?? '');
-          const newText = String(display.newContent ?? '');
+          const oldText = String(display.originalContent ?? "");
+          const newText = String(display.newContent ?? "");
 
           // Count non-empty lines
-          const oldLines = oldText
-            .split('\n')
-            .filter((line) => line.length > 0).length;
-          const newLines = newText
-            .split('\n')
-            .filter((line) => line.length > 0).length;
+          const oldLines = oldText.split("\n").filter((line) => line.length > 0).length;
+          const newLines = newText.split("\n").filter((line) => line.length > 0).length;
 
           stats.linesAdded += newLines;
           stats.linesRemoved += oldLines;
@@ -225,16 +208,16 @@ function calculateFileStats(records: ChatRecord[]): FileOperationStats {
  * Extracts token usage from TaskResultDisplay executionSummary.
  */
 function extractTaskToolTokens(record: ChatRecord): number {
-  if (record.type !== 'tool_result' || !record.toolCallResult?.resultDisplay) {
+  if (record.type !== "tool_result" || !record.toolCallResult?.resultDisplay) {
     return 0;
   }
 
   const { resultDisplay } = record.toolCallResult;
   if (
-    typeof resultDisplay === 'object' &&
-    'type' in resultDisplay &&
-    resultDisplay.type === 'task_execution' &&
-    'executionSummary' in resultDisplay
+    typeof resultDisplay === "object" &&
+    "type" in resultDisplay &&
+    resultDisplay.type === "task_execution" &&
+    "executionSummary" in resultDisplay
   ) {
     const summary = resultDisplay.executionSummary as {
       totalTokens?: number;
@@ -244,7 +227,7 @@ function extractTaskToolTokens(record: ChatRecord): number {
       cachedTokens?: number;
     };
     // Use totalTokens if available, otherwise sum individual token counts
-    if (typeof summary.totalTokens === 'number') {
+    if (typeof summary.totalTokens === "number") {
       return summary.totalTokens;
     }
     // Fallback: sum available token counts
@@ -279,7 +262,7 @@ function calculateTokenStats(records: ChatRecord[]): {
 
   // Aggregate usageMetadata from all assistant records
   for (const record of records) {
-    if (record.type === 'assistant') {
+    if (record.type === "assistant") {
       if (record.usageMetadata) {
         totalTokens += record.usageMetadata.totalTokenCount ?? 0;
       }
@@ -305,9 +288,7 @@ function calculateTokenStats(records: ChatRecord[]): {
   // Use last valid record's values for context usage calculation
   // This represents how much of the context window is being used by the total tokens
   if (lastValidRecord) {
-    const percent =
-      (lastValidRecord.totalTokenCount / lastValidRecord.contextWindowSize) *
-      100;
+    const percent = (lastValidRecord.totalTokenCount / lastValidRecord.contextWindowSize) * 100;
     return {
       totalTokens,
       contextUsagePercent: Math.round(percent * 10) / 10,
@@ -319,7 +300,7 @@ function calculateTokenStats(records: ChatRecord[]): {
   // (for display purposes only, without percentage)
   const lastAssistantRecord = [...records]
     .reverse()
-    .find((r) => r.type === 'assistant' && r.contextWindowSize !== undefined);
+    .find((r) => r.type === "assistant" && r.contextWindowSize !== undefined);
 
   return {
     totalTokens,
@@ -342,20 +323,20 @@ async function extractMetadata(
 
   // Extract basic info from the first record
   const firstRecord = messages[0];
-  const cwd = firstRecord?.cwd ?? '';
+  const cwd = firstRecord?.cwd ?? "";
   const gitBranch = firstRecord?.gitBranch;
 
   // Get git repository name
   let gitRepo: string | undefined;
   if (cwd) {
-    const { getGitRepoName } = await import('@airiscode/runtime');
+    const { getGitRepoName } = await import("@airiscode/runtime");
     gitRepo = getGitRepoName(cwd);
   }
 
   // Try to get model from assistant messages
   let model: string | undefined;
   for (const record of messages) {
-    if (record.type === 'assistant' && record.model) {
+    if (record.type === "assistant" && record.model) {
       model = record.model;
       break;
     }
@@ -365,7 +346,7 @@ async function extractMetadata(
   const channel = config.getChannel?.();
 
   // Count user prompts
-  const promptCount = messages.filter((m) => m.type === 'user').length;
+  const promptCount = messages.filter((m) => m.type === "user").length;
 
   // Calculate file stats from original ChatRecords
   const fileStats = calculateFileStats(messages);
@@ -403,15 +384,15 @@ class ExportSessionContext implements SessionContext {
   readonly config: Config;
   private messages: ExportMessage[] = [];
   private currentMessage: {
-    type: 'user' | 'assistant';
-    role: 'user' | 'assistant' | 'thinking';
+    type: "user" | "assistant";
+    role: "user" | "assistant" | "thinking";
     parts: Array<{ text: string }>;
     timestamp: number;
     usageMetadata?: GenerateContentResponseUsageMetadata;
   } | null = null;
   private activeRecordId: string | null = null;
   private activeRecordTimestamp: string | null = null;
-  private toolCallMap: Map<string, ExportMessage['toolCall']> = new Map();
+  private toolCallMap: Map<string, ExportMessage["toolCall"]> = new Map();
 
   constructor(sessionId: string, config: Config) {
     this.sessionId = sessionId;
@@ -420,10 +401,10 @@ class ExportSessionContext implements SessionContext {
 
   async sendUpdate(update: SessionUpdate): Promise<void> {
     switch (update.sessionUpdate) {
-      case 'user_message_chunk':
-        this.handleMessageChunk('user', update.content);
+      case "user_message_chunk":
+        this.handleMessageChunk("user", update.content);
         break;
-      case 'agent_message_chunk': {
+      case "agent_message_chunk": {
         // Extract usageMetadata from _meta if available
         const usageMeta = update._meta as
           | {
@@ -436,35 +417,29 @@ class ExportSessionContext implements SessionContext {
               };
             }
           | undefined;
-        const usageMetadata: GenerateContentResponseUsageMetadata | undefined =
-          usageMeta?.usage
-            ? {
-                promptTokenCount: usageMeta.usage.inputTokens,
-                candidatesTokenCount: usageMeta.usage.outputTokens,
-                totalTokenCount: usageMeta.usage.totalTokens,
-                thoughtsTokenCount: usageMeta.usage.thoughtTokens,
-                cachedContentTokenCount: usageMeta.usage.cachedReadTokens,
-              }
-            : undefined;
-        this.handleMessageChunk(
-          'assistant',
-          update.content,
-          'assistant',
-          usageMetadata,
-        );
+        const usageMetadata: GenerateContentResponseUsageMetadata | undefined = usageMeta?.usage
+          ? {
+              promptTokenCount: usageMeta.usage.inputTokens,
+              candidatesTokenCount: usageMeta.usage.outputTokens,
+              totalTokenCount: usageMeta.usage.totalTokens,
+              thoughtsTokenCount: usageMeta.usage.thoughtTokens,
+              cachedContentTokenCount: usageMeta.usage.cachedReadTokens,
+            }
+          : undefined;
+        this.handleMessageChunk("assistant", update.content, "assistant", usageMetadata);
         break;
       }
-      case 'agent_thought_chunk':
-        this.handleMessageChunk('assistant', update.content, 'thinking');
+      case "agent_thought_chunk":
+        this.handleMessageChunk("assistant", update.content, "thinking");
         break;
-      case 'tool_call':
+      case "tool_call":
         this.flushCurrentMessage();
         this.handleToolCallStart(update);
         break;
-      case 'tool_call_update':
+      case "tool_call_update":
         this.handleToolCallUpdate(update);
         break;
-      case 'plan':
+      case "plan":
         this.flushCurrentMessage();
         this.handlePlanUpdate(update);
         break;
@@ -488,18 +463,17 @@ class ExportSessionContext implements SessionContext {
   }
 
   private handleMessageChunk(
-    role: 'user' | 'assistant',
+    role: "user" | "assistant",
     content: { type: string; text?: string },
-    messageRole: 'user' | 'assistant' | 'thinking' = role,
+    messageRole: "user" | "assistant" | "thinking" = role,
     usageMetadata?: GenerateContentResponseUsageMetadata,
   ): void {
-    if (content.type !== 'text' || !content.text) return;
+    if (content.type !== "text" || !content.text) return;
 
     // If we're starting a new message type, flush the previous one
     if (
       this.currentMessage &&
-      (this.currentMessage.type !== role ||
-        this.currentMessage.role !== messageRole)
+      (this.currentMessage.type !== role || this.currentMessage.role !== messageRole)
     ) {
       this.flushCurrentMessage();
     }
@@ -512,7 +486,7 @@ class ExportSessionContext implements SessionContext {
     ) {
       this.currentMessage.parts.push({ text: content.text });
       // Merge usageMetadata if provided (for assistant messages)
-      if (usageMetadata && role === 'assistant') {
+      if (usageMetadata && role === "assistant") {
         this.currentMessage.usageMetadata = usageMetadata;
       }
     } else {
@@ -521,18 +495,17 @@ class ExportSessionContext implements SessionContext {
         role: messageRole,
         parts: [{ text: content.text }],
         timestamp: Date.now(),
-        ...(usageMetadata && role === 'assistant' ? { usageMetadata } : {}),
+        ...(usageMetadata && role === "assistant" ? { usageMetadata } : {}),
       };
     }
   }
 
   private handleToolCallStart(update: ToolCall): void {
-    const toolCall: ExportMessage['toolCall'] = {
+    const toolCall: ExportMessage["toolCall"] = {
       toolCallId: update.toolCallId,
-      kind: update.kind || 'other',
-      title:
-        typeof update.title === 'string' ? update.title : update.title || '',
-      status: update.status || 'pending',
+      kind: update.kind || "other",
+      title: typeof update.title === "string" ? update.title : update.title || "",
+      status: update.status || "pending",
       rawInput: update.rawInput as string | object | undefined,
       locations: update.locations,
       timestamp: Date.now(),
@@ -546,14 +519,14 @@ class ExportSessionContext implements SessionContext {
       uuid,
       sessionId: this.sessionId,
       timestamp: this.getMessageTimestamp(),
-      type: 'tool_call',
+      type: "tool_call",
       toolCall,
     });
   }
 
   private handleToolCallUpdate(update: {
     toolCallId: string;
-    status?: 'pending' | 'in_progress' | 'completed' | 'failed' | null;
+    status?: "pending" | "in_progress" | "completed" | "failed" | null;
     title?: string | null;
     content?: Array<{ type: string; [key: string]: unknown }> | null;
     kind?: string | null;
@@ -563,15 +536,14 @@ class ExportSessionContext implements SessionContext {
       // Update the tool call in place
       if (update.status) toolCall.status = update.status;
       if (update.content) toolCall.content = update.content;
-      if (update.title)
-        toolCall.title = typeof update.title === 'string' ? update.title : '';
+      if (update.title) toolCall.title = typeof update.title === "string" ? update.title : "";
     }
   }
 
   private handlePlanUpdate(update: {
     entries: Array<{
       content: string;
-      status: 'pending' | 'in_progress' | 'completed';
+      status: "pending" | "in_progress" | "completed";
       priority?: string;
     }>;
   }): void {
@@ -584,20 +556,16 @@ class ExportSessionContext implements SessionContext {
     const todoText = update.entries
       .map((entry) => {
         const checkbox =
-          entry.status === 'completed'
-            ? '[x]'
-            : entry.status === 'in_progress'
-              ? '[-]'
-              : '[ ]';
+          entry.status === "completed" ? "[x]" : entry.status === "in_progress" ? "[-]" : "[ ]";
         return `- ${checkbox} ${entry.content}`;
       })
-      .join('\n');
+      .join("\n");
 
     const todoContent = [
       {
-        type: 'content' as const,
+        type: "content" as const,
         content: {
-          type: 'text',
+          type: "text",
           text: todoText,
         },
       },
@@ -607,12 +575,12 @@ class ExportSessionContext implements SessionContext {
       uuid,
       sessionId: this.sessionId,
       timestamp,
-      type: 'tool_call',
+      type: "tool_call",
       toolCall: {
         toolCallId: uuid, // Use the same uuid as toolCallId for plan updates
-        kind: 'todowrite',
-        title: 'TodoWrite',
-        status: 'completed',
+        kind: "todowrite",
+        title: "TodoWrite",
+        status: "completed",
         content: todoContent,
         timestamp: Date.parse(timestamp),
       },
@@ -635,10 +603,7 @@ class ExportSessionContext implements SessionContext {
     };
 
     // Add usageMetadata for assistant messages
-    if (
-      this.currentMessage.type === 'assistant' &&
-      this.currentMessage.usageMetadata
-    ) {
+    if (this.currentMessage.type === "assistant" && this.currentMessage.usageMetadata) {
       exportMessage.usageMetadata = this.currentMessage.usageMetadata;
     }
 
@@ -669,10 +634,7 @@ export async function collectSessionData(
   config: Config,
 ): Promise<ExportSessionData> {
   // Create export session context
-  const exportContext = new ExportSessionContext(
-    conversation.sessionId,
-    config,
-  );
+  const exportContext = new ExportSessionContext(conversation.sessionId, config);
 
   // Create history replayer with export context
   const replayer = new HistoryReplayer(exportContext);

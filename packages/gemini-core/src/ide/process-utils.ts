@@ -4,10 +4,10 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { exec } from 'node:child_process';
-import { promisify } from 'node:util';
-import os from 'node:os';
-import path from 'node:path';
+import { exec } from "node:child_process";
+import os from "node:os";
+import path from "node:path";
+import { promisify } from "node:util";
 
 const execAsync = promisify(exec);
 
@@ -35,7 +35,7 @@ async function getProcessTableWindows(): Promise<Map<number, ProcessInfo>> {
   try {
     // Fetch ProcessId, ParentProcessId, Name, and CommandLine for all processes.
     const powershellCommand =
-      'Get-CimInstance Win32_Process | Select-Object ProcessId,ParentProcessId,Name,CommandLine | ConvertTo-Json -Compress';
+      "Get-CimInstance Win32_Process | Select-Object ProcessId,ParentProcessId,Name,CommandLine | ConvertTo-Json -Compress";
     // Increase maxBuffer to handle large process lists (default is 1MB)
     const { stdout } = await execAsync(`powershell "${powershellCommand}"`, {
       maxBuffer: 10 * 1024 * 1024,
@@ -57,12 +57,12 @@ async function getProcessTableWindows(): Promise<Map<number, ProcessInfo>> {
     }
 
     for (const p of processes) {
-      if (p && typeof p.ProcessId === 'number') {
+      if (p && typeof p.ProcessId === "number") {
         processMap.set(p.ProcessId, {
           pid: p.ProcessId,
           parentPid: p.ParentProcessId || 0,
-          name: p.Name || '',
-          command: p.CommandLine || '',
+          name: p.Name || "",
+          command: p.CommandLine || "",
         });
       }
     }
@@ -88,13 +88,13 @@ async function getProcessInfo(pid: number): Promise<{
     const { stdout } = await execAsync(command);
     const trimmedStdout = stdout.trim();
     if (!trimmedStdout) {
-      return { parentPid: 0, name: '', command: '' };
+      return { parentPid: 0, name: "", command: "" };
     }
     const parts = trimmedStdout.split(/\s+/);
     const ppidString = parts[0];
     const parentPid = parseInt(ppidString, 10);
     const fullCommand = trimmedStdout.substring(ppidString.length).trim();
-    const processName = path.basename(fullCommand.split(' ')[0]);
+    const processName = path.basename(fullCommand.split(" ")[0]);
 
     return {
       parentPid: isNaN(parentPid) ? 1 : parentPid,
@@ -102,7 +102,7 @@ async function getProcessInfo(pid: number): Promise<{
       command: fullCommand,
     };
   } catch (_e) {
-    return { parentPid: 0, name: '', command: '' };
+    return { parentPid: 0, name: "", command: "" };
   }
 }
 
@@ -119,7 +119,7 @@ async function getIdeProcessInfoForUnix(): Promise<{
   pid: number;
   command: string;
 }> {
-  const shells = ['zsh', 'bash', 'sh', 'tcsh', 'csh', 'ksh', 'fish', 'dash'];
+  const shells = ["zsh", "bash", "sh", "tcsh", "csh", "ksh", "fish", "dash"];
   let currentPid = process.pid;
 
   for (let i = 0; i < MAX_TRAVERSAL_DEPTH; i++) {
@@ -218,7 +218,7 @@ export async function getIdeProcessInfo(): Promise<{
 }> {
   const platform = os.platform();
 
-  if (platform === 'win32') {
+  if (platform === "win32") {
     return getIdeProcessInfoForWindows();
   }
 

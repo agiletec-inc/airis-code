@@ -3,7 +3,7 @@
  * Responsibility: Cache tool descriptions to minimize Gateway API calls
  */
 
-import type { ToolDescription } from '@airiscode/mcp-gateway-client';
+import type { ToolDescription } from "@airiscode/mcp-gateway-client";
 
 export class ToolDescriptionCache {
   private cache = new Map<string, ToolDescription[]>();

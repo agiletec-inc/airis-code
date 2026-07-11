@@ -4,9 +4,9 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import * as fs from 'node:fs';
-import { parse, stringify } from 'comment-json';
-import { coreEvents } from '@airiscode/gemini-cli-core';
+import * as fs from "node:fs";
+import { coreEvents } from "@airiscode/gemini-cli-core";
+import { parse, stringify } from "comment-json";
 
 /**
  * Type representing an object that may contain Symbol keys for comments.
@@ -21,19 +21,19 @@ export function updateSettingsFilePreservingFormat(
   updates: Record<string, unknown>,
 ): void {
   if (!fs.existsSync(filePath)) {
-    fs.writeFileSync(filePath, JSON.stringify(updates, null, 2), 'utf-8');
+    fs.writeFileSync(filePath, JSON.stringify(updates, null, 2), "utf-8");
     return;
   }
 
-  const originalContent = fs.readFileSync(filePath, 'utf-8');
+  const originalContent = fs.readFileSync(filePath, "utf-8");
 
   let parsed: Record<string, unknown>;
   try {
     parsed = parse(originalContent) as Record<string, unknown>;
   } catch (error) {
     coreEvents.emitFeedback(
-      'error',
-      'Error parsing settings file. Please check the JSON syntax.',
+      "error",
+      "Error parsing settings file. Please check the JSON syntax.",
       error,
     );
     return;
@@ -42,7 +42,7 @@ export function updateSettingsFilePreservingFormat(
   const updatedStructure = applyUpdates(parsed, updates);
   const updatedContent = stringify(updatedStructure, null, 2);
 
-  fs.writeFileSync(filePath, updatedContent, 'utf-8');
+  fs.writeFileSync(filePath, updatedContent, "utf-8");
 }
 
 /**
@@ -74,9 +74,7 @@ function preserveCommentsOnPropertyDeletion(
   function appendToSymbol(destSym: symbol, comments: unknown[]) {
     if (!comments || comments.length === 0) return;
     const existing = target[destSym];
-    target[destSym] = Array.isArray(existing)
-      ? existing.concat(comments)
-      : comments;
+    target[destSym] = Array.isArray(existing) ? existing.concat(comments) : comments;
   }
 
   if (beforeComments && beforeComments.length > 0) {
@@ -85,7 +83,7 @@ function preserveCommentsOnPropertyDeletion(
     } else if (prevKey) {
       appendToSymbol(Symbol.for(`after:${prevKey}`), beforeComments);
     } else {
-      appendToSymbol(Symbol.for('before'), beforeComments);
+      appendToSymbol(Symbol.for("before"), beforeComments);
     }
     delete target[beforeSym];
   }
@@ -96,7 +94,7 @@ function preserveCommentsOnPropertyDeletion(
     } else if (prevKey) {
       appendToSymbol(Symbol.for(`after:${prevKey}`), afterComments);
     } else {
-      appendToSymbol(Symbol.for('after'), afterComments);
+      appendToSymbol(Symbol.for("after"), afterComments);
     }
     delete target[afterSym];
   }
@@ -109,12 +107,9 @@ function preserveCommentsOnPropertyDeletion(
  * - Recursively applies to nested objects
  * - Preserves comments when deleting keys
  */
-function applyKeyDiff(
-  base: Record<string, unknown>,
-  desired: Record<string, unknown>,
-): void {
+function applyKeyDiff(base: Record<string, unknown>, desired: Record<string, unknown>): void {
   for (const existingKey of Object.getOwnPropertyNames(base)) {
-    if (!Object.prototype.hasOwnProperty.call(desired, existingKey)) {
+    if (!Object.hasOwn(desired, existingKey)) {
       preserveCommentsOnPropertyDeletion(base, existingKey);
       delete base[existingKey];
     }
@@ -124,22 +119,13 @@ function applyKeyDiff(
     const nextVal = desired[nextKey];
     const baseVal = base[nextKey];
 
-    const isObj =
-      typeof nextVal === 'object' &&
-      nextVal !== null &&
-      !Array.isArray(nextVal);
-    const isBaseObj =
-      typeof baseVal === 'object' &&
-      baseVal !== null &&
-      !Array.isArray(baseVal);
+    const isObj = typeof nextVal === "object" && nextVal !== null && !Array.isArray(nextVal);
+    const isBaseObj = typeof baseVal === "object" && baseVal !== null && !Array.isArray(baseVal);
     const isArr = Array.isArray(nextVal);
     const isBaseArr = Array.isArray(baseVal);
 
     if (isObj && isBaseObj) {
-      applyKeyDiff(
-        baseVal as Record<string, unknown>,
-        nextVal as Record<string, unknown>,
-      );
+      applyKeyDiff(baseVal as Record<string, unknown>, nextVal as Record<string, unknown>);
     } else if (isArr && isBaseArr) {
       // In-place mutate arrays to preserve array-level comments on CommentArray
       const baseArr = baseVal as unknown[];

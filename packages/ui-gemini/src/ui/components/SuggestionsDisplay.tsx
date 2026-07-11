@@ -4,11 +4,11 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { Box, Text } from 'ink';
-import { theme } from '../semantic-colors.js';
-import { PrepareLabel, MAX_WIDTH } from './PrepareLabel.js';
-import { CommandKind } from '../commands/types.js';
-import { Colors } from '../colors.js';
+import { Box, Text } from "ink";
+import { Colors } from "../colors.js";
+import { CommandKind } from "../commands/types.js";
+import { theme } from "../semantic-colors.js";
+import { MAX_WIDTH, PrepareLabel } from "./PrepareLabel.js";
 export interface Suggestion {
   label: string;
   value: string;
@@ -23,7 +23,7 @@ interface SuggestionsDisplayProps {
   width: number;
   scrollOffset: number;
   userInput: string;
-  mode: 'reverse' | 'slash';
+  mode: "reverse" | "slash";
   expandedIndex?: number;
 }
 
@@ -54,20 +54,15 @@ export function SuggestionsDisplay({
 
   // Calculate the visible slice based on scrollOffset
   const startIndex = scrollOffset;
-  const endIndex = Math.min(
-    scrollOffset + MAX_SUGGESTIONS_TO_SHOW,
-    suggestions.length,
-  );
+  const endIndex = Math.min(scrollOffset + MAX_SUGGESTIONS_TO_SHOW, suggestions.length);
   const visibleSuggestions = suggestions.slice(startIndex, endIndex);
 
   const getFullLabel = (s: Suggestion) =>
-    s.label + (s.commandKind === CommandKind.MCP_PROMPT ? ' [MCP]' : '');
+    s.label + (s.commandKind === CommandKind.MCP_PROMPT ? " [MCP]" : "");
 
-  const maxLabelLength = Math.max(
-    ...suggestions.map((s) => getFullLabel(s).length),
-  );
+  const maxLabelLength = Math.max(...suggestions.map((s) => getFullLabel(s).length));
   const commandColumnWidth =
-    mode === 'slash' ? Math.min(maxLabelLength, Math.floor(width * 0.5)) : 0;
+    mode === "slash" ? Math.min(maxLabelLength, Math.floor(width * 0.5)) : 0;
 
   return (
     <Box flexDirection="column" paddingX={1} width={width}>
@@ -92,7 +87,7 @@ export function SuggestionsDisplay({
         return (
           <Box key={`${suggestion.value}-${originalIndex}`} flexDirection="row">
             <Box
-              {...(mode === 'slash'
+              {...(mode === "slash"
                 ? { width: commandColumnWidth, flexShrink: 0 as const }
                 : { flexShrink: 1 as const })}
             >
@@ -113,7 +108,7 @@ export function SuggestionsDisplay({
             )}
             {isActive && isLong && (
               <Box width={3} flexShrink={0}>
-                <Text color={Colors.Gray}>{isExpanded ? ' ← ' : ' → '}</Text>
+                <Text color={Colors.Gray}>{isExpanded ? " ← " : " → "}</Text>
               </Box>
             )}
           </Box>

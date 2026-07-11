@@ -4,14 +4,14 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { EventEmitter } from 'node:events';
-import type { LoadServerHierarchicalMemoryResponse } from './memoryDiscovery.js';
+import { EventEmitter } from "node:events";
+import type { LoadServerHierarchicalMemoryResponse } from "./memoryDiscovery.js";
 
 /**
  * Defines the severity level for user-facing feedback.
  * This maps loosely to UI `MessageType`
  */
-export type FeedbackSeverity = 'info' | 'warning' | 'error';
+export type FeedbackSeverity = "info" | "warning" | "error";
 
 /**
  * Payload for the 'user-feedback' event.
@@ -60,10 +60,10 @@ export interface ModelChangedPayload {
 export type MemoryChangedPayload = LoadServerHierarchicalMemoryResponse;
 
 export enum CoreEvent {
-  UserFeedback = 'user-feedback',
-  FallbackModeChanged = 'fallback-mode-changed',
-  ModelChanged = 'model-changed',
-  MemoryChanged = 'memory-changed',
+  UserFeedback = "user-feedback",
+  FallbackModeChanged = "fallback-mode-changed",
+  ModelChanged = "model-changed",
+  MemoryChanged = "memory-changed",
 }
 
 export interface CoreEvents {
@@ -85,11 +85,7 @@ export class CoreEventEmitter extends EventEmitter<CoreEvents> {
    * Sends actionable feedback to the user.
    * Buffers automatically if the UI hasn't subscribed yet.
    */
-  emitFeedback(
-    severity: FeedbackSeverity,
-    message: string,
-    error?: unknown,
-  ): void {
+  emitFeedback(severity: FeedbackSeverity, message: string, error?: unknown): void {
     const payload: UserFeedbackPayload = { severity, message, error };
 
     if (this.listenerCount(CoreEvent.UserFeedback) === 0) {

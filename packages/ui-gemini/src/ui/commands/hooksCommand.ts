@@ -4,48 +4,41 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import type { SlashCommand, CommandContext } from './types.js';
-import { CommandKind } from './types.js';
-import { MessageType, type HistoryItemHooksList } from '../types.js';
-import type {
-  HookRegistryEntry,
-  MessageActionReturn,
-} from '@airiscode/gemini-cli-core';
-import { getErrorMessage } from '@airiscode/gemini-cli-core';
-import { SettingScope } from '../../config/settings.js';
+import type { HookRegistryEntry, MessageActionReturn } from "@airiscode/gemini-cli-core";
+import { getErrorMessage } from "@airiscode/gemini-cli-core";
+import { SettingScope } from "../../config/settings.js";
+import { type HistoryItemHooksList, MessageType } from "../types.js";
+import type { CommandContext, SlashCommand } from "./types.js";
+import { CommandKind } from "./types.js";
 
 /**
  * Display a formatted list of hooks with their status
  */
-async function panelAction(
-  context: CommandContext,
-): Promise<void | MessageActionReturn> {
+async function panelAction(context: CommandContext): Promise<void | MessageActionReturn> {
   const { config } = context.services;
   if (!config) {
     return {
-      type: 'message',
-      messageType: 'error',
-      content: 'Config not loaded.',
+      type: "message",
+      messageType: "error",
+      content: "Config not loaded.",
     };
   }
 
   const hookSystem = config.getHookSystem();
   if (!hookSystem) {
     return {
-      type: 'message',
-      messageType: 'info',
-      content:
-        'Hook system is not enabled. Enable it in settings with tools.enableHooks',
+      type: "message",
+      messageType: "info",
+      content: "Hook system is not enabled. Enable it in settings with tools.enableHooks",
     };
   }
 
   const allHooks = hookSystem.getAllHooks();
   if (allHooks.length === 0) {
     return {
-      type: 'message',
-      messageType: 'info',
-      content:
-        'No hooks configured. Add hooks to your settings to get started.',
+      type: "message",
+      messageType: "info",
+      content: "No hooks configured. Add hooks to your settings to get started.",
     };
   }
 
@@ -67,27 +60,27 @@ async function enableAction(
   const { config } = context.services;
   if (!config) {
     return {
-      type: 'message',
-      messageType: 'error',
-      content: 'Config not loaded.',
+      type: "message",
+      messageType: "error",
+      content: "Config not loaded.",
     };
   }
 
   const hookSystem = config.getHookSystem();
   if (!hookSystem) {
     return {
-      type: 'message',
-      messageType: 'error',
-      content: 'Hook system is not enabled.',
+      type: "message",
+      messageType: "error",
+      content: "Hook system is not enabled.",
     };
   }
 
   const hookName = args.trim();
   if (!hookName) {
     return {
-      type: 'message',
-      messageType: 'error',
-      content: 'Usage: /hooks enable <hook-name>',
+      type: "message",
+      messageType: "error",
+      content: "Usage: /hooks enable <hook-name>",
     };
   }
 
@@ -96,26 +89,24 @@ async function enableAction(
   const disabledHooks = settings.merged.hooks?.disabled || ([] as string[]);
 
   // Remove from disabled list if present
-  const newDisabledHooks = disabledHooks.filter(
-    (name: string) => name !== hookName,
-  );
+  const newDisabledHooks = disabledHooks.filter((name: string) => name !== hookName);
 
   // Update settings (setValue automatically saves)
   try {
-    settings.setValue(SettingScope.User, 'hooks.disabled', newDisabledHooks);
+    settings.setValue(SettingScope.User, "hooks.disabled", newDisabledHooks);
 
     // Enable in hook system
     hookSystem.setHookEnabled(hookName, true);
 
     return {
-      type: 'message',
-      messageType: 'info',
+      type: "message",
+      messageType: "info",
       content: `Hook "${hookName}" enabled successfully.`,
     };
   } catch (error) {
     return {
-      type: 'message',
-      messageType: 'error',
+      type: "message",
+      messageType: "error",
       content: `Failed to enable hook: ${getErrorMessage(error)}`,
     };
   }
@@ -131,27 +122,27 @@ async function disableAction(
   const { config } = context.services;
   if (!config) {
     return {
-      type: 'message',
-      messageType: 'error',
-      content: 'Config not loaded.',
+      type: "message",
+      messageType: "error",
+      content: "Config not loaded.",
     };
   }
 
   const hookSystem = config.getHookSystem();
   if (!hookSystem) {
     return {
-      type: 'message',
-      messageType: 'error',
-      content: 'Hook system is not enabled.',
+      type: "message",
+      messageType: "error",
+      content: "Hook system is not enabled.",
     };
   }
 
   const hookName = args.trim();
   if (!hookName) {
     return {
-      type: 'message',
-      messageType: 'error',
-      content: 'Usage: /hooks disable <hook-name>',
+      type: "message",
+      messageType: "error",
+      content: "Usage: /hooks disable <hook-name>",
     };
   }
 
@@ -165,27 +156,27 @@ async function disableAction(
 
     // Update settings (setValue automatically saves)
     try {
-      settings.setValue(SettingScope.User, 'hooks.disabled', newDisabledHooks);
+      settings.setValue(SettingScope.User, "hooks.disabled", newDisabledHooks);
 
       // Disable in hook system
       hookSystem.setHookEnabled(hookName, false);
 
       return {
-        type: 'message',
-        messageType: 'info',
+        type: "message",
+        messageType: "info",
         content: `Hook "${hookName}" disabled successfully.`,
       };
     } catch (error) {
       return {
-        type: 'message',
-        messageType: 'error',
+        type: "message",
+        messageType: "error",
         content: `Failed to disable hook: ${getErrorMessage(error)}`,
       };
     }
   } else {
     return {
-      type: 'message',
-      messageType: 'info',
+      type: "message",
+      messageType: "info",
       content: `Hook "${hookName}" is already disabled.`,
     };
   }
@@ -194,10 +185,7 @@ async function disableAction(
 /**
  * Completion function for hook names
  */
-function completeHookNames(
-  context: CommandContext,
-  partialArg: string,
-): string[] {
+function completeHookNames(context: CommandContext, partialArg: string): string[] {
   const { config } = context.services;
   if (!config) return [];
 
@@ -213,20 +201,20 @@ function completeHookNames(
  * Get a display name for a hook
  */
 function getHookDisplayName(hook: HookRegistryEntry): string {
-  return hook.config.command || 'unknown-hook';
+  return hook.config.command || "unknown-hook";
 }
 
 const panelCommand: SlashCommand = {
-  name: 'panel',
-  altNames: ['list', 'show'],
-  description: 'Display all registered hooks with their status',
+  name: "panel",
+  altNames: ["list", "show"],
+  description: "Display all registered hooks with their status",
   kind: CommandKind.BUILT_IN,
   action: panelAction,
 };
 
 const enableCommand: SlashCommand = {
-  name: 'enable',
-  description: 'Enable a hook by name',
+  name: "enable",
+  description: "Enable a hook by name",
   kind: CommandKind.BUILT_IN,
   autoExecute: true,
   action: enableAction,
@@ -234,8 +222,8 @@ const enableCommand: SlashCommand = {
 };
 
 const disableCommand: SlashCommand = {
-  name: 'disable',
-  description: 'Disable a hook by name',
+  name: "disable",
+  description: "Disable a hook by name",
   kind: CommandKind.BUILT_IN,
   autoExecute: true,
   action: disableAction,
@@ -243,9 +231,9 @@ const disableCommand: SlashCommand = {
 };
 
 export const hooksCommand: SlashCommand = {
-  name: 'hooks',
-  description: 'Manage hooks',
+  name: "hooks",
+  description: "Manage hooks",
   kind: CommandKind.BUILT_IN,
   subCommands: [panelCommand, enableCommand, disableCommand],
-  action: async (context: CommandContext) => panelCommand.action!(context, ''),
+  action: async (context: CommandContext) => panelCommand.action!(context, ""),
 };

@@ -4,29 +4,23 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+import type { MCPServerConfig } from "@airiscode/gemini-cli-core";
+import { createTransport, debugLogger, MCPServerStatus } from "@airiscode/gemini-cli-core";
+import { Client } from "@modelcontextprotocol/sdk/client/index.js";
 // File for 'gemini mcp list' command
-import type { CommandModule } from 'yargs';
-import { loadSettings } from '../../config/settings.js';
-import type { MCPServerConfig } from '@airiscode/gemini-cli-core';
-import {
-  MCPServerStatus,
-  createTransport,
-  debugLogger,
-} from '@airiscode/gemini-cli-core';
-import { Client } from '@modelcontextprotocol/sdk/client/index.js';
-import { ExtensionManager } from '../../config/extension-manager.js';
-import { requestConsentNonInteractive } from '../../config/extensions/consent.js';
-import { promptForSetting } from '../../config/extensions/extensionSettings.js';
-import { exitCli } from '../utils.js';
+import type { CommandModule } from "yargs";
+import { ExtensionManager } from "../../config/extension-manager.js";
+import { requestConsentNonInteractive } from "../../config/extensions/consent.js";
+import { promptForSetting } from "../../config/extensions/extensionSettings.js";
+import { loadSettings } from "../../config/settings.js";
+import { exitCli } from "../utils.js";
 
-const COLOR_GREEN = '\u001b[32m';
-const COLOR_YELLOW = '\u001b[33m';
-const COLOR_RED = '\u001b[31m';
-const RESET_COLOR = '\u001b[0m';
+const COLOR_GREEN = "\u001b[32m";
+const COLOR_YELLOW = "\u001b[33m";
+const COLOR_RED = "\u001b[31m";
+const RESET_COLOR = "\u001b[0m";
 
-async function getMcpServersFromConfig(): Promise<
-  Record<string, MCPServerConfig>
-> {
+async function getMcpServersFromConfig(): Promise<Record<string, MCPServerConfig>> {
   const settings = loadSettings();
   const extensionManager = new ExtensionManager({
     settings: settings.merged,
@@ -55,8 +49,8 @@ async function testMCPConnection(
   config: MCPServerConfig,
 ): Promise<MCPServerStatus> {
   const client = new Client({
-    name: 'mcp-test-client',
-    version: '0.0.1',
+    name: "mcp-test-client",
+    version: "0.0.1",
   });
 
   let transport;
@@ -96,45 +90,43 @@ export async function listMcpServers(): Promise<void> {
   const serverNames = Object.keys(mcpServers);
 
   if (serverNames.length === 0) {
-    debugLogger.log('No MCP servers configured.');
+    debugLogger.log("No MCP servers configured.");
     return;
   }
 
-  debugLogger.log('Configured MCP servers:\n');
+  debugLogger.log("Configured MCP servers:\n");
 
   for (const serverName of serverNames) {
     const server = mcpServers[serverName];
 
     const status = await getServerStatus(serverName, server);
 
-    let statusIndicator = '';
-    let statusText = '';
+    let statusIndicator = "";
+    let statusText = "";
     switch (status) {
       case MCPServerStatus.CONNECTED:
-        statusIndicator = COLOR_GREEN + '✓' + RESET_COLOR;
-        statusText = 'Connected';
+        statusIndicator = COLOR_GREEN + "✓" + RESET_COLOR;
+        statusText = "Connected";
         break;
       case MCPServerStatus.CONNECTING:
-        statusIndicator = COLOR_YELLOW + '…' + RESET_COLOR;
-        statusText = 'Connecting';
+        statusIndicator = COLOR_YELLOW + "…" + RESET_COLOR;
+        statusText = "Connecting";
         break;
       case MCPServerStatus.DISCONNECTED:
       default:
-        statusIndicator = COLOR_RED + '✗' + RESET_COLOR;
-        statusText = 'Disconnected';
+        statusIndicator = COLOR_RED + "✗" + RESET_COLOR;
+        statusText = "Disconnected";
         break;
     }
 
     let serverInfo =
-      serverName +
-      (server.extension?.name ? ` (from ${server.extension.name})` : '') +
-      ': ';
+      serverName + (server.extension?.name ? ` (from ${server.extension.name})` : "") + ": ";
     if (server.httpUrl) {
       serverInfo += `${server.httpUrl} (http)`;
     } else if (server.url) {
       serverInfo += `${server.url} (sse)`;
     } else if (server.command) {
-      serverInfo += `${server.command} ${server.args?.join(' ') || ''} (stdio)`;
+      serverInfo += `${server.command} ${server.args?.join(" ") || ""} (stdio)`;
     }
 
     debugLogger.log(`${statusIndicator} ${serverInfo} - ${statusText}`);
@@ -142,8 +134,8 @@ export async function listMcpServers(): Promise<void> {
 }
 
 export const listCommand: CommandModule = {
-  command: 'list',
-  describe: 'List all configured MCP servers',
+  command: "list",
+  describe: "List all configured MCP servers",
   handler: async () => {
     await listMcpServers();
     await exitCli();

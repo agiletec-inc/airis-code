@@ -4,10 +4,10 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { Box, Text } from 'ink';
-import { Storage, isDebugLoggingDegraded } from '@airiscode/runtime';
-import { useConfig } from '../contexts/ConfigContext.js';
-import { theme } from '../semantic-colors.js';
+import { isDebugLoggingDegraded, Storage } from "@airiscode/runtime";
+import { Box, Text } from "ink";
+import { useConfig } from "../contexts/ConfigContext.js";
+import { theme } from "../semantic-colors.js";
 
 /**
  * Displays debug mode status and log file path when debug mode is enabled.
@@ -27,9 +27,7 @@ export const DebugModeNotification = () => {
       <Text color={theme.status.warning}>Debug mode enabled</Text>
       <Text dimColor>Logging to: {logPath}</Text>
       {isDegraded && (
-        <Text dimColor>
-          Warning: Debug logging is degraded (write failures occurred)
-        </Text>
+        <Text dimColor>Warning: Debug logging is degraded (write failures occurred)</Text>
       )}
     </Box>
   );

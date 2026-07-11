@@ -4,22 +4,19 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import React, { act } from 'react';
-import {
-  ShellToolMessage,
-  type ShellToolMessageProps,
-} from './ShellToolMessage.js';
-import { StreamingState, ToolCallStatus } from '../../types.js';
-import { Text } from 'ink';
-import type { Config } from '@airiscode/gemini-cli-core';
-import { renderWithProviders } from '../../../test-utils/render.js';
-import { waitFor } from '../../../test-utils/async.js';
-import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { SHELL_TOOL_NAME } from '@airiscode/gemini-cli-core';
-import { SHELL_COMMAND_NAME } from '../../constants.js';
-import { StreamingContext } from '../../contexts/StreamingContext.js';
+import type { Config } from "@airiscode/gemini-cli-core";
+import { SHELL_TOOL_NAME } from "@airiscode/gemini-cli-core";
+import { Text } from "ink";
+import React, { act } from "react";
+import { beforeEach, describe, expect, it, vi } from "vitest";
+import { waitFor } from "../../../test-utils/async.js";
+import { renderWithProviders } from "../../../test-utils/render.js";
+import { SHELL_COMMAND_NAME } from "../../constants.js";
+import { StreamingContext } from "../../contexts/StreamingContext.js";
+import { StreamingState, ToolCallStatus } from "../../types.js";
+import { ShellToolMessage, type ShellToolMessageProps } from "./ShellToolMessage.js";
 
-vi.mock('../TerminalOutput.js', () => ({
+vi.mock("../TerminalOutput.js", () => ({
   TerminalOutput: function MockTerminalOutput({
     cursor,
   }: {
@@ -34,12 +31,8 @@ vi.mock('../TerminalOutput.js', () => ({
 }));
 
 // Mock child components or utilities if they are complex or have side effects
-vi.mock('../GeminiRespondingSpinner.js', () => ({
-  GeminiRespondingSpinner: ({
-    nonRespondingDisplay,
-  }: {
-    nonRespondingDisplay?: string;
-  }) => {
+vi.mock("../GeminiRespondingSpinner.js", () => ({
+  GeminiRespondingSpinner: ({ nonRespondingDisplay }: { nonRespondingDisplay?: string }) => {
     const streamingState = React.useContext(StreamingContext)!;
     if (streamingState === StreamingState.Responding) {
       return <Text>MockRespondingSpinner</Text>;
@@ -48,24 +41,24 @@ vi.mock('../GeminiRespondingSpinner.js', () => ({
   },
 }));
 
-vi.mock('../../utils/MarkdownDisplay.js', () => ({
+vi.mock("../../utils/MarkdownDisplay.js", () => ({
   MarkdownDisplay: function MockMarkdownDisplay({ text }: { text: string }) {
     return <Text>MockMarkdown:{text}</Text>;
   },
 }));
 
-describe('<ShellToolMessage />', () => {
+describe("<ShellToolMessage />", () => {
   const baseProps: ShellToolMessageProps = {
-    callId: 'tool-123',
+    callId: "tool-123",
     name: SHELL_COMMAND_NAME,
-    description: 'A shell command',
-    resultDisplay: 'Test result',
+    description: "A shell command",
+    resultDisplay: "Test result",
     status: ToolCallStatus.Executing,
     terminalWidth: 80,
     confirmationDetails: undefined,
-    emphasis: 'medium',
+    emphasis: "medium",
     isFirst: true,
-    borderColor: 'green',
+    borderColor: "green",
     borderDimColor: false,
     config: {
       getEnableInteractiveShell: () => true,
@@ -78,10 +71,7 @@ describe('<ShellToolMessage />', () => {
   };
 
   // Helper to render with context
-  const renderWithContext = (
-    ui: React.ReactElement,
-    streamingState: StreamingState,
-  ) =>
+  const renderWithContext = (ui: React.ReactElement, streamingState: StreamingState) =>
     renderWithProviders(ui, {
       uiActions,
       uiState: { streamingState },
@@ -91,12 +81,12 @@ describe('<ShellToolMessage />', () => {
     vi.clearAllMocks();
   });
 
-  describe('interactive shell focus', () => {
+  describe("interactive shell focus", () => {
     const shellProps: ShellToolMessageProps = {
       ...baseProps,
     };
 
-    it('clicks inside the shell area sets focus to true', async () => {
+    it("clicks inside the shell area sets focus to true", async () => {
       const { stdin, lastFrame, simulateClick } = renderWithProviders(
         <ShellToolMessage {...shellProps} />,
         {
@@ -106,7 +96,7 @@ describe('<ShellToolMessage />', () => {
       );
 
       await waitFor(() => {
-        expect(lastFrame()).toContain('A shell command'); // Wait for render
+        expect(lastFrame()).toContain("A shell command"); // Wait for render
       });
 
       await simulateClick(stdin, 2, 2); // Click at column 2, row 2 (1-based)
@@ -116,7 +106,7 @@ describe('<ShellToolMessage />', () => {
       });
     });
 
-    it('handles focus for SHELL_TOOL_NAME (core shell tool)', async () => {
+    it("handles focus for SHELL_TOOL_NAME (core shell tool)", async () => {
       const coreShellProps: ShellToolMessageProps = {
         ...shellProps,
         name: SHELL_TOOL_NAME,
@@ -131,7 +121,7 @@ describe('<ShellToolMessage />', () => {
       );
 
       await waitFor(() => {
-        expect(lastFrame()).toContain('A shell command');
+        expect(lastFrame()).toContain("A shell command");
       });
 
       await simulateClick(stdin, 2, 2);
@@ -141,7 +131,7 @@ describe('<ShellToolMessage />', () => {
       });
     });
 
-    it('resets focus when shell finishes', async () => {
+    it("resets focus when shell finishes", async () => {
       let updateStatus: (s: ToolCallStatus) => void = () => {};
 
       const Wrapper = () => {
@@ -162,7 +152,7 @@ describe('<ShellToolMessage />', () => {
 
       // Verify it is initially focused
       await waitFor(() => {
-        expect(lastFrame()).toContain('(Focused)');
+        expect(lastFrame()).toContain("(Focused)");
       });
 
       // Now update status to Success

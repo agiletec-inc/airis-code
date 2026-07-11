@@ -4,60 +4,54 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { useState, useCallback, useEffect, useMemo } from 'react';
-import { Box, Text } from 'ink';
-import { theme } from '../../semantic-colors.js';
-import { useKeypress } from '../../hooks/useKeypress.js';
-import { t } from '../../../i18n/index.js';
+import {
+  type AnyDeclarativeTool,
+  createDebugLogger,
+  type DiscoveredMCPPrompt,
+  DiscoveredMCPTool,
+  getMCPServerStatus,
+  MCPOAuthTokenStorage,
+  type MCPServerConfig,
+} from "@airiscode/runtime";
+import { Box, Text } from "ink";
+import { useCallback, useEffect, useMemo, useState } from "react";
+import { loadSettings, SettingScope } from "../../../config/settings.js";
+import { t } from "../../../i18n/index.js";
+import { useConfig } from "../../contexts/ConfigContext.js";
+import { useKeypress } from "../../hooks/useKeypress.js";
+import { useTerminalSize } from "../../hooks/useTerminalSize.js";
+import { theme } from "../../semantic-colors.js";
+import { AuthenticateStep } from "./steps/AuthenticateStep.js";
+import { DisableScopeSelectStep } from "./steps/DisableScopeSelectStep.js";
+import { ServerDetailStep } from "./steps/ServerDetailStep.js";
+import { ServerListStep } from "./steps/ServerListStep.js";
+import { ToolDetailStep } from "./steps/ToolDetailStep.js";
+import { ToolListStep } from "./steps/ToolListStep.js";
 import type {
   MCPManagementDialogProps,
   MCPServerDisplayInfo,
   MCPToolDisplayInfo,
-} from './types.js';
-import { MCP_MANAGEMENT_STEPS } from './types.js';
-import { ServerListStep } from './steps/ServerListStep.js';
-import { ServerDetailStep } from './steps/ServerDetailStep.js';
-import { ToolListStep } from './steps/ToolListStep.js';
-import { ToolDetailStep } from './steps/ToolDetailStep.js';
-import { DisableScopeSelectStep } from './steps/DisableScopeSelectStep.js';
-import { AuthenticateStep } from './steps/AuthenticateStep.js';
-import { useConfig } from '../../contexts/ConfigContext.js';
-import {
-  getMCPServerStatus,
-  DiscoveredMCPTool,
-  MCPOAuthTokenStorage,
-  type MCPServerConfig,
-  type AnyDeclarativeTool,
-  type DiscoveredMCPPrompt,
-  createDebugLogger,
-} from '@airiscode/runtime';
-import { loadSettings, SettingScope } from '../../../config/settings.js';
-import { isToolValid, getToolInvalidReasons } from './utils.js';
-import { useTerminalSize } from '../../hooks/useTerminalSize.js';
+} from "./types.js";
+import { MCP_MANAGEMENT_STEPS } from "./types.js";
+import { getToolInvalidReasons, isToolValid } from "./utils.js";
 
-const debugLogger = createDebugLogger('MCP_DIALOG');
+const debugLogger = createDebugLogger("MCP_DIALOG");
 
-export const MCPManagementDialog: React.FC<MCPManagementDialogProps> = ({
-  onClose,
-}) => {
+export const MCPManagementDialog: React.FC<MCPManagementDialogProps> = ({ onClose }) => {
   const config = useConfig();
   const { columns: width } = useTerminalSize();
   const boxWidth = width - 4;
 
   const [servers, setServers] = useState<MCPServerDisplayInfo[]>([]);
   const [selectedServerIndex, setSelectedServerIndex] = useState<number>(-1);
-  const [selectedTool, setSelectedTool] = useState<MCPToolDisplayInfo | null>(
-    null,
-  );
+  const [selectedTool, setSelectedTool] = useState<MCPToolDisplayInfo | null>(null);
   const [navigationStack, setNavigationStack] = useState<string[]>([
     MCP_MANAGEMENT_STEPS.SERVER_LIST,
   ]);
   const [isLoading, setIsLoading] = useState(true);
 
   // Load MCP server data - extracted to a separate function for reuse
-  const fetchServerData = useCallback(async (): Promise<
-    MCPServerDisplayInfo[]
-  > => {
+  const fetchServerData = useCallback(async (): Promise<MCPServerDisplayInfo[]> => {
     if (!config) return [];
 
     const mcpServers = config.getMcpServers() || {};
@@ -67,9 +61,7 @@ export const MCPManagementDialog: React.FC<MCPManagementDialogProps> = ({
     // Get settings to determine the scope of each server
     const settings = loadSettings();
     const userSettings = settings.forScope(SettingScope.User).settings;
-    const workspaceSettings = settings.forScope(
-      SettingScope.Workspace,
-    ).settings;
+    const workspaceSettings = settings.forScope(SettingScope.Workspace).settings;
 
     const serverInfos: MCPServerDisplayInfo[] = [];
 
@@ -81,34 +73,28 @@ export const MCPManagementDialog: React.FC<MCPManagementDialogProps> = ({
       // Get tools for this server
       const allTools: AnyDeclarativeTool[] = toolRegistry?.getAllTools() || [];
       const serverTools = allTools.filter(
-        (t): t is DiscoveredMCPTool =>
-          t instanceof DiscoveredMCPTool && t.serverName === name,
+        (t): t is DiscoveredMCPTool => t instanceof DiscoveredMCPTool && t.serverName === name,
       );
 
       // Get prompts for this server
-      const allPrompts: DiscoveredMCPPrompt[] =
-        promptRegistry?.getAllPrompts() || [];
-      const serverPrompts = allPrompts.filter(
-        (p) => 'serverName' in p && p.serverName === name,
-      );
+      const allPrompts: DiscoveredMCPPrompt[] = promptRegistry?.getAllPrompts() || [];
+      const serverPrompts = allPrompts.filter((p) => "serverName" in p && p.serverName === name);
 
       // Determine source type
-      let source: 'user' | 'project' | 'extension' = 'user';
+      let source: "user" | "project" | "extension" = "user";
       if (serverConfig.extensionName) {
-        source = 'extension';
+        source = "extension";
       } else if (workspaceSettings.mcpServers?.[name]) {
-        source = 'project';
+        source = "project";
       } else if (userSettings.mcpServers?.[name]) {
-        source = 'user';
+        source = "user";
       }
 
       // Use config.isMcpServerDisabled() to check if server is disabled
       const isDisabled = config.isMcpServerDisabled(name);
 
       // Count invalid tools (missing name or description)
-      const invalidToolCount = serverTools.filter(
-        (t) => !t.name || !t.description,
-      ).length;
+      const invalidToolCount = serverTools.filter((t) => !t.name || !t.description).length;
 
       // Check if OAuth tokens exist for this server
       let hasOAuthTokens = false;
@@ -144,7 +130,7 @@ export const MCPManagementDialog: React.FC<MCPManagementDialogProps> = ({
         const serverInfos = await fetchServerData();
         setServers(serverInfos);
       } catch (error) {
-        debugLogger.error('Error loading MCP servers:', error);
+        debugLogger.error("Error loading MCP servers:", error);
       } finally {
         setIsLoading(false);
       }
@@ -163,9 +149,7 @@ export const MCPManagementDialog: React.FC<MCPManagementDialogProps> = ({
 
   // Current step
   const getCurrentStep = useCallback(
-    () =>
-      navigationStack[navigationStack.length - 1] ||
-      MCP_MANAGEMENT_STEPS.SERVER_LIST,
+    () => navigationStack[navigationStack.length - 1] || MCP_MANAGEMENT_STEPS.SERVER_LIST,
     [navigationStack],
   );
 
@@ -200,10 +184,7 @@ export const MCPManagementDialog: React.FC<MCPManagementDialogProps> = ({
     const allTools: AnyDeclarativeTool[] = toolRegistry.getAllTools();
     const mcpTools: DiscoveredMCPTool[] = [];
     for (const tool of allTools) {
-      if (
-        tool instanceof DiscoveredMCPTool &&
-        tool.serverName === selectedServer.name
-      ) {
+      if (tool instanceof DiscoveredMCPTool && tool.serverName === selectedServer.name) {
         mcpTools.push(tool);
       }
     }
@@ -214,11 +195,11 @@ export const MCPManagementDialog: React.FC<MCPManagementDialogProps> = ({
       let invalidReason: string | undefined;
       if (!isValid) {
         const reasons = getToolInvalidReasons(tool.name, tool.description);
-        invalidReason = reasons.map((r) => t(r)).join(', ');
+        invalidReason = reasons.map((r) => t(r)).join(", ");
       }
 
       return {
-        name: tool.name || t('(unnamed)'),
+        name: tool.name || t("(unnamed)"),
         description: tool.description,
         serverName: tool.serverName,
         schema: tool.parameterSchema as object | undefined,
@@ -255,7 +236,7 @@ export const MCPManagementDialog: React.FC<MCPManagementDialogProps> = ({
       const serverInfos = await fetchServerData();
       setServers(serverInfos);
     } catch (error) {
-      debugLogger.error('Error reloading MCP servers:', error);
+      debugLogger.error("Error reloading MCP servers:", error);
     } finally {
       setIsLoading(false);
     }
@@ -269,9 +250,7 @@ export const MCPManagementDialog: React.FC<MCPManagementDialogProps> = ({
       setIsLoading(true);
       const tokenStorage = new MCPOAuthTokenStorage();
       await tokenStorage.deleteCredentials(selectedServer.name);
-      debugLogger.info(
-        `Cleared OAuth tokens for server '${selectedServer.name}'`,
-      );
+      debugLogger.info(`Cleared OAuth tokens for server '${selectedServer.name}'`);
 
       // Disconnect the server so it no longer appears as connected
       const toolRegistry = config.getToolRegistry();
@@ -282,10 +261,7 @@ export const MCPManagementDialog: React.FC<MCPManagementDialogProps> = ({
       // Reload to update hasOAuthTokens flag and server status
       await reloadServers();
     } catch (error) {
-      debugLogger.error(
-        `Error clearing OAuth tokens for server '${selectedServer.name}':`,
-        error,
-      );
+      debugLogger.error(`Error clearing OAuth tokens for server '${selectedServer.name}':`, error);
     } finally {
       setIsLoading(false);
     }
@@ -304,10 +280,7 @@ export const MCPManagementDialog: React.FC<MCPManagementDialogProps> = ({
       // Reload server data to update status
       await reloadServers();
     } catch (error) {
-      debugLogger.error(
-        `Error reconnecting to server '${selectedServer.name}':`,
-        error,
-      );
+      debugLogger.error(`Error reconnecting to server '${selectedServer.name}':`, error);
     } finally {
       setIsLoading(false);
     }
@@ -329,18 +302,14 @@ export const MCPManagementDialog: React.FC<MCPManagementDialogProps> = ({
         const currentExcluded = scopeSettings.mcp?.excluded || [];
 
         if (currentExcluded.includes(server.name)) {
-          const newExcluded = currentExcluded.filter(
-            (name: string) => name !== server.name,
-          );
-          settings.setValue(scope, 'mcp.excluded', newExcluded);
+          const newExcluded = currentExcluded.filter((name: string) => name !== server.name);
+          settings.setValue(scope, "mcp.excluded", newExcluded);
         }
       }
 
       // Update runtime config exclusion list
       const currentExcluded = config.getExcludedMcpServers() || [];
-      const newExcluded = currentExcluded.filter(
-        (name: string) => name !== server.name,
-      );
+      const newExcluded = currentExcluded.filter((name: string) => name !== server.name);
       config.setExcludedMcpServers(newExcluded);
 
       // Rediscover tools for this server
@@ -352,10 +321,7 @@ export const MCPManagementDialog: React.FC<MCPManagementDialogProps> = ({
       // Reload server data
       await reloadServers();
     } catch (error) {
-      debugLogger.error(
-        `Error enabling server '${selectedServer.name}':`,
-        error,
-      );
+      debugLogger.error(`Error enabling server '${selectedServer.name}':`, error);
     } finally {
       setIsLoading(false);
     }
@@ -377,22 +343,20 @@ export const MCPManagementDialog: React.FC<MCPManagementDialogProps> = ({
         const settings = loadSettings();
 
         // Determine the scope based on server configuration location
-        let targetScope: 'user' | 'workspace' = 'user';
-        if (server.source === 'extension') {
+        let targetScope: "user" | "workspace" = "user";
+        if (server.source === "extension") {
           // Extension servers should not be disabled through user/workspace settings
           // Show error message and return
-          debugLogger.warn(
-            `Cannot disable extension MCP server '${server.name}'`,
-          );
+          debugLogger.warn(`Cannot disable extension MCP server '${server.name}'`);
           setIsLoading(false);
           return;
-        } else if (server.source === 'project') {
-          targetScope = 'workspace';
+        } else if (server.source === "project") {
+          targetScope = "workspace";
         }
 
         // Get current exclusion list for the target scope
         const scopeSettings = settings.forScope(
-          targetScope === 'user' ? SettingScope.User : SettingScope.Workspace,
+          targetScope === "user" ? SettingScope.User : SettingScope.Workspace,
         ).settings;
         const currentExcluded = scopeSettings.mcp?.excluded || [];
 
@@ -400,8 +364,8 @@ export const MCPManagementDialog: React.FC<MCPManagementDialogProps> = ({
         if (!currentExcluded.includes(server.name)) {
           const newExcluded = [...currentExcluded, server.name];
           settings.setValue(
-            targetScope === 'user' ? SettingScope.User : SettingScope.Workspace,
-            'mcp.excluded',
+            targetScope === "user" ? SettingScope.User : SettingScope.Workspace,
+            "mcp.excluded",
             newExcluded,
           );
         }
@@ -415,10 +379,7 @@ export const MCPManagementDialog: React.FC<MCPManagementDialogProps> = ({
         // Reload server list
         await reloadServers();
       } catch (error) {
-        debugLogger.error(
-          `Error disabling server '${selectedServer.name}':`,
-          error,
-        );
+        debugLogger.error(`Error disabling server '${selectedServer.name}':`, error);
       } finally {
         setIsLoading(false);
       }
@@ -427,7 +388,7 @@ export const MCPManagementDialog: React.FC<MCPManagementDialogProps> = ({
 
   // Execute disable after selecting scope
   const handleSelectDisableScope = useCallback(
-    async (scope: 'user' | 'workspace') => {
+    async (scope: "user" | "workspace") => {
       if (!config || !selectedServer) return;
 
       try {
@@ -438,7 +399,7 @@ export const MCPManagementDialog: React.FC<MCPManagementDialogProps> = ({
 
         // Get current exclusion list
         const scopeSettings = settings.forScope(
-          scope === 'user' ? SettingScope.User : SettingScope.Workspace,
+          scope === "user" ? SettingScope.User : SettingScope.Workspace,
         ).settings;
         const currentExcluded = scopeSettings.mcp?.excluded || [];
 
@@ -446,8 +407,8 @@ export const MCPManagementDialog: React.FC<MCPManagementDialogProps> = ({
         if (!currentExcluded.includes(server.name)) {
           const newExcluded = [...currentExcluded, server.name];
           settings.setValue(
-            scope === 'user' ? SettingScope.User : SettingScope.Workspace,
-            'mcp.excluded',
+            scope === "user" ? SettingScope.User : SettingScope.Workspace,
+            "mcp.excluded",
             newExcluded,
           );
         }
@@ -464,10 +425,7 @@ export const MCPManagementDialog: React.FC<MCPManagementDialogProps> = ({
         // Return to server detail page
         handleNavigateBack();
       } catch (error) {
-        debugLogger.error(
-          `Error disabling server '${selectedServer.name}':`,
-          error,
-        );
+        debugLogger.error(`Error disabling server '${selectedServer.name}':`, error);
       } finally {
         setIsLoading(false);
       }
@@ -481,10 +439,10 @@ export const MCPManagementDialog: React.FC<MCPManagementDialogProps> = ({
     let headerText = (
       <Box flexDirection="column">
         <Text color={theme.text.accent} bold>
-          {t('Manage MCP servers')}
+          {t("Manage MCP servers")}
         </Text>
         <Text color={theme.text.secondary}>
-          {servers.length} {servers.length === 1 ? t('server') : t('servers')}
+          {servers.length} {servers.length === 1 ? t("server") : t("servers")}
         </Text>
       </Box>
     );
@@ -494,7 +452,7 @@ export const MCPManagementDialog: React.FC<MCPManagementDialogProps> = ({
         headerText = (
           <Box>
             <Text color={theme.text.accent} bold>
-              {selectedServer?.name || t('Server Detail')}
+              {selectedServer?.name || t("Server Detail")}
             </Text>
           </Box>
         );
@@ -503,13 +461,12 @@ export const MCPManagementDialog: React.FC<MCPManagementDialogProps> = ({
         headerText = (
           <Box flexDirection="column">
             <Text color={theme.text.accent} bold>
-              {t('Tools for {{serverName}}', {
-                serverName: selectedServer?.name || 'Server',
+              {t("Tools for {{serverName}}", {
+                serverName: selectedServer?.name || "Server",
               })}
             </Text>
             <Text color={theme.text.secondary}>
-              ({getServerTools().length}{' '}
-              {getServerTools().length === 1 ? t('tool') : t('tools')})
+              ({getServerTools().length} {getServerTools().length === 1 ? t("tool") : t("tools")})
             </Text>
           </Box>
         );
@@ -519,24 +476,22 @@ export const MCPManagementDialog: React.FC<MCPManagementDialogProps> = ({
           <Box flexDirection="column">
             <Box>
               <Text color={theme.text.accent} bold>
-                {selectedTool?.name || t('Tool Detail')}
+                {selectedTool?.name || t("Tool Detail")}
               </Text>
               {selectedTool?.annotations?.destructiveHint && (
-                <Text color={theme.status.error}>{'[destructive]'}</Text>
+                <Text color={theme.status.error}>{"[destructive]"}</Text>
               )}
               {selectedTool?.annotations?.idempotentHint && (
-                <Text color={theme.status.warning}>{'[idempotent]'}</Text>
+                <Text color={theme.status.warning}>{"[idempotent]"}</Text>
               )}
               {selectedTool?.annotations?.readOnlyHint && (
-                <Text color={theme.status.success}>{'[read-only]'}</Text>
+                <Text color={theme.status.success}>{"[read-only]"}</Text>
               )}
               {selectedTool?.annotations?.openWorldHint && (
-                <Text color={theme.text.primary}>{'[open-world]'}</Text>
+                <Text color={theme.text.primary}>{"[open-world]"}</Text>
               )}
             </Box>
-            <Text color={theme.text.secondary}>
-              {selectedTool?.serverName || t('Server')}
-            </Text>
+            <Text color={theme.text.secondary}>{selectedTool?.serverName || t("Server")}</Text>
           </Box>
         );
         break;
@@ -544,7 +499,7 @@ export const MCPManagementDialog: React.FC<MCPManagementDialogProps> = ({
         headerText = (
           <Box>
             <Text color={theme.text.accent} bold>
-              {t('OAuth Authentication')}
+              {t("OAuth Authentication")}
             </Text>
           </Box>
         );
@@ -560,16 +515,14 @@ export const MCPManagementDialog: React.FC<MCPManagementDialogProps> = ({
   // Render step content
   const renderStepContent = useCallback(() => {
     if (isLoading) {
-      return <Text color={theme.text.secondary}>{t('Loading...')}</Text>;
+      return <Text color={theme.text.secondary}>{t("Loading...")}</Text>;
     }
 
     const currentStep = getCurrentStep();
 
     switch (currentStep) {
       case MCP_MANAGEMENT_STEPS.SERVER_LIST:
-        return (
-          <ServerListStep servers={servers} onSelect={handleSelectServer} />
-        );
+        return <ServerListStep servers={servers} onSelect={handleSelectServer} />;
 
       case MCP_MANAGEMENT_STEPS.SERVER_DETAIL:
         return (
@@ -597,16 +550,14 @@ export const MCPManagementDialog: React.FC<MCPManagementDialogProps> = ({
         return (
           <ToolListStep
             tools={getServerTools()}
-            serverName={selectedServer?.name || ''}
+            serverName={selectedServer?.name || ""}
             onSelect={handleSelectTool}
             onBack={handleNavigateBack}
           />
         );
 
       case MCP_MANAGEMENT_STEPS.TOOL_DETAIL:
-        return (
-          <ToolDetailStep tool={selectedTool} onBack={handleNavigateBack} />
-        );
+        return <ToolDetailStep tool={selectedTool} onBack={handleNavigateBack} />;
 
       case MCP_MANAGEMENT_STEPS.AUTHENTICATE:
         return (
@@ -622,7 +573,7 @@ export const MCPManagementDialog: React.FC<MCPManagementDialogProps> = ({
       default:
         return (
           <Box>
-            <Text color={theme.status.error}>{t('Unknown step')}</Text>
+            <Text color={theme.status.error}>{t("Unknown step")}</Text>
           </Box>
         );
     }
@@ -648,33 +599,33 @@ export const MCPManagementDialog: React.FC<MCPManagementDialogProps> = ({
   // Render step footer
   const renderStepFooter = useCallback(() => {
     const currentStep = getCurrentStep();
-    let footerText = '';
+    let footerText = "";
 
     switch (currentStep) {
       case MCP_MANAGEMENT_STEPS.SERVER_LIST:
         if (servers.length === 0) {
-          footerText = t('Esc to close');
+          footerText = t("Esc to close");
         } else {
-          footerText = t('↑↓ to navigate · Enter to select · Esc to close');
+          footerText = t("↑↓ to navigate · Enter to select · Esc to close");
         }
         break;
       case MCP_MANAGEMENT_STEPS.SERVER_DETAIL:
-        footerText = t('↑↓ to navigate · Enter to select · Esc to back');
+        footerText = t("↑↓ to navigate · Enter to select · Esc to back");
         break;
       case MCP_MANAGEMENT_STEPS.DISABLE_SCOPE_SELECT:
-        footerText = t('↑↓ to navigate · Enter to confirm · Esc to back');
+        footerText = t("↑↓ to navigate · Enter to confirm · Esc to back");
         break;
       case MCP_MANAGEMENT_STEPS.TOOL_LIST:
-        footerText = t('↑↓ to navigate · Enter to select · Esc to back');
+        footerText = t("↑↓ to navigate · Enter to select · Esc to back");
         break;
       case MCP_MANAGEMENT_STEPS.TOOL_DETAIL:
-        footerText = t('Esc to back');
+        footerText = t("Esc to back");
         break;
       case MCP_MANAGEMENT_STEPS.AUTHENTICATE:
-        footerText = t('Esc to go back');
+        footerText = t("Esc to go back");
         break;
       default:
-        footerText = t('Esc to close');
+        footerText = t("Esc to close");
     }
 
     return (
@@ -687,10 +638,7 @@ export const MCPManagementDialog: React.FC<MCPManagementDialogProps> = ({
   // ESC key handler - only close dialog, child components handle back navigation to avoid duplicate triggers
   useKeypress(
     (key) => {
-      if (
-        key.name === 'escape' &&
-        getCurrentStep() === MCP_MANAGEMENT_STEPS.SERVER_LIST
-      ) {
+      if (key.name === "escape" && getCurrentStep() === MCP_MANAGEMENT_STEPS.SERVER_LIST) {
         onClose();
       }
     },

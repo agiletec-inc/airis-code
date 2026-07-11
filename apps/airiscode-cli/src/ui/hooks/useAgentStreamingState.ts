@@ -13,16 +13,16 @@
  * layout and interaction.
  */
 
-import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import {
-  AgentStatus,
-  AgentEventType,
-  isTerminalStatus,
-  type AgentInteractive,
   type AgentEventEmitter,
-} from '@airiscode/runtime';
-import { StreamingState } from '../types.js';
-import { useTimer } from './useTimer.js';
+  AgentEventType,
+  type AgentInteractive,
+  AgentStatus,
+  isTerminalStatus,
+} from "@airiscode/runtime";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { StreamingState } from "../types.js";
+import { useTimer } from "./useTimer.js";
 
 // ─── Types ──────────────────────────────────────────────────
 
@@ -73,8 +73,7 @@ export function useAgentStreamingState(
 
   useEffect(() => {
     if (!interactiveAgent) return;
-    const emitter: AgentEventEmitter | undefined =
-      interactiveAgent.getEventEmitter();
+    const emitter: AgentEventEmitter | undefined = interactiveAgent.getEventEmitter();
     if (!emitter) return;
 
     const handler = () => forceRender();
@@ -90,9 +89,8 @@ export function useAgentStreamingState(
     const usageHandler = (event: {
       usage?: { totalTokenCount?: number; promptTokenCount?: number };
     }) => {
-      const count =
-        event?.usage?.totalTokenCount ?? event?.usage?.promptTokenCount;
-      if (typeof count === 'number' && count > 0) {
+      const count = event?.usage?.totalTokenCount ?? event?.usage?.promptTokenCount;
+      if (typeof count === "number" && count > 0) {
         setLastPromptTokenCount(count);
       }
     };
@@ -110,8 +108,7 @@ export function useAgentStreamingState(
 
   const status = interactiveAgent?.getStatus();
   const pendingApprovals = interactiveAgent?.getPendingApprovals();
-  const hasPendingApprovals =
-    pendingApprovals !== undefined && pendingApprovals.size > 0;
+  const hasPendingApprovals = pendingApprovals !== undefined && pendingApprovals.size > 0;
 
   const streamingState = useMemo(() => {
     if (hasPendingApprovals) {
@@ -124,8 +121,7 @@ export function useAgentStreamingState(
   }, [status, hasPendingApprovals]);
 
   const isInputActive =
-    (streamingState === StreamingState.Idle ||
-      streamingState === StreamingState.Responding) &&
+    (streamingState === StreamingState.Idle || streamingState === StreamingState.Responding) &&
     status !== undefined &&
     !isTerminalStatus(status);
 
@@ -143,10 +139,7 @@ export function useAgentStreamingState(
     prevStreamingRef.current = streamingState;
   }, [streamingState]);
 
-  const elapsedTime = useTimer(
-    streamingState === StreamingState.Responding,
-    timerResetKey,
-  );
+  const elapsedTime = useTimer(streamingState === StreamingState.Responding, timerResetKey);
 
   return {
     status,

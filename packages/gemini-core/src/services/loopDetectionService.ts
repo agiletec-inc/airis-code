@@ -4,27 +4,24 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import type { Content } from '@google/genai';
-import { createHash } from 'node:crypto';
-import type { ServerGeminiStreamEvent } from '../core/turn.js';
-import { GeminiEventType } from '../core/turn.js';
+import { createHash } from "node:crypto";
+import type { Content } from "@google/genai";
+import type { Config } from "../config/config.js";
+import type { ServerGeminiStreamEvent } from "../core/turn.js";
+import { GeminiEventType } from "../core/turn.js";
 import {
+  logLlmLoopCheck,
   logLoopDetected,
   logLoopDetectionDisabled,
-  logLlmLoopCheck,
-} from '../telemetry/loggers.js';
+} from "../telemetry/loggers.js";
 import {
+  LlmLoopCheckEvent,
   LoopDetectedEvent,
   LoopDetectionDisabledEvent,
   LoopType,
-  LlmLoopCheckEvent,
-} from '../telemetry/types.js';
-import type { Config } from '../config/config.js';
-import {
-  isFunctionCall,
-  isFunctionResponse,
-} from '../utils/messageInspectors.js';
-import { debugLogger } from '../utils/debugLogger.js';
+} from "../telemetry/types.js";
+import { debugLogger } from "../utils/debugLogger.js";
+import { isFunctionCall, isFunctionResponse } from "../utils/messageInspectors.js";
 
 const TOOL_CALL_LOOP_THRESHOLD = 5;
 const CONTENT_LOOP_THRESHOLD = 10;
@@ -63,7 +60,7 @@ const MAX_LLM_CHECK_INTERVAL = 15;
  * The confidence threshold above which the LLM is considered to have detected a loop.
  */
 const LLM_CONFIDENCE_THRESHOLD = 0.9;
-const DOUBLE_CHECK_MODEL_ALIAS = 'loop-detection-double-check';
+const DOUBLE_CHECK_MODEL_ALIAS = "loop-detection-double-check";
 
 const LOOP_DETECTION_SYSTEM_PROMPT = `You are a sophisticated AI diagnostic agent specializing in identifying when a conversational AI is stuck in an unproductive state. Your task is to analyze the provided conversation history and determine if the assistant has ceased to make meaningful progress.
 
@@ -77,20 +74,19 @@ Crucially, differentiate between a true unproductive state and legitimate, incre
 For example, a series of 'tool_A' or 'tool_B' tool calls that make small, distinct changes to the same file (like adding docstrings to functions one by one) is considered forward progress and is NOT a loop. A loop would be repeatedly replacing the same text with the same content, or cycling between a small set of files with no net change.`;
 
 const LOOP_DETECTION_SCHEMA: Record<string, unknown> = {
-  type: 'object',
+  type: "object",
   properties: {
     unproductive_state_analysis: {
-      type: 'string',
-      description:
-        'Your reasoning on if the conversation is looping without forward progress.',
+      type: "string",
+      description: "Your reasoning on if the conversation is looping without forward progress.",
     },
     unproductive_state_confidence: {
-      type: 'number',
+      type: "number",
       description:
-        'A number between 0.0 and 1.0 representing your confidence that the conversation is in an unproductive state.',
+        "A number between 0.0 and 1.0 representing your confidence that the conversation is in an unproductive state.",
     },
   },
-  required: ['unproductive_state_analysis', 'unproductive_state_confidence'],
+  required: ["unproductive_state_analysis", "unproductive_state_confidence"],
 };
 
 /**
@@ -99,14 +95,14 @@ const LOOP_DETECTION_SCHEMA: Record<string, unknown> = {
  */
 export class LoopDetectionService {
   private readonly config: Config;
-  private promptId = '';
+  private promptId = "";
 
   // Tool call tracking
   private lastToolCallKey: string | null = null;
   private toolCallRepetitionCount: number = 0;
 
   // Content streaming tracking
-  private streamContentHistory = '';
+  private streamContentHistory = "";
   private contentStats = new Map<string, number[]>();
   private lastContentIndex = 0;
   private loopDetected = false;
@@ -129,16 +125,13 @@ export class LoopDetectionService {
    */
   disableForSession(): void {
     this.disabledForSession = true;
-    logLoopDetectionDisabled(
-      this.config,
-      new LoopDetectionDisabledEvent(this.promptId),
-    );
+    logLoopDetectionDisabled(this.config, new LoopDetectionDisabledEvent(this.promptId));
   }
 
   private getToolCallKey(toolCall: { name: string; args: object }): string {
     const argsString = JSON.stringify(toolCall.args);
     const keyString = `${toolCall.name}:${argsString}`;
-    return createHash('sha256').update(keyString).digest('hex');
+    return createHash("sha256").update(keyString).digest("hex");
   }
 
   /**
@@ -209,10 +202,7 @@ export class LoopDetectionService {
     if (this.toolCallRepetitionCount >= TOOL_CALL_LOOP_THRESHOLD) {
       logLoopDetected(
         this.config,
-        new LoopDetectedEvent(
-          LoopType.CONSECUTIVE_IDENTICAL_TOOL_CALLS,
-          this.promptId,
-        ),
+        new LoopDetectedEvent(LoopType.CONSECUTIVE_IDENTICAL_TOOL_CALLS, this.promptId),
       );
       return true;
     }
@@ -236,28 +226,19 @@ export class LoopDetectionService {
     // reset tracking to avoid analyzing content that spans across different element boundaries.
     const numFences = (content.match(/```/g) ?? []).length;
     const hasTable = /(^|\n)\s*(\|.*\||[|+-]{3,})/.test(content);
-    const hasListItem =
-      /(^|\n)\s*[*-+]\s/.test(content) || /(^|\n)\s*\d+\.\s/.test(content);
+    const hasListItem = /(^|\n)\s*[*-+]\s/.test(content) || /(^|\n)\s*\d+\.\s/.test(content);
     const hasHeading = /(^|\n)#+\s/.test(content);
     const hasBlockquote = /(^|\n)>\s/.test(content);
     const isDivider = /^[+-_=*\u2500-\u257F]+$/.test(content);
 
-    if (
-      numFences ||
-      hasTable ||
-      hasListItem ||
-      hasHeading ||
-      hasBlockquote ||
-      isDivider
-    ) {
+    if (numFences || hasTable || hasListItem || hasHeading || hasBlockquote || isDivider) {
       // Reset tracking when different content elements are detected to avoid analyzing content
       // that spans across different element boundaries.
       this.resetContentTracking();
     }
 
     const wasInCodeBlock = this.inCodeBlock;
-    this.inCodeBlock =
-      numFences % 2 === 0 ? this.inCodeBlock : !this.inCodeBlock;
+    this.inCodeBlock = numFences % 2 === 0 ? this.inCodeBlock : !this.inCodeBlock;
     if (wasInCodeBlock || this.inCodeBlock || isDivider) {
       return false;
     }
@@ -278,14 +259,9 @@ export class LoopDetectionService {
     }
 
     // Calculate how much content to remove from the beginning
-    const truncationAmount =
-      this.streamContentHistory.length - MAX_HISTORY_LENGTH;
-    this.streamContentHistory =
-      this.streamContentHistory.slice(truncationAmount);
-    this.lastContentIndex = Math.max(
-      0,
-      this.lastContentIndex - truncationAmount,
-    );
+    const truncationAmount = this.streamContentHistory.length - MAX_HISTORY_LENGTH;
+    this.streamContentHistory = this.streamContentHistory.slice(truncationAmount);
+    this.lastContentIndex = Math.max(0, this.lastContentIndex - truncationAmount);
 
     // Update all stored chunk indices to account for the truncation
     for (const [hash, oldIndices] of this.contentStats.entries()) {
@@ -317,15 +293,12 @@ export class LoopDetectionService {
         this.lastContentIndex,
         this.lastContentIndex + CONTENT_CHUNK_SIZE,
       );
-      const chunkHash = createHash('sha256').update(currentChunk).digest('hex');
+      const chunkHash = createHash("sha256").update(currentChunk).digest("hex");
 
       if (this.isLoopDetectedForChunk(currentChunk, chunkHash)) {
         logLoopDetected(
           this.config,
-          new LoopDetectedEvent(
-            LoopType.CHANTING_IDENTICAL_SENTENCES,
-            this.promptId,
-          ),
+          new LoopDetectedEvent(LoopType.CHANTING_IDENTICAL_SENTENCES, this.promptId),
         );
         return true;
       }
@@ -338,10 +311,7 @@ export class LoopDetectionService {
   }
 
   private hasMoreChunksToProcess(): boolean {
-    return (
-      this.lastContentIndex + CONTENT_CHUNK_SIZE <=
-      this.streamContentHistory.length
-    );
+    return this.lastContentIndex + CONTENT_CHUNK_SIZE <= this.streamContentHistory.length;
   }
 
   /**
@@ -374,8 +344,7 @@ export class LoopDetectionService {
 
     // Analyze the most recent occurrences to see if they're clustered closely together
     const recentIndices = existingIndices.slice(-CONTENT_LOOP_THRESHOLD);
-    const totalDistance =
-      recentIndices[recentIndices.length - 1] - recentIndices[0];
+    const totalDistance = recentIndices[recentIndices.length - 1] - recentIndices[0];
     const averageDistance = totalDistance / (CONTENT_LOOP_THRESHOLD - 1);
     const maxAllowedDistance = CONTENT_CHUNK_SIZE * 5;
 
@@ -386,10 +355,7 @@ export class LoopDetectionService {
    * Verifies that two chunks with the same hash actually contain identical content.
    * This prevents false positives from hash collisions.
    */
-  private isActualContentMatch(
-    currentChunk: string,
-    originalIndex: number,
-  ): boolean {
+  private isActualContentMatch(currentChunk: string, originalIndex: number): boolean {
     const originalChunk = this.streamContentHistory.substring(
       originalIndex,
       originalIndex + CONTENT_CHUNK_SIZE,
@@ -401,10 +367,7 @@ export class LoopDetectionService {
     // A function response must be preceded by a function call.
     // Continuously removes dangling function calls from the end of the history
     // until the last turn is not a function call.
-    while (
-      recentHistory.length > 0 &&
-      isFunctionCall(recentHistory[recentHistory.length - 1])
-    ) {
+    while (recentHistory.length > 0 && isFunctionCall(recentHistory[recentHistory.length - 1])) {
       recentHistory.pop();
     }
 
@@ -428,45 +391,30 @@ export class LoopDetectionService {
 
     const taskPrompt = `Please analyze the conversation history to determine the possibility that the conversation is stuck in a repetitive, non-productive state. Provide your response in the requested JSON format.`;
 
-    const contents = [
-      ...trimmedHistory,
-      { role: 'user', parts: [{ text: taskPrompt }] },
-    ];
+    const contents = [...trimmedHistory, { role: "user", parts: [{ text: taskPrompt }] }];
     if (contents.length > 0 && isFunctionCall(contents[0])) {
       contents.unshift({
-        role: 'user',
-        parts: [{ text: 'Recent conversation history:' }],
+        role: "user",
+        parts: [{ text: "Recent conversation history:" }],
       });
     }
 
-    const flashResult = await this.queryLoopDetectionModel(
-      'loop-detection',
-      contents,
-      signal,
-    );
+    const flashResult = await this.queryLoopDetectionModel("loop-detection", contents, signal);
 
     if (!flashResult) {
       return false;
     }
 
-    const flashConfidence = flashResult[
-      'unproductive_state_confidence'
-    ] as number;
+    const flashConfidence = flashResult["unproductive_state_confidence"] as number;
 
-    const doubleCheckModelName =
-      this.config.modelConfigService.getResolvedConfig({
-        model: DOUBLE_CHECK_MODEL_ALIAS,
-      }).model;
+    const doubleCheckModelName = this.config.modelConfigService.getResolvedConfig({
+      model: DOUBLE_CHECK_MODEL_ALIAS,
+    }).model;
 
     if (flashConfidence < LLM_CONFIDENCE_THRESHOLD) {
       logLlmLoopCheck(
         this.config,
-        new LlmLoopCheckEvent(
-          this.promptId,
-          flashConfidence,
-          doubleCheckModelName,
-          -1,
-        ),
+        new LlmLoopCheckEvent(this.promptId, flashConfidence, doubleCheckModelName, -1),
       );
       this.updateCheckInterval(flashConfidence);
       return false;
@@ -474,7 +422,7 @@ export class LoopDetectionService {
 
     if (this.config.isInFallbackMode()) {
       const flashModelName = this.config.modelConfigService.getResolvedConfig({
-        model: 'loop-detection',
+        model: "loop-detection",
       }).model;
       this.handleConfirmedLoop(flashResult, flashModelName);
       return true;
@@ -488,7 +436,7 @@ export class LoopDetectionService {
     );
 
     const mainModelConfidence = mainModelResult
-      ? (mainModelResult['unproductive_state_confidence'] as number)
+      ? (mainModelResult["unproductive_state_confidence"] as number)
       : 0;
 
     logLlmLoopCheck(
@@ -529,10 +477,7 @@ export class LoopDetectionService {
         maxAttempts: 2,
       })) as Record<string, unknown>;
 
-      if (
-        result &&
-        typeof result['unproductive_state_confidence'] === 'number'
-      ) {
+      if (result && typeof result["unproductive_state_confidence"] === "number") {
         return result;
       }
       return null;
@@ -542,31 +487,23 @@ export class LoopDetectionService {
     }
   }
 
-  private handleConfirmedLoop(
-    result: Record<string, unknown>,
-    modelName: string,
-  ): void {
+  private handleConfirmedLoop(result: Record<string, unknown>, modelName: string): void {
     if (
-      typeof result['unproductive_state_analysis'] === 'string' &&
-      result['unproductive_state_analysis']
+      typeof result["unproductive_state_analysis"] === "string" &&
+      result["unproductive_state_analysis"]
     ) {
-      debugLogger.warn(result['unproductive_state_analysis']);
+      debugLogger.warn(result["unproductive_state_analysis"]);
     }
     logLoopDetected(
       this.config,
-      new LoopDetectedEvent(
-        LoopType.LLM_DETECTED_LOOP,
-        this.promptId,
-        modelName,
-      ),
+      new LoopDetectedEvent(LoopType.LLM_DETECTED_LOOP, this.promptId, modelName),
     );
   }
 
   private updateCheckInterval(unproductive_state_confidence: number): void {
     this.llmCheckInterval = Math.round(
       MIN_LLM_CHECK_INTERVAL +
-        (MAX_LLM_CHECK_INTERVAL - MIN_LLM_CHECK_INTERVAL) *
-          (1 - unproductive_state_confidence),
+        (MAX_LLM_CHECK_INTERVAL - MIN_LLM_CHECK_INTERVAL) * (1 - unproductive_state_confidence),
     );
   }
 
@@ -588,7 +525,7 @@ export class LoopDetectionService {
 
   private resetContentTracking(resetHistory = true): void {
     if (resetHistory) {
-      this.streamContentHistory = '';
+      this.streamContentHistory = "";
     }
     this.contentStats.clear();
     this.lastContentIndex = 0;

@@ -8,53 +8,53 @@ import type {
   CompressionStatus,
   GeminiCLIExtension,
   MCPServerConfig,
+  RetrieveUserQuotaResponse,
   ThoughtSummary,
   ToolCallConfirmationDetails,
   ToolConfirmationOutcome,
   ToolResultDisplay,
-  RetrieveUserQuotaResponse,
-} from '@airiscode/gemini-cli-core';
-import type { PartListUnion } from '@google/genai';
-import { type ReactNode } from 'react';
+} from "@airiscode/gemini-cli-core";
+import type { PartListUnion } from "@google/genai";
+import { type ReactNode } from "react";
 
 export type { ThoughtSummary };
 
 export enum AuthState {
   // Attempting to authenticate or re-authenticate
-  Unauthenticated = 'unauthenticated',
+  Unauthenticated = "unauthenticated",
   // Auth dialog is open for user to select auth method
-  Updating = 'updating',
+  Updating = "updating",
   // Waiting for user to input API key
-  AwaitingApiKeyInput = 'awaiting_api_key_input',
+  AwaitingApiKeyInput = "awaiting_api_key_input",
   // Successfully authenticated
-  Authenticated = 'authenticated',
+  Authenticated = "authenticated",
 }
 
 // Only defining the state enum needed by the UI
 export enum StreamingState {
-  Idle = 'idle',
-  Responding = 'responding',
-  WaitingForConfirmation = 'waiting_for_confirmation',
+  Idle = "idle",
+  Responding = "responding",
+  WaitingForConfirmation = "waiting_for_confirmation",
 }
 
 // Copied from server/src/core/turn.ts for CLI usage
 export enum GeminiEventType {
-  Content = 'content',
-  ToolCallRequest = 'tool_call_request',
+  Content = "content",
+  ToolCallRequest = "tool_call_request",
   // Add other event types if the UI hook needs to handle them
 }
 
 export enum ToolCallStatus {
-  Pending = 'Pending',
-  Canceled = 'Canceled',
-  Confirming = 'Confirming',
-  Executing = 'Executing',
-  Success = 'Success',
-  Error = 'Error',
+  Pending = "Pending",
+  Canceled = "Canceled",
+  Confirming = "Confirming",
+  Executing = "Executing",
+  Success = "Success",
+  Error = "Error",
 }
 
 export interface ToolCallEvent {
-  type: 'tool_call';
+  type: "tool_call";
   status: ToolCallStatus;
   callId: string;
   name: string;
@@ -85,46 +85,46 @@ export interface CompressionProps {
 /**
  * For use when you want no icon.
  */
-export const emptyIcon = '  ';
+export const emptyIcon = "  ";
 
 export interface HistoryItemBase {
   text?: string; // Text content for user/gemini/info/error messages
 }
 
 export type HistoryItemUser = HistoryItemBase & {
-  type: 'user';
+  type: "user";
   text: string;
 };
 
 export type HistoryItemGemini = HistoryItemBase & {
-  type: 'gemini';
+  type: "gemini";
   text: string;
 };
 
 export type HistoryItemGeminiContent = HistoryItemBase & {
-  type: 'gemini_content';
+  type: "gemini_content";
   text: string;
 };
 
 export type HistoryItemInfo = HistoryItemBase & {
-  type: 'info';
+  type: "info";
   text: string;
   icon?: string;
   color?: string;
 };
 
 export type HistoryItemError = HistoryItemBase & {
-  type: 'error';
+  type: "error";
   text: string;
 };
 
 export type HistoryItemWarning = HistoryItemBase & {
-  type: 'warning';
+  type: "warning";
   text: string;
 };
 
 export type HistoryItemAbout = HistoryItemBase & {
-  type: 'about';
+  type: "about";
   cliVersion: string;
   osVersion: string;
   sandboxEnv: string;
@@ -136,51 +136,51 @@ export type HistoryItemAbout = HistoryItemBase & {
 };
 
 export type HistoryItemHelp = HistoryItemBase & {
-  type: 'help';
+  type: "help";
   timestamp: Date;
 };
 
 export type HistoryItemStats = HistoryItemBase & {
-  type: 'stats';
+  type: "stats";
   duration: string;
   quotas?: RetrieveUserQuotaResponse;
 };
 
 export type HistoryItemModelStats = HistoryItemBase & {
-  type: 'model_stats';
+  type: "model_stats";
 };
 
 export type HistoryItemToolStats = HistoryItemBase & {
-  type: 'tool_stats';
+  type: "tool_stats";
 };
 
 export type HistoryItemModel = HistoryItemBase & {
-  type: 'model';
+  type: "model";
   model: string;
 };
 
 export type HistoryItemQuit = HistoryItemBase & {
-  type: 'quit';
+  type: "quit";
   duration: string;
 };
 
 export type HistoryItemToolGroup = HistoryItemBase & {
-  type: 'tool_group';
+  type: "tool_group";
   tools: IndividualToolCallDisplay[];
 };
 
 export type HistoryItemUserShell = HistoryItemBase & {
-  type: 'user_shell';
+  type: "user_shell";
   text: string;
 };
 
 export type HistoryItemCompression = HistoryItemBase & {
-  type: 'compression';
+  type: "compression";
   compression: CompressionProps;
 };
 
 export type HistoryItemExtensionsList = HistoryItemBase & {
-  type: 'extensions_list';
+  type: "extensions_list";
   extensions: GeminiCLIExtension[];
 };
 
@@ -190,7 +190,7 @@ export interface ChatDetail {
 }
 
 export type HistoryItemChatList = HistoryItemBase & {
-  type: 'chat_list';
+  type: "chat_list";
   chats: ChatDetail[];
 };
 
@@ -201,7 +201,7 @@ export interface ToolDefinition {
 }
 
 export type HistoryItemToolsList = HistoryItemBase & {
-  type: 'tools_list';
+  type: "tools_list";
   tools: ToolDefinition[];
   showDescriptions: boolean;
 };
@@ -233,15 +233,12 @@ export interface JsonMcpResource {
 }
 
 export type HistoryItemMcpStatus = HistoryItemBase & {
-  type: 'mcp_status';
+  type: "mcp_status";
   servers: Record<string, MCPServerConfig>;
   tools: JsonMcpTool[];
   prompts: JsonMcpPrompt[];
   resources: JsonMcpResource[];
-  authStatus: Record<
-    string,
-    'authenticated' | 'expired' | 'unauthenticated' | 'not-configured'
-  >;
+  authStatus: Record<string, "authenticated" | "expired" | "unauthenticated" | "not-configured">;
   blockedServers: Array<{ name: string; extensionName: string }>;
   discoveryInProgress: boolean;
   connectingServers: string[];
@@ -250,7 +247,7 @@ export type HistoryItemMcpStatus = HistoryItemBase & {
 };
 
 export type HistoryItemHooksList = HistoryItemBase & {
-  type: 'hooks_list';
+  type: "hooks_list";
   hooks: Array<{
     config: { command?: string; type: string; timeout?: number };
     source: string;
@@ -292,23 +289,23 @@ export type HistoryItem = HistoryItemWithoutId & { id: number };
 
 // Message types used by internal command feedback (subset of HistoryItem types)
 export enum MessageType {
-  INFO = 'info',
-  ERROR = 'error',
-  WARNING = 'warning',
-  USER = 'user',
-  ABOUT = 'about',
-  HELP = 'help',
-  STATS = 'stats',
-  MODEL_STATS = 'model_stats',
-  TOOL_STATS = 'tool_stats',
-  QUIT = 'quit',
-  GEMINI = 'gemini',
-  COMPRESSION = 'compression',
-  EXTENSIONS_LIST = 'extensions_list',
-  TOOLS_LIST = 'tools_list',
-  MCP_STATUS = 'mcp_status',
-  CHAT_LIST = 'chat_list',
-  HOOKS_LIST = 'hooks_list',
+  INFO = "info",
+  ERROR = "error",
+  WARNING = "warning",
+  USER = "user",
+  ABOUT = "about",
+  HELP = "help",
+  STATS = "stats",
+  MODEL_STATS = "model_stats",
+  TOOL_STATS = "tool_stats",
+  QUIT = "quit",
+  GEMINI = "gemini",
+  COMPRESSION = "compression",
+  EXTENSIONS_LIST = "extensions_list",
+  TOOLS_LIST = "tools_list",
+  MCP_STATUS = "mcp_status",
+  CHAT_LIST = "chat_list",
+  HOOKS_LIST = "hooks_list",
 }
 
 // Simplified message structure for internal feedback
@@ -365,7 +362,7 @@ export type Message =
     };
 
 export interface ConsoleMessageItem {
-  type: 'log' | 'warn' | 'error' | 'debug' | 'info';
+  type: "log" | "warn" | "error" | "debug" | "info";
   content: string;
   count: number;
 }
@@ -375,7 +372,7 @@ export interface ConsoleMessageItem {
  * being submitted to the Gemini model.
  */
 export interface SubmitPromptResult {
-  type: 'submit_prompt';
+  type: "submit_prompt";
   content: PartListUnion;
 }
 
@@ -384,21 +381,18 @@ export interface SubmitPromptResult {
  */
 export type SlashCommandProcessorResult =
   | {
-      type: 'schedule_tool';
+      type: "schedule_tool";
       toolName: string;
       toolArgs: Record<string, unknown>;
     }
   | {
-      type: 'handled'; // Indicates the command was processed and no further action is needed.
+      type: "handled"; // Indicates the command was processed and no further action is needed.
     }
   | SubmitPromptResult;
 
 export interface ShellConfirmationRequest {
   commands: string[];
-  onConfirm: (
-    outcome: ToolConfirmationOutcome,
-    approvedCommands?: string[],
-  ) => void;
+  onConfirm: (outcome: ToolConfirmationOutcome, approvedCommands?: string[]) => void;
 }
 
 export interface ConfirmationRequest {
@@ -407,5 +401,5 @@ export interface ConfirmationRequest {
 }
 
 export interface LoopDetectionConfirmationRequest {
-  onComplete: (result: { userSelection: 'disable' | 'keep' }) => void;
+  onComplete: (result: { userSelection: "disable" | "keep" }) => void;
 }

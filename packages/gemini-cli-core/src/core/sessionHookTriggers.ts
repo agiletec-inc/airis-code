@@ -4,18 +4,14 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import type { MessageBus } from '../confirmation-bus/message-bus.js';
+import type { MessageBus } from "../confirmation-bus/message-bus.js";
 import {
-  MessageBusType,
   type HookExecutionRequest,
   type HookExecutionResponse,
-} from '../confirmation-bus/types.js';
-import type {
-  SessionStartSource,
-  SessionEndReason,
-  PreCompressTrigger,
-} from '../hooks/types.js';
-import { debugLogger } from '../utils/debugLogger.js';
+  MessageBusType,
+} from "../confirmation-bus/types.js";
+import type { PreCompressTrigger, SessionEndReason, SessionStartSource } from "../hooks/types.js";
+import { debugLogger } from "../utils/debugLogger.js";
 
 /**
  * Fires the SessionStart hook.
@@ -31,7 +27,7 @@ export async function fireSessionStartHook(
     await messageBus.request<HookExecutionRequest, HookExecutionResponse>(
       {
         type: MessageBusType.HOOK_EXECUTION_REQUEST,
-        eventName: 'SessionStart',
+        eventName: "SessionStart",
         input: {
           source,
         },
@@ -57,7 +53,7 @@ export async function fireSessionEndHook(
     await messageBus.request<HookExecutionRequest, HookExecutionResponse>(
       {
         type: MessageBusType.HOOK_EXECUTION_REQUEST,
-        eventName: 'SessionEnd',
+        eventName: "SessionEnd",
         input: {
           reason,
         },
@@ -83,7 +79,7 @@ export async function firePreCompressHook(
     await messageBus.request<HookExecutionRequest, HookExecutionResponse>(
       {
         type: MessageBusType.HOOK_EXECUTION_REQUEST,
-        eventName: 'PreCompress',
+        eventName: "PreCompress",
         input: {
           trigger,
         },

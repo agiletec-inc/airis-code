@@ -4,11 +4,11 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { describe, it, expect } from 'vitest';
-import { lerp } from './math.js';
+import { describe, expect, it } from "vitest";
+import { lerp } from "./math.js";
 
-describe('math', () => {
-  describe('lerp', () => {
+describe("math", () => {
+  describe("lerp", () => {
     it.each([
       [0, 10, 0, 0],
       [0, 10, 1, 10],
@@ -17,7 +17,7 @@ describe('math', () => {
       [-10, 10, 0.5, 0],
       [0, 10, 2, 20],
       [0, 10, -1, -10],
-    ])('lerp(%d, %d, %d) should return %d', (start, end, t, expected) => {
+    ])("lerp(%d, %d, %d) should return %d", (start, end, t, expected) => {
       expect(lerp(start, end, t)).toBe(expected);
     });
   });

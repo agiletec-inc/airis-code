@@ -4,12 +4,12 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { access, cp, mkdir, readdir, writeFile } from 'node:fs/promises';
-import { join, dirname, basename } from 'node:path';
-import type { CommandModule } from 'yargs';
-import { fileURLToPath } from 'node:url';
-import { getErrorMessage } from '../../utils/errors.js';
-import { writeStdoutLine, writeStderrLine } from '../../utils/stdioHelpers.js';
+import { access, cp, mkdir, readdir, writeFile } from "node:fs/promises";
+import { basename, dirname, join } from "node:path";
+import { fileURLToPath } from "node:url";
+import type { CommandModule } from "yargs";
+import { getErrorMessage } from "../../utils/errors.js";
+import { writeStderrLine, writeStdoutLine } from "../../utils/stdioHelpers.js";
 
 interface NewArgs {
   path: string;
@@ -19,7 +19,7 @@ interface NewArgs {
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 
-const EXAMPLES_PATH = join(__dirname, 'examples');
+const EXAMPLES_PATH = join(__dirname, "examples");
 
 async function pathExists(path: string) {
   try {
@@ -61,12 +61,9 @@ async function handleNew(args: NewArgs) {
       const extensionName = basename(args.path);
       const manifest = {
         name: extensionName,
-        version: '1.0.0',
+        version: "1.0.0",
       };
-      await writeFile(
-        join(args.path, 'qwen-extension.json'),
-        JSON.stringify(manifest, null, 2),
-      );
+      await writeFile(join(args.path, "qwen-extension.json"), JSON.stringify(manifest, null, 2));
       writeStdoutLine(`Successfully created new extension at ${args.path}.`);
     }
     writeStdoutLine(
@@ -80,31 +77,29 @@ async function handleNew(args: NewArgs) {
 
 async function getBoilerplateChoices() {
   const entries = await readdir(EXAMPLES_PATH, { withFileTypes: true });
-  return entries
-    .filter((entry) => entry.isDirectory())
-    .map((entry) => entry.name);
+  return entries.filter((entry) => entry.isDirectory()).map((entry) => entry.name);
 }
 
 export const newCommand: CommandModule = {
-  command: 'new <path> [template]',
-  describe: 'Create a new extension from a boilerplate example.',
+  command: "new <path> [template]",
+  describe: "Create a new extension from a boilerplate example.",
   builder: async (yargs) => {
     const choices = await getBoilerplateChoices();
     return yargs
-      .positional('path', {
-        describe: 'The path to create the extension in.',
-        type: 'string',
+      .positional("path", {
+        describe: "The path to create the extension in.",
+        type: "string",
       })
-      .positional('template', {
-        describe: 'The boilerplate template to use.',
-        type: 'string',
+      .positional("template", {
+        describe: "The boilerplate template to use.",
+        type: "string",
         choices,
       });
   },
   handler: async (args) => {
     await handleNew({
-      path: args['path'] as string,
-      template: args['template'] as string | undefined,
+      path: args["path"] as string,
+      template: args["template"] as string | undefined,
     });
   },
 };

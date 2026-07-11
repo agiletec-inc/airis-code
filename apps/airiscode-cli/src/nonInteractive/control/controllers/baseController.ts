@@ -15,15 +15,11 @@
  * - Integration with central pending request registry
  */
 
-import { randomUUID } from 'node:crypto';
-import type { DebugLogger } from '@airiscode/runtime';
-import { createDebugLogger } from '@airiscode/runtime';
-import type { IControlContext } from '../ControlContext.js';
-import type {
-  ControlRequestPayload,
-  ControlResponse,
-  CLIControlRequest,
-} from '../../types.js';
+import { randomUUID } from "node:crypto";
+import type { DebugLogger } from "@airiscode/runtime";
+import { createDebugLogger } from "@airiscode/runtime";
+import type { CLIControlRequest, ControlRequestPayload, ControlResponse } from "../../types.js";
+import type { IControlContext } from "../ControlContext.js";
 
 const DEFAULT_REQUEST_TIMEOUT_MS = 30000; // 30 seconds
 
@@ -61,11 +57,7 @@ export abstract class BaseController {
   protected controllerName: string;
   protected debugLogger: DebugLogger;
 
-  constructor(
-    context: IControlContext,
-    registry: IPendingRequestRegistry,
-    controllerName: string,
-  ) {
+  constructor(context: IControlContext, registry: IPendingRequestRegistry, controllerName: string) {
     this.context = context;
     this.registry = registry;
     this.controllerName = controllerName;
@@ -87,9 +79,7 @@ export abstract class BaseController {
     const timeoutId = setTimeout(() => {
       requestAbortController.abort();
       this.registry.deregisterIncomingRequest(requestId);
-      this.debugLogger.warn(
-        `[${this.controllerName}] Request timeout: ${requestId}`,
-      );
+      this.debugLogger.warn(`[${this.controllerName}] Request timeout: ${requestId}`);
     }, DEFAULT_REQUEST_TIMEOUT_MS);
 
     // Register with central registry
@@ -101,10 +91,7 @@ export abstract class BaseController {
     );
 
     try {
-      const response = await this.handleRequestPayload(
-        payload,
-        requestAbortController.signal,
-      );
+      const response = await this.handleRequestPayload(payload, requestAbortController.signal);
 
       // Success - deregister
       this.registry.deregisterIncomingRequest(requestId);
@@ -130,12 +117,12 @@ export abstract class BaseController {
   ): Promise<ControlResponse> {
     // Check if stream is closed
     if (this.context.inputClosed) {
-      throw new Error('Input closed');
+      throw new Error("Input closed");
     }
 
     // Check if already aborted
     if (signal?.aborted) {
-      throw new Error('Request aborted');
+      throw new Error("Request aborted");
     }
 
     const requestId = randomUUID();
@@ -144,39 +131,35 @@ export abstract class BaseController {
       // Setup abort handler
       const abortHandler = () => {
         this.registry.deregisterOutgoingRequest(requestId);
-        reject(new Error('Request aborted'));
-        this.debugLogger.warn(
-          `[${this.controllerName}] Outgoing request aborted: ${requestId}`,
-        );
+        reject(new Error("Request aborted"));
+        this.debugLogger.warn(`[${this.controllerName}] Outgoing request aborted: ${requestId}`);
       };
 
       if (signal) {
-        signal.addEventListener('abort', abortHandler, { once: true });
+        signal.addEventListener("abort", abortHandler, { once: true });
       }
 
       // Setup timeout
       const timeoutId = setTimeout(() => {
         if (signal) {
-          signal.removeEventListener('abort', abortHandler);
+          signal.removeEventListener("abort", abortHandler);
         }
         this.registry.deregisterOutgoingRequest(requestId);
-        reject(new Error('Control request timeout'));
-        this.debugLogger.warn(
-          `[${this.controllerName}] Outgoing request timeout: ${requestId}`,
-        );
+        reject(new Error("Control request timeout"));
+        this.debugLogger.warn(`[${this.controllerName}] Outgoing request timeout: ${requestId}`);
       }, timeoutMs);
 
       // Wrap resolve/reject to clean up abort listener
       const wrappedResolve = (response: ControlResponse) => {
         if (signal) {
-          signal.removeEventListener('abort', abortHandler);
+          signal.removeEventListener("abort", abortHandler);
         }
         resolve(response);
       };
 
       const wrappedReject = (error: Error) => {
         if (signal) {
-          signal.removeEventListener('abort', abortHandler);
+          signal.removeEventListener("abort", abortHandler);
         }
         reject(error);
       };
@@ -192,7 +175,7 @@ export abstract class BaseController {
 
       // Send control request
       const request: CLIControlRequest = {
-        type: 'control_request',
+        type: "control_request",
         request_id: requestId,
         request: payload,
       };
@@ -201,7 +184,7 @@ export abstract class BaseController {
         this.context.streamJson.send(request);
       } catch (error) {
         if (signal) {
-          signal.removeEventListener('abort', abortHandler);
+          signal.removeEventListener("abort", abortHandler);
         }
         this.registry.deregisterOutgoingRequest(requestId);
         reject(error);

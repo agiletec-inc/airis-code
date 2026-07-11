@@ -4,23 +4,23 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import type React from 'react';
-import { Box, Text } from 'ink';
-import Gradient from 'ink-gradient';
-import { shortenPath, tildeifyPath } from '@airiscode/runtime';
-import { theme } from '../semantic-colors.js';
-import { shortAsciiLogo } from './AsciiArt.js';
-import { getAsciiArtWidth, getCachedStringWidth } from '../utils/textUtils.js';
-import { useTerminalSize } from '../hooks/useTerminalSize.js';
+import { shortenPath, tildeifyPath } from "@airiscode/runtime";
+import { Box, Text } from "ink";
+import Gradient from "ink-gradient";
+import type React from "react";
+import { useTerminalSize } from "../hooks/useTerminalSize.js";
+import { theme } from "../semantic-colors.js";
+import { getAsciiArtWidth, getCachedStringWidth } from "../utils/textUtils.js";
+import { shortAsciiLogo } from "./AsciiArt.js";
 
 /**
  * Auth display type for the Header component.
  * Simplified representation of authentication method shown to users.
  */
 export enum AuthDisplayType {
-  CODING_PLAN = 'Coding Plan',
-  API_KEY = 'API Key',
-  UNKNOWN = 'Unknown',
+  CODING_PLAN = "Coding Plan",
+  API_KEY = "API Key",
+  UNKNOWN = "Unknown",
 }
 
 interface HeaderProps {
@@ -54,14 +54,10 @@ export const Header: React.FC<HeaderProps> = ({
   const minPathLength = 40; // Minimum readable path length
   const minInfoPanelWidth = minPathLength + infoPanelChromeWidth;
 
-  const availableTerminalWidth = Math.max(
-    0,
-    terminalWidth - containerMarginX * 2,
-  );
+  const availableTerminalWidth = Math.max(0, terminalWidth - containerMarginX * 2);
 
   // Check if we have enough space for logo + gap + minimum info panel
-  const showLogo =
-    availableTerminalWidth >= logoWidth + logoGap + minInfoPanelWidth;
+  const showLogo = availableTerminalWidth >= logoWidth + logoGap + minInfoPanelWidth;
 
   // Calculate available width for info panel (use all remaining space)
   // Cap at 60 when in two-column layout (with logo)
@@ -71,28 +67,21 @@ export const Header: React.FC<HeaderProps> = ({
     : availableTerminalWidth;
 
   // Calculate max path lengths (subtract padding/borders from available space)
-  const maxPathLength = Math.max(
-    0,
-    availableInfoPanelWidth - infoPanelChromeWidth,
-  );
+  const maxPathLength = Math.max(0, availableInfoPanelWidth - infoPanelChromeWidth);
 
-  const infoPanelContentWidth = Math.max(
-    0,
-    availableInfoPanelWidth - infoPanelChromeWidth,
-  );
+  const infoPanelContentWidth = Math.max(0, availableInfoPanelWidth - infoPanelChromeWidth);
   const authModelText = `${formattedAuthType} | ${model}`;
-  const modelHintText = ' (/model to change)';
+  const modelHintText = " (/model to change)";
   const showModelHint =
     infoPanelContentWidth > 0 &&
-    getCachedStringWidth(authModelText + modelHintText) <=
-      infoPanelContentWidth;
+    getCachedStringWidth(authModelText + modelHintText) <= infoPanelContentWidth;
 
   // Now shorten the path to fit the available space
   const tildeifiedPath = tildeifyPath(workingDirectory);
   const shortenedPath = shortenPath(tildeifiedPath, Math.max(3, maxPathLength));
   const displayPath =
     maxPathLength <= 0
-      ? ''
+      ? ""
       : shortenedPath.length > maxPathLength
         ? shortenedPath.slice(0, maxPathLength)
         : shortenedPath;
@@ -145,9 +134,7 @@ export const Header: React.FC<HeaderProps> = ({
         {/* Auth and Model line */}
         <Text>
           <Text color={theme.text.secondary}>{authModelText}</Text>
-          {showModelHint && (
-            <Text color={theme.text.secondary}>{modelHintText}</Text>
-          )}
+          {showModelHint && <Text color={theme.text.secondary}>{modelHintText}</Text>}
         </Text>
         {/* Directory line */}
         <Text color={theme.text.secondary}>{displayPath}</Text>

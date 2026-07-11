@@ -138,7 +138,7 @@ Child-process wrappers for other CLIs:
 | @airiscode/driver-openai | ✅ Built | OpenAI driver with tools |
 | @airiscode/driver-anthropic | ✅ Built | Anthropic driver with tools |
 | @airiscode/drivers | ✅ Built | Base driver interface |
-| @airiscode/runtime-gemini | ✅ Built | Gemini core logic |
+| @airiscode/core-gemini | ✅ Built | Gemini core logic |
 | @airiscode/gemini-core | ✅ Built | Gemini CLI adapted |
 | @airiscode/ui-gemini | ⏭️  Skipped | Missing dependencies |
 | @airiscode/policies | ✅ Built | Policy profiles |

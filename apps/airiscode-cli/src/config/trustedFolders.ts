@@ -7,7 +7,12 @@
 import * as fs from "node:fs";
 import { homedir } from "node:os";
 import * as path from "node:path";
-import { FatalConfigError, getErrorMessage, ideContextStore, isWithinRoot } from "@airiscode/runtime";
+import {
+  FatalConfigError,
+  getErrorMessage,
+  ideContextStore,
+  isWithinRoot,
+} from "@airiscode/runtime";
 import stripJsonComments from "strip-json-comments";
 import { writeStderrLine } from "../utils/stdioHelpers.js";
 import type { Settings } from "./settings.js";

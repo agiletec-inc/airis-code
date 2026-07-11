@@ -99,7 +99,7 @@ function resolveEnvVarsInObjectInternal<T>(
     visited.add(obj as object);
     const newObj = { ...obj } as T;
     for (const key in newObj) {
-      if (Object.hasOwn(newObj, key)) {
+      if (Object.hasOwn(newObj as object, key)) {
         newObj[key] = resolveEnvVarsInObjectInternal(newObj[key], visited, customEnv);
       }
     }

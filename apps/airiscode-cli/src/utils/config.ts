@@ -1,6 +1,6 @@
-import * as fs from 'node:fs/promises';
-import * as path from 'node:path';
-import { homedir } from 'node:os';
+import * as fs from "node:fs/promises";
+import { homedir } from "node:os";
+import * as path from "node:path";
 
 export interface LegacyCliConfig {
   plannerModel: string;
@@ -8,19 +8,19 @@ export interface LegacyCliConfig {
   [key: string]: unknown;
 }
 
-const CONFIG_DIR = path.join(homedir(), '.airiscode');
-const CONFIG_FILE = path.join(CONFIG_DIR, 'config.json');
+const CONFIG_DIR = path.join(homedir(), ".airiscode");
+const CONFIG_FILE = path.join(CONFIG_DIR, "config.json");
 
 const DEFAULT_CONFIG: LegacyCliConfig = {
-  plannerModel: 'qwen3.5:2b',
+  plannerModel: "qwen3.5:2b",
 };
 
 async function readJsonFile<T>(filePath: string): Promise<T | null> {
   try {
-    const raw = await fs.readFile(filePath, 'utf8');
+    const raw = await fs.readFile(filePath, "utf8");
     return JSON.parse(raw) as T;
   } catch (error) {
-    if ((error as NodeJS.ErrnoException).code === 'ENOENT') {
+    if ((error as NodeJS.ErrnoException).code === "ENOENT") {
       return null;
     }
     throw error;
@@ -35,9 +35,7 @@ export async function loadConfig(): Promise<LegacyCliConfig> {
   };
 }
 
-export async function saveConfig(
-  updates: Partial<LegacyCliConfig>,
-): Promise<LegacyCliConfig> {
+export async function saveConfig(updates: Partial<LegacyCliConfig>): Promise<LegacyCliConfig> {
   const current = await loadConfig();
   const next = {
     ...current,
@@ -45,7 +43,7 @@ export async function saveConfig(
   };
 
   await fs.mkdir(CONFIG_DIR, { recursive: true });
-  await fs.writeFile(CONFIG_FILE, JSON.stringify(next, null, 2), 'utf8');
+  await fs.writeFile(CONFIG_FILE, JSON.stringify(next, null, 2), "utf8");
 
   return next;
 }

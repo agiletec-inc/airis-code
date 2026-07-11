@@ -1,5 +1,5 @@
 {
-  "name": "@airiscode/runtime-gemini",
+  "name": "@airiscode/core-gemini",
   "version": "0.1.0",
   "type": "module",
   "main": "dist/index.js",

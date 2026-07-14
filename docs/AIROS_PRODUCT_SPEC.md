@@ -24,7 +24,10 @@ CLI / optional menu bar: operator surfaces
 The first slice is `.airis/airis.yml` validation via `airiscode doctor` plus a validated
 `.airis/status.json` contract via `airiscode status --json`, which is the initial menu-bar read
 surface. The local run store replays safe events through `airiscode run status` and
-`airiscode run events`; the menu bar remains read-only. Durable transitions are
+`airiscode run events`; these commands emit stable JSON for polling/refresh, and the menu bar
+remains read-only. Events contain only an allowlisted workflow envelope (no free-form message,
+prompt, transcript, credential, cookie, or provider payload) and use monotonic timestamps for
+deterministic replay. Durable transitions are
 `queued -> claimed -> planned -> implementing -> verifying -> review -> merge_pending -> merged`;
 blocked/failed/cancelled require explicit operator action. Pending CI is not a failure.
 

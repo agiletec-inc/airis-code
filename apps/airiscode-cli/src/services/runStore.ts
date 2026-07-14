@@ -1,5 +1,5 @@
 import { createHash } from "node:crypto";
-import { chmod, mkdir, readdir, readFile, rename, unlink, writeFile } from "node:fs/promises";
+import { chmod, link, mkdir, readdir, readFile, rename, unlink, writeFile } from "node:fs/promises";
 import { homedir } from "node:os";
 import { dirname, join, resolve } from "node:path";
 import { z } from "zod";
@@ -43,7 +43,6 @@ export const RunEventSchema = z
     repository: z.string().min(1),
     issue: z.string().min(1).optional(),
     attention: z.enum(["none", "operator", "ci", "approval"]),
-    message: z.string().max(500).optional(),
   })
   .strict();
 
@@ -125,6 +124,9 @@ export async function appendRunEvent(
     return { event: existing, duplicate: true };
   }
   const prior = (await listRunEvents(options, event.runId)).at(-1);
+  if (prior && event.occurredAt <= prior.occurredAt) {
+    throw new Error(`event timestamp must advance: ${prior.occurredAt} -> ${event.occurredAt}`);
+  }
   if (prior ? !transitions[prior.state].includes(event.state) : event.state !== "queued") {
     throw new Error(
       `invalid transition${prior ? `: ${prior.state} -> ${event.state}` : `: initial state must be queued, got ${event.state}`}`,
@@ -141,9 +143,16 @@ export async function appendRunEvent(
       mode: 0o600,
       flag: "wx",
     });
-    await rename(temporary, destination);
+    await link(temporary, destination);
+    await unlink(temporary);
   } catch (error) {
     await unlink(temporary).catch(() => undefined);
+    if ((error as NodeJS.ErrnoException).code === "EEXIST") {
+      const existing = RunEventSchema.parse(JSON.parse(await readFile(destination, "utf8")));
+      if (JSON.stringify(existing) === JSON.stringify(event))
+        return { event: existing, duplicate: true };
+      throw new Error(`idempotency key conflict: ${event.idempotencyKey}`);
+    }
     throw error;
   }
   return { event, duplicate: false };

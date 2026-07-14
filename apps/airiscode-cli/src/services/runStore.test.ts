@@ -40,8 +40,27 @@ describe("run store", () => {
     expect((await appendRunEvent(event, { home })).duplicate).toBe(false);
     expect((await appendRunEvent(event, { home })).duplicate).toBe(true);
     await expect(
-      appendRunEvent({ ...base, state: "merged", idempotencyKey: "bad" }, { home }),
+      appendRunEvent(
+        { ...base, state: "merged", idempotencyKey: "bad", occurredAt: "2026-07-15T00:00:01.000Z" },
+        { home },
+      ),
     ).rejects.toThrow("invalid transition");
+  });
+
+  it("requires replayable monotonic timestamps", async () => {
+    const home = await mkdtemp(join(tmpdir(), "airis-run-store-"));
+    await appendRunEvent({ ...base, state: "queued", idempotencyKey: "ordered-1" }, { home });
+    await expect(
+      appendRunEvent(
+        {
+          ...base,
+          state: "claimed",
+          idempotencyKey: "ordered-2",
+          occurredAt: "2026-07-14T23:59:59.000Z",
+        },
+        { home },
+      ),
+    ).rejects.toThrow("event timestamp must advance");
   });
 
   it("does not replay untrusted JSON or store sensitive fields", async () => {

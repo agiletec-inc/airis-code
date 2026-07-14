@@ -14,8 +14,7 @@ const emitCommand: CommandModule = {
       .option("idempotency-key", { type: "string", demandOption: true })
       .option("occurred-at", { type: "string" })
       .option("issue", { type: "string" })
-      .option("attention", { type: "string", default: "none" })
-      .option("message", { type: "string" }),
+      .option("attention", { type: "string", default: "none" }),
   handler: async (argv) => {
     const result = await appendRunEvent({
       runId: String(argv["run-id"]),
@@ -25,7 +24,6 @@ const emitCommand: CommandModule = {
       occurredAt: String(argv["occurred-at"] ?? new Date().toISOString()),
       issue: argv.issue as string | undefined,
       attention: argv.attention as never,
-      message: argv.message as string | undefined,
     });
     await rebuildRunStatus({}, String(argv["run-id"]));
     process.stdout.write(`${JSON.stringify(result)}\n`);

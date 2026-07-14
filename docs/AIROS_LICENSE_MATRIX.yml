@@ -1,0 +1,19 @@
+schemaVersion: 1
+components:
+  - name: airis-code-core
+    license: MIT
+    reuse: core
+    attributionRequired: true
+  - name: claude-code-terminal-ux
+    license: MIT
+    reuse: optional-adapter
+    attributionRequired: true
+  - name: cmd-ime
+    license: MIT
+    reuse: optional-menu-bar-reference
+    attributionRequired: true
+  - name: airis-keeper
+    license: Elastic-2.0
+    reuse: separate-commercial-component-only
+    attributionRequired: true
+    coreImport: false

@@ -11,6 +11,7 @@ repository:
   owner: example
   name: app
   defaultBranch: main
+  issueProvider: github
 workflow:
   issueLabels:
     queue: airis
@@ -19,6 +20,9 @@ workflow:
     blocked: airis:blocked
   autoMerge: true
   maxConcurrent: 2
+  riskPolicy: standard
+  approvals: on-failure
+  agents: {implement: implement, verify: verify, review: review}
 commands:
   test: [pnpm, test]
   lint: [pnpm, lint]
@@ -28,6 +32,8 @@ privacy:
   telemetry: local
   collectSource: false
   collectPrompts: false
+  collectQuota: true
+  remoteConsent: false
   retentionDays: 30
 `;
 
@@ -51,5 +57,13 @@ describe("repository profile", () => {
       expect(result.errors).toContain(
         "privacy.collectSource: Invalid literal value, expected false",
       );
+  });
+
+  it("rejects unknown controls and remote telemetry without consent", async () => {
+    const root = await mkdtemp(join(tmpdir(), "airis-profile-"));
+    const path = join(root, "airis.yml");
+    await writeFile(path, `${validProfile}\nriskPolicy: unsafe\n`);
+    const result = await loadRepositoryProfile(path);
+    expect(result.ok).toBe(false);
   });
 });

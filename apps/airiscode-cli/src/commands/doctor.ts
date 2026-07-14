@@ -1,6 +1,21 @@
 import type { Argv, CommandModule } from "yargs";
 import { loadRepositoryProfile } from "../services/repositoryProfile.js";
 
+export async function runDoctor(
+  profilePath: string,
+  json: boolean,
+  output = process.stdout,
+): Promise<number> {
+  const result = await loadRepositoryProfile(profilePath);
+  if (json) output.write(`${JSON.stringify(result, null, 2)}\n`);
+  else if (result.ok) output.write(`AIris OS profile: OK (${result.path})\n`);
+  else {
+    output.write(`AIris OS profile: INVALID (${result.path})\n`);
+    for (const error of result.errors) output.write(`- ${error}\n`);
+  }
+  return result.ok ? 0 : 1;
+}
+
 export const doctorCommand: CommandModule = {
   command: "doctor",
   describe: "Validate the repository's AIris OS profile",
@@ -13,13 +28,6 @@ export const doctorCommand: CommandModule = {
       })
       .option("json", { type: "boolean", default: false, describe: "Print machine-readable JSON" }),
   handler: async (argv) => {
-    const result = await loadRepositoryProfile(String(argv["profile"]));
-    if (argv["json"]) process.stdout.write(`${JSON.stringify(result, null, 2)}\n`);
-    else if (result.ok) process.stdout.write(`AIris OS profile: OK (${result.path})\n`);
-    else {
-      process.stdout.write(`AIris OS profile: INVALID (${result.path})\n`);
-      for (const error of result.errors) process.stdout.write(`- ${error}\n`);
-    }
-    if (!result.ok) process.exitCode = 1;
+    process.exitCode = await runDoctor(String(argv["profile"]), Boolean(argv["json"]));
   },
 };

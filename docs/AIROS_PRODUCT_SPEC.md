@@ -21,7 +21,9 @@ Repository adapter: SCM, issue provider, commands, branch rules, repo profile
 CLI / optional menu bar: operator surfaces
 ```
 
-The first slice is `.airis/airis.yml` validation via `airiscode doctor`. Durable transitions are
+The first slice is `.airis/airis.yml` validation via `airiscode doctor` plus a validated
+`.airis/status.json` contract via `airiscode status --json`, which is the initial menu-bar read
+surface. Durable transitions are
 `queued -> claimed -> planned -> implementing -> verifying -> review -> merge_pending -> merged`;
 blocked/failed/cancelled require explicit operator action. Pending CI is not a failure.
 

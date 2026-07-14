@@ -1,4 +1,4 @@
-import { createHash } from "node:crypto";
+import { createHash, randomUUID } from "node:crypto";
 import { chmod, link, mkdir, readdir, readFile, rename, unlink, writeFile } from "node:fs/promises";
 import { homedir } from "node:os";
 import { dirname, join, resolve } from "node:path";
@@ -136,7 +136,10 @@ export async function appendRunEvent(
   await mkdir(home, { recursive: true, mode: 0o700 });
   await chmod(home, 0o700);
   const destination = join(home, eventName(event.idempotencyKey));
-  const temporary = join(home, `.${eventName(event.idempotencyKey)}.${process.pid}.tmp`);
+  const temporary = join(
+    home,
+    `.${eventName(event.idempotencyKey)}.${process.pid}.${randomUUID()}.tmp`,
+  );
   try {
     await writeFile(temporary, `${JSON.stringify(event, null, 2)}\n`, {
       encoding: "utf8",
@@ -182,7 +185,7 @@ export async function rebuildRunStatus(
   const destination = statusPath(options);
   await mkdir(dirname(destination), { recursive: true, mode: 0o700 });
   await chmod(dirname(destination), 0o700);
-  const temporary = `${destination}.${process.pid}.tmp`;
+  const temporary = `${destination}.${process.pid}.${randomUUID()}.tmp`;
   try {
     await writeFile(temporary, `${JSON.stringify(status, null, 2)}\n`, {
       encoding: "utf8",

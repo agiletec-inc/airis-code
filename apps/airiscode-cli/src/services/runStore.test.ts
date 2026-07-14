@@ -63,6 +63,16 @@ describe("run store", () => {
     ).rejects.toThrow("event timestamp must advance");
   });
 
+  it("serializes concurrent writes for one idempotency key", async () => {
+    const home = await mkdtemp(join(tmpdir(), "airis-run-store-"));
+    const event = { ...base, state: "queued" as const, idempotencyKey: "concurrent" };
+    const results = await Promise.all([
+      appendRunEvent(event, { home }),
+      appendRunEvent(event, { home }),
+    ]);
+    expect(results.map((result) => result.duplicate).sort()).toEqual([false, true]);
+  });
+
   it("does not replay untrusted JSON or store sensitive fields", async () => {
     const home = await mkdtemp(join(tmpdir(), "airis-run-store-"));
     await writeFile(

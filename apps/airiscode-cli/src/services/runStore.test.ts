@@ -1,4 +1,4 @@
-import { mkdtemp, readdir, readFile, writeFile } from "node:fs/promises";
+import { mkdir, mkdtemp, readdir, readFile, utimes, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { describe, expect, it } from "vitest";
@@ -71,6 +71,22 @@ describe("run store", () => {
       appendRunEvent(event, { home }),
     ]);
     expect(results.map((result) => result.duplicate).sort()).toEqual([false, true]);
+  });
+
+  it("recovers stale status locks", async () => {
+    const home = await mkdtemp(join(tmpdir(), "airis-run-store-"));
+    const statusPath = join(home, "status.json");
+    await appendRunEvent(
+      { ...base, state: "queued", idempotencyKey: "stale-lock" },
+      { home, statusPath },
+    );
+    const lock = `${statusPath}.lock`;
+    await mkdir(lock);
+    const old = new Date(Date.now() - 60_000);
+    await utimes(lock, old, old);
+    await expect(rebuildRunStatus({ home, statusPath }, "run-1")).resolves.toMatchObject({
+      state: "queued",
+    });
   });
 
   it("does not replay untrusted JSON or store sensitive fields", async () => {

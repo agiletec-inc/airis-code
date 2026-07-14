@@ -7,6 +7,7 @@ import {
   readFile,
   rename,
   rmdir,
+  stat,
   unlink,
   writeFile,
 } from "node:fs/promises";
@@ -188,6 +189,7 @@ export function statusFromEvents(events: RunEvent[]): RunStatus | null {
 
 async function withStatusLock<T>(destination: string, action: () => Promise<T>): Promise<T> {
   const lock = `${destination}.lock`;
+  const staleAfterMs = 30_000;
   for (let attempt = 0; attempt < 200; attempt += 1) {
     try {
       await mkdir(lock, { mode: 0o700 });
@@ -198,6 +200,12 @@ async function withStatusLock<T>(destination: string, action: () => Promise<T>):
       }
     } catch (error) {
       if ((error as NodeJS.ErrnoException).code !== "EEXIST") throw error;
+      try {
+        const lockAge = Date.now() - (await stat(lock)).mtimeMs;
+        if (lockAge > staleAfterMs) await rmdir(lock);
+      } catch (lockError) {
+        if ((lockError as NodeJS.ErrnoException).code !== "ENOENT") throw lockError;
+      }
       await new Promise((resolveDelay) => setTimeout(resolveDelay, 5));
     }
   }

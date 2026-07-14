@@ -9,6 +9,7 @@ import {
   rmdir,
   stat,
   unlink,
+  utimes,
   writeFile,
 } from "node:fs/promises";
 import { homedir } from "node:os";
@@ -193,9 +194,13 @@ async function withStatusLock<T>(destination: string, action: () => Promise<T>):
   for (let attempt = 0; attempt < 200; attempt += 1) {
     try {
       await mkdir(lock, { mode: 0o700 });
+      const heartbeat = setInterval(() => {
+        void utimes(lock, new Date(), new Date()).catch(() => undefined);
+      }, 5_000);
       try {
         return await action();
       } finally {
+        clearInterval(heartbeat);
         await rmdir(lock).catch(() => undefined);
       }
     } catch (error) {

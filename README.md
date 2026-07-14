@@ -279,6 +279,7 @@ MIT License - see [LICENSE](./LICENSE) for details.
 
 ### User Guides
 - [QUICKSTART.md](./QUICKSTART.md) - Setup guide & usage examples
+- [Local quota history](./docs/USAGE_QUOTA_HISTORY.md) - Normalized local quota snapshots and privacy boundary
 - [CLAUDE.md](./CLAUDE.md) - Project guidelines for Claude Code
 - [ARCHTECHTURE.md](./ARCHTECHTURE.md) - System architecture & design
 

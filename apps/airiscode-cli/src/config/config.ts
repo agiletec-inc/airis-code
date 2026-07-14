@@ -41,6 +41,7 @@ import { channelCommand } from "../commands/channel.js";
 import { extensionsCommand } from "../commands/extensions.js";
 import { hooksCommand } from "../commands/hooks.js";
 import { mcpCommand } from "../commands/mcp.js";
+import { usageCommand } from "../commands/usage.js";
 import { appEvents } from "../utils/events.js";
 import { getAuthTypeFromEnv, resolveCliGenerationConfig } from "../utils/modelConfigUtils.js";
 import { resolvePath } from "../utils/resolvePath.js";
@@ -548,7 +549,9 @@ export async function parseArguments(): Promise<CliArgs> {
     // Register Hooks subcommands
     .command(hooksCommand)
     // Register Channel subcommands
-    .command(channelCommand);
+    .command(channelCommand)
+    // Register local provider quota history commands
+    .command(usageCommand());
 
   yargsInstance
     .version(await getCliVersion()) // This will enable the --version flag based on package.json
@@ -570,7 +573,8 @@ export async function parseArguments(): Promise<CliArgs> {
     (result._[0] === "mcp" ||
       result._[0] === "extensions" ||
       result._[0] === "hooks" ||
-      result._[0] === "channel")
+      result._[0] === "channel" ||
+      result._[0] === "usage")
   ) {
     // MCP/Extensions/Hooks commands handle their own execution and process exit
     process.exit(0);

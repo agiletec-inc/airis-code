@@ -38,11 +38,10 @@ import yargs, { type Argv } from "yargs";
 import { hideBin } from "yargs/helpers";
 import { authCommand } from "../commands/auth.js";
 import { channelCommand } from "../commands/channel.js";
-import { doctorCommand } from "../commands/doctor.js";
 import { extensionsCommand } from "../commands/extensions.js";
 import { hooksCommand } from "../commands/hooks.js";
 import { mcpCommand } from "../commands/mcp.js";
-import { statusCommand } from "../commands/status.js";
+import { registerOperationalCommands } from "../commands/operational.js";
 import { usageCommand } from "../commands/usage.js";
 import { appEvents } from "../utils/events.js";
 import { getAuthTypeFromEnv, resolveCliGenerationConfig } from "../utils/modelConfigUtils.js";
@@ -551,11 +550,8 @@ export async function parseArguments(): Promise<CliArgs> {
     // Register Hooks subcommands
     .command(hooksCommand)
     // Register Channel subcommands
-    .command(channelCommand)
-    .command(doctorCommand)
-    .command(statusCommand)
-    // Register local provider quota history commands
-    .command(usageCommand());
+    .command(channelCommand);
+  registerOperationalCommands(yargsInstance).command(usageCommand());
 
   yargsInstance
     .version(await getCliVersion()) // This will enable the --version flag based on package.json

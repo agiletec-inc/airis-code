@@ -8,7 +8,7 @@ permission.
 
 Every release needs a dependency/attribution report covering direct imports, vendored files,
 generated artifacts, packages, and runtime services. The license allowlist is a release gate.
-The repository keeps the initial component matrix in `docs/AIROS_LICENSE_MATRIX.yml`; release
+The repository keeps the initial component matrix in `docs/AIROS_LICENSE_MATRIX.json`; release
 automation must fail if a component marked `coreImport: false` is imported by the OSS core.
 
 Default collection is local-only operational metadata. Source code, prompts, transcripts,

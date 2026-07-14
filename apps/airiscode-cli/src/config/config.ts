@@ -41,6 +41,8 @@ import { channelCommand } from "../commands/channel.js";
 import { extensionsCommand } from "../commands/extensions.js";
 import { hooksCommand } from "../commands/hooks.js";
 import { mcpCommand } from "../commands/mcp.js";
+import { registerOperationalCommands } from "../commands/operational.js";
+import { usageCommand } from "../commands/usage.js";
 import { appEvents } from "../utils/events.js";
 import { getAuthTypeFromEnv, resolveCliGenerationConfig } from "../utils/modelConfigUtils.js";
 import { resolvePath } from "../utils/resolvePath.js";
@@ -549,6 +551,7 @@ export async function parseArguments(): Promise<CliArgs> {
     .command(hooksCommand)
     // Register Channel subcommands
     .command(channelCommand);
+  registerOperationalCommands(yargsInstance).command(usageCommand());
 
   yargsInstance
     .version(await getCliVersion()) // This will enable the --version flag based on package.json
@@ -565,12 +568,16 @@ export async function parseArguments(): Promise<CliArgs> {
 
   // Handle case where MCP subcommands are executed - they should exit the process
   // and not return to main CLI logic
+  if (result._.length > 0 && (result._[0] === "doctor" || result._[0] === "status")) {
+    process.exit(process.exitCode ?? 0);
+  }
   if (
     result._.length > 0 &&
     (result._[0] === "mcp" ||
       result._[0] === "extensions" ||
       result._[0] === "hooks" ||
-      result._[0] === "channel")
+      result._[0] === "channel" ||
+      result._[0] === "usage")
   ) {
     // MCP/Extensions/Hooks commands handle their own execution and process exit
     process.exit(0);

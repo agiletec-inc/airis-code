@@ -1,0 +1,19 @@
+{
+  "captured_at": "2026-07-12T01:02:03.000Z",
+  "rate_limits": {
+    "five_hour": {
+      "used_percentage": 37.5,
+      "resets_at": "2026-07-12T05:00:00.000Z"
+    },
+    "seven_day": {
+      "used_percentage": 61,
+      "resets_at": "2026-07-19T00:00:00.000Z"
+    }
+  },
+  "prompt": "FORBIDDEN_PROMPT_VALUE",
+  "credentials": {
+    "access_token": "FORBIDDEN_ACCESS_TOKEN"
+  },
+  "cookies": "FORBIDDEN_COOKIE_VALUE",
+  "unknown_provider_field": "FORBIDDEN_UNKNOWN_VALUE"
+}

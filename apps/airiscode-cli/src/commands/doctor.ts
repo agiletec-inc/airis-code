@@ -1,10 +1,11 @@
+import type { Writable } from "node:stream";
 import type { Argv, CommandModule } from "yargs";
 import { loadRepositoryProfile } from "../services/repositoryProfile.js";
 
 export async function runDoctor(
   profilePath: string,
   json: boolean,
-  output = process.stdout,
+  output: Writable = process.stdout,
 ): Promise<number> {
   const result = await loadRepositoryProfile(profilePath);
   if (json) output.write(`${JSON.stringify(result, null, 2)}\n`);

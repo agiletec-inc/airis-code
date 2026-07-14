@@ -4,6 +4,7 @@ import { homedir } from "node:os";
 import { join } from "node:path";
 import type { Readable } from "node:stream";
 import type { Argv, CommandModule } from "yargs";
+import { z } from "zod";
 
 type UsageWindow = {
   usedPercent: number;
@@ -21,6 +22,32 @@ export type UsageSnapshot = {
     sevenDay: UsageWindow;
   };
 };
+
+const UsageSnapshotSchema = z
+  .object({
+    schemaVersion: z.literal(1),
+    provider: z.literal("claude"),
+    capturedAt: z.string().datetime(),
+    source: z.literal("claude-statusline"),
+    policyVersion: z.string().optional(),
+    windows: z
+      .object({
+        fiveHour: z
+          .object({
+            usedPercent: z.number().min(0).max(100),
+            resetsAt: z.string().datetime().optional(),
+          })
+          .strict(),
+        sevenDay: z
+          .object({
+            usedPercent: z.number().min(0).max(100),
+            resetsAt: z.string().datetime().optional(),
+          })
+          .strict(),
+      })
+      .strict(),
+  })
+  .strict();
 
 type UsageCommandDependencies = {
   stdin?: Readable;
@@ -99,12 +126,20 @@ async function loadSnapshots(): Promise<UsageSnapshot[]> {
   const records = await Promise.all(
     names
       .filter((name) => name.endsWith(".json"))
-      .map(
-        async (name) =>
-          JSON.parse(await readFile(join(usageHome(), name), "utf8")) as UsageSnapshot,
-      ),
+      .map(async (name) => {
+        try {
+          const result = UsageSnapshotSchema.safeParse(
+            JSON.parse(await readFile(join(usageHome(), name), "utf8")),
+          );
+          return result.success ? result.data : null;
+        } catch {
+          return null;
+        }
+      }),
   );
-  return records.sort((a, b) => a.capturedAt.localeCompare(b.capturedAt));
+  return records
+    .filter((record): record is UsageSnapshot => record !== null)
+    .sort((a, b) => a.capturedAt.localeCompare(b.capturedAt));
 }
 
 async function persist(snapshot: UsageSnapshot): Promise<void> {

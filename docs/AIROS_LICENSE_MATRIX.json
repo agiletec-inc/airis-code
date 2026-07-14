@@ -1,0 +1,9 @@
+{
+  "schemaVersion": 1,
+  "components": [
+    { "name": "airis-code-core", "license": "MIT", "coreImport": true },
+    { "name": "claude-code-terminal-ux", "license": "MIT", "coreImport": true },
+    { "name": "cmd-ime", "license": "MIT", "coreImport": true },
+    { "name": "airis-keeper", "license": "Elastic-2.0", "coreImport": false, "forbiddenImportTokens": ["airis-keeper", "Elastic-2.0"] }
+  ]
+}

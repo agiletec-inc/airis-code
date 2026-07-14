@@ -70,6 +70,18 @@ afterEach(() => {
 });
 
 describe("usage quota collector acceptance contract", () => {
+  it("ignores malformed files instead of emitting arbitrary local JSON", async () => {
+    const home = await mkdtemp(join(tmpdir(), "airis-usage-untrusted-"));
+    await writeFile(
+      join(home, "untrusted.json"),
+      JSON.stringify({ prompt: "secret", token: "secret" }),
+    );
+    const result = await runUsage(["usage", "history", "--json"], { home });
+    expect(result.exitCode, result.stderr).toBe(0);
+    expect(JSON.parse(result.stdout)).toEqual([]);
+    expect(result.stdout).not.toContain("secret");
+  });
+
   it("AC-1 ingests Claude statusline input from a file and stdin", async () => {
     for (const inputMode of ["file", "stdin"] as const) {
       const home = await mkdtemp(join(tmpdir(), `airis-usage-${inputMode}-`));

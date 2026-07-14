@@ -1,0 +1,17 @@
+version: 1
+repository:
+  provider: github
+  owner: example
+  name: app
+  defaultBranch: main
+workflow:
+  issueLabels: {queue: airis, active: airis:wip, review: airis:review, blocked: airis:blocked}
+  autoMerge: false
+  maxConcurrent: 1
+commands:
+  test: [pnpm, test]
+  lint: [pnpm, lint]
+  typecheck: [pnpm, typecheck]
+  build: [pnpm, build]
+workspace: {strategy: worktree}
+privacy: {telemetry: local, collectSource: false, collectPrompts: false, retentionDays: 30}

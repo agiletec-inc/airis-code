@@ -38,6 +38,7 @@ import yargs, { type Argv } from "yargs";
 import { hideBin } from "yargs/helpers";
 import { authCommand } from "../commands/auth.js";
 import { channelCommand } from "../commands/channel.js";
+import { doctorCommand } from "../commands/doctor.js";
 import { extensionsCommand } from "../commands/extensions.js";
 import { hooksCommand } from "../commands/hooks.js";
 import { mcpCommand } from "../commands/mcp.js";
@@ -550,6 +551,7 @@ export async function parseArguments(): Promise<CliArgs> {
     .command(hooksCommand)
     // Register Channel subcommands
     .command(channelCommand)
+    .command(doctorCommand)
     // Register local provider quota history commands
     .command(usageCommand());
 
@@ -574,7 +576,8 @@ export async function parseArguments(): Promise<CliArgs> {
       result._[0] === "extensions" ||
       result._[0] === "hooks" ||
       result._[0] === "channel" ||
-      result._[0] === "usage")
+      result._[0] === "usage" ||
+      result._[0] === "doctor")
   ) {
     // MCP/Extensions/Hooks commands handle their own execution and process exit
     process.exit(0);

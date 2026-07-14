@@ -1,5 +1,15 @@
 import { createHash, randomUUID } from "node:crypto";
-import { chmod, link, mkdir, readdir, readFile, rename, unlink, writeFile } from "node:fs/promises";
+import {
+  chmod,
+  link,
+  mkdir,
+  readdir,
+  readFile,
+  rename,
+  rmdir,
+  unlink,
+  writeFile,
+} from "node:fs/promises";
 import { homedir } from "node:os";
 import { dirname, join, resolve } from "node:path";
 import { z } from "zod";
@@ -176,6 +186,24 @@ export function statusFromEvents(events: RunEvent[]): RunStatus | null {
   return status;
 }
 
+async function withStatusLock<T>(destination: string, action: () => Promise<T>): Promise<T> {
+  const lock = `${destination}.lock`;
+  for (let attempt = 0; attempt < 200; attempt += 1) {
+    try {
+      await mkdir(lock, { mode: 0o700 });
+      try {
+        return await action();
+      } finally {
+        await rmdir(lock).catch(() => undefined);
+      }
+    } catch (error) {
+      if ((error as NodeJS.ErrnoException).code !== "EEXIST") throw error;
+      await new Promise((resolveDelay) => setTimeout(resolveDelay, 5));
+    }
+  }
+  throw new Error(`timed out acquiring status lock: ${lock}`);
+}
+
 export async function rebuildRunStatus(
   options: RunStoreOptions = {},
   runId?: string,
@@ -185,17 +213,25 @@ export async function rebuildRunStatus(
   const destination = statusPath(options);
   await mkdir(dirname(destination), { recursive: true, mode: 0o700 });
   await chmod(dirname(destination), 0o700);
-  const temporary = `${destination}.${process.pid}.${randomUUID()}.tmp`;
-  try {
-    await writeFile(temporary, `${JSON.stringify(status, null, 2)}\n`, {
-      encoding: "utf8",
-      mode: 0o600,
-      flag: "wx",
-    });
-    await rename(temporary, destination);
-  } catch (error) {
-    await unlink(temporary).catch(() => undefined);
-    throw error;
-  }
-  return status;
+  return withStatusLock(destination, async () => {
+    try {
+      const current = RunStatusSchema.safeParse(JSON.parse(await readFile(destination, "utf8")));
+      if (current.success && current.data.updatedAt >= status.updatedAt) return current.data;
+    } catch {
+      // The event log remains authoritative if status output is absent or invalid.
+    }
+    const temporary = `${destination}.${process.pid}.${randomUUID()}.tmp`;
+    try {
+      await writeFile(temporary, `${JSON.stringify(status, null, 2)}\n`, {
+        encoding: "utf8",
+        mode: 0o600,
+        flag: "wx",
+      });
+      await rename(temporary, destination);
+    } catch (error) {
+      await unlink(temporary).catch(() => undefined);
+      throw error;
+    }
+    return status;
+  });
 }
